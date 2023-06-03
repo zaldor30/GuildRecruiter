@@ -16,9 +16,12 @@ Libs\AceConsole-3.0\AceConsole-3.0.xml
 Libs\AceGUI-3.0\AceGUI-3.0.xml
 Libs\AceConfig-3.0\AceConfig-3.0.xml
 
-GR_Constants.lua
 GR_Initialization.lua
-GR_Configurations.lua
 
+GR_Constants.lua
+GR_GlobalFunctions.lua
+
+GR_Configurations.lua
 GR_Core.lua
-##GR_GlobalFunctions.lua
+
+GR_SearchStart.lua

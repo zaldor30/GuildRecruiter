@@ -1,4 +1,6 @@
 -- Guid Recruiter Constants
+GR_LIBSTUB = LibStub('LibDBIcon-1.0')
+MAX_CHARACTER_LEVEL = 70
 GR_SCAN_WAIT_TIME = 5
 
 GR_INSTANCE_ZONES = {
@@ -50,3 +52,29 @@ GR_INSTANCE_ZONES = {
 		7546,
 		8093,
 }
+
+-- Namespaces
+GR_NAMESPACES = {}
+
+-- Dialogue Boxes
+local AceGUI = LibStub('AceGUI-3.0')
+
+function INFO_BOX(title, msg, statusText, width, height)
+	width = width and width or 400
+	height = height and height or 100
+
+	local f = AceGUI:Create('Frame')
+	f:SetCallback('OnClose',function(widget) AceGUI:Release(widget) end)
+	f:SetTitle(title)
+	f:SetStatusText(statusText)
+	f:EnableResize(false)
+	f:SetLayout('Flow')
+	f:SetWidth(width)
+	f:SetHeight(height)
+
+	local label = AceGUI:Create('Label')
+	label:SetText(msg)
+	label:SetWidth(width - 50)
+	label:SetFont('Fonts\\FRIZQT__.ttf', 14, 'OUTLINE')
+	f:AddChild(label)
+end

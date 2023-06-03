@@ -1,6 +1,7 @@
 -- Guild Recruiter Initialization
 GR_ADDON = LibStub('AceAddon-3.0'):NewAddon('GuildRecruiter', 'AceConsole-3.0', 'AceEvent-3.0')
 
+GR_ADDON.icon = LibStub('LibDBIcon-1.0')
 GR_ADDON.playerFaction = UnitFactionGroup('player') == 'Horde' and 2 or 1
 GR_ADDON.version = GetAddOnMetadata('GuildRecruiter', 'Version')
 GR_ADDON.whoQuery = {}
