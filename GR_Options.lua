@@ -1,5 +1,7 @@
 -- Guild Recruiter Configuration Options
-local code, cText = GR_CODE, GR_CODE.cText
+local icon = LibStub('LibDBIcon-1.0')
+
+local code, cText = GRCODE, GRCODE.cText
 local class = select(2, UnitClass('player'))
 local cClass = select(4, GetClassColor(class))
 local formattedPreview = ''
@@ -15,13 +17,13 @@ local tblMessage = resetTable()
 
 GR_MAIN_OPTIONS = {
     name = 'Guild Recruiter',
-    handler = GR_ADDON,
+    handler = GRADDON,
     type = 'group',
     args = {
         optGeneral = {
             name = 'General',
             order = 1,
-            handler = GR_ADDON,
+            handler = GRADDON,
             type = 'group',
             args = {
                 genHeader1 = {
@@ -35,11 +37,11 @@ GR_MAIN_OPTIONS = {
                     type = 'toggle',
                     order = 0,
                     width = 'full',
-                    set = function(_, val) GRDB.profile.minimap = { hide = not val } end,
+                    set = function(_, val) GRADDON.db.profile.minimap = { hide = not val } end,
                     get = function(_)
-                        if not GRDB.profile.minimap.hide then GR_LIBSTUB:Show('GR_Icon')
-                        else GR_LIBSTUB:Hide('GR_Icon') end
-                        return not GRDB.profile.minimap.hide
+                        if not GRADDON.db.profile.minimap.hide then icon:Show('GR_Icon')
+                        else icon:Hide('GR_Icon') end
+                        return not GRADDON.db.profile.minimap.hide
                     end,
                 },
                 showMenu = {
@@ -48,8 +50,8 @@ GR_MAIN_OPTIONS = {
                     type = 'toggle',
                     order = 1,
                     width = 'full',
-                    set = function(_, val) GRDB.global.showMenu = val end,
-                    get = function(_) return GRDB.global.showMenu end,
+                    set = function(_, val) GRADDON.db.global.showMenu = val end,
+                    get = function(_) return GRADDON.db.global.showMenu end,
                 },
                 genHeader2 = {
                     name = 'Invite Settings',
@@ -62,8 +64,8 @@ GR_MAIN_OPTIONS = {
                     type = 'toggle',
                     order = 3,
                     width = 'full',
-                    set = function(_, val) GRDB.global.showMsg = val end,
-                    get = function(_) return GRDB.global.showMsg end,
+                    set = function(_, val) GRADDON.db.global.showMsg = val end,
+                    get = function(_) return GRADDON.db.global.showMsg end,
                 },
                 scanPlayers = {
                     name = 'Perform Auto Scan',
@@ -71,8 +73,8 @@ GR_MAIN_OPTIONS = {
                     type = 'toggle',
                     order = 4,
                     width = 1.2,
-                    set = function(_, val) GRDB.global.scanPlayers = val end,
-                    get = function(_) return GRDB.global.scanPlayers end,
+                    set = function(_, val) GRADDON.db.global.scanPlayers = val end,
+                    get = function(_) return GRADDON.db.global.scanPlayers end,
                 },
                 scanTime = {
                     name = 'Time to wait between scans',
@@ -85,8 +87,8 @@ GR_MAIN_OPTIONS = {
                     end,
                     order = 5,
                     width = .8,
-                    set = function(_, val) GRDB.global.scanTime = val end,
-                    get = function(_) return GRDB.global.scanTime end,
+                    set = function(_, val) GRADDON.db.global.scanTime = val end,
+                    get = function(_) return GRADDON.db.global.scanTime end,
                 },
                 rememberPlayers = {
                     name = 'Remember invited players',
@@ -94,8 +96,8 @@ GR_MAIN_OPTIONS = {
                     type = 'toggle',
                     order = 6,
                     width = 1.2,
-                    set = function(_, val) GRDB.global.remember = val end,
-                    get = function(_) return GRDB.global.remember end,
+                    set = function(_, val) GRADDON.db.global.remember = val end,
+                    get = function(_) return GRADDON.db.global.remember end,
                 },
                 rememberTime = {
                     name = 'Time to wait',
@@ -110,15 +112,15 @@ GR_MAIN_OPTIONS = {
                     },
                     order = 67,
                     width = .8,
-                    set = function(_, val) GRDB.global.rememberTime = val end,
-                    get = function(_) return GRDB.global.rememberTime end,
+                    set = function(_, val) GRADDON.db.global.rememberTime = val end,
+                    get = function(_) return GRADDON.db.global.rememberTime end,
                 },
             },
         },
         optMessages = {
             name = 'Messages',
             order = 2,
-            handler = GR_ADDON,
+            handler = GRADDON,
             type = 'group',
             args = {
                 msgHeader1 = {
@@ -145,18 +147,18 @@ GR_MAIN_OPTIONS = {
                     order = 3,
                     width = 2,
                     values = function()
-                        if GRDB.global.messages then
+                        if GRADDON.db.global.messages then
                             local tbl = {}
-                            for k, r in pairs(GRDB.global.messages) do tbl[k] = r.desc end
+                            for k, r in pairs(GRADDON.db.global.messages) do tbl[k] = r.desc end
                             return tbl
                         else return {} end
                     end,
-                    set = function(_, val) GRDB.global.activeMessage = val end,
+                    set = function(_, val) GRADDON.db.global.activeMessage = val end,
                     get = function(_)
-                        if GRDB.global.activeMessage and GRDB.global.messages then
-                            tblMessage = GRDB.global.messages[GRDB.global.activeMessage]
-                            return GRDB.global.activeMessage
-                        elseif not GRDB.global.messages then GRDB.global.activeMessage = nil end
+                        if GRADDON.db.global.activeMessage and GRADDON.db.global.messages then
+                            tblMessage = GRADDON.db.global.messages[GRADDON.db.global.activeMessage]
+                            return GRADDON.db.global.activeMessage
+                        elseif not GRADDON.db.global.messages then GRADDON.db.global.activeMessage = nil end
                     end,
                 },
                 msgInviteNew = {
@@ -166,11 +168,11 @@ GR_MAIN_OPTIONS = {
                     width = .5,
                     order = 4,
                     disabled = function()
-                        if GRDB.global.activeMessage then return false
+                        if GRADDON.db.global.activeMessage then return false
                         else return true end
                     end,
                     func = function()
-                        GRDB.global.activeMessage = nil
+                        GRADDON.db.global.activeMessage = nil
                         tblMessage = resetTable()
                     end,
                 },
@@ -238,12 +240,12 @@ GR_MAIN_OPTIONS = {
                     type = 'execute',
                     width = .5,
                     disabled = function()
-                        return (not GRDB or not GRDB.global.activeMessage) and true or false
+                        return (not db or not GRADDON.db.global.activeMessage) and true or false
                     end,
                     func = function()
-                        if GRDB.global.activeMessage and GRDB.global.messages[GRDB.global.activeMessage] then
-                            GRDB.global.messages[GRDB.global.activeMessage] = nil
-                            GRDB.global.activeMessage = nil
+                        if GRADDON.db.global.activeMessage and GRADDON.db.global.messages[GRADDON.db.global.activeMessage] then
+                            GRADDON.db.global.messages[GRADDON.db.global.activeMessage] = nil
+                            GRADDON.db.global.activeMessage = nil
                             tblMessage = resetTable()
                         end
                     end,
@@ -258,13 +260,13 @@ GR_MAIN_OPTIONS = {
                         else return true end
                     end,
                     func = function()
-                        GRDB.global.messages = GRDB.global.messages or {}
-                        if not GRDB.global.activeMessage then
-                            table.insert(GRDB.global.messages, tblMessage)
-                            GRDB.global.activeMessage = #GRDB.global.messages
-                        else GRDB.global.messages[GRDB.global.activeMessage] = tblMessage end
+                        GRADDON.db.global.messages = GRADDON.db.global.messages or {}
+                        if not GRADDON.db.global.activeMessage then
+                            table.insert(GRADDON.db.global.messages, tblMessage)
+                            GRADDON.db.global.activeMessage = #GRADDON.db.global.messages
+                        else GRADDON.db.global.messages[GRADDON.db.global.activeMessage] = tblMessage end
 
-                        INFO_BOX('Record Saved', 'Message has been saved.', 'Press the Close button', 250)
+                        --INFO_BOX('Record Saved', 'Message has been saved.', 'Press the Close button', 250)
                     end,
                 },
             }
@@ -272,21 +274,21 @@ GR_MAIN_OPTIONS = {
         optFilters = {
             name = 'Filters',
             order = 3,
-            handler = GR_ADDON,
+            handler = GRADDON,
             type = 'group',
             args = {}
         },
         optBlackList = {
             name = 'Black List',
             order = 4,
-            handler = GR_ADDON,
+            handler = GRADDON,
             type = 'group',
             args = {}
         },
         optSync = {
             name = 'Syncronize',
             order = 5,
-            handler = GR_ADDON,
+            handler = GRADDON,
             type = 'group',
             args = {}
         },

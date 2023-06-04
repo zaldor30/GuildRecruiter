@@ -87,9 +87,29 @@
         "IsShiftKeyDown",
         "IsControlKeyDown",
         "IsAltKeyDown",
-        "CreateFont"
+        "CreateFont",
+        "GetRealmID",
+        "EasyMenu",
+        "tinsert",
+        "strsub",
+        "ChatFrame1",
+        "ChatFrame_OnHyperlinkShow",
+        "ChatFrame1ButtonFrame",
+        "UIDropDownMenu_AddButton",
+        "UIDROPDOWNMENU_MENU_LEVEL",
+        "GuildInvite",
+        "CloseDropDownMenus",
+        "StaticPopup_Show",
+        "DropDownList1",
+        "LFGListFrameDropDownButton",
+        "CanGuildInvite",
+        "IsInGuild",
+        "UnitIsConnected",
+        "GetGuildInfo"
     ],
     "Lua.diagnostics.disable": [
-        "undefined-field"
+        "undefined-field",
+        "duplicate-set-field",
+        "param-type-mismatch"
     ]
 }

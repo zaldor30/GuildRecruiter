@@ -1,7 +1,25 @@
 -- Guild Recruiter Global Functions
-local code = GR_CODE
-GR_CODE = {
+local function AnalytecsCode()
+    local tbl = {}
+    function tbl:Invited()
+        print('Invited')
+        GRADDON.db.global.invitedPlayers = GRCODE.inc(GRADDON.db.global.invitedPlayers)
+        GRADDON.db.global.invitedPlayers = GRCODE.inc(GRADDON.db.profile.invitedPlayers)
+    end
+
+    return tbl
+end
+local Analytecs = AnalytecsCode()
+
+GRCODE = {
     -- Text Routines
+    inc = function(data, count)
+        print('inc')
+        count = count or 1
+        data = data and data + count or count
+        print(data)
+        return data
+    end,
     cText = function(color, text) return '|c'..color..text..'|r' end,
 
     -- Guild Info Routines
@@ -10,20 +28,20 @@ GR_CODE = {
         local club = clubID and C_ClubFinder.GetRecruitingClubInfoFromClubID(clubID) or nil
         if club then
             local gName, gLink = club.name, GetClubFinderLink(club.clubFinderGUID, club.name)
-            GRDB.global.guildInfo = { [UnitGUID('player')] = {clubID = clubID, guildName = gName, guildLink = gLink } }
+            GRADDON.db.global.guildInfo = { [UnitGUID('player')] = {clubID = clubID, guildName = gName, guildLink = gLink } }
             return gLink, gName
         end
     end,
     GetGuildInfo = function()
         local clubID = C_Club.GetGuildClubId()
-        local gInfo = GRDB.global.guildInfo and GRDB.global.guildInfo[UnitGUID('player')] or nil
+        local gInfo = GRADDON.db.global.guildInfo and GRADDON.db.global.guildInfo[UnitGUID('player')] or nil
         if not gInfo or clubID ~= gInfo.clubID then return nil
         else return gInfo.guildLink, gInfo.guildName end
     end,
     GuildReplace = function(msg)
         local gLink, gName = nil, nil
-        if GR_CODE.GetGuildInfo() then gLink, gName = GR_CODE.GetGuildInfo()
-        else gLink, gName = GR_CODE.SetGuildInfo() end
+        if GRCODE.GetGuildInfo() then gLink, gName = GRCODE.GetGuildInfo()
+        else gLink, gName = GRCODE.SetGuildInfo() end
 
         if gLink and gName and msg then
             msg = gsub(msg, 'GUILDLINK', gLink and gLink or 'No Guild Link')
@@ -32,6 +50,14 @@ GR_CODE = {
         end
 
         return msg
+    end,
+
+    -- Analytecs and Player Interactions
+    InviteToGuild = function(playerName)
+        if CanGuildInvite() and not GetGuildInfo(playerName) then
+            GuildInvite(playerName)
+            Analytecs:Invited()
+        end
     end,
 
     -- Frame Routines

@@ -1,9 +1,4 @@
--- Guild Recruiter Core
-local AC, ACD = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0')
-local addonOptions = nil
-
--- Options Table Defaults
-OPTIONS_DEFAULT = {
+local optDefaults = {
     profile = {
         minimap = { hide = false, },
     },
@@ -20,7 +15,11 @@ OPTIONS_DEFAULT = {
     }
 }
 
+local AC, ACD, icon = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0'), LibStub('LibDBIcon-1.0')
+local addonOptions = nil
+
 function CreateMiniMapIcon()
+    local cText = function(color, text) return '|c'..color..text..'|r' end
     local iconData = LibStub("LibDataBroker-1.1"):NewDataObject("GuildRecruiter", { -- Minimap Icon Settings
         type = 'data source',
         icon = 'Interface\\AddOns\\GuildRecruiter\\imgs\\gr_minimap',
@@ -29,7 +28,6 @@ function CreateMiniMapIcon()
             elseif button == 'RightButton' then InterfaceOptionsFrame_OpenToCategory(addonOptions) end
         end,
         OnTooltipShow = function(GameTooltip)
-            local cText = GR_CODE.cText
             local msg = cText('FFFFFF00','Guild Recruiter')
             msg = msg..cText('FFFFFFFF', '\nLMB - Start Recruit Search\n')
             msg = msg..cText('FFFFFFFF', 'RMB - Open Configuration')
@@ -38,12 +36,11 @@ function CreateMiniMapIcon()
         end,
     })
 
-    GR_LIBSTUB:Register('GR_Icon', iconData, GRDB.profile.minimap)
+    icon:Register('GR_Icon', iconData, GRADDON.db.profile.minimap)
 end
-
-function GR_ADDON:OnInitialize()
+function GRADDON:OnInitialize()
     -- Set DB
-    GRDB = LibStub('AceDB-3.0'):New('GuildRecruiterDB', OPTIONS_DEFAULT, true)
+    GRADDON.db = LibStub('AceDB-3.0'):New('GuildRecruiterDB', optDefaults, true)
 
     -- Register Options table
     AC:RegisterOptionsTable('GuildRecruiter_Options', GR_MAIN_OPTIONS)
@@ -58,7 +55,7 @@ function GR_ADDON:OnInitialize()
 end
 
 -- Slash Command Routines
-function GR_ADDON:SlashCommand(msg)
+function GRADDON:SlashCommand(msg)
     msg = msg and msg:trim() or msg
     if msg == 'config' then InterfaceOptionsFrame_OpenToCategory(addonOptions) end
 end
