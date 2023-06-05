@@ -2,23 +2,25 @@
 GRADDON = LibStub('AceAddon-3.0'):NewAddon('GuildRecruiter', 'AceConsole-3.0', 'AceEvent-3.0')
 GRADDON.playerFaction = UnitFactionGroup('player') == 'Horde' and 2 or 1
 GRADDON.version = GetAddOnMetadata('GuildRecruiter', 'Version')
-GRADDON.menu = nil
+GRADDON.db = nil
+GRADDON.bl = nil
+GRADDON.ps = nil
 GRADDON.realmID = GetRealmID()
 GRADDON.whoQuery = {}
-GRADDON.color = {
-    WARRIOR='ffc79c6e',
-	PALADIN='fff58cba',
-	HUNTER='ffabd473',
-	ROGUE='fffff569',
-	PRIEST='ffffffff',
-	DEATHKNIGHT='ffc41f3b',
-	SHAMAN='ff0070de',
-	MAGE='ff3fc7eb',
-	WARLOCK='ff8788ee',
-	MONK='ff00ff96',
-	DRUID='ffff7d0a',
-	DEMONHUNTER='ffa330c9',
-	EVOKER='ff308a77',
+GRADDON.classInfo = {
+	WARRIOR = {fClass = 'Warrior', color = 'ffc79c6e'},
+	PALADIN = {fClass = 'Warrior', color = 'fff58cba'},
+	HUNTER = {fClass = 'Warrior', color = 'ffabd473'},
+	ROGUE = {fClass = 'Warrior', color = 'fffff569'},
+	PRIEST = {fClass = 'Warrior', color = 'ffffffff'},
+	DEATHKNIGHT = {fClass = 'Warrior', color = 'ffc41f3b'},
+	SHAMAN = {fClass = 'Warrior', color = 'ff0070de'},
+	MAGE = {fClass = 'Warrior', color = 'ff3fc7eb'},
+	WARLOCK = {fClass = 'Warrior', color = 'ff8788ee'},
+	MONK = {fClass = 'Warrior', color = 'ff00ff96'},
+	DRUID = {fClass = 'Warrior', color = 'ffff7d0a'},
+	DEMONHUNTER = {fClass = 'Warrior', color = 'ffa330c9'},
+	EVOKER = {fClass = 'Warrior', color = 'ff308a77'},
 }
 
 local function HandlesGlobalMouseEvent(self, button, event)
@@ -41,7 +43,7 @@ invite:SetFont('Fonts\\FRIZQT__.ttf', 12, 'OUTLINE')
 invite:SetHighlight(255,255,255,125)
 invite.frame.HandlesGlobalMouseEvent = HandlesGlobalMouseEvent
 invite:SetCallback('OnClick', function()
-	if f.name then GR_CODE.InviteToGuild(f.name) end
+	if f.name then GRCODE.InviteToGuild(f.name) end
 	CloseDropDownMenus()
 end)
 invite:SetPoint('TOPLEFT', f.frame, 'TOPLEFT', 0, 0)

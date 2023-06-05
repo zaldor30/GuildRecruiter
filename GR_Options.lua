@@ -15,10 +15,32 @@ local function resetTable()
 end
 local tblMessage = resetTable()
 
+local function resetFilterTable()
+    return {
+        lvlMin = 1,
+        lvlMax = MAX_CHARACTER_LEVEL,
+        race = nil,
+        class = nil,
+        filter = nil,
+    }
+end
+local tblFilter = resetFilterTable()
+
+local function CreateFilter()
+    local filter = nil
+    if tblFilter.race then filter = "-r'"..tblFilter.race.."'" end
+    if tblFilter.race and tblFilter.class then filter = filter.." " end
+    if tblFilter.class then filter = filter.."-c'"..tblFilter.class.."'" end
+    tblFilter.filter = filter
+end
+
+--table.insert(tblClasses, {[0] = 'No Class'})
+
+local activeFilter = nil
 GR_MAIN_OPTIONS = {
-    name = 'Guild Recruiter',
-    handler = GRADDON,
+    name = 'GuildRecruiter',
     type = 'group',
+    handler = GRADDON.db,
     args = {
         optGeneral = {
             name = 'General',
@@ -105,10 +127,10 @@ GR_MAIN_OPTIONS = {
                     type = 'select',
                     style = 'dropdown',
                     values = {
-                        ['WEEK'] = '7 days.',
-                        ['MONTH'] = '30 days.',
-                        ['QUARTER'] = '90 days.',
-                        ['YEAR'] = '365 days.',
+                        [7] = '7 days.',
+                        [30] = '30 days.',
+                        [90] = '90 days.',
+                        [365] = '365 days.',
                     },
                     order = 67,
                     width = .8,
@@ -153,12 +175,12 @@ GR_MAIN_OPTIONS = {
                             return tbl
                         else return {} end
                     end,
-                    set = function(_, val) GRADDON.db.global.activeMessage = val end,
+                    set = function(_, val) GRADDON.db.profile.activeMessage = val end,
                     get = function(_)
-                        if GRADDON.db.global.activeMessage and GRADDON.db.global.messages then
-                            tblMessage = GRADDON.db.global.messages[GRADDON.db.global.activeMessage]
-                            return GRADDON.db.global.activeMessage
-                        elseif not GRADDON.db.global.messages then GRADDON.db.global.activeMessage = nil end
+                        if GRADDON.db.profile.activeMessage and GRADDON.db.global.messages then
+                            tblMessage = GRADDON.db.global.messages[GRADDON.db.profile.activeMessage]
+                            return GRADDON.db.profile.activeMessage
+                        elseif not GRADDON.db.global.messages then GRADDON.db.profile.activeMessage = nil end
                     end,
                 },
                 msgInviteNew = {
@@ -167,12 +189,9 @@ GR_MAIN_OPTIONS = {
                     type = 'execute',
                     width = .5,
                     order = 4,
-                    disabled = function()
-                        if GRADDON.db.global.activeMessage then return false
-                        else return true end
-                    end,
+                    disabled = function() return not GRADDON.db.profile.activeMessage end,
                     func = function()
-                        GRADDON.db.global.activeMessage = nil
+                        GRADDON.db.profile.activeMessage = nil
                         tblMessage = resetTable()
                     end,
                 },
@@ -211,10 +230,20 @@ GR_MAIN_OPTIONS = {
                     width = 'full',
                     fontSize = 'medium'
                 },
+                msgNotGM = {
+                    name = function()
+                        local errMsg = (tblMessage.message and strfind(tblMessage.message, 'GUILDLINK') and not IsGuildLeader()) and 'WARNING: You are not a GM, so GUILDLINK is an invalid option.' or nil
+                        return cText('FFFF0000', errMsg or '')
+                    end,
+                    type = 'description',
+                    order = 9,
+                    width = 'full',
+                    fontSize = 'medium'
+                },
                 msgHeader4 = {
                     name = '',
                     type = 'header',
-                    order = 9
+                    order = 10
                 },
                 msgPreviewCount = {
                     name = function()
@@ -225,14 +254,14 @@ GR_MAIN_OPTIONS = {
                         return msg
                     end,
                     type = 'description',
-                    order = 10,
+                    order = 11,
                     width = 'full',
                     fontSize = 'medium'
                 },
                 msgHeader5 = {
                     name = '',
                     type = 'header',
-                    order = 11,
+                    order = 12,
                 },
                 msgInviteDel = {
                     name = 'Delete',
@@ -240,12 +269,12 @@ GR_MAIN_OPTIONS = {
                     type = 'execute',
                     width = .5,
                     disabled = function()
-                        return (not db or not GRADDON.db.global.activeMessage) and true or false
+                        return (not GRADDON.db or not GRADDON.db.profile.activeMessage) and true or false
                     end,
                     func = function()
-                        if GRADDON.db.global.activeMessage and GRADDON.db.global.messages[GRADDON.db.global.activeMessage] then
-                            GRADDON.db.global.messages[GRADDON.db.global.activeMessage] = nil
-                            GRADDON.db.global.activeMessage = nil
+                        if GRADDON.db.profile.activeMessage and GRADDON.db.global.messages[GRADDON.db.profile.activeMessage] then
+                            GRADDON.db.global.messages[GRADDON.db.profile.activeMessage] = nil
+                            GRADDON.db.profile.activeMessage = nil
                             tblMessage = resetTable()
                         end
                     end,
@@ -261,10 +290,10 @@ GR_MAIN_OPTIONS = {
                     end,
                     func = function()
                         GRADDON.db.global.messages = GRADDON.db.global.messages or {}
-                        if not GRADDON.db.global.activeMessage then
+                        if not GRADDON.db.profile.activeMessage then
                             table.insert(GRADDON.db.global.messages, tblMessage)
-                            GRADDON.db.global.activeMessage = #GRADDON.db.global.messages
-                        else GRADDON.db.global.messages[GRADDON.db.global.activeMessage] = tblMessage end
+                            GRADDON.db.profile.activeMessage = #GRADDON.db.global.messages
+                        else GRADDON.db.global.messages[GRADDON.db.profile.activeMessage] = tblMessage end
 
                         --INFO_BOX('Record Saved', 'Message has been saved.', 'Press the Close button', 250)
                     end,
@@ -276,7 +305,97 @@ GR_MAIN_OPTIONS = {
             order = 3,
             handler = GRADDON,
             type = 'group',
-            args = {}
+            args = {
+                activeFilterDrop = {
+                    name = 'Filter Description',
+                    desc = 'Select the filter to edit.',
+                    type = 'select',
+                    style = 'dropdown',
+                    width = 2,
+                    order = 1,
+                    values = function()
+                        if not GRADDON.db.global.filters then return {} end
+                        local tbl = {}
+                        for k,r in pairs(GRADDON.db.global.filters) do tbl[k] = r end
+                        return tbl
+                    end,
+                    set = function(_,val) activeFilter = val end,
+                    get = function() return activeFilter end,
+                },
+                fNewButton = {
+                    name = 'New',
+                    desc = 'Create a new filter.',
+                    type = 'execute',
+                    width = .5,
+                    order = 2,
+                    disabled = function() return not activeFilter end,
+                    func = function()
+                        activeFilter = nil
+                        tblFilter = resetFilterTable()
+                    end,
+                },
+                fHeader1 = {
+                    name = 'Create Filter',
+                    type = 'header',
+                    order = 3,
+                },
+                fDesc = {
+                    name = "You can create a filter using the dropdowns bellow or manually enter a filter using the who commands.\nFollow the format: Race: r-'race' Class: c-'class'.\n\nThe class levels on the main screen will override any manual ones.",
+                    type = 'description',
+                    fontSize = 'medium',
+                    order = 4,
+                },
+                fHeader2 = {
+                    name = '',
+                    type = 'header',
+                    order = 5,
+                },
+                fRaces = {
+                    name = 'Race',
+                    type = 'select',
+                    style = 'dropdown',
+                    width = 1,
+                    order = 6,
+                    values = function()
+                        local tbl = {}
+                        for _,r in pairs(APR) do tbl[r] = r end
+                        tbl[0] = ''
+                        return tbl
+                    end,
+                    set = function(_,val)
+                        tblFilter.race = (val == 0 and nil or val)
+                        CreateFilter()
+                    end,
+                    get = function(_) return tblFilter.race end,
+                },
+                fClasses = {
+                    name = 'Classes',
+                    type = 'select',
+                    style = 'dropdown',
+                    width = 1,
+                    order = 7,
+                    values = function()
+                        local tbl = {}
+                        for _,r in pairs(APC) do tbl[r.className] = r.className end
+                        tbl[0] = ''
+                        return tbl
+                    end,
+                    set = function(_,val)
+                        tblFilter.class = (val == 0 and nil or val)
+                        CreateFilter()
+                    end,
+                    get = function(_) return tblFilter.class end,
+                },
+                fCustomFilter = {
+                    name = 'Custom Filter/Preview',
+                    type = 'input',
+                    multiline = 10,
+                    order = 8,
+                    width = 'full',
+                    set = function(_, val) tblFilter = val end,
+                    get = function(_) return tblFilter.filter or '' end,
+                },
+            }
         },
         optBlackList = {
             name = 'Black List',

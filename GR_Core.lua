@@ -4,7 +4,7 @@ local optDefaults = {
     },
     global = {
         showIcon = true,
-        showMsg = true,
+        showMsg = false,
         showMenu = true,
         scanPlayers = false,
         scanTime = '10',
@@ -24,7 +24,7 @@ function CreateMiniMapIcon()
         type = 'data source',
         icon = 'Interface\\AddOns\\GuildRecruiter\\imgs\\gr_minimap',
         OnClick = function(_, button)
-            if button == 'LeftButton' then GR_NAMESPACES:createMainSearch()
+            if button == 'LeftButton' then NS.MainScreen()
             elseif button == 'RightButton' then InterfaceOptionsFrame_OpenToCategory(addonOptions) end
         end,
         OnTooltipShow = function(GameTooltip)
@@ -38,13 +38,19 @@ function CreateMiniMapIcon()
 
     icon:Register('GR_Icon', iconData, GRADDON.db.profile.minimap)
 end
+
 function GRADDON:OnInitialize()
     -- Set DB
-    GRADDON.db = LibStub('AceDB-3.0'):New('GuildRecruiterDB', optDefaults, true)
+    GRADDON.db = LibStub('AceDB-3.0'):New('GR_SettingsDB', optDefaults, PLAYER_PROFILE)
+    RefreshFNData(GRADDON.db)
+    GRCODE.SetGuildInfo()
+    NS.SetProfileDefaults(GRADDON.db)
 
-    -- Register Options table
-    AC:RegisterOptionsTable('GuildRecruiter_Options', GR_MAIN_OPTIONS)
-    addonOptions = ACD:AddToBlizOptions('GuildRecruiter_Options', 'Guild Recruiter')
+    GRADDON.bl = LibStub('AceDB-3.0'):New('GR_BlackListDB', nil, true)
+    GRADDON.ps = LibStub('AceDB-3.0'):New('GR_PlayersScannedDB', nil, true)
+
+    AC:RegisterOptionsTable('GR_Options', GR_MAIN_OPTIONS)
+    addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
 
     -- Slash Command Declaration
     self:RegisterChatCommand('rl', function() ReloadUI() end)
