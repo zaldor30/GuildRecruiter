@@ -101,9 +101,26 @@ GRCODE = {
     end,
 
     -- Frame Routines
+    createErrorWindow = function(msg)
+        local errorDialog = {
+            text = msg,
+            button1 = 'Okay',
+            timeout = 10,
+            showAlert = true,
+            whileDead = true,
+            hideOnEscape = true,
+            preferredIndex = 3,
+            OnShow = function(self)
+                self:SetPoint("CENTER")
+            end,
+        }
+        StaticPopupDialogs["MY_ERROR_DIALOG"] = errorDialog
+        StaticPopup_Show("MY_ERROR_DIALOG")
+    end,
     createPadding = function(f, rWidth)
         local widget = LibStub("AceGUI-3.0"):Create('Label')
-        widget:SetRelativeWidth(rWidth)
+        if rWidth <=2 then widget:SetRelativeWidth(rWidth)
+        else widget:SetWidth(rWidth) end
         f:AddChild(widget)
     end,
 }

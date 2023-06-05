@@ -22,6 +22,7 @@ local function resetFilterTable()
         race = nil,
         class = nil,
         filter = nil,
+        desc = nil,
     }
 end
 local tblFilter = resetFilterTable()
@@ -34,9 +35,7 @@ local function CreateFilter()
     tblFilter.filter = filter
 end
 
---table.insert(tblClasses, {[0] = 'No Class'})
-
-local activeFilter = nil
+local activeFilter = false
 GR_MAIN_OPTIONS = {
     name = 'GuildRecruiter',
     type = 'group',
@@ -294,8 +293,7 @@ GR_MAIN_OPTIONS = {
                             table.insert(GRADDON.db.global.messages, tblMessage)
                             GRADDON.db.profile.activeMessage = #GRADDON.db.global.messages
                         else GRADDON.db.global.messages[GRADDON.db.profile.activeMessage] = tblMessage end
-
-                        --INFO_BOX('Record Saved', 'Message has been saved.', 'Press the Close button', 250)
+                        GRCODE.createErrorWindow('Message Saved')
                     end,
                 },
             }
@@ -314,12 +312,15 @@ GR_MAIN_OPTIONS = {
                     width = 2,
                     order = 1,
                     values = function()
-                        if not GRADDON.db.global.filters then return {} end
+                        if not GRADDON.db.global.filter then return {} end
                         local tbl = {}
-                        for k,r in pairs(GRADDON.db.global.filters) do tbl[k] = r end
+                        for k,r in pairs(GRADDON.db.global.filter) do tbl[k] = r.desc or '' end
                         return tbl
                     end,
-                    set = function(_,val) activeFilter = val end,
+                    set = function(_,val)
+                        activeFilter = val
+                        tblFilter = GRADDON.db.global.filter[val]
+                    end,
                     get = function() return activeFilter end,
                 },
                 fNewButton = {
@@ -330,7 +331,7 @@ GR_MAIN_OPTIONS = {
                     order = 2,
                     disabled = function() return not activeFilter end,
                     func = function()
-                        activeFilter = nil
+                        activeFilter = false
                         tblFilter = resetFilterTable()
                     end,
                 },
@@ -350,12 +351,22 @@ GR_MAIN_OPTIONS = {
                     type = 'header',
                     order = 5,
                 },
+                fDescFilter = {
+                    name = 'Filter Description',
+                    desc = 'Short description of the filter.',
+                    type = 'input',
+                    multiline = false,
+                    order = 6,
+                    width = 'full',
+                    set = function(_, val) tblFilter.desc = val end,
+                    get = function(_) return tblFilter.desc or '' end,
+                },
                 fRaces = {
                     name = 'Race',
                     type = 'select',
                     style = 'dropdown',
                     width = 1,
-                    order = 6,
+                    order = 7,
                     values = function()
                         local tbl = {}
                         for _,r in pairs(APR) do tbl[r] = r end
@@ -373,7 +384,7 @@ GR_MAIN_OPTIONS = {
                     type = 'select',
                     style = 'dropdown',
                     width = 1,
-                    order = 7,
+                    order = 8,
                     values = function()
                         local tbl = {}
                         for _,r in pairs(APC) do tbl[r.className] = r.className end
@@ -389,11 +400,40 @@ GR_MAIN_OPTIONS = {
                 fCustomFilter = {
                     name = 'Custom Filter/Preview',
                     type = 'input',
-                    multiline = 10,
-                    order = 8,
+                    order = 9,
                     width = 'full',
-                    set = function(_, val) tblFilter = val end,
+                    set = function(_, val) tblFilter.filter = val end,
                     get = function(_) return tblFilter.filter or '' end,
+                },
+                fDelButton = {
+                    name = 'Delete',
+                    desc = 'Delete the selected filter.',
+                    type = 'execute',
+                    width = .5,
+                    disabled = function() return not GRADDON.db.profile.activeFilter end,
+                    func = function()
+                        if GRADDON.db.profile.activeFilter and GRADDON.db.global.filter[GRADDON.db.profile.activeFilter] then
+                            GRADDON.db.global.filter[GRADDON.db.profile.activeFilter] = nil
+                            GRADDON.db.profile.activeFilter = nil
+                            activeFilter = false
+                            tblFilter = resetFilterTable()
+                        end
+                    end,
+                },
+                fSaveButton = {
+                    name = 'Save',
+                    desc = 'Save the current filter.',
+                    type = 'execute',
+                    width = .5,
+                    disabled = function() return not tblFilter.filter end,
+                    func = function()
+                        GRADDON.db.global.filter = GRADDON.db.global.filter or {}
+                        if not activeFilter then table.insert(GRADDON.db.global.filter, tblFilter)
+                        else GRADDON.db.global.filter[activeFilter] = tblFilter end
+                        GRCODE.createErrorWindow('Filter Saved')
+                        activeFilter = false
+                        tblFilter = resetFilterTable()
+                    end,
                 },
             }
         },

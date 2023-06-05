@@ -105,7 +105,8 @@
         "CanGuildInvite",
         "IsInGuild",
         "UnitIsConnected",
-        "GetGuildInfo"
+        "GetGuildInfo",
+        "StaticPopupDialogs"
     ],
     "Lua.diagnostics.disable": [
         "undefined-field",

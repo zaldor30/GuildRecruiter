@@ -119,6 +119,17 @@ local function MainScreen_Primary()
     primary:AddChild(errLabel)
 end
 
+local function FilterGroup_List()
+    local tbl = {}
+    tbl[0] = 'Default Filter'
+    if GRADDON.db.global.filter then
+        for x=1,#GRADDON.db.global.filter do
+            tbl[x] = GRADDON.db.global.filter[x].desc
+        end
+    end
+    return tbl
+end
+
 function NS.MainScreen()
     p,g = GRADDON.db.profile, GRADDON.db.global
     if f then f:Show() return end
@@ -136,16 +147,65 @@ function NS.MainScreen()
     tinsert(UISpecialFrames, "GuildRecruiter")
 
     MainScreen_Primary()
-
     local filterGroup = aceGUI:Create('InlineGroup')
     filterGroup:SetTitle('Available Filters')
     filterGroup:SetLayout("flow")
-    filterGroup:SetWidth(150)
+    filterGroup:SetWidth(215)
     f:AddChild(filterGroup)
+
+    local dropdown = aceGUI:Create('Dropdown')
+    dropdown:SetLabel('Filters')
+    dropdown:SetRelativeWidth(.5)
+    dropdown:SetList(FilterGroup_List())
+    dropdown:SetValue((p.activeFilter and p.activeFilter == 99) and 0 or (p.activeFilter or 0))
+    dropdown:SetFullWidth(true)
+    dropdown:SetCallback('OnValueChanged', function(_, _, val) p.activeFilter = (val == 0 and 99 or val) end)
+    filterGroup:AddChild(dropdown)
+
+    local spacer = aceGUI:Create('Label')
+    spacer:SetText(' ')
+    spacer:SetWidth(20)
+    f:AddChild(spacer)
 
     local statsGroup = aceGUI:Create('InlineGroup')
     statsGroup:SetTitle('Statistics')
     statsGroup:SetLayout("flow")
-    filterGroup:SetWidth(150)
+    statsGroup:SetWidth(230)
     f:AddChild(statsGroup)
+
+    local label = aceGUI:Create('Label')
+    label:SetText(UnitName('player')..' Scanned: '..(p.playersScanned or 0))
+    label:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
+    label:SetFullWidth(true)
+    statsGroup:AddChild(label)
+
+    label = aceGUI:Create('Label')
+    label:SetText('Total Players Scanned (Account): '..(g.playersScanned or 0))
+    label:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
+    label:SetFullWidth(true)
+    statsGroup:AddChild(label)
+
+    label = aceGUI:Create('Label')
+    label:SetText(UnitName('player')..' Invited: '..(p.invitedPlayers or 0))
+    label:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
+    label:SetFullWidth(true)
+    statsGroup:AddChild(label)
+
+    label = aceGUI:Create('Label')
+    label:SetText('Total Invites (Account): '..(g.invitedPlayers or 0))
+    label:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
+    label:SetFullWidth(true)
+    statsGroup:AddChild(label)
+
+    label = aceGUI:Create('Label')
+    label:SetText(UnitName('player')..' Black Listed: '..(p.blackListed or 0))
+    label:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
+    label:SetFullWidth(true)
+    statsGroup:AddChild(label)
+
+    label = aceGUI:Create('Label')
+    label:SetText('Total Black Listed (Account): '..(g.blackListed or 0))
+    label:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
+    label:SetFullWidth(true)
+    statsGroup:AddChild(label)
 end
