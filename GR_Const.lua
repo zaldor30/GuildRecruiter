@@ -1,6 +1,6 @@
 -- Guid Recruiter Constants
 MAX_CHARACTER_LEVEL = GetMaxPlayerLevel()
-GR_SCAN_WAIT_TIME = 5
+SCAN_WAIT_TIME = 2
 DEFAULT_FONT = 'Fonts\\FRIZQT__.ttf'
 PLAYER_PROFILE = UnitName('player')..' - '..GetRealmName()
 NS = {}

@@ -46,11 +46,11 @@ local function MainScreen_Primary()
     -- Minimum Player Level
     editBox = aceGUI:Create('EditBox')
     editBox:SetLabel('Min Level')
-    editBox:SetText(g.minLevel or '1')
+    editBox:SetText(p.minLevel or '1')
     editBox:SetMaxLetters(2)
     editBox:SetRelativeWidth(.13)
     editBox:SetCallback('OnEnterPressed', function(widget,_, val)
-        local maxLevel = g.maxLevel and tonumber(g.maxLevel) or MAX_CHARACTER_LEVEL
+        local maxLevel = p.maxLevel and tonumber(p.maxLevel) or MAX_CHARACTER_LEVEL
         local error, msg = false, 'You must enter a number between 1 and '..tostring(MAX_CHARACTER_LEVEL)
 
         val = tonumber(val:trim()) or nil
@@ -59,9 +59,9 @@ local function MainScreen_Primary()
         elseif not val or (val < 1 or val > MAX_CHARACTER_LEVEL) then error = true end
 
         if error then
-            widget:SetText(g.minLevel or '1')
+            widget:SetText(p.minLevel or '1')
             UIErrorsFrame:AddMessage(msg, 1.0, 0.1, 0.1, 1.0)
-        else g.minLevel = val end
+        else p.minLevel = val end
     end)
     primary:AddChild(editBox)
 
@@ -71,11 +71,11 @@ local function MainScreen_Primary()
     -- Maximum Player Level
     local editBoxMax = aceGUI:Create('EditBox')
     editBoxMax:SetLabel('Max Level')
-    editBoxMax:SetText(g.maxLevel or tostring(MAX_CHARACTER_LEVEL))
+    editBoxMax:SetText(p.maxLevel or tostring(MAX_CHARACTER_LEVEL))
     editBoxMax:SetMaxLetters(2)
     editBoxMax:SetRelativeWidth(.13)
     editBoxMax:SetCallback('OnEnterPressed', function(widget,_, val)
-        local minLevel = g.minLevel and tonumber(g.minLevel) or 1
+        local minLevel = p.minLevel and tonumber(p.minLevel) or 1
         local error, msg = false, 'You must enter a number between 1 and '..tostring(MAX_CHARACTER_LEVEL)
 
         val = tonumber(val:trim()) or nil
@@ -84,9 +84,9 @@ local function MainScreen_Primary()
         elseif not val or (val < 1 or val > MAX_CHARACTER_LEVEL) then error = true end
 
         if error then
-            widget:SetText(g.maxLevel or tostring(MAX_CHARACTER_LEVEL))
+            widget:SetText(p.maxLevel or tostring(MAX_CHARACTER_LEVEL))
             UIErrorsFrame:AddMessage(msg, 1.0, 0.1, 0.1, 1.0)
-        else g.maxLevel = val end
+        else p.maxLevel = val end
     end)
     primary:AddChild(editBoxMax)
 
@@ -100,7 +100,11 @@ local function MainScreen_Primary()
     btn:SetCallback('OnClick', function(_, button)
         if not p.activeMessage then
             errLabel:SetText(GRCODE.cText('FFFF0000', 'You must select a valid message.'))
-        else errLabel:SetText('') end
+        else
+            errLabel:SetText('')
+            NS.ScanningScreen()
+            f:Hide()
+        end
     end)
     primary:AddChild(btn)
 

@@ -50,7 +50,7 @@ function GRADDON:OnInitialize()
     GRADDON.ps = LibStub('AceDB-3.0'):New('GR_PlayersScannedDB', nil, true)
 
     AC:RegisterOptionsTable('GR_Options', GR_MAIN_OPTIONS)
-    addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
+    ADDON_OPTIONS = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
 
     -- Slash Command Declaration
     self:RegisterChatCommand('rl', function() ReloadUI() end)
@@ -63,5 +63,5 @@ end
 -- Slash Command Routines
 function GRADDON:SlashCommand(msg)
     msg = msg and msg:trim() or msg
-    if msg == 'config' then InterfaceOptionsFrame_OpenToCategory(addonOptions) end
+    if msg == 'config' then InterfaceOptionsFrame_OpenToCategory(ADDON_OPTIONS) end
 end

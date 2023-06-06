@@ -23,6 +23,8 @@ GRADDON.classInfo = {
 	EVOKER = {fClass = 'Warrior', color = 'ff308a77'},
 }
 
+AceEvent = LibStub("AceEvent-3.0")
+AceEvent.UnregisterAllEvents('GuildRecruiter')
 local function HandlesGlobalMouseEvent(self, button, event)
 	if event == 'GLOBAL_MOUSE_DOWN' and (button == 'LeftButton' or button == 'RightButton')then
 		return true

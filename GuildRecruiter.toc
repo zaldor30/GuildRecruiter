@@ -22,4 +22,5 @@ GR_Functions.lua
 GR_Options.lua
 
 GR_Core.lua
+GR_Scanner.lua
 GR_MainScreen.lua
