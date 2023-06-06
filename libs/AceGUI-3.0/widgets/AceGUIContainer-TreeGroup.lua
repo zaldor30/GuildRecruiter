@@ -84,7 +84,7 @@ local function UpdateButton(button, treeline, selected, canExpand, isExpanded)
 
 	if disabled then
 		button:EnableMouse(false)
-		button.text:SetText("|cff808080"..text..FONT_COLOR_CODE_CLOSE)
+		button.text:SetText("|cff808080"..text..FONT_COLOR_NS.code_CLOSE)
 	else
 		button.text:SetText(text)
 		button:EnableMouse(true)
@@ -407,7 +407,7 @@ local methods = {
 
 		local treeframe = self.treeframe
 
-		status.scrollToSelection = status.scrollToSelection or scrollToSelection	-- needs to be cached in case the control hasn't been drawn yet (code bails out below)
+		status.scrollToSelection = status.scrollToSelection or scrollToSelection	-- needs to be cached in case the control hasn't been drawn yet (NS.code bails out below)
 
 		self:BuildLevel(tree, 1)
 

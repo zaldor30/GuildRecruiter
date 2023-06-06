@@ -367,7 +367,7 @@ local optionsTable = {
 	current = {
 		order = 11,
 		type = "description",
-		name = function(info) return L["current"] .. " " .. NORMAL_FONT_COLOR_CODE .. info.handler:GetCurrentProfile() .. FONT_COLOR_CODE_CLOSE end,
+		name = function(info) return L["current"] .. " " .. NORMAL_FONT_COLOR_NS.code .. info.handler:GetCurrentProfile() .. FONT_COLOR_NS.code_CLOSE end,
 		width = "default",
 	},
 	choosedesc = {

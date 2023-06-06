@@ -290,7 +290,7 @@ do
 		frame:SetHeight(self.maxHeight)
 		--frame:SetToplevel(true)
 
-		-- NOTE: The whole scroll frame code is copied from the AceGUI-3.0 widget ScrollFrame
+		-- NOTE: The whole scroll frame NS.code is copied from the AceGUI-3.0 widget ScrollFrame
 		local scrollFrame = CreateFrame("ScrollFrame", nil, frame)
 		local itemFrame = CreateFrame("Frame", nil, scrollFrame)
 
