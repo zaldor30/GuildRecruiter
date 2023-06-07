@@ -1,13 +1,16 @@
 -- Guid Recruiter Constants
-NS = {}
-NS.db, NS.code = {}, {} -- Namespace and NS.code Namespace
+GuildRecruiter = {}
+_G['GuildRecruiter'] = GuildRecruiter
+local _, ns = ... -- Namespace (myaddon, namespace)
+
+ns.db, ns.code = {}, {} -- Namespace and ns.code Namespace
 MAX_CHARACTER_LEVEL = GetMaxPlayerLevel()
 SCAN_WAIT_TIME = 2
 DEFAULT_FONT = 'Fonts\\FRIZQT__.ttf'
 PLAYER_PROFILE = UnitName('player')..' - '..GetRealmName()
 
 function SetGuildInfo()
-	local p = NS.db.profile
+	local p = ns.db.profile
 	local clubID = C_Club.GetGuildClubId() or nil
 	local club = clubID and C_ClubFinder.GetRecruitingClubInfoFromClubID(clubID) or nil
 	if club then
@@ -18,8 +21,8 @@ function SetGuildInfo()
 		p.guildInfo = { [UnitGUID('player')] = {clubID = clubID, guildName = C_Club.GetClubInfo(clubID).name, guildLink = nil } }
 	end
 end
-function NS:SetProfileDefaults()
-	local g = NS.db.global
+function ns:SetProfileDefaults()
+	local g = ns.db.global
 
 	g.showMenu = g.showMenu or true
 	g.showMsg = g.showMsg or false

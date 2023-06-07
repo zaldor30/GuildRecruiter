@@ -1,4 +1,5 @@
-NS.code = {
+local _, ns = ... -- Namespace (myaddon, namespace)
+code = {
     -- Text Routines
     inc = function(data, count) return (data or 0) + (count or 1) end,
     cText = function(color, text)
@@ -32,11 +33,11 @@ NS.code = {
                 local gName = GetGuildRosterInfo(i)
                 if gName == name then
                     nameFound = true
-                    NS.Analytecs:acceptedInvite()
+                    ns.Analytecs:acceptedInvite()
                     break
                 end
             end
-            if not nameFound then NS.Analytecs:declinedInvite() end
+            if not nameFound then ns.Analytecs:declinedInvite() end
         end
         AceTimer:ScheduleTimer(GuildInviteTimer, 60, playerName)
     end,
@@ -44,8 +45,8 @@ NS.code = {
         local name = playerName
         if CanGuildInvite() and not GetGuildInfo(playerName) then
             GuildInvite(playerName) -- Needs to be first
-            NS.code.startInviteTimer(name)
-            NS.Analytecs:Invited()
+            ns.code.startInviteTimer(name)
+            ns.Analytecs:Invited()
         end
     end,
 
@@ -73,3 +74,4 @@ NS.code = {
         f:AddChild(widget)
     end,
 }
+ns.code = code

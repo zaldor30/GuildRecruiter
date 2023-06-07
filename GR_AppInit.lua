@@ -1,4 +1,7 @@
 -- Application Initialization
+local _, ns = ... -- Namespace (myaddon, namespace)
+ns ={}
+
 GRADDON = LibStub('AceAddon-3.0'):NewAddon('GuildRecruiter', 'AceConsole-3.0', 'AceEvent-3.0')
 GRADDON.playerFaction = UnitFactionGroup('player') == 'Horde' and 2 or 1
 GRADDON.version = GetAddOnMetadata('GuildRecruiter', 'Version')
@@ -43,7 +46,7 @@ invite:SetFont('Fonts\\FRIZQT__.ttf', 12, 'OUTLINE')
 invite:SetHighlight(255,255,255,125)
 invite.frame.HandlesGlobalMouseEvent = HandlesGlobalMouseEvent
 invite:SetCallback('OnClick', function()
-	if f.name then NS.code.InviteToGuild(f.name) end
+	if f.name then ns.code.InviteToGuild(f.name) end
 	CloseDropDownMenus()
 end)
 invite:SetPoint('TOPLEFT', f.frame, 'TOPLEFT', 0, 0)

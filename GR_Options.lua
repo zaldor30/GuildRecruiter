@@ -1,8 +1,9 @@
 -- Guild Recruiter Configuration Options
+local _, ns = ... -- Namespace (myaddon, namespace)
 local icon = LibStub('LibDBIcon-1.0')
 
 local profile, global = nil, nil
-local cText = NS.code.cText
+local cText = ns.code.cText
 local class = select(2, UnitClass('player'))
 local cClass = select(4, GetClassColor(class))
 local formattedPreview = ''
@@ -125,7 +126,7 @@ GR_MAIN_OPTIONS = {
                 },
                 msgPreview = {
                     name = function()
-                        formattedPreview = NS.code.GuildReplace(tblMessage.message)
+                        formattedPreview = ns.code.GuildReplace(tblMessage.message)
                         local msg = cText('FFFF80FF', 'To [')..cText(cClass, UnitName('player'))..cText('FFFF80FF', ']: '..formattedPreview)
                         return msg
                     end,
@@ -198,7 +199,7 @@ GR_MAIN_OPTIONS = {
                             table.insert(global.messages, tblMessage)
                             profile.activeMessage = #global.messages
                         else global.messages[profile.activeMessage] = tblMessage end
-                        NS.code.createErrorWindow('Message Saved')
+                        ns.code.createErrorWindow('Message Saved')
                     end,
                 },
             }
@@ -421,7 +422,7 @@ GR_MAIN_OPTIONS = {
                         global.filter = global.filter or {}
                         if not activeFilter then table.insert(global.filter, tblFilter)
                         else global.filter[activeFilter] = tblFilter end
-                        NS.code.createErrorWindow('Filter Saved')
+                        ns.code.createErrorWindow('Filter Saved')
                         tblFilter = optTables:resetFilter()
                     end,
                 },
@@ -441,4 +442,12 @@ GR_MAIN_OPTIONS = {
         },
     }
 }
-function NS:SetOptionsDB() profile, global = NS.db.profile, NS.db.global end
+function ns:SetOptionsDB() profile, global = ns.db.profile, ns.db.global end
+
+local function OverrideEscapeMenu()
+    if GameMenuFrame:IsShown() then
+        HideUIPanel(GameMenuFrame)
+        return true
+    end
+end
+hooksecurefunc("ToggleGameMenu", OverrideEscapeMenu)
