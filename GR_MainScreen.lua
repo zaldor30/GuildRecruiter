@@ -10,16 +10,19 @@ local btnScan = aceGUI:Create('Button') -- Start scan button
 
 local function GetActiveMessages()
     local isGM = IsGuildLeader()
-    if not global.messages or #global.messages == 0 then
+    if (not global.inviteFormat or global.inviteFormat ~= 2) and (not global.messages or #global.messages == 0) then
         errLabel:SetText('You need create a message in options, click on settings.')
-        return end
-    local tbl = {}
-    for k, r in pairs(global.messages) do
-        local gLinkFound = strfind(r.message, 'GUILDLINK')
-        if (gLinkFound and isGM) or not gLinkFound then tbl[k] = r.desc
-        elseif gLinkFound and k == profile.activeMessage then profile.activeMessage = nil end
+        btnScan:SetDisabled(true)
+        return
+    elseif global.messages and #global.messages ~= 0 then
+        local tbl = {}
+        for k, r in pairs(global.messages) do
+            local gLinkFound = strfind(r.message, 'GUILDLINK')
+            if (gLinkFound and isGM) or not gLinkFound then tbl[k] = r.desc
+            elseif gLinkFound and k == profile.activeMessage then profile.activeMessage = nil end
+        end
+        return tbl
     end
-    return tbl
 end
 local function FilterGroup_List()
     local tbl = {}
@@ -51,9 +54,9 @@ function ns:ShowMainScreen()
     _G["GuildRecruiter"] = f
     tinsert(UISpecialFrames, "GuildRecruiter")
 
+    f:SetStatusText('Guild Recruiter v:'..GRADDON.version..' - Doing Maintenance')
     function ns:MaintenanceDone() f:SetStatusText('Guild Recruiter v:'..GRADDON.version) end
     ns:DoMaintenance()
-    f:SetStatusText('Guild Recruiter v:'..GRADDON.version..' - Doing Maintenance')
 
     -- Setup the Inline Groups on the screen
     local grpSearch = aceGUI:Create('InlineGroup') -- Top search group
@@ -81,22 +84,22 @@ function ns:ShowMainScreen()
     f:AddChild(grpStats)
 
     -- Top Search Group Widgets ------------------------------------------------
-    dropdown = aceGUI:Create('Dropdown') -- Select invite type
-    dropdown:SetLabel('Invite Format')
-    dropdown:SetRelativeWidth(.5)
-    dropdown:SetList({
+    local msgDrop = aceGUI:Create('Dropdown') -- Select invite type
+    msgDrop:SetLabel('Invite Format')
+    msgDrop:SetRelativeWidth(.5)
+    msgDrop:SetList({
         [1] = 'Message ONLY',
         [2] = 'Guild Invite ONLY',
         [3] = 'Guild Invite and Message',
         [4] = 'Message Only if Invitation is declined',
     })
-    dropdown:SetValue(global and global.inviteFormat or 1)
-    dropdown:SetCallback('OnValueChanged', function(_, _, val)
+    msgDrop:SetValue(global and global.inviteFormat or 1)
+    msgDrop:SetCallback('OnValueChanged', function(_, _, val)
         if val ~= 2 and not global.messages then btnScan:SetDisabled(true)
         else btnScan:SetDisabled(false) end
         global.inviteFormat = val
     end)
-    grpSearch:AddChild(dropdown)
+    grpSearch:AddChild(msgDrop)
 
     ns.code.createPadding(grpSearch, .03)
 
@@ -149,7 +152,7 @@ function ns:ShowMainScreen()
     btnScan:SetText('Scan') -- Scan button
     btnScan:SetRelativeWidth(.15)
     btnScan:SetCallback('OnClick', function(_, button)
-        if not profile.activeMessage then
+        if not profile.activeMessage and global.inviteFormat ~= 2 then
             errLabel:SetText(ns.code.cText('FFFF0000', 'You must select a valid message.'))
         else
             errLabel:SetText('')
