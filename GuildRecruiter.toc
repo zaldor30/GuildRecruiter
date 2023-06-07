@@ -26,4 +26,4 @@ GR_Core.lua
 GR_MainScreen.lua
 
 GR_Invited.lua
-##GR_Scanner.lua
+GR_Scanner.lua
