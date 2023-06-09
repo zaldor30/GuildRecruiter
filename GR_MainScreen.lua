@@ -1,10 +1,10 @@
 -- Guild Recruiter Main Screen
 local _, ns = ... -- Namespace (myaddon, namespace)
-ms = {} 
 local aceGUI = LibStub("AceGUI-3.0")
 local global, profile = ns.db.global, ns.db.profile
 
 -- Widgets that need to be accessed after functions
+local f = nil
 local errLabel = aceGUI:Create('Label')
 local btnScan = aceGUI:Create('Button') -- Start scan button
 
@@ -35,20 +35,37 @@ local function FilterGroup_List()
     return tbl
 end
 
+local lblPS, lblIP, lblBL = aceGUI:Create('Label'), aceGUI:Create('Label'), aceGUI:Create('Label')
+local lblPSP, lblIPP, lblBLP = aceGUI:Create('Label'), aceGUI:Create('Label'), aceGUI:Create('Label')
+local function updateStats()
+    lblPS:SetText('Players Scanned: '..ns.Analytics:get('playersScanned', true))
+    lblIP:SetText('Players Invited: '..ns.Analytics:get('invitedPlayers', true))
+    lblBL:SetText('Players Black Listed: '..ns.Analytics:get('blackListed', true))
+    lblPSP:SetText('Total Players Scanned: '..ns.Analytics:get('playersScanned'))
+    lblIPP:SetText('Total Invites: '..ns.Analytics:get('invitedPlayers'))
+    lblBLP:SetText('Total Black Listed: '..ns.Analytics:get('blackListed', true))
+end
+
 -- Create the main screen frame
 function ns:ShowMainScreen()
     local dropdown, editBox, label = nil, nil, nil
     global, profile = ns.db.global, ns.db.profile
 
     -- Base Frame of the Main Screen
-    if f then f:Show() return end
+    if f then
+        updateStats()
+        f:Show()
+        return
+    end
     f = aceGUI:Create('Frame')
     f:SetTitle('Guild Recruiter')
-    f:SetStatusText('Guild Recruiter v:'..GRADDON.version)
+    f:SetStatusText('Guild Recruiter v'..GRADDON.version)
     f:EnableResize(false)
     f:SetWidth(500)
     f:SetHeight(370)
     f:SetLayout('flow')
+    f:SetCallback('OnClose', function(widget)
+    end)
 
     -- Allows for ESC to exit
     _G["GuildRecruiter"] = f
@@ -61,12 +78,14 @@ function ns:ShowMainScreen()
     -- Setup the Inline Groups on the screen
     local grpSearch = aceGUI:Create('InlineGroup') -- Top search group
     grpSearch:SetTitle('Search Options')
+    grpSearch:ClearAllPoints()
     grpSearch:SetLayout("flow")
     grpSearch:SetFullWidth(true)
     grpSearch:SetHeight(250)
     f:AddChild(grpSearch)
 
     local grpFilter = aceGUI:Create('InlineGroup') -- Filter Group
+    grpFilter:ClearAllPoints()
     grpFilter:SetTitle('Available Filters')
     grpFilter:SetLayout("flow")
     grpFilter:SetWidth(215)
@@ -78,6 +97,7 @@ function ns:ShowMainScreen()
     f:AddChild(spacer)
 
     local grpStats = aceGUI:Create('InlineGroup') -- Stats Group
+    grpStats:ClearAllPoints()
     grpStats:SetTitle('Statistics')
     grpStats:SetLayout("flow")
     grpStats:SetWidth(230)
@@ -95,8 +115,14 @@ function ns:ShowMainScreen()
     })
     msgDrop:SetValue(global and global.inviteFormat or 1)
     msgDrop:SetCallback('OnValueChanged', function(_, _, val)
-        if val ~= 2 and not global.messages then btnScan:SetDisabled(true)
-        else btnScan:SetDisabled(false) end
+        local msg = 'You must go to settings and create a message before using this option.'
+        if val ~= 2 and not global.messages then
+            errLabel:SetText(msg)
+            btnScan:SetDisabled(true)
+        else
+            errLabel:SetText('')
+            btnScan:SetDisabled(false)
+        end
         global.inviteFormat = val
     end)
     grpSearch:AddChild(msgDrop)
@@ -157,6 +183,7 @@ function ns:ShowMainScreen()
         else
             errLabel:SetText('')
             ns.ScanningScreen()
+            ns:resetFilter()
             f:Hide()
         end
     end)
@@ -203,23 +230,20 @@ function ns:ShowMainScreen()
     heading:SetHeight(12)
     grpStats:AddChild(heading)
     
-    label = aceGUI:Create('Label')
-    label:SetText('Players Scanned: '..ns.Analytics.get('playersScanned', true))
-    label:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
-    label:SetFullWidth(true)
-    grpStats:AddChild(label)
+    lblPS:SetText('Players Scanned: '..ns.Analytics:get('playersScanned', true))
+    lblPS:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
+    lblPS:SetFullWidth(true)
+    grpStats:AddChild(lblPS)
     
-    label = aceGUI:Create('Label')
-    label:SetText('Players Invited: '..ns.Analytics.get('invitedPlayers', true))
-    label:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
-    label:SetFullWidth(true)
-    grpStats:AddChild(label)
+    lblIP:SetText('Players Invited: '..ns.Analytics:get('invitedPlayers', true))
+    lblIP:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
+    lblIP:SetFullWidth(true)
+    grpStats:AddChild(lblIP)
 
-    label = aceGUI:Create('Label')
-    label:SetText('Players Black Listed: '..ns.Analytics.get('blackListed', true))
-    label:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
-    label:SetFullWidth(true)
-    grpStats:AddChild(label)
+    lblBL:SetText('Players Black Listed: '..ns.Analytics:get('blackListed', true))
+    lblBL:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
+    lblBL:SetFullWidth(true)
+    grpStats:AddChild(lblBL)
 
     heading = AceGUI:Create("Label")
     heading:SetText('Account Stats:')
@@ -229,21 +253,18 @@ function ns:ShowMainScreen()
     heading:SetHeight(12)
     grpStats:AddChild(heading)
 
-    label = aceGUI:Create('Label')
-    label:SetText('Total Players Scanned: '..ns.Analytics.get('playersScanned'))
-    label:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
-    label:SetFullWidth(true)
-    grpStats:AddChild(label)
+    lblPSP:SetText('Total Players Scanned: '..ns.Analytics:get('playersScanned'))
+    lblPSP:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
+    lblPSP:SetFullWidth(true)
+    grpStats:AddChild(lblPSP)
 
-    label = aceGUI:Create('Label')
-    label:SetText('Total Invites: '..ns.Analytics.get('invitedPlayers'))
-    label:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
-    label:SetFullWidth(true)
-    grpStats:AddChild(label)
+    lblIPP:SetText('Total Invites: '..ns.Analytics:get('invitedPlayers'))
+    lblIPP:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
+    lblIPP:SetFullWidth(true)
+    grpStats:AddChild(lblIPP)
 
-    label = aceGUI:Create('Label')
-    label:SetText('Total Black Listed: '..ns.Analytics.get('blackListed', true))
-    label:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
-    label:SetFullWidth(true)
-    grpStats:AddChild(label)
+    lblBLP:SetText('Total Black Listed: '..ns.Analytics:get('blackListed', true))
+    lblBLP:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
+    lblBLP:SetFullWidth(true)
+    grpStats:AddChild(lblBLP)
 end

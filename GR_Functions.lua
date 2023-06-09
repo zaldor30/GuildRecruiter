@@ -3,9 +3,10 @@ code = {
     -- Text Routines
     inc = function(data, count) return (data or 0) + (count or 1) end,
     cText = function(color, text)
-        if type(color) ~= 'string' or not text then print(color,text) return end
+        if type(color) ~= 'string' or not text then return end
         return '|c'..color..text..'|r'
     end,
+    consoleOut = function(msg) print('|cFF807e14GR: '..msg..'|r') end,
 
     -- Guild Info Routines
     GetGuildInfo = function()
@@ -15,8 +16,11 @@ code = {
         else return (gInfo.guildLink or 'GUILDLINK'), gInfo.guildName end
     end,
     GuildReplace = function(msg)
-        if gLink and gName and msg then
-            msg = gsub(msg, 'GUILDLINK', gLink and gLink or 'No Guild Link')
+        local gi = ns.db.profile.guildInfo
+        local gLink, gName = gi.guildLink, gi.guildName
+        
+        if gName and msg then
+            msg = gLink and gsub(msg, 'GUILDLINK', gLink and gLink or 'No Guild Link') or msg
             msg = gsub(msg, 'GUILDNAME', gName and '<'..gName..'>' or 'No Guild Name')
             msg = gsub(msg, 'NAME', UnitName('player') or 'Player Name')
         end
@@ -33,21 +37,22 @@ code = {
                 local gName = GetGuildRosterInfo(i)
                 if gName == name then
                     nameFound = true
-                    ns.Analytecs:acceptedInvite()
+                    ns.Analytics:analyticsAdd('acceptedInvite')
                     break
                 end
             end
-            if not nameFound then ns.Analytecs:declinedInvite() end
+            if not nameFound then ns.Analytics:analyticsAdd('declinedInvite') end
         end
         AceTimer:ScheduleTimer(GuildInviteTimer, 60, playerName)
     end,
     InviteToGuild = function(playerName)
         local name = playerName
-        if CanGuildInvite() and not GetGuildInfo(playerName) then
+        local tblBL = ns.dbBl.BlackList or {}
+        if not tblBL[playerName] and CanGuildInvite() and not GetGuildInfo(playerName) then
             GuildInvite(playerName) -- Needs to be first
             ns.code.startInviteTimer(name)
-            ns.Analytecs:Invited()
-        end
+            ns.Analytics:analyticsAdd('invitedPlayers')
+        elseif tblBL[playerName] then ns.code.consoleOut(playerName..' has been black listed for \"'..tblBL[playerName].reason..'\".') end
     end,
 
     -- Frame Routines

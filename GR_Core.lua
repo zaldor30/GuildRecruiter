@@ -43,9 +43,13 @@ end
 function GRADDON:OnInitialize()
     -- Set Databases
     GRADDON.db = DB:New('GR_SettingsDB', optDefaults, PLAYER_PROFILE)
-    GRADDON.bl = DB:New('GR_BlackListDB', nil, true)
-    GRADDON.inv = DB:New('GR_InvitedPlayersDB', nil, true)
+    GRADDON.dbBl = DB:New('GR_BlackListDB', nil, PLAYER_PROFILE)
+    GRADDON.dbInv = DB:New('GR_InvitedPlayersDB', nil, PLAYER_PROFILE)
+    GRADDON.dbAnal = DB:New('GR_AnalyticsDB', nil, PLAYER_PROFILE)
     ns.db.profile, ns.db.global = GRADDON.db.profile, GRADDON.db.global
+    ns.dbBl = GRADDON.dbBl.global
+    ns.dbInv.global, ns.dbInv.profile = GRADDON.dbInv.global, GRADDON.dbInv.profile
+    ns.dbA.global, ns.dbA.profile = GRADDON.dbAnal.global, GRADDON.dbAnal.profile
 
     ns:SetOptionsDB()
     AC:RegisterOptionsTable('GR_Options', GR_MAIN_OPTIONS)
@@ -58,6 +62,7 @@ function GRADDON:OnInitialize()
 
     CreateMiniMapIcon()
 
+    ns.Analytics.loadData()
     ns:SetProfileDefaults()
 end
 

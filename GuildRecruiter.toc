@@ -3,7 +3,7 @@
 ## Title: GuildRecruiter
 ## Notes: Allows guild officers to recruite new members
 ## Author: Moonfury
-## SavedVariables: GR_SettingsDB, GR_InvitedPlayersDB, GR_BlackListDB
+## SavedVariables: GR_SettingsDB, GR_InvitedPlayersDB, GR_BlackListDB, GR_AnalyticsDB
 ## OptionalDeps: Ace3
 
 Libs\LibStub\LibStub.lua
@@ -27,3 +27,5 @@ GR_MainScreen.lua
 
 GR_Invited.lua
 GR_Scanner.lua
+GR_BlackList.lua
+GR_InvitePlayers.lua

@@ -74,11 +74,11 @@ GR_MAIN_OPTIONS = {
                     order = 3,
                     width = 2,
                     values = function()
+                        local tbl = {}
                         if global.messages then
-                            local tbl = {}
                             for k, r in pairs(global.messages) do tbl[k] = r.desc end
-                            return tbl
-                        else return {} end
+                        end
+                        return tbl
                     end,
                     set = function(_, val) profile.activeMessage = val end,
                     get = function(_)
@@ -446,8 +446,8 @@ function ns:SetOptionsDB() profile, global = ns.db.profile, ns.db.global end
 
 local function OverrideEscapeMenu()
     if GameMenuFrame:IsShown() then
-        HideUIPanel(GameMenuFrame)
+        --HideUIPanel(GameMenuFrame)
         return true
-    end
+    else  end
 end
-hooksecurefunc("ToggleGameMenu", OverrideEscapeMenu)
+--hooksecurefunc("ToggleGameMenu", OverrideEscapeMenu)

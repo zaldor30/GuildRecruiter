@@ -1,6 +1,5 @@
 -- Application Initialization
 local _, ns = ... -- Namespace (myaddon, namespace)
-ns ={}
 
 GRADDON = LibStub('AceAddon-3.0'):NewAddon('GuildRecruiter', 'AceConsole-3.0', 'AceEvent-3.0')
 GRADDON.playerFaction = UnitFactionGroup('player') == 'Horde' and 2 or 1
@@ -59,7 +58,7 @@ blacklist:SetFont('Fonts\\FRIZQT__.ttf', 12, 'OUTLINE')
 blacklist:SetHighlight(255,255,255,125)
 blacklist.frame.HandlesGlobalMouseEvent = HandlesGlobalMouseEvent
 blacklist:SetCallback('OnClick', function()
-	print('BLACK LIST CLICK')
+	if f.name then ns:AddBlackList(f.name) end
 	CloseDropDownMenus()
 end)
 blacklist:SetPoint('TOPLEFT', invite.frame, 'BOTTOMLEFT', 0, 0)

@@ -1,10 +1,8 @@
 -- Guild Recruiter Global Functions
 local _, ns = ... -- Namespace (myaddon, namespace)
 
-local tblAnalytics, tblVersion = {}, 1
-local dbAnalytics = nil
-local p,g = nil, nil
-
+local tblAnalytics, tblVersion = nil, 1
+local p,g = ns.dbA.profile, ns.dbA.global
 local analytics = {
     new = function()
         return {
@@ -12,53 +10,37 @@ local analytics = {
             ['invitedPlayers'] = 0,
             ['acceptedInvite'] = 0,
             ['declinedInvite'] = 0,
-            ['blackListed'] = 0,
+            ['BlackListed'] = 0,
         }
     end,
     saveData = function()
+        p,g = ns.dbA.profile, ns.dbA.global
         g.analytics = tblAnalytics.global
         p.analytics = tblAnalytics.profile
     end,
     loadData = function()
+        p,g = ns.dbA.profile, ns.dbA.global
         if g.analyticsVersion and g.analyticsVersion > tblVersion then -- do upgrade
             error('Analytic table upgrade has not been implemeneted at this time.')
         else g.analyticsVersion = tblVersion end
 
-        tblAnalytics.global = g.analytics.global and g.analytics.global or ns.Analytics:new()
-        tblAnalytics.profile = p.analytics.profile and g.analytics.profile or ns.Analytics:new()
+        tblAnalytics = tblAnalytics and table.wipe(tblAnalytics) or {}
+        tblAnalytics.global = g.analytics and g.analytics or ns.Analytics:new()
+        tblAnalytics.profile = p.analytics and p.analytics or ns.Analytics:new()
+        ns.Analytics:saveData()
     end,
-    get = function(key, profile)
-        if profile then return tblAnalytics.global[key]
-        else return tblAnalytics.profile[key] end
+    get = function(_, key, isGlobal)
+        if not tblAnalytics.global then ns.Analytics:loadData() end
+        
+        if isGlobal then return tblAnalytics.global[key] or 0
+        else return tblAnalytics.profile[key] or 0 end
     end,
     -- Guild Invite Analytics ns.code
-    playersScanned = function(amt)
-        tblAnalytics.global['playersScanned'] = tblAnalytics.global['playersScanned'] + amt
-        tblAnalytics.profile['playersScanned'] = tblAnalytics.profile['playersScanned'] + amt
-        dbAnalytics:saveData()
-    end,
-    Invited = function()
-        tblAnalytics.global.invitedPlayers = tblAnalytics.global.invitedPlayers + 1
-        tblAnalytics.profile.invitedPlayers = tblAnalytics.profile.invitedPlayers + 1
-        dbAnalytics:saveData()
-    end,
-    acceptedInvite = function()
-        tblAnalytics.global.acceptedInvite = tblAnalytics.global.acceptedInvite + 1
-        tblAnalytics.profile.acceptedInvite = tblAnalytics.profile.acceptedInvite + 1
-        dbAnalytics:saveData()
-    end,
-    declinedInvite = function()
-        tblAnalytics.global.declinedInvite = tblAnalytics.global.declinedInvite + 1
-        tblAnalytics.profile.declinedInvite = tblAnalytics.profile.declinedInvite + 1
-        dbAnalytics:saveData()
-    end,
-    -- Black List Analytics ns.code
-    blackListed = function(remove)
-        tblAnalytics.global = {['blackListed'] = tblAnalytics.global.blackListed + (remove and -1 or 1)}
-        tblAnalytics.profile = {['blackListed'] = tblAnalytics.profile.blackListed + (remove and -1 or 1)}
-        dbAnalytics:saveData()
+    analyticsAdd = function(_,key, amt)
+        if not tblAnalytics then ns.Analytics:loadData() end
+        tblAnalytics.global[key] = tblAnalytics.global[key] + (amt or 1)
+        tblAnalytics.profile[key] = tblAnalytics.profile[key] + (amt or 1)
+        ns.Analytics:saveData()
     end,
 }
 ns.Analytics = analytics
-tblAnalytics.global = ns.Analytics.new()
-tblAnalytics.profile = ns.Analytics.new()
