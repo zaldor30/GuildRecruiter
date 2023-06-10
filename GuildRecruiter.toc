@@ -17,15 +17,19 @@ Libs\AceGUI-3.0\AceGUI-3.0.xml
 Libs\AceConfig-3.0\AceConfig-3.0.xml
 
 GR_AppInit.lua
-GR_Const.lua
-GR_Analytics.lua
-GR_Functions.lua
 GR_Options.lua
 
-GR_Core.lua
-GR_MainScreen.lua
+GR_Datasets.lua
+##GR_fnInvite.lua
+GR_fnGeneral.lua
+##GR_fnAnalytics.lua
 
-GR_Invited.lua
-GR_Scanner.lua
-GR_BlackList.lua
-GR_InvitePlayers.lua
+GR_Core.lua
+
+##GR_Sync.lua
+##GR_Invited.lua
+##GR_BlackList.lua
+
+##GR_ScreenMain.lua
+##GR_ScreenInvite.lua
+##GR_ScreenScanner.lua

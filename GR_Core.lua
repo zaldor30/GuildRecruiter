@@ -1,23 +1,7 @@
--- Guild Recruiter Core
+-- Guild Recruiter Core and Initialize
 local _, ns = ... -- Namespace (myaddon, namespace)
-local AC, ACD, DB = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0'), LibStub('AceDB-3.0')
-local icon = LibStub('LibDBIcon-1.0')
-
-local optDefaults = {
-    profile = {
-        minimap = { hide = false, },
-    },
-    global = {
-        showIcon = true,
-        showMsg = false,
-        showMenu = true,
-        scanTime = '2',
-        remember = true,
-        rememberTime = '7',
-        msgInviteDesc = '',
-        msgInvite = '',
-    }
-}
+local AC, ACD = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0')
+local icon, DB = LibStub('LibDBIcon-1.0'), LibStub('AceDB-3.0')
 
 function CreateMiniMapIcon()
     local cText = ns.code.cText
@@ -39,20 +23,21 @@ function CreateMiniMapIcon()
 
     icon:Register('GR_Icon', iconData, ns.db.profile.minimap)
 end
-
 function GRADDON:OnInitialize()
+    local ds = ns.datasets
+
     -- Set Databases
-    GRADDON.db = DB:New('GR_SettingsDB', optDefaults, PLAYER_PROFILE)
+    GRADDON.db = DB:New('GR_SettingsDB', ds.tblOptDefaults, PLAYER_PROFILE)
     GRADDON.dbBl = DB:New('GR_BlackListDB', nil, PLAYER_PROFILE)
     GRADDON.dbInv = DB:New('GR_InvitedPlayersDB', nil, PLAYER_PROFILE)
     GRADDON.dbAnal = DB:New('GR_AnalyticsDB', nil, PLAYER_PROFILE)
-    ns.db.profile, ns.db.global = GRADDON.db.profile, GRADDON.db.global
-    ns.dbBl = GRADDON.dbBl.global
-    ns.dbInv.global, ns.dbInv.profile = GRADDON.dbInv.global, GRADDON.dbInv.profile
-    ns.dbA.global, ns.dbA.profile = GRADDON.dbAnal.global, GRADDON.dbAnal.profile
+    ns.db = GRADDON.db
+    ns.dbBL = GRADDON.dbBl
+    ns.dbInv = GRADDON.dbInv
+    ns.dbAnal = GRADDON.dbAnal
 
-    ns:SetOptionsDB()
-    AC:RegisterOptionsTable('GR_Options', GR_MAIN_OPTIONS)
+    ns:SetOptionsDB() -- Udpates the db in options
+    AC:RegisterOptionsTable('GR_Options', ns.options)
     ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
 
     -- Slash Command Declaration
@@ -60,15 +45,8 @@ function GRADDON:OnInitialize()
     self:RegisterChatCommand('gr', 'SlashCommand')
     self:RegisterChatCommand('guildrecruiter', 'SlashCommand')
 
+    -- Other Housekeeping Routines
+    -- Start Maintenance with chat msg
     CreateMiniMapIcon()
-
-    ns.Analytics.loadData()
-    ns:SetProfileDefaults()
-end
-
--- Slash Command Routines
-function GRADDON:SlashCommand(msg)
-    msg = msg and msg:trim() or msg
-    if not msg or msg == '' then ns:ShowMainScreen()
-    elseif msg == 'config' then InterfaceOptionsFrame_OpenToCategory(ADDON_OPTIONS) end
+    ds:saveOptions() -- Saves default to data file
 end
