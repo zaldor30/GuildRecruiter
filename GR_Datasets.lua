@@ -1,13 +1,13 @@
 -- Pre-defined Datasets
+local _, ns = ... -- Namespace (myaddon, namespace)
 ns.datasets = {}
 local ds = ns.datasets
 
 -- All Classes
 function ds:Init()
-    tblAllRaces = ds:races() -- Only for player faction
-    tblAllClasses = ds:classes()
-    tblBadZones = ds:invalidZones()
-    tblOptDefaults = ds:optionDefaults()
+    self.tblAllRaces = ds:races() -- Only for player faction
+    self.tblAllClasses = ds:classes()
+    self.tblBadZones = ds:invalidZones()
 end
 function ds:classes()
     local tbl = {}
@@ -16,6 +16,7 @@ function ds:classes()
 		if class then
 			tbl[class.classID] = { classFile = class.classFile, className = class.className }
 		end
+        tbl[13] = { classFile = 'EVOKER', className = 'Evoker'}
 	end
 
 	return tbl
@@ -23,8 +24,35 @@ end
 function ds:races()
     local tbl, raceID, faction = {}, 1, UnitFactionGroup('player')
     while C_CreatureInfo.GetRaceInfo(raceID) do
-		if raceFactions[raceID] == faction or raceFactions[raceID] == 'Neutral' then
-       tbl[raceID] = C_CreatureInfo.GetRaceInfo(raceID).clientFileString end
+        local raceFactions = {
+            [1] = "Alliance",    -- Human
+            [2] = "Horde",       -- Orc
+            [3] = "Alliance",    -- Dwarf
+            [4] = "Alliance",    -- Night Elf
+            [5] = "Horde",       -- Undead
+            [6] = "Horde",       -- Tauren
+            [7] = "Alliance",    -- Gnome
+            [8] = "Horde",       -- Troll
+            [9] = "Alliance",    -- Goblin
+            [10] = "Horde",      -- Blood Elf
+            [11] = "Alliance",   -- Draenei
+            [22] = "Alliance",   -- Worgen
+            [24] = "Neutral",    -- Pandaren (can choose either faction)
+            [25] = "Horde",      -- Horde Pandaren
+            [26] = "Alliance",   -- Alliance Pandaren
+            [27] = "Alliance",   -- Nightborne
+            [28] = "Horde",      -- Highmountain Tauren
+            [29] = "Alliance",   -- Void Elf
+            [30] = "Alliance",   -- Lightforged Draenei
+            [31] = "Horde",      -- Zandalari Troll
+            [32] = "Horde",      -- Kul Tiran
+            [34] = "Alliance",   -- Dark Iron Dwarf
+            [36] = "Horde",      -- Mag'har Orc
+            [37] = "Alliance",   -- Mechagnome
+        }
+
+        if raceFactions[raceID] == faction or raceFactions[raceID] == 'Neutral' then
+        tbl[raceID] = C_CreatureInfo.GetRaceInfo(raceID).clientFileString end
         raceID = raceID + 1
     end
 
@@ -79,31 +107,14 @@ function ds:invalidZones()
         [657] = "The Vortex Pinnacle", 
     }
 end
-function ds:optionDefaults()
-    return {
-        profile = {
-            minimap = { hide = false, },
-        },
-        global = {
-            showIcon = true,
-            showMsg = false,
-            showMenu = true,
-            scanTime = '2',
-            remember = true,
-            rememberTime = '7',
-            msgInviteDesc = '',
-            msgInvite = '',
-        }
-    }
-end
 function ds:saveOptions()
     local p,g = ns.db.profile, ns.db.global
 
+    g.showMsg = g.showMsg or false
+    g.scanWait = g.scanWait or SCAN_WAIT_TIME
 	g.showMenu = g.showMenu or true
-	g.showMsg = g.showMsg or false
-	g.autoScanTime = g.autoScanTime or SCAN_WAIT_TIME
+    g.rememberTime = g.rememberTime or 7
 	g.rememberPlayers = g.rememberPlayers or true
-	g.rememberTime = g.rememberTime or 7
 
 	local clubID = C_Club.GetGuildClubId() or nil
 	local club = clubID and C_ClubFinder.GetRecruitingClubInfoFromClubID(clubID) or nil

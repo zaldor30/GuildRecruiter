@@ -1,6 +1,7 @@
 -- Namespace Setup
 local _, ns = ... -- Namespace (myaddon, namespace)
 ns = {}
+local iconPath = 'Interface\\Icons\\'
 
 -- Application Initialization
 -- Uses: AceConsole-3.0, AceEvent-3.0, AceComm-3.0, AceHook-3.0, AceSerializer-3.0
@@ -10,19 +11,19 @@ GRADDON.version = GetAddOnMetadata('GuildRecruiter', 'Version')
 GRADDON.realmID = GetRealmID()
 GRADDON.whoQuery = {}
 GRADDON.classInfo = {
-	WARRIOR = {fClass = 'Warrior', color = 'ffc79c6e'},
-	PALADIN = {fClass = 'Warrior', color = 'fff58cba'},
-	HUNTER = {fClass = 'Warrior', color = 'ffabd473'},
-	ROGUE = {fClass = 'Warrior', color = 'fffff569'},
-	PRIEST = {fClass = 'Warrior', color = 'ffffffff'},
-	DEATHKNIGHT = {fClass = 'Warrior', color = 'ffc41f3b'},
-	SHAMAN = {fClass = 'Warrior', color = 'ff0070de'},
-	MAGE = {fClass = 'Warrior', color = 'ff3fc7eb'},
-	WARLOCK = {fClass = 'Warrior', color = 'ff8788ee'},
-	MONK = {fClass = 'Warrior', color = 'ff00ff96'},
-	DRUID = {fClass = 'Warrior', color = 'ffff7d0a'},
-	DEMONHUNTER = {fClass = 'Warrior', color = 'ffa330c9'},
-	EVOKER = {fClass = 'Warrior', color = 'ff308a77'},
+	WARRIOR = {fClass = 'Warrior', color = 'ffc79c6e', icon = iconPath..'ClassIcon_Warrior'},
+	PALADIN = {fClass = 'Paladin', color = 'fff58cba', icon = iconPath..'ClassIcon_Paladin'},
+	HUNTER = {fClass = 'Hunter', color = 'ffabd473', icon = iconPath..'ClassIcon_Hunter'},
+	ROGUE = {fClass = 'Rouge', color = 'fffff569', icon = iconPath..'ClassIcon_Rogue'},
+	PRIEST = {fClass = 'Priest', color = 'ffffffff', icon = iconPath..'ClassIcon_Priest'},
+	DEATHKNIGHT = {fClass = 'Death Knight', color = 'ffc41f3b', icon = iconPath..'ClassIcon_DeathKnight'},
+	SHAMAN = {fClass = 'Shaman', color = 'ff0070de', icon = iconPath..'ClassIcon_Saman'},
+	MAGE = {fClass = 'Mage', color = 'ff3fc7eb', icon = iconPath..'ClassIcon_Mage'},
+	WARLOCK = {fClass = 'Warlock', color = 'ff8788ee', icon = iconPath..'ClassIcon_Warlock'},
+	MONK = {fClass = 'Monk', color = 'ff00ff96', icon = iconPath..'ClassIcon_Monk'},
+	DRUID = {fClass = 'Druid', color = 'ffff7d0a', icon = iconPath..'ClassIcon_Druid'},
+	DEMONHUNTER = {fClass = 'Demon Hunter', color = 'ffa330c9', icon = iconPath..'ClassIcon_DemonHunter'},
+	EVOKER = {fClass = 'Evoker', color = 'ff308a77', icon = iconPath..'ClassIcon_Evoker'},
 }
 GRADDON.addonPrefix = 'GuildRecruiter'
 
