@@ -27,9 +27,9 @@ function si:Init()
     self.whoScroll = aceGUI:Create("ScrollFrame")
 
     self.labelLog = aceGUI:Create("Label")
+    self.labelProgress = aceGUI:Create("Label")
     self.labelPrevFilter = aceGUI:Create("Label")
     self.labelNextFilter = aceGUI:Create("Label")
-    self.labelProgress = aceGUI:Create("Label")
 end
 -- Log and Found Routines
 function si:showFound(foundTable)
@@ -68,29 +68,34 @@ function si:showLog(logTable)
     local function CreateLog(tbl)
         local class, pName, level, guild = tbl.class, tbl.name, tbl.level, tbl.guild
 
+        local group = aceGUI:Create('SimpleGroup')
+        group:SetFullWidth(true)
+        group:SetLayout("flow")
+        self.whoScroll:AddChild(group)
+
         local icon = aceGUI:Create('Icon')
         icon:SetImage(GRADDON.classInfo[class].icon)
         icon:SetImageSize(12, 12)
         icon:SetWidth(20)
-        self.whoScroll:AddChild(icon)
+        group:AddChild(icon)
 
         local label = aceGUI:Create('Label')
         label:SetText(ns.code:cPlayer(pName, class))
         label:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
         label:SetWidth(100)
-        self.whoScroll:AddChild(label)
+        group:AddChild(label)
 
         label = aceGUI:Create('Label')
         label:SetText(level)
         label:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
         label:SetWidth(20)
-        self.whoScroll:AddChild(label)
+        group:AddChild(label)
 
         label = aceGUI:Create('Label')
         label:SetText(guild)
         label:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
-        label:SetWidth(190)
-        self.whoScroll:AddChild(label)
+        label:SetWidth(150)
+        group:AddChild(label)
     end
 
     self.whoScroll:ReleaseChildren()
@@ -161,9 +166,11 @@ function si:nextSearch()
     if not self.tblFilter or #self.tblFilter == 0 then self.f:SetStatusText('Waiting ...') return end
 
     local filter = table.remove(self.tblFilter, 1)
-    self.labelPrevFilter:SetText(ns.code:TruncateString('Current Search: '..filter, self.MAX_LENGTH))
-    self.labelNextFilter:SetText(ns.code:TruncateString('Next Search: '..(self.tblFilter[1] or '<none>'), self.MAX_LENGTH))
+    self.labelPrevFilter:SetText(ns.code:TruncateString('Current: '..filter, self.MAX_LENGTH))
+    self.labelNextFilter:SetText(ns.code:TruncateString('Next: '..(self.tblFilter[1] or '<none>'), self.MAX_LENGTH))
+    si:HideFriendsList(true) -- Have to show to be 100%, but hides after
     C_FriendList.SendWho(filter)
+    si:HideFriendsList(false)
     self.btnSearch:SetDisabled(true)
 
     local percent = (self.totalFilters - #self.tblFilter) / self.totalFilters
@@ -172,11 +179,11 @@ function si:nextSearch()
 end
 
 -- Screen Routines
-function si:HideFriendsList()
+function si:HideFriendsList(show)
     if not FriendsFrame:IsVisible() then return end
 
     ns.code:ClickSound('DISABLE')
-    FriendsFrame:Hide()
+    if show then FriendsFrame:Show() else FriendsFrame:Hide() end
     ns.code:ClickSound('ENABLE')
 end
 function si:hide()
@@ -184,38 +191,48 @@ function si:hide()
     self.hidden = true
     self.f:Hide()
 end
-function si:RefreshScannerScreen(tbl, skip) -- WHO_LIST_UPDATE located here
+function si:StartScreenScanner(tbl, skip)
+    self.hidden = false
+
     function GRADDON:searchWhoResultCallback(_, ...) -- When WHO_LIST_UPDATE event is returned
-        if not self.showWho then si:HideFriendsList() end
         self.tblLog = self.tblLog and table.wipe(self.tblLog) or {}
-        self.tblFound = self.tblFound and self.tblFound or {}
+        if not self.tblFound then self.tblFound = {} end
 
         ns.Analytics:add('Players_Scanned', C_FriendList.GetNumWhoResults())
         for i=1,C_FriendList.GetNumWhoResults() do
             local info = C_FriendList.GetWhoInfo(i)
             table.insert(self.tblLog, {name = info.fullName, class = info.filename, level = info.level, guild = info.fullGuildName or '', info.area})
             if not info.fullGuildName or info.fullGuildName == '' then
-                if not self.tblFound[info.fullName] and ns.Invite:canAddPlayer(info.fullName, info.area) then
+                if not self.tblFound[info.fullName] and ns.Invite:canAddPlayer(info.fullName, info.area, false) then
                     self.tblFound[info.fullName] = {name = info.fullName, class = info.filename, checked = true}
                 end
             end
         end
+        if not self.showWho then si:HideFriendsList() end
 
         si:showLog(self.tblLog)
         si:showFound(self.tblFound)
     end
-
-    self.hidden = false
-    self.tblFound = tbl and tbl or self.tblFound
     GRADDON:RegisterEvent('WHO_LIST_UPDATE', 'searchWhoResultCallback')
-    if self.f and not skip then self.f:Show() end
+
+    if self.f and not skip then
+        self.tblLog = table.wipe(self.tblLog) or {}
+        self.tblFilter = not tbl and table.wipe(self.tblFilter) or (self.tblFilter or {})
+        if not tbl then
+            self.btnSearch:SetDisabled(false)
+            self.labelPrevFilter:SetText('Filter active: <none>')
+            self.labelNextFilter:SetText('Filter active: <none>')
+        end
+        self.tblFound = tbl and tbl or (table.wipe(self.tblFound) or {})
+        si:showLog(self.tblLog)
+        si:showFound(self.tblFound)
+
+        self.f:Show()
+    elseif not self.f then si:ScreenScanner() end
 end
 function si:ScreenScanner()
     p,g = ns.db.profile, ns.db.global
     self.showWho = p.showWho or false
-
-    if self.f then self.f:Show() return end
-    si:RefreshScannerScreen(nil, 'SKIP')
 
     self.f = aceGUI:Create('Frame')
     self.f:SetTitle('Guild Recruiter Scanning')
@@ -270,21 +287,22 @@ function si:InviteGroup()
     btnInvite:SetCallback('OnClick', function(_, _)
         local tbl, c = {}, 0
         for k, r in pairs(self.tblFound) do
-            if not r.checked then
+            if r.checked then
                 c = c + 1
                 tbl[k] = r
             end
         end
         if c > 0 then
-            ns:InvitePlayers(tbl)
             self.f:Hide()
-        else ns.code.consoleOut('There are no records marked to invite.') end
+            ns.InviteScreen:StartScreenInvite(tbl)
+        else ns.code:consoleOut('There are no records marked to invite.') end
     end)
     pfGroup:AddChild(btnInvite)
 
     local btnRemove = self.btnRemove
     btnRemove:SetText('Remove')
     btnRemove:SetRelativeWidth(.5)
+    btnRemove:SetDisabled(true)
     btnRemove:SetCallback('OnClick', function(_, _)
         local rCount = 0
         for k, r in pairs(self.tblFound) do
@@ -296,7 +314,7 @@ function si:InviteGroup()
         end
 
         si:showFound()
-        ns.code.consoleOut(rCount..' players were added to invited list.')
+        ns.code:consoleOut(rCount..' players were added to invited list.')
     end)
     pfGroup:AddChild(btnRemove)
 
@@ -316,7 +334,7 @@ function si:WhoGroup()
     local whoScroll = self.whoScroll
     whoScroll:SetLayout("Flow")
     whoScroll:SetFullWidth(true)
-    whoScroll:SetHeight(225)
+    whoScroll:SetHeight(230)
     whoGroup:AddChild(whoScroll)
 
     self.labelLog:SetText('Players Found: '..#self.tblLog)

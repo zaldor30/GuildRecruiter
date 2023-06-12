@@ -9,6 +9,7 @@ GRADDON = LibStub('AceAddon-3.0'):NewAddon('GuildRecruiter', 'AceConsole-3.0', '
 GRADDON.playerFaction = UnitFactionGroup('player') == 'Horde' and 2 or 1
 GRADDON.version = GetAddOnMetadata('GuildRecruiter', 'Version')
 GRADDON.realmID = GetRealmID()
+GRADDON.prefix = 'GuildRecruiter'
 GRADDON.whoQuery = {}
 GRADDON.classInfo = {
 	WARRIOR = {fClass = 'Warrior', color = 'ffc79c6e', icon = iconPath..'ClassIcon_Warrior'},

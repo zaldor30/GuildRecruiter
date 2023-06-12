@@ -12,7 +12,7 @@ function analytics:new()
     return {
         ['Players_Scanned'] = 0,
         ['Invited_Players'] = 0,
-        ['Accepted_Players'] = 0,
+        ['Accepted_Invite'] = 0,
         ['Declined_Invite'] = 0,
         ['Black_Listed'] = 0,
     }
@@ -26,7 +26,7 @@ function analytics:load()
     self.tblAnalytics.global = self.g.analytics and self.g.analytics or analytics:new()
     self.tblAnalytics.profile = self.p.analytics and self.p.analytics or analytics:new()
 end
-function analytics:get(_, key, isGlobal)
+function analytics:get(key, isGlobal)
     analytics:UpdateDB()
     if not self.tblAnalytics or not self.tblAnalytics.global or not self.tblAnalytics.profile then
         analytics:load() end
@@ -42,7 +42,7 @@ function analytics:getFields()
 end
 function analytics:add(key, amt)
     analytics:UpdateDB()
-    if not self.tblAnalytics.global or not self.tblAnalytics.profile then
+    if not self.tblAnalytics or not self.tblAnalytics.global or not self.tblAnalytics.profile then
         analytics:load() end
 
     self.tblAnalytics.global[key] = (self.tblAnalytics.global[key] or 0) + (amt or 1)

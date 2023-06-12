@@ -21,18 +21,16 @@ function mainScreen:AddAnalytics(field, isGlobal)
     self.grpAnal:AddChild(label)
 end
 function mainScreen:GetMessageList()
-    local isGM = IsGuildLeader()
-
     if (not p.inviteFormat or p.inviteFormat ~= 2) and (not g.messages or #g.messages == 0) then
         self.errLabel:SetText('You need create a message in options, click on settings.')
         self.btnScan:SetDisabled(true)
         return
-    elseif g.messages and #g.messages ~= 0 then
+    elseif g.messages then
         local tbl = {}
         for k, r in pairs(g.messages) do
             local gLinkFound = strfind(r.message, 'GUILDLINK')
-            if (gLinkFound and isGM) or not gLinkFound then tbl[k] = r.desc
-            elseif not isGM and gLinkFound and k == p.activeMessage then p.activeMessage = nil end
+            if (gLinkFound and p.guildInfo.guildLink) or not gLinkFound then tbl[k] = r.desc
+            elseif not p.guildInfo.guildLink and gLinkFound and k == p.activeMessage then p.activeMessage = nil end
         end
         return tbl
     end
@@ -67,17 +65,17 @@ function mainScreen:Refresh(analyticsOnly)
     self.grpAnal:ReleaseChildren()
     local tblAnalytics = ns.Analytics:getFields()
     analyticsHeader(UnitName('player')..' Stats:')
-    for x=1,#tblAnalytics do mainScreen:AddAnalytics(tblAnalytics[x]) end
+    for _, r in pairs(tblAnalytics) do mainScreen:AddAnalytics(r) end
     analyticsHeader('Account Stats:')
-    for x=1,#tblAnalytics do mainScreen:AddAnalytics(tblAnalytics[x], 'isGlobal') end
+    for _, r in pairs(tblAnalytics) do mainScreen:AddAnalytics(r, 'isGlobal') end
 end
 function mainScreen:ShowMainScreen()
     p,g = ns.db.profile, ns.db.global
     if not p.inviteFormat then p.inviteFormat = 2 end
 
     if self.f then
-        self.f:Show()
         mainScreen:Refresh()
+        self.f:Show()
         return
     end
 
@@ -86,7 +84,7 @@ function mainScreen:ShowMainScreen()
     self.f:SetStatusText('Guild Recruiter v'..GRADDON.version)
     self.f:EnableResize(false)
     self.f:SetWidth(500)
-    self.f:SetHeight(375)
+    self.f:SetHeight(380)
     self.f:SetLayout('flow')
     self.f:SetCallback('OnClose', function(widget)
     end)
@@ -99,6 +97,7 @@ function mainScreen:ShowMainScreen()
     mainScreen:FilterOptions()
     ns.widgets:createPadding(self.f, 20)
     mainScreen:Analytics()
+    mainScreen:Refresh('ANAL_ONLY')
 end
 function mainScreen:TopOptions()
     local editBox = nil
@@ -186,7 +185,7 @@ function mainScreen:TopOptions()
             self.errLabel:SetText(ns.code.cText('FFFF0000', 'You must select a valid message.'))
         else
             self.errLabel:SetText('')
-            ns.ScreenInvite:ScreenScanner()
+            ns.ScreenInvite:StartScreenScanner()
             self.f:Hide()
         end
     end)

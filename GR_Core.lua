@@ -41,6 +41,7 @@ function CreateMiniMapIcon()
     icon:Register('GR_Icon', iconData, ns.db.profile.minimap)
 end
 function GRADDON:OnInitialize()
+    if not C_Club.GetGuildClubId() then return end
     local ds = ns.datasets
 
     -- Set Databases
@@ -54,7 +55,8 @@ function GRADDON:OnInitialize()
     ns.dbInv = GRADDON.dbInv
     ns.dbAnal = GRADDON.dbAnal
 
-    ns:SetOptionsDB() -- Udpates the db in options
+    ns:SetOptionsDB()
+    ns.datasets:saveOptions() -- Udpates the db in options
     AC:RegisterOptionsTable('GR_Options', ns.options)
     ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
 
@@ -63,10 +65,10 @@ function GRADDON:OnInitialize()
     self:RegisterChatCommand('gr', 'SlashCommand')
     self:RegisterChatCommand('guildrecruiter', 'SlashCommand')
 
+    CreateMiniMapIcon()
+
     -- Other Housekeeping Routines
     -- Start Maintenance with chat msg
-    -- Don't forget chat msg event capture
-    CreateMiniMapIcon()
 end
 
 -- Slash Command Routines
@@ -75,3 +77,74 @@ function GRADDON:SlashCommand(msg)
     if not msg or msg == '' then ns.MainScreen:ShowMainScreen()
     elseif msg == 'config' then InterfaceOptionsFrame_OpenToCategory(ns.addonOptions) end
 end
+
+-- Context Menu Creation for Guild Invite/Black List
+local function HandlesGlobalMouseEvent(self, button, event)
+	if event == 'GLOBAL_MOUSE_DOWN' and (button == 'LeftButton' or button == 'RightButton')then
+		return true
+	end
+	return false
+end
+local AceGUI = LibStub("AceGUI-3.0")
+local f = AceGUI:Create('InlineGroup')
+f:SetWidth(135)
+f:SetLayout('flow')
+
+local invite = AceGUI:Create('InteractiveLabel')
+invite:SetText('Guild Invite')
+invite:SetWidth(135)
+invite:SetFont('Fonts\\FRIZQT__.ttf', 12, 'OUTLINE')
+invite:SetHighlight(255,255,255,125)
+invite.frame.HandlesGlobalMouseEvent = HandlesGlobalMouseEvent
+invite:SetCallback('OnClick', function()
+	if f.name then
+        ns.code:consoleOut('Sending invite to '..f.name)
+        ns.Invite:invitePlayer(f.name, nil, 'SEND_INVITE', 'FORCE', select(2, UnitClass(f.name))) end
+	CloseDropDownMenus()
+end)
+invite:SetPoint('TOPLEFT', f.frame, 'TOPLEFT', 0, 0)
+f:AddChild(invite)
+
+local blacklist = AceGUI:Create('InteractiveLabel')
+blacklist:SetText('Black List')
+blacklist:SetWidth(135)
+blacklist:SetFont('Fonts\\FRIZQT__.ttf', 12, 'OUTLINE')
+blacklist:SetHighlight(255,255,255,125)
+blacklist.frame.HandlesGlobalMouseEvent = HandlesGlobalMouseEvent
+blacklist:SetCallback('OnClick', function()
+	if f.name then ns.BlackList:add(f.name) end
+	CloseDropDownMenus()
+end)
+blacklist:SetPoint('TOPLEFT', invite.frame, 'BOTTOMLEFT', 0, 0)
+f:AddChild(blacklist)
+
+local function DropDownOnShow(self)
+	local dropdown = self.dropdown
+	if not dropdown then return end
+
+	f.frame:SetParent(self)
+	f.frame:SetFrameStrata(self:GetFrameStrata())
+	f.frame:SetFrameLevel(self:GetFrameLevel() + 2)
+	f:ClearAllPoints()
+
+	if dropdown.Button == LFGListFrameDropDownButton then
+	elseif dropdown.which then -- UnitPopup
+		local dropdownFullName = nil
+		if dropdown.name then
+			if dropdown.server and not dropdown.name:find('-') then
+				dropdownFullName = dropdown.name .. '-' .. dropdown.server
+			else dropdownFullName = dropdown.name end
+		end
+		f.name = dropdownFullName
+	else return end
+
+	if self:GetLeft() >= self:GetWidth() then f:SetPoint('TOPRIGHT', self, 'TOPLEFT',0,0)
+	else f:SetPoint('TOPLEFT', self, 'TOPRIGHT',0,0) end
+	f.frame:Show()
+end
+local function DropDownOnHide()
+	f.frame:Hide()
+end
+
+DropDownList1:HookScript('OnShow', DropDownOnShow)
+DropDownList1:HookScript('OnHide', DropDownOnHide)

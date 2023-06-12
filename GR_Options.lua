@@ -6,6 +6,7 @@ local p,g = nil, nil
 local code = ns.code
 local fPreview = nil
 local optTables = {}
+local selectedMessage = nil
 
 function ns:SetOptionsDB() p, g = ns.db.profile, ns.db.global end
 function optTables:newMsg()
@@ -75,15 +76,15 @@ ns.options = {
                         end
                         return tbl
                     end,
-                    set = function(_, val) g.activeMessage = val end,
+                    set = function(_, val) selectedMessage = val end,
                     get = function(_)
                         local msg = g.messages or nil
-                        local active = g.activeMessage or nil
+                        local active = selectedMessage or nil
 
                         if active and msg then
                             tblMessage = msg[active] or {}
                             return active
-                        elseif not msg then p.activeMessage = nil end
+                        elseif not msg then selectedMessage = nil end
                     end,
                 },
                 msgNewBtn = {
@@ -92,10 +93,10 @@ ns.options = {
                     type = 'execute',
                     width = .5,
                     order = 4,
-                    disabled = function() return not p.activeMessage end,
+                    disabled = function() return not selectedMessage end,
                     func = function()
-                        p.activeMessage = nil
                         tblMessage = optTables:newMsg()
+                        selectedMessage = nil
                     end,
                 },
                 msgInviteDesc = {
@@ -125,7 +126,7 @@ ns.options = {
                 msgPreview = {
                     name = function()
                         fPreview = code:GuildReplace(tblMessage.message)
-                        return (code:cText('FFFF80FF', 'To [')..code.fPlayerName..code:cText('FFFF80FF', ']: '..fPreview)) or ''
+                        return (code:cText('FFFF80FF', 'To [')..code.fPlayerName..code:cText('FFFF80FF', ']: '..(fPreview or ''))) or ''
                     end,
                     type = 'description',
                     order = 8,
@@ -134,7 +135,7 @@ ns.options = {
                 },
                 msgNotGM = {
                     name = function()
-                        local errMsg = (tblMessage.message and strfind(tblMessage.message, 'GUILDLINK') and not IsGuildLeader()) and 'WARNING: You are not a GM, so GUILDLINK is an invalid option.' or nil
+                        local errMsg = (tblMessage.message and strfind(tblMessage.message, 'GUILDLINK') and not p.guildInfo.guildLink and not IsGuildLeader()) and 'WARNING: You are not a GM, so GUILDLINK is an invalid option.' or nil
                         return errMsg and code:cText('FFFF0000', errMsg) or ' '
                     end,
                     type = 'description',
@@ -168,13 +169,13 @@ ns.options = {
                     desc = 'Delete the selected message.',
                     type = 'execute',
                     width = .5,
-                    disabled = function() return not p.activeMessage and true or false end,
+                    disabled = function() return not selectedMessage and true or false end,
                     func = function()
                         local msg = g.messages or nil
-                        local active = p.activeMessage or nil
+                        local active = selectedMessage or nil
                         if active and msg and msg[active] then
                             msg[active] = nil
-                            active = nil
+                            selectedMessage = nil
                             tblMessage = optTables:newMsg()
                         end
                     end,
@@ -184,15 +185,21 @@ ns.options = {
                     desc = 'Save the selected message.',
                     type = 'execute',
                     width = .5,
-                    disabled = function() return (tblMessage.desc ~= '' and tblMessage.message ~= '') and false or true end,
+                    disabled = function()
+                        if not tblMessage then return true end
+                        return not ((tblMessage.desc and strlen(tblMessage.desc) > 0) and (tblMessage.message and strlen(tblMessage.message) > 0)) end,
                     func = function()
                         local msg = g.messages or {}
-                        local active = p.activeMessage
+                        local active = selectedMessage
                         if not active then
                             table.insert(msg, tblMessage)
                             active = #msg
                         else msg[active] = tblMessage end
-                        ns.widgets:createErrorWindow('Message Saved')
+                        g.messages = msg
+
+                        tblMessage = optTables:newMsg()
+                        selectedMessage = nil
+                        UIErrorsFrame:AddMessage('Message Saved', 1.0, 0.1, 0.1, 1.0)
                     end,
                 }
             },

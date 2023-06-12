@@ -116,13 +116,16 @@ function ds:saveOptions()
     g.rememberTime = g.rememberTime or 7
 	g.rememberPlayers = g.rememberPlayers or true
 
-	local clubID = C_Club.GetGuildClubId() or nil
-	local club = clubID and C_ClubFinder.GetRecruitingClubInfoFromClubID(clubID) or nil
-	if club then
-		local gName, gLink = club.name, GetClubFinderLink(club.clubFinderGUID, club.name)
-		p.guildInfo = {clubID = clubID, guildName = gName, guildLink = gLink }
-	elseif clubID and C_Club.GetClubInfo(clubID) then
-		p.guildInfo = {clubID = clubID, guildName = C_Club.GetClubInfo(clubID).name, guildLink = nil }
-	end
+    local isGM = IsGuildLeader()
+    if (not p.guildInfo or not p.guildInfo.guildName) or (isGM and not p.guildInfo.guildLink) then
+        local clubID = C_Club.GetGuildClubId() or nil
+        local club = clubID and C_ClubFinder.GetRecruitingClubInfoFromClubID(clubID) or nil
+        if club then
+            local gName, gLink = club.name, GetClubFinderLink(club.clubFinderGUID, club.name)
+            p.guildInfo = {clubID = clubID, guildName = gName, guildLink = gLink }
+        elseif clubID and C_Club.GetClubInfo(clubID) then
+            p.guildInfo = {clubID = clubID, guildName = C_Club.GetClubInfo(clubID).name, guildLink = nil }
+        end
+    end
 end
 ds:Init()

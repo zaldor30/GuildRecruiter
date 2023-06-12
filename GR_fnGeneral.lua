@@ -21,16 +21,21 @@ function code:cPlayer(uName, class)
     if not cClass then return uName
     else return code:cText(cClass, uName) end
 end
+function code:consoleOut(msg, color)
+    print('|c'..(color or 'FF807e14')..'GR: '..(msg or 'did not get message')..'|r')
+end
 function code:TruncateString(msg, length)
     return strlen(msg) > length and strsub(msg,1,length)..'...' or msg
 end
 function code:GuildReplace(msg)
+    if not msg then return end
+
     local gi = ns.db.profile.guildInfo
-    local gLink, gName = gi.guildLink, gi.guildName
+    local gLink, gName = gi.guildLink or nil, gi.guildName or nil
 
     if gName and msg then
         msg = gLink and gsub(msg, 'GUILDLINK', gLink and gLink or 'No Guild Link') or msg
-        msg = gsub(msg, 'GUILDNAME', gName and '<'..gName..'>' or 'No Guild Name')
+        msg = gName and gsub(msg, 'GUILDNAME', gName and '<'..gName..'>' or 'No Guild Name') or msg
         msg = gsub(msg, 'NAME', UnitName('player') or 'PLAYERNAME')
     end
 
