@@ -107,7 +107,8 @@
         "UnitIsConnected",
         "GetGuildInfo",
         "StaticPopupDialogs",
-        "FriendsFrame"
+        "FriendsFrame",
+        "complete"
     ],
     "Lua.diagnostics.disable": [
         "undefined-field",

@@ -7,6 +7,7 @@ ns.MainScreen = {}
 local mainScreen = ns.MainScreen
 function mainScreen:Init()
     self.f = nil
+    self.cmbMessages = aceGUI:Create('Dropdown')
     self.btnScan = aceGUI:Create('Button')
     self.errLabel = aceGUI:Create('Label')
     self.grpAnal = aceGUI:Create('ScrollFrame')
@@ -48,7 +49,8 @@ function mainScreen:FilterGroup_List()
 end
 function mainScreen:Refresh(analyticsOnly)
     if not analyticsOnly then
-        mainScreen:GetMessageList()
+        self.cmbMessages:SetList(mainScreen:GetMessageList())
+        self.cmbMessages:SetValue(p and p.activeMessage or nil)
         mainScreen:FilterGroup_List()
     end
 
@@ -74,8 +76,8 @@ function mainScreen:ShowMainScreen()
     if not p.inviteFormat then p.inviteFormat = 2 end
 
     if self.f then
-        mainScreen:Refresh()
         self.f:Show()
+        mainScreen:Refresh()
         return
     end
 
@@ -191,7 +193,7 @@ function mainScreen:TopOptions()
     end)
     grpSearch:AddChild(self.btnScan)
 
-    local cmb = aceGUI:Create('Dropdown') -- Dropdown of messages to send
+    local cmb = self.cmbMessages -- Dropdown of messages to send
     cmb:SetLabel('Active Message')
     cmb:SetList(mainScreen:GetMessageList())
     cmb:SetValue(p and p.activeMessage or nil)

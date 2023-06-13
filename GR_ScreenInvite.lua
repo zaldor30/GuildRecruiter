@@ -1,6 +1,6 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
 local AceGUI = LibStub("AceGUI-3.0")
-local p,g = nil, nil
+local p,g, dbInv = nil, nil, nil
 
 ns.InviteScreen = {}
 local is = ns.InviteScreen
@@ -15,6 +15,8 @@ function is:Init()
 
     self.btnSend = AceGUI:Create('Button')
     self.lblProgress = AceGUI:Create('Label')
+
+    self.startFound = nil
 end
 function is:SendInvitesOut()
     local msg, sendInvite = nil, false
@@ -23,12 +25,28 @@ function is:SendInvitesOut()
     end
     sendInvite = p.inviteFormat ~= 1 and true or false
 
+    function is:complete()
+        self.isRunning = false
+        self.lblProgress:SetText('Sent '..self.invitedCount..' invites to players.')
+        self.fInvite:SetStatusText('Messages sent, press close.')
+
+        local stored, queue = 0, 0
+        for _ in pairs(dbInv.invitedPlayers or {}) do stored = stored + 1 end
+        for _ in pairs(self.tblFound or {}) do queue = queue + 1 end
+
+        ns.code:consoleOut('You started with '..self.startFound)
+        ns.code:consoleOut('You invited '..self.invitedCount..' players.')
+        ns.code:consoleOut('You now have '..stored..' recorded invites.')
+        ns.code:consoleOut(queue..' players are still queued for invite.')
+        self.invitedCount = 0
+    end
     function is:invitePlayers(guildMessage, skipTimer)
         if not self.isRunning then return end
 
         local k = next(self.tblFound)
         local tbl = self.tblFound[k] or nil
-        if tbl then self.tblFound[k] = nil end
+        self.tblFound[k] = nil
+
         if tbl then
             ns.Invite:invitePlayer(k, guildMessage, sendInvite, false, tbl.class)
 
@@ -39,23 +57,24 @@ function is:SendInvitesOut()
 
             local function restart() is:invitePlayers(guildMessage) end
             local function enableButton() self.btnSend:SetDisabled(false) end
-            if not skipTimer then C_Timer.After(1, restart)
-            elseif skipTimer then C_Timer.After(.5, enableButton) end
-        else
-            self.isRunning = false
-            self.lblProgress:SetText('Sent '..self.invitedCount..' invites to players.')
-            self.fInvite:SetStatusText('Messages sent, press close.')
-            self.invitedCount = 0
-        end
+
+            if next(self.tblFound) then
+                if not skipTimer then C_Timer.After(1, restart)
+                elseif skipTimer then C_Timer.After(.5, enableButton) end
+            else is:complete() end
+        else is:complete() end
     end
 
     is:invitePlayers(msg, sendInvite)
 end
 function is:StartScreenInvite(tbl)
-    p,g = ns.db.profile, ns.db.global
+    p,g, dbInv = ns.db.profile, ns.db.global, ns.dbInv.global
     self.tblFound = tbl or {}
     self.foundCount, self.invitedCount = 0, 0
     for _ in pairs(self.tblFound) do self.foundCount = self.foundCount + 1 end
+
+    self.startFound = 0
+    for _ in pairs(dbInv.invitedPlayers or {}) do self.startFound = self.startFound + 1 end
 
     if self.foundCount > 0 then self.btnSend:SetDisabled(false) else self.btnSend:SetDisabled(true) end
     if not self.fInvite then is:CreateScreenInvite()
@@ -75,6 +94,7 @@ function is:CreateScreenInvite()
     self.fInvite:SetHeight(160)
     self.fInvite:SetCallback('OnClose', function()
         self.isRunning = false
+        is:complete()
         ns.ScreenInvite:StartScreenScanner(self.tblFound)
     end)
 

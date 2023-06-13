@@ -90,16 +90,14 @@ function invite:invitePlayer(pName, msg, sendInvite, _, class)
     if pName and CanGuildInvite() and not GetGuildInfo(pName) then
         if msg and p.inviteFormat ~= 4 then SendChatMessage(msg, 'WHISPER', nil, pName) end
         GRADDON:RegisterEvent('CHAT_MSG_SYSTEM', 'ChatMsgHandler')
+
         if sendInvite then GuildInvite(pName)
         else
-            if pName then
-                self.tblSentInvite[pName] = true
-                GRADDON:UnregisterEvent('CHAT_MSG_SYSTEM')
-            end
+            self.tblSentInvite[pName] = true
             ns.Analytics:add('Invited_Players')
         end
 
         invite:logInvite(pName, class)
-    end
+    else GRADDON:UnregisterEvent('CHAT_MSG_SYSTEM') end
 end
 invite:Init()
