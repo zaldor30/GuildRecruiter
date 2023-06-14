@@ -9,8 +9,17 @@ function mainScreen:Init()
     self.f = nil
     self.cmbMessages = aceGUI:Create('Dropdown')
     self.btnScan = aceGUI:Create('Button')
+    self.labelSync = aceGUI:Create('Label')
     self.errLabel = aceGUI:Create('Label')
     self.grpAnal = aceGUI:Create('ScrollFrame')
+    self.syncButton = aceGUI:Create('Button')
+
+    self.scanIsDisabled = false
+end
+function mainScreen:UpdateSyncTime() self.labelSync:SetText('Last Sync: '..(p.lastSync or '<none>')) end
+function mainScreen:DisableScanButton(isDisabled)
+    self.btnScan:SetDisabled(not isDisabled and self.scanIsDisabled or isDisabled)
+    self.syncButton:SetDisabled(isDisabled)
 end
 function mainScreen:AddAnalytics(field, isGlobal)
     local desc = gsub(field, '_', ' ')
@@ -25,6 +34,7 @@ function mainScreen:GetMessageList()
     if (not p.inviteFormat or p.inviteFormat ~= 2) and (not g.messages or #g.messages == 0) then
         self.errLabel:SetText('You need create a message in options, click on settings.')
         self.btnScan:SetDisabled(true)
+        self.scanIsDisabled = true
         return
     elseif g.messages then
         local tbl = {}
@@ -51,6 +61,7 @@ function mainScreen:Refresh(analyticsOnly)
     if not analyticsOnly then
         self.cmbMessages:SetList(mainScreen:GetMessageList())
         self.cmbMessages:SetValue(p and p.activeMessage or nil)
+        mainScreen:UpdateSyncTime()
         mainScreen:FilterGroup_List()
     end
 
@@ -127,9 +138,11 @@ function mainScreen:TopOptions()
         if val ~= 2 and not g.messages then
             self.errLabel:SetText(msg)
             self.btnScan:SetDisabled(true)
+            self.scanIsDisabled = true
         else
             self.errLabel:SetText('')
             self.btnScan:SetDisabled(false)
+            self.scanIsDisabled = false
         end
         p.inviteFormat = val
     end)
@@ -201,8 +214,10 @@ function mainScreen:TopOptions()
     grpSearch:AddChild(cmb)
 
     ns.widgets:createPadding(grpSearch, .03)
+
     self.errLabel:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
     self.errLabel:SetRelativeWidth(.5)
+    self.errLabel:SetPoint("BOTTOM", grpSearch.frame, "BOTTOM", 0, -30)
     grpSearch:AddChild(self.errLabel)
 end
 function mainScreen:FilterOptions()
@@ -234,11 +249,17 @@ function mainScreen:FilterOptions()
     end)
     grpFilter:AddChild(btn)
 
-    btn = aceGUI:Create('Button') -- Start scan button
+    btn = self.syncButton
     btn:SetText('Sync')
     btn:SetRelativeWidth(.5)
-    btn:SetCallback('OnClick', function(_, button) ns:SyncData() end)
+    btn:SetCallback('OnClick', function(_, button) ns.Sync:BeginSync() end)
     grpFilter:AddChild(btn)
+
+    local label = self.labelSync
+    label:SetText('Last Sync: '..(p.lastSync or '<none>'))
+    label:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+    label:SetFullWidth(true)
+    grpFilter:AddChild(label)
 end
 function mainScreen:Analytics()
     local inlineGroup = aceGUI:Create('InlineGroup')

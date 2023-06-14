@@ -12,7 +12,7 @@ StaticPopupDialogs[POPUP_REASON] = {
         value = strlen(value) > 0 and value or 'No reason'
 
         tblBlackList = g.blackList or {}
-        tblBlackList[blName] = { reason = value, whoDidIt = UnitGUID('player'), dateBlackList = C_DateAndTime.GetServerTimeLocal() }
+        tblBlackList[blName] = { reason = value, whoDidIt = UnitGUID('player'), dateBlackList = C_DateAndTime.GetServerTimeLocal(), markedForDelete = false }
         g.blackList = tblBlackList
         ns.Analytics:add('Black_Listed')
         ns.code:consoleOut(blName..' was added to the black list with \"'..value..'\" as a reason.')
@@ -46,8 +46,10 @@ function blackList:add(name)
     StaticPopup_Show(POPUP_REASON)
 end
 function blackList:IsOnBlackList(name)
+    local realm = '-'..GetRealmName()
+    name = gsub(name, realm, '')
     g = ns.dbBL.global
     tblBlackList = g.blackList or {}
-    return tblBlackList[name] and true or false
+    return (tblBlackList[name] and not tblBlackList[name].markedForDelete) and true or false
 end
 blackList:Init()

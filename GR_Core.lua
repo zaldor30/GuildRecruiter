@@ -14,6 +14,7 @@ local dOptions = {
         showIcon = true,
         showMsg = false,
         showMenu = true,
+        showSystem = false,
         scanTime = '2',
         msgInviteDesc = '',
         msgInvite = '',
@@ -41,9 +42,6 @@ function CreateMiniMapIcon()
     icon:Register('GR_Icon', iconData, ns.db.profile.minimap)
 end
 function GRADDON:OnInitialize()
-    if not C_Club.GetGuildClubId() then return end
-    local ds = ns.datasets
-
     -- Set Databases
     GRADDON.db = DB:New('GR_SettingsDB', dOptions, PLAYER_PROFILE)
     GRADDON.dbBl = DB:New('GR_BlackListDB', nil, PLAYER_PROFILE)
@@ -56,6 +54,7 @@ function GRADDON:OnInitialize()
     ns.dbAnal = GRADDON.dbAnal
 
     ns:SetOptionsDB()
+    if not C_Club.GetGuildClubId() and not ns.db.profile.guildInfo.guildName then return end
     ns.datasets:saveOptions() -- Udpates the db in options
     AC:RegisterOptionsTable('GR_Options', ns.options)
     ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
@@ -65,8 +64,8 @@ function GRADDON:OnInitialize()
     self:RegisterChatCommand('gr', 'SlashCommand')
     self:RegisterChatCommand('guildrecruiter', 'SlashCommand')
 
+    ns.Sync:addonStartUp()
     CreateMiniMapIcon()
-
     -- Other Housekeeping Routines
     -- Start Maintenance with chat msg
 end
@@ -81,6 +80,7 @@ end
 -- Context Menu Creation for Guild Invite/Black List
 local function HandlesGlobalMouseEvent(self, button, event)
 	if event == 'GLOBAL_MOUSE_DOWN' and (button == 'LeftButton' or button == 'RightButton')then
+        if not ns.db.global.showMenu then return false end
 		return true
 	end
 	return false
@@ -119,6 +119,7 @@ blacklist:SetPoint('TOPLEFT', invite.frame, 'BOTTOMLEFT', 0, 0)
 f:AddChild(blacklist)
 
 local function DropDownOnShow(self)
+    if not ns.db.global.showMenu then return end
 	local dropdown = self.dropdown
 	if not dropdown then return end
 
@@ -138,8 +139,8 @@ local function DropDownOnShow(self)
 		f.name = dropdownFullName
 	else return end
 
-	if self:GetLeft() >= self:GetWidth() then f:SetPoint('TOPRIGHT', self, 'TOPLEFT',0,0)
-	else f:SetPoint('TOPLEFT', self, 'TOPRIGHT',0,0) end
+	if self:GetLeft() >= self:GetWidth() then f:SetPoint('BOTTOMRIGHT', self, 'BOTTOMLEFT',0,0)
+	else f:SetPoint('BOTTOMLEFT', self, 'BOTTOMRIGHT',0,0) end
 	f.frame:Show()
 end
 local function DropDownOnHide()

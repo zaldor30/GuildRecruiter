@@ -36,7 +36,7 @@ function si:showFound(foundTable)
     self.tblFound = foundTable
     local function createFound(pName)
         local checkBox = aceGUI:Create('CheckBox')
-        checkBox:SetLabel(ns.code:cPlayer(pName))
+        checkBox:SetLabel(ns.code:cPlayer(pName, self.tblFound[pName].class or nil))
         checkBox:SetValue(false)
         checkBox:ToggleChecked(true) -- Does not trigger callback
         checkBox:SetFullWidth(true)
@@ -113,8 +113,8 @@ function si:startWaitTimer(timeRemain, percent)
         self.btnSearch:SetText('Search for Players')
         self.f:SetStatusText('Ready for next scan! (Filter Progress: '..percent..')')
     elseif not self.hidden then
+        self.btnSearch:SetText('Search for Players ('..timeRemain..')')
         C_Timer.After(timeRemain, function()
-            self.btnSearch:SetText('Search for Players ('..timeRemain..')')
             si:startWaitTimer(timeRemain - 1, percent)
         end)
     end
@@ -125,7 +125,8 @@ function si:createFilter()
 
     local function createClassFilter()
         for _,r in pairs(ns.datasets.tblAllClasses) do
-            local filter = 'c-"'..r.classFile..'"'
+            local class = r.classFile:gsub('DEATHKNIGHT', 'DEATH KNIGHT'):gsub('DEMONHUNTER', 'DEMON HUNTER')
+            local filter = 'c-"'..class..'"'
             local level, lMax = min, max
             if lMax - level > 5 and max ~= level then
                 while level <= lMax do
@@ -191,44 +192,44 @@ function si:hide()
     self.hidden = true
     self.f:Hide()
 end
-function si:StartScreenScanner(tbl, skip)
-    self.hidden = false
+function si:CallBackEvent()
+    self.tblLog = self.tblLog and table.wipe(self.tblLog) or {}
+    self.tblFound = self.tblFound or {}
 
-    function GRADDON:searchWhoResultCallback(_, ...) -- When WHO_LIST_UPDATE event is returned
-        self.tblLog = self.tblLog and table.wipe(self.tblLog) or {}
-        if not self.tblFound then self.tblFound = {} end
-
-        ns.Analytics:add('Players_Scanned', C_FriendList.GetNumWhoResults())
-        for i=1,C_FriendList.GetNumWhoResults() do
-            local info = C_FriendList.GetWhoInfo(i)
-            table.insert(self.tblLog, {name = info.fullName, class = info.filename, level = info.level, guild = info.fullGuildName or '', info.area})
-            if not info.fullGuildName or info.fullGuildName == '' then
-                if not self.tblFound[info.fullName] and ns.Invite:canAddPlayer(info.fullName, info.area, false) then
-                    self.tblFound[info.fullName] = {name = info.fullName, class = info.filename, checked = true}
-                end
+    ns.Analytics:add('Players_Scanned', C_FriendList.GetNumWhoResults())
+    for i=1,C_FriendList.GetNumWhoResults() do
+        local info = C_FriendList.GetWhoInfo(i)
+        table.insert(self.tblLog, {name = info.fullName, class = info.filename, level = info.level, guild = info.fullGuildName or '', info.area})
+        if not info.fullGuildName or info.fullGuildName == '' then
+            if not self.tblFound[info.fullName] and ns.Invite:canAddPlayer(info.fullName, info.area, false) then
+                self.tblFound[info.fullName] = {name = info.fullName, class = info.filename, checked = true}
             end
         end
-        if not self.showWho then si:HideFriendsList() end
-
-        si:showLog(self.tblLog)
-        si:showFound(self.tblFound)
     end
-    GRADDON:RegisterEvent('WHO_LIST_UPDATE', 'searchWhoResultCallback')
+    if not self.showWho then si:HideFriendsList() end
+
+    si:showLog(self.tblLog)
+    si:showFound(self.tblFound)
+end
+function si:StartScreenScanner(tbl, skip)
+    self.hidden = false
+    self.tblLog = table.wipe(self.tblLog) or {}
+    self.tblFound = tbl or (table.wipe(self.tblFound) or {})
+
+    function GRADDON:searchWhoResultCallback(_, ...) si:CallBackEvent() end
 
     if self.f and not skip then
-        self.tblLog = table.wipe(self.tblLog) or {}
-        self.tblFilter = not tbl and table.wipe(self.tblFilter) or (self.tblFilter or {})
         if not tbl then
             self.btnSearch:SetDisabled(false)
             self.labelPrevFilter:SetText('Filter active: <none>')
             self.labelNextFilter:SetText('Filter active: <none>')
         end
-        self.tblFound = tbl and tbl or (table.wipe(self.tblFound) or {})
         si:showLog(self.tblLog)
         si:showFound(self.tblFound)
 
         self.f:Show()
     elseif not self.f then si:ScreenScanner() end
+    GRADDON:RegisterEvent('WHO_LIST_UPDATE', 'searchWhoResultCallback')
 end
 function si:ScreenScanner()
     p,g = ns.db.profile, ns.db.global

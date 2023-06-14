@@ -33,11 +33,13 @@ function is:SendInvitesOut()
         local stored, queue = 0, 0
         for _ in pairs(dbInv.invitedPlayers or {}) do stored = stored + 1 end
         for _ in pairs(self.tblFound or {}) do queue = queue + 1 end
-
-        ns.code:consoleOut('You started with '..self.startFound)
-        ns.code:consoleOut('You invited '..self.invitedCount..' players.')
-        ns.code:consoleOut('You now have '..stored..' recorded invites.')
-        ns.code:consoleOut(queue..' players are still queued for invite.')
+   
+        if g.showSystem then
+            ns.code:consoleOut('You started with '..self.startFound)
+            ns.code:consoleOut('You invited '..self.invitedCount..' players.')
+            ns.code:consoleOut('You now have '..stored..' recorded invites.')
+            ns.code:consoleOut(queue..' players are still queued for invite.')
+        end
         self.invitedCount = 0
     end
     function is:invitePlayers(guildMessage, skipTimer)

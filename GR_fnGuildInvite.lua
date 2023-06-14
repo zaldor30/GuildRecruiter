@@ -8,7 +8,11 @@ function invite:Init()
     self.tblInvited = nil
     self.tblSentInvite = {}
 end
-function invite:updateDB() p,g, dbInv = ns.db.profile, ns.db.global, ns.dbInv.global end
+function GRADDON:ChatMsgHandler(_, msg,_) invite:ChatMessageHandler(msg) end
+function invite:updateDB()
+    p,g, dbInv = ns.db.profile, ns.db.global, ns.dbInv.global
+    GRADDON:RegisterEvent('CHAT_MSG_SYSTEM', 'ChatMsgHandler')
+end
 function invite:new(class)
     return {
         ['playerClass'] = class or '',
@@ -48,8 +52,7 @@ function invite:logInvite(pName, class)
         invite:save()
     end
 end
-
-function GRADDON:ChatMsgHandler(_, msg,_)
+function invite:ChatMessageHandler(msg)
     if not self.tblSentInvite then self.tblSentInvite = {} end
 
     local function eraseRecord(pName)
@@ -65,22 +68,29 @@ function GRADDON:ChatMsgHandler(_, msg,_)
         if pName then self.tblSentInvite[pName] = true end
         ns.Analytics:add('Invited_Players')
     elseif strmatch(msg, 'joined the guild') then
-        if dbInv.invitedPlayers[pName] then
-            ns.Analytics:add('Accepted_Invite')
-            eraseRecord(pName)
+        ns.Analytics:add('Accepted_Invite')
+        if p.showGreeting and p.greeting then
+            C_Timer.After(2, function() SendChatMessage(p.greeting, 'GUILD') end)
         end
+        eraseRecord(pName)
     elseif strmatch(msg, 'declines your guild') then
-        if dbInv.invitedPlayers[pName] then
-            ns.Analytics:add('Declined_Invite')
-            eraseRecord(pName)
-        end
+        ns.Analytics:add('Declined_Invite')
+        eraseRecord(pName)
     end
 
     local c = 0
     if self.tblSentInvite then
         for _ in pairs(self.tblSentInvite) do c = c + 1 end
     end
-    if c == 0 then GRADDON:UnregisterEvent('CHAT_MSG_SYSTEM') end
+end
+
+local sentMsg = nil
+local function MyWhisperFilter(self, event, message, sender)
+    local myWhisper = sentMsg -- Replace with the whisper message you sent
+
+    if message == myWhisper then
+        return true -- Returning true will hide the message
+    end
 end
 function invite:invitePlayer(pName, msg, sendInvite, _, class)
     if not pName then return end
@@ -88,8 +98,14 @@ function invite:invitePlayer(pName, msg, sendInvite, _, class)
     invite:updateDB()
     class = class and class or select(2, UnitClass(pName))
     if pName and CanGuildInvite() and not GetGuildInfo(pName) then
-        if msg and p.inviteFormat ~= 4 then SendChatMessage(msg, 'WHISPER', nil, pName) end
-        GRADDON:RegisterEvent('CHAT_MSG_SYSTEM', 'ChatMsgHandler')
+        if msg and p.inviteFormat ~= 4 then
+            if not g.showMsg then
+                sentMsg = msg
+                ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER_INFORM", MyWhisperFilter)
+                ns.code:consoleOut('Sent invite to '..(ns.code:cPlayer(pName, class) or pName))
+            end
+            SendChatMessage(msg, 'WHISPER', nil, pName)
+        end
 
         if sendInvite then GuildInvite(pName)
         else
@@ -98,6 +114,8 @@ function invite:invitePlayer(pName, msg, sendInvite, _, class)
         end
 
         invite:logInvite(pName, class)
-    else GRADDON:UnregisterEvent('CHAT_MSG_SYSTEM') end
+    end
+
+    --if #self.tblSentInvite == 0 then GRADDON:UnregisterEvent('CHAT_MSG_SYSTEM') end
 end
 invite:Init()

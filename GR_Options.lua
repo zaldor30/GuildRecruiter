@@ -203,6 +203,87 @@ ns.options = {
                     end,
                 }
             },
-        }
+        },
+        mnuOptions = {
+            name = 'GR Options',
+            type = 'group',
+            order = 1,
+            args = {
+                msgHeader1 = {
+                    name = 'General Settings',
+                    type = 'header',
+                    width = 'full',
+                    order = 0,
+                },
+                optIcon = {
+                    name = 'Show icon on minimap',
+                    type = 'toggle',
+                    width = 'full',
+                    order = 1,
+                    set = function(_, val) p.minimap = { hide = not val } end,
+                    get = function(_)
+                        if not p.minimap.hide then icon:Show('GR_Icon')
+                        else icon:Hide('GR_Icon') end
+                        return not p.minimap.hide
+                    end,
+                },
+                optSystemMsg = {
+                    name = 'Show addon messages in chat.',
+                    type = 'toggle',
+                    width = 'full',
+                    order = 2,
+                    set = function(_, val) g.showSystem = val end,
+                    get = function(_) return g.showSystem end,
+                },
+                optContextMnu = {
+                    name = 'Show context menu for guild invite/black list.',
+                    type = 'toggle',
+                    width = 'full',
+                    order = 3,
+                    set = function(_, val) g.showMenu = val end,
+                    get = function(_) return g.showMenu end,
+                },
+                msgHeader2 = {
+                    name = 'Invite Settings',
+                    type = 'header',
+                    order = 10,
+                },
+                optShowAccepted = {
+                    name = 'Send guild greeting message when invite is accepted.',
+                    type = 'toggle',
+                    width = 'full',
+                    order = 11,
+                    set = function(_, val) p.showGreeting = val end,
+                    get = function(_) return p.showGreeting end,
+                },
+                optShowAcceptedMsg = {
+                    name = 'Greeting Message',
+                    type = 'input',
+                    width = 'full',
+                    order = 12,
+                    set = function(_, val) p.greeting = val end,
+                    get = function(_) return p.greeting end,
+                },
+                optShowInvite = {
+                    name = 'Show your whisper when sending invite messages.',
+                    type = 'toggle',
+                    width = 'full',
+                    order = 13,
+                    set = function(_, val) g.showMsg = val end,
+                    get = function(_) return g.showMsg end,
+                },
+                optScanInterval = {
+                    name = 'Time to wait between scans (default recommended).',
+                    type = 'input',
+                    width = 'full',
+                    order = 14,
+                    set = function(_, val)
+                        if tonumber(val) >=2 and tonumber(val) < 10 then g.scanTime = val
+                        else return g.scanTime end
+                    end,
+                    get = function(_) return g.scanTime end,
+                }
+            }
+        },
     }
 }

@@ -22,7 +22,7 @@ function code:cPlayer(uName, class)
     else return code:cText(cClass, uName) end
 end
 function code:consoleOut(msg, color)
-    print('|c'..(color or 'FF807e14')..'GR: '..(msg or 'did not get message')..'|r')
+    print('|c'..(color or 'FF3EB9D8')..'GR: '..(msg or 'did not get message')..'|r')
 end
 function code:TruncateString(msg, length)
     return strlen(msg) > length and strsub(msg,1,length)..'...' or msg
