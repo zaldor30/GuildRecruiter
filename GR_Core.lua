@@ -67,7 +67,7 @@ function GRADDON:OnInitialize()
     self:RegisterChatCommand('gr', 'SlashCommand')
     self:RegisterChatCommand('guildrecruiter', 'SlashCommand')
 
-    ns.Sync:addonStartUp()
+    ns.Sync:InitializeSync()
     CreateMiniMapIcon()
     -- Other Housekeeping Routines
     -- Start Maintenance with chat msg

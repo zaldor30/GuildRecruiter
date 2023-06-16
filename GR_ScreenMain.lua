@@ -43,11 +43,14 @@ function mainScreen:DoingMaintenance()
         mainScreen:SetButtons()
     else self.f:SetStatusText(self.defaultStatus) end
 end
-function mainScreen:UpdateSyncTime(msg) self.labelSync:SetText('Last Sync: '..(msg or (p.lastSync or '<none>'))) end
-function mainScreen:DisableSyncButton(isDisabled) -- Disable and re-enable sync button
-    self.btnScan:SetDisabled(not isDisabled and self.scanIsDisabled or isDisabled)
-    self.syncButton:SetDisabled(isDisabled)
-    -- Returns SetDisabled?!?!?!?
+function mainScreen:UpdateSyncTime(msg) self.labelSync:SetText('Last Sync: '..(msg or (ns.db.profile.lastSync or '<none>'))) end
+function mainScreen:SyncStatus(isDisabled, isMaster, msg) -- Disable and re-enable sync button
+   if not isMaster then
+        self.btnScan:SetDisabled(not isDisabled and self.scanIsDisabled or isDisabled)
+        self.syncButton:SetDisabled(isDisabled)
+   end
+
+    mainScreen:UpdateSyncTime(msg)
 end
 -- Main Screen Update Routines
 function mainScreen:SetButtons()
@@ -287,14 +290,14 @@ function mainScreen:Filter()
     btn = self.syncButton
     btn:SetText('Sync')
     btn:SetRelativeWidth(.5)
-    btn:SetCallback('OnClick', function() ns.Sync:BeginSync() end)
+    btn:SetCallback('OnClick', function() ns.Sync:StartSyncMaster() end)
     grpFilter:AddChild(btn)
 
     local label = self.labelSync
-    label:SetText(mainScreen:UpdateSyncTime())
     label:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
     label:SetFullWidth(true)
     grpFilter:AddChild(label)
+    mainScreen:UpdateSyncTime()
 end
 function mainScreen:Analytics()
     local inlineGroup = aceGUI:Create('InlineGroup')
