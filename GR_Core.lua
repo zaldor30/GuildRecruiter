@@ -3,6 +3,8 @@ local _, ns = ... -- Namespace (myaddon, namespace)
 local AC, ACD = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0')
 local icon, DB = LibStub('LibDBIcon-1.0'), LibStub('AceDB-3.0')
 
+ns.MaintenanceActive = false
+
 local dOptions = {
     profile = {
         minimap = { hide = false, },
@@ -15,6 +17,7 @@ local dOptions = {
         showMsg = false,
         showMenu = true,
         showSystem = false,
+        showWhisper = true,
         scanTime = '2',
         msgInviteDesc = '',
         msgInvite = '',

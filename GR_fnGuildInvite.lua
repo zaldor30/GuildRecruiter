@@ -8,11 +8,11 @@ function invite:Init()
     self.tblInvited = nil
     self.tblSentInvite = {}
 end
-function GRADDON:ChatMsgHandler(_, msg,_) invite:ChatMessageHandler(msg) end
 function invite:updateDB()
     p,g, dbInv = ns.db.profile, ns.db.global, ns.dbInv.global
-    GRADDON:RegisterEvent('CHAT_MSG_SYSTEM', 'ChatMsgHandler')
 end
+function GRADDON:ChatMsgHandler(_, msg,_) invite:ChatMessageHandler(msg) end
+function invite:StartChatMessageHandler() GRADDON:RegisterEvent('CHAT_MSG_SYSTEM', 'ChatMsgHandler') end
 function invite:new(class)
     return {
         ['playerClass'] = class or '',
@@ -70,7 +70,7 @@ function invite:ChatMessageHandler(msg)
     elseif strmatch(msg, 'joined the guild') then
         ns.Analytics:add('Accepted_Invite')
         if p.showGreeting and p.greeting then
-            C_Timer.After(2, function() SendChatMessage(p.greeting, 'GUILD') end)
+            C_Timer.After(5, function() SendChatMessage(p.greeting, 'GUILD') end)
         end
         eraseRecord(pName)
     elseif strmatch(msg, 'declines your guild') then
@@ -101,10 +101,24 @@ function invite:invitePlayer(pName, msg, sendInvite, _, class)
         if msg and p.inviteFormat ~= 4 then
             if not g.showMsg then
                 sentMsg = msg
-                ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER_INFORM", MyWhisperFilter)
-                ns.code:consoleOut('Sent invite to '..(ns.code:cPlayer(pName, class) or pName))
+                SendChatMessage(msg, 'WHISPER', nil, pName)
+                if g.showMsg then
+                    ns.code:consoleOut('Sent invite to '..(ns.code:cPlayer(pName, class) or pName)) end
+                --[[C_Timer.After(1, function(self)
+                    for tabIndex = 1, FCF_GetNumActiveChatFrames() do
+                        local chatFrame = _G["ChatFrame" .. tabIndex]
+                        local tabText = _G["ChatFrame" .. tabIndex .. "TabText"]
+    
+                        if tabText and tabText:GetText() == pName then
+                            local player = chatFrame.editBox:GetAttribute("tellTarget")
+                            if player == pName then
+                                FCF_Close(chatFrame:GetID())
+                                break
+                            end
+                        end
+                    end
+                end)--]]
             end
-            SendChatMessage(msg, 'WHISPER', nil, pName)
         end
 
         if sendInvite then GuildInvite(pName)

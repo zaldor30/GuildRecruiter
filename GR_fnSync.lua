@@ -90,7 +90,7 @@ function sync:startClientSync()
             hasSync = true
             r.hasSentRequest = true
             sync:SendCommMessage('SYNC_DATA_REQUEST', 'WHISPER', k)
-            r.timerID = AceTimer:ScheduleTimer('CallBackWait', 60)
+            r.timerID = AceTimer:ScheduleTimer('CallBackWait', 120)
         end
     end
     if not hasSync then
