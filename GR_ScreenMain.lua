@@ -33,7 +33,8 @@ function mainScreen:Init()
     self.labelSync = aceGUI:Create('Label')
 end
 function mainScreen:DoingMaintenance()
-    local active = ns.MaintenanceActive
+    if not self.f then return end
+    local active = ns.maint.maintenanceActive
     self.maintActive = active
 
     self.syncButton:SetDisabled(active)

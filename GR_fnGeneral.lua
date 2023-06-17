@@ -76,3 +76,35 @@ function widgets:createPadding(frame, rWidth)
     frame:AddChild(widget)
 end
 widgets:Init()
+
+ns.maint = {}
+local maint = ns.maint
+local global, dbInv = nil, nil
+function maint:Init()
+    self.maintenanceActive = false
+end
+function maint:StartMaintenance()
+    global, dbInv = ns.db.global, ns.dbInv.global
+
+    local removeCount = 0
+    local cutOffTime = C_DateAndTime.GetServerTimeLocal() - ((global.rememberTime or 7) * 86400)
+
+    self.maintenanceActive = true
+    ns.MainScreen:DoingMaintenance()
+
+    ns.code:consoleOut('Starting database maintenance...')
+    for _,r in pairs(dbInv.invitedPlayers or {}) do
+        local invitedOn = (type(r) == 'table' and r.invitedOn) and (type(r.invitedOn) == 'string' and tonumber(r.invitedOn) or r.invitedOn) or nil
+        if invitedOn and invitedOn <= cutOffTime then
+            r = nil
+            removeCount = removeCount + 1
+        elseif not invitedOn then r = nil end
+    end
+    if global.showSystem then
+        ns.code:consoleOut(removeCount..' were removed from the invitied players list.') end
+
+    self.maintenanceActive = false
+    ns.MainScreen:DoingMaintenance()
+    ns.code:consoleOut('Database maintenance complete.')
+end
+maint:Init()

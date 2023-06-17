@@ -4,12 +4,27 @@ local p,g, dbInv = nil, nil, nil
 
 ns.Invite = {}
 local invite = ns.Invite
+local sentMsg, showWhispers = nil, true
+
+local function MyWhisperFilter(self, event, message, sender)
+    local killMessage = message:match('AFK') or false
+    local myWhisper = sentMsg -- Replace with the whisper message you sent
+    if showWhispers then ns.code:consoleOut('Sending invite message to '..sender) end
+    if killMessage or message == myWhisper then return showWhispers end -- Returning true will hide the message
+end
+
 function invite:Init()
     self.tblInvited = nil
     self.tblSentInvite = {}
+
+    self.chatInform = false
 end
 function invite:updateDB()
     p,g, dbInv = ns.db.profile, ns.db.global, ns.dbInv.global
+    showWhispers = not g.showWhisper
+    if not self.chatInform then
+        ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER_INFORM", MyWhisperFilter)
+    end
 end
 function GRADDON:ChatMsgHandler(_, msg,_) invite:ChatMessageHandler(msg) end
 function invite:StartChatMessageHandler() GRADDON:RegisterEvent('CHAT_MSG_SYSTEM', 'ChatMsgHandler') end
@@ -45,7 +60,7 @@ function invite:canAddPlayer(pName, zone, showError, force)
     elseif canAddPlayer == 'ZONE' then ns.code:consoleOut(pName..' is in an instanced zone.') end
 end
 function invite:logInvite(pName, class)
-    if not pName or not class or self.tblInvited[pName] then return
+    if not pName or not class or not self.tblInvited or not self.tblInvited[pName] then return
     elseif g.rememberPlayers then
         if not self.tblInvited then invite:load() end
         self.tblInvited[pName] = invite:new(class)
@@ -81,15 +96,6 @@ function invite:ChatMessageHandler(msg)
     local c = 0
     if self.tblSentInvite then
         for _ in pairs(self.tblSentInvite) do c = c + 1 end
-    end
-end
-
-local sentMsg = nil
-local function MyWhisperFilter(self, event, message, sender)
-    local myWhisper = sentMsg -- Replace with the whisper message you sent
-
-    if message == myWhisper then
-        return true -- Returning true will hide the message
     end
 end
 function invite:invitePlayer(pName, msg, sendInvite, _, class)

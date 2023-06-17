@@ -217,6 +217,7 @@ ns.options = {
                 },
                 optIcon = {
                     name = 'Show icon on minimap',
+                    desc = 'Toggles the visibility of the minimap icon.  You can use /gr or /gr config to access the addon.',
                     type = 'toggle',
                     width = 'full',
                     order = 1,
@@ -229,6 +230,7 @@ ns.options = {
                 },
                 optSystemMsg = {
                     name = 'Show addon messages in chat.',
+                    desc = 'Shows verbose addon messages in chat, suggest disabling.',
                     type = 'toggle',
                     width = 'full',
                     order = 2,
@@ -237,6 +239,7 @@ ns.options = {
                 },
                 optContextMnu = {
                     name = 'Show context menu for guild invite/black list.',
+                    desc = 'When you right click on a player in chat, an extra menu will appear to invite to guild or black list.',
                     type = 'toggle',
                     width = 'full',
                     order = 3,
@@ -250,6 +253,7 @@ ns.options = {
                 },
                 optShowInvite = {
                     name = 'Show your whisper when sending invite messages.',
+                    desc = 'This will show or hide whisper messages to recruits, suggest going to social and turn on in-line whispers for best results.',
                     type = 'toggle',
                     width = 'full',
                     order = 11,
@@ -258,6 +262,7 @@ ns.options = {
                 },
                 optShowAccepted = {
                     name = 'Send guild greeting message when invite is accepted.',
+                    desc = 'Enable/disable greeting message to newly joined players.',
                     type = 'toggle',
                     width = 'full',
                     order = 12,
@@ -266,6 +271,7 @@ ns.options = {
                 },
                 optShowAcceptedMsg = {
                     name = 'Greeting Message',
+                    desc = 'This message will be sent to guild chat when a player accepts invite.',
                     type = 'input',
                     width = 'full',
                     order = 13,
@@ -274,6 +280,7 @@ ns.options = {
                 },
                 optScanInterval = {
                     name = 'Time to wait between scans (default recommended).',
+                    desc = 'WoW requires a cooldown period between /who scans, this is the time that the system will wait between scans.',
                     type = 'input',
                     width = 'full',
                     order = 14,
@@ -282,7 +289,34 @@ ns.options = {
                         else return g.scanTime end
                     end,
                     get = function(_) return g.scanTime end,
-                }
+                },
+                optRememberInvite = {
+                    name = 'Anti guild spam protection.',
+                    desc = "Remembers invited players so you don't constantly spam them invites",
+                    type = 'toggle',
+                    width = 1.5,
+                    order = 15,
+                    set = function(_, val) p.remember = val end,
+                    get = function(_) return p.remember end,
+                },
+                optReInvite = {
+                    name = 'Reinvite players after:',
+                    desc = 'Number of days before resetting invite status.',
+                    type = 'select',
+                    style = 'dropdown',
+                    order = 16,
+                    width = 1,
+                    values = function()
+                        return {
+                            [1] = '1 day',
+                            [3] = '3 days',
+                            [5] = '5 days',
+                            [7] = '7 days',
+                        }
+                    end,
+                    set = function(_, val) p.rememberTime = val end,
+                    get = function(_) return p.rememberTime or 7 end,
+                },
             }
         },
     }

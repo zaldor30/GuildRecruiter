@@ -68,6 +68,7 @@ function GRADDON:OnInitialize()
     self:RegisterChatCommand('guildrecruiter', 'SlashCommand')
 
     ns.Sync:InitializeSync()
+    ns.maint:StartMaintenance()
     CreateMiniMapIcon()
     -- Other Housekeeping Routines
     -- Start Maintenance with chat msg

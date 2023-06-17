@@ -1,10 +1,11 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
 
 local AceTimer = LibStub("AceTimer-3.0")
-local comPrefix = GRADDON.prefix
+local LibDeflate = LibStub:GetLibrary("LibDeflate")
 
+local COMM_PREFIX = GRADDON.prefix
 local REQUEST_TIMEOUT = 5
-local DATA_WAIT_TIMEOUT = 120
+local DATA_WAIT_TIMEOUT = 60
 local PERMORMING_SYNC = ns.code:cText('FF00FF00', 'Performing Sync')
 
 ns.Sync = {}
@@ -18,6 +19,7 @@ function GRADDON:OnCommReceived(prefix, message, distribution, sender)
     sync:OnCommReceived(prefix, message, distribution, sender) end
 
 function sync:Init()
+    self.autoSync = true
     self.showConsole = false
     self.commRegistered = false
 
@@ -35,7 +37,7 @@ function sync:InitializeSync()
 
     if not self.commRegistered then
         self.commRegistered = true
-        GRADDON:RegisterComm(comPrefix, 'OnCommReceived')
+        GRADDON:RegisterComm(COMM_PREFIX, 'OnCommReceived')
     end
 end
 function sync:StartStatusUpdate(starting, failed)
@@ -64,26 +66,38 @@ end
 -- Communications Routines
 function sync:SendCommMessage(msg, chatType, target)
     if not msg then return end
-    GRADDON:SendCommMessage(comPrefix, msg, (chatType or 'GUILD'), target)
+    chatType = chatType or 'GUILD'
+    GRADDON:SendCommMessage(COMM_PREFIX, msg, chatType, (target or nil), 'ALERT')
+end
+function sync:SendCommMessageTest(msg, chatType, target)
+    if not msg then return end
+    chatType = chatType or 'GUILD'
+    GRADDON:SendCommMessage(COMM_PREFIX, msg, chatType, nil, 'ALERT')
 end
 function sync:OnCommReceived(prefix, message, distribution, sender)
     local distroOk = (distribution == 'GUILD' or distribution == 'WHISPER') and true or false
     if not distroOk or sender == UnitName('player') or prefix ~= GRADDON.prefix or not message then return end
 
-    local success, tblData = GRADDON:Deserialize(message)
+    local success, tblData = false, nil
+    if not message:match('SYNC_') then
+        sync:consoleOut('Decoding message from '..sender)
+        local decodedWowMessage = LibDeflate:DecodeForWoWAddonChannel(message)
+        sync:consoleOut('Decompressing data from '..sender)
+        local decompressedData = LibDeflate:DecompressDeflate(decodedWowMessage)
+        success, tblData = GRADDON:Deserialize(decompressedData) end
 
     -- Master Communications
     if self.master then
-        if message == 'SYNC_NEED_CONFIRM' then sync:MasterSync(message, sender)
-        elseif self.master and success then sync:MasterSync('DATA_RECEIVED', sender, tblData) end
+        -- Expected Messages: SYNC_NEED_CONFIRM, DATA_RECEIVED
+        if self.master and success then sync:MasterSync('DATA_RECEIVED', sender, tblData)
+        else sync:MasterSync(message, sender) end
     end
 
     -- Client Communications
     if not self.master then
-        if message == 'SYNC_REQUEST' then sync:ClientSync(message, sender)
-        elseif self.syncMaster == sender and message == 'SYNC_DATA_REQUEST' then sync:ClientSync(message, sender)
-        elseif self.syncMaster == sender and message == 'REQUESTING_SYNC_DATA' then sync:ClientSync(message, sender)
-        elseif self.syncMaster == sender and success then sync:ClientSync('DATA_RECEIVED', sender, tblData) end
+        -- Expected Messages: SYNC_REQUEST, SYNC_DATA_REQUEST, DATA_RECEIVED
+        if self.syncMaster == sender and success then sync:ClientSync('DATA_RECEIVED', sender, tblData)
+        else sync:ClientSync(message, sender) end
     end
 end
 
@@ -98,7 +112,9 @@ function sync:PrepareData()
         invitedPlayers = dbInv.invitedPlayers or {},
         blackList = dbBL.blackList or {},
     }
-    return GRADDON:Serialize(tblSync)
+    local serializedData = GRADDON:Serialize(tblSync)
+    local compressedData = LibDeflate:CompressDeflate(serializedData)
+    return LibDeflate:EncodeForWoWAddonChannel(compressedData)
 end
 function sync:ParseSyncData(tblData, sender)
     local invitedCount, blackListCount, blRemovedCount = 0, 0, 0
@@ -128,6 +144,7 @@ function sync:ParseSyncData(tblData, sender)
 
     sync:consoleOut(sender..' added '..invitedCount..' new invited players.')
     sync:consoleOut(sender..' added '..blackListCount..' new black listed players.')
+    sync:consoleOut('Finished sync with '..sender)
 end
 
 -- Master/Client Sync Routines
@@ -166,7 +183,7 @@ function sync:MasterSync(msg, sender, ...)
             clientFound = true
             sync:consoleOut('Sending data request to '..k)
             sync:SendCommMessage('SYNC_DATA_REQUEST', 'WHISPER', k)
-            r.timerID = AceTimer:ScheduleTimer('CallBackSync', 120, k)
+            r.timerID = AceTimer:ScheduleTimer('CallBackSync', DATA_WAIT_TIMEOUT, k)
         end
         if not clientFound then
             ns.code:consoleOut('Did not find anyone to sync with.')
@@ -190,7 +207,7 @@ function sync:MasterSync(msg, sender, ...)
             end
             ns.code:consoleOut('Sending merged data to all clients.')
             local syncData = sync:PrepareData()
-            sync:SendCommMessage(syncData, 'GUILD', UnitName('player'))
+            sync:SendCommMessage(syncData)
             sync:StartStatusUpdate(false)
         end
     end
