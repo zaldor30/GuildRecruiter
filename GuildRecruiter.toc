@@ -30,5 +30,5 @@ GR_Options.lua
 GR_Core.lua
 
 GR_ScreenMain.lua
-GR_ScreenInvite.lua
+##GR_ScreenInvite.lua
 GR_ScreenScanner.lua

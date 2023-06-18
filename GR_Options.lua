@@ -38,7 +38,7 @@ end
 
 local activeFilter = false
 ns.options = {
-    name = 'Guild Recruiter ('..GRADDON.version..')',
+    name = GR_VERSION_INFO,
     type = 'group',
     args = {
         mnuMsg = {

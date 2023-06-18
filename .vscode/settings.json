@@ -108,7 +108,9 @@
         "GetGuildInfo",
         "StaticPopupDialogs",
         "FriendsFrame",
-        "complete"
+        "complete",
+        "GetCursorPosition",
+        "GameTooltip_SetDefaultAnchor"
     ],
     "Lua.diagnostics.disable": [
         "undefined-field",

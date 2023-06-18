@@ -32,7 +32,8 @@ GuildRecruiter = {}
 _G['GuildRecruiter'] = GuildRecruiter
 
 -- Constant Variables
-SCAN_WAIT_TIME = 4
+GR_VERSION_INFO = 'Guild Recruiter v'..GRADDON.version..' (Release Candidate)'
+SCAN_WAIT_TIME = 2
 PLAYER_PROFILE = UnitName('player')..' - '..GetRealmName()
 MAX_CHARACTER_LEVEL = GetMaxPlayerLevel()
 
@@ -42,3 +43,4 @@ MORPHEUS_FONT = 'Fonts\\MORPHEUS.ttf'
 SKURRI_FONT = 'Fonts\\SKURRI.ttf'
 MORRIS_FONT = 'Fonts\\MORRIS__.ttf'
 FRIENDS_FONT = 'Fonts\\FRIENDS.ttf'
+DEFAULT_FONT_SIZE = 12

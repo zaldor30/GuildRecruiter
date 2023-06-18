@@ -18,6 +18,7 @@ local dOptions = {
         showMenu = true,
         showSystem = false,
         showWhisper = true,
+        showWhoQuery = false,
         scanTime = '2',
         msgInviteDesc = '',
         msgInvite = '',

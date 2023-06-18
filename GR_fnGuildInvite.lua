@@ -17,6 +17,7 @@ function invite:Init()
     self.tblInvited = nil
     self.tblSentInvite = {}
 
+    self.waitWelcome = false
     self.chatInform = false
 end
 function invite:updateDB()
@@ -82,10 +83,14 @@ function invite:ChatMessageHandler(msg)
         pName = trimmed:match('(.-) ') or nil
         if pName then self.tblSentInvite[pName] = true end
         ns.Analytics:add('Invited_Players')
-    elseif strmatch(msg, 'joined the guild') then
+    elseif strmatch(msg, 'joined the guild') and self.tblInvited and self.tblInvited[pName] then
         ns.Analytics:add('Accepted_Invite')
-        if p.showGreeting and p.greeting then
-            C_Timer.After(5, function() SendChatMessage(p.greeting, 'GUILD') end)
+        if not self.waitWelcome and p.showGreeting and p.greeting then
+            self.waitWelcome = true
+            C_Timer.After(5, function()
+                ns.Invite.waitWelcome = false
+                SendChatMessage(p.greeting, 'GUILD')
+            end)
         end
         eraseRecord(pName)
     elseif strmatch(msg, 'declines your guild') then
@@ -110,20 +115,6 @@ function invite:invitePlayer(pName, msg, sendInvite, _, class)
                 SendChatMessage(msg, 'WHISPER', nil, pName)
                 if g.showMsg then
                     ns.code:consoleOut('Sent invite to '..(ns.code:cPlayer(pName, class) or pName)) end
-                --[[C_Timer.After(1, function(self)
-                    for tabIndex = 1, FCF_GetNumActiveChatFrames() do
-                        local chatFrame = _G["ChatFrame" .. tabIndex]
-                        local tabText = _G["ChatFrame" .. tabIndex .. "TabText"]
-    
-                        if tabText and tabText:GetText() == pName then
-                            local player = chatFrame.editBox:GetAttribute("tellTarget")
-                            if player == pName then
-                                FCF_Close(chatFrame:GetID())
-                                break
-                            end
-                        end
-                    end
-                end)--]]
             end
         end
 

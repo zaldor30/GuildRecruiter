@@ -10,7 +10,7 @@ function mainScreen:Init()
     self.scanIsDisabled = false
     self.ChatMsgHandler = false -- Event handler for join messages in chat
 
-    self.defaultStatus = 'Guild Recruiter v'..GRADDON.version
+    self.defaultStatus = GR_VERSION_INFO
 
     self.tblFormat = {
         [1] = 'Message ONLY',
@@ -244,7 +244,6 @@ function mainScreen:Top()
         else
             self.errLabel:SetText('')
             ns.ScreenInvite:StartScreenScanner()
-            self.f:Hide()
         end
     end)
 

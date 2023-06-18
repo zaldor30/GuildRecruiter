@@ -42,7 +42,8 @@ function code:GuildReplace(msg)
     return msg
 end
 function code:ClickSound(enable)
-    if strupper(enable) == 'ENABLE' then SetCVar("Sound_EnableSFX", self.originalClickSound or "1")
+    if strupper(enable) == 'ENABLE' then
+        SetCVar("Sound_EnableSFX", (self.originalClickSound or "1"))
     else SetCVar("Sound_EnableSFX", "0") end
 end
 code:Init()
@@ -52,6 +53,16 @@ local widgets = ns.widgets
 
 function widgets:Init()
     self.defaultTimeout = 10
+end
+function widgets:createTooltip(text, body)
+    local uiScale, x, y = UIParent:GetEffectiveScale(), GetCursorPosition()
+    CreateFrame("GameTooltip", nil, nil, "GameTooltipTemplate")
+    GameTooltip_SetDefaultAnchor(GameTooltip, UIParent)
+    GameTooltip:SetOwner(UIParent, "ANCHOR_CURSOR") -- Attaches the tooltip to cursor
+    GameTooltip:SetPoint("BOTTOMLEFT", nil, "BOTTOMLEFT", x / uiScale, y / uiScale)
+    GameTooltip:SetText(text)
+    if body then GameTooltip:AddLine(body,1,1,1) end
+    GameTooltip:Show()
 end
 function widgets:createErorrWindow(msg, alert)
     local errorDialog = {
@@ -74,6 +85,14 @@ function widgets:createPadding(frame, rWidth)
     if rWidth <=2 then widget:SetRelativeWidth(rWidth)
     else widget:SetWidth(rWidth) end
     frame:AddChild(widget)
+end
+function widgets:createLabel(text, width, font, fontSize)
+    local label = LibStub("AceGUI-3.0"):Create('Label')
+    label:SetText(text)
+    label:SetFont((font or DEFAULT_FONT), (fontSize or DEFAULT_FONT_SIZE), 'OUTLINE')
+    if width == 'full' then label:SetFullWidth(true)
+    else label:SetWidth(width) end
+    return label
 end
 widgets:Init()
 
