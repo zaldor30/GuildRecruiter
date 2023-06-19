@@ -1,5 +1,5 @@
 ## Interface: 100100
-## Version: 1.0.0
+## Version: 1.0.2
 ## Title: GuildRecruiter
 ## Notes: Allows guild officers to recruite new members
 ## Author: Moonfury
@@ -30,5 +30,4 @@ GR_Options.lua
 GR_Core.lua
 
 GR_ScreenMain.lua
-##GR_ScreenInvite.lua
 GR_ScreenScanner.lua

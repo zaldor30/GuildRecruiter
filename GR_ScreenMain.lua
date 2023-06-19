@@ -8,7 +8,6 @@ local mainScreen = ns.MainScreen
 function mainScreen:Init()
     self.maintActive = false
     self.scanIsDisabled = false
-    self.ChatMsgHandler = false -- Event handler for join messages in chat
 
     self.defaultStatus = GR_VERSION_INFO
 
@@ -151,11 +150,6 @@ function mainScreen:ShowMainScreen()
         mainScreen:Top()
         mainScreen:Filter()
         mainScreen:Analytics()
-    end
-
-    if not self.ChatMsgHandler then
-        self.messageHanderActive = true
-        ns.Invite:StartChatMessageHandler()
     end
 
     _G["GuildRecruiter"] = self.f

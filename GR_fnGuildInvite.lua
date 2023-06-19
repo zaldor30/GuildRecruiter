@@ -2,33 +2,28 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
 local p,g, dbInv = nil, nil, nil
 
-ns.Invite = {}
-local invite = ns.Invite
+-- Keep whispers from showing in chat (only if sentMsg matches)
 local sentMsg, showWhispers = nil, true
-
 local function MyWhisperFilter(self, event, message, sender)
-    local killMessage = message:match('AFK') or false
-    local myWhisper = sentMsg -- Replace with the whisper message you sent
+    local killMessage = message:match('away') or false
     if showWhispers then ns.code:consoleOut('Sending invite message to '..sender) end
-    if killMessage or message == myWhisper then return showWhispers end -- Returning true will hide the message
+    if killMessage or message == sentMsg then return not showWhispers end -- Returning true will hide the message
 end
 
+ns.Invite = {}
+local invite = ns.Invite
 function invite:Init()
     self.tblInvited = nil
     self.tblSentInvite = {}
 
     self.waitWelcome = false
-    self.chatInform = false
+    self.chatWhisperInform = false
 end
 function invite:updateDB()
     p,g, dbInv = ns.db.profile, ns.db.global, ns.dbInv.global
-    showWhispers = not g.showWhisper
-    if not self.chatInform then
-        ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER_INFORM", MyWhisperFilter)
-    end
+    showWhispers = g.showWhisper or false
+    self.tblInvited = dbInv.invitedPlayers or {}
 end
-function GRADDON:ChatMsgHandler(_, msg,_) invite:ChatMessageHandler(msg) end
-function invite:StartChatMessageHandler() GRADDON:RegisterEvent('CHAT_MSG_SYSTEM', 'ChatMsgHandler') end
 function invite:new(class)
     return {
         ['playerClass'] = class or '',
@@ -36,40 +31,60 @@ function invite:new(class)
         ['invitedOn'] = C_DateAndTime.GetServerTimeLocal(),
     }
 end
-function invite:load()
-    invite:updateDB()
-    self.tblInvited = dbInv.invitedPlayers or {}
-end
-function invite:save()
-    invite:updateDB()
-    dbInv.invitedPlayers = self.tblInvited
+-- Invite Routines
+function invite:recordInvite(pName, class)
+    if not self.tblInvited then invite:updateDB() end
+
+    ns.Analytics:add('Invited_Players')
+    if not pName or not class then return
+    elseif g.rememberPlayers then
+        pName = gsub(pName, '-'..GetRealmName(), '')
+        self.tblInvited[pName] = invite:new(class)
+        self.tblSentInvite[pName] = self.tblInvited[pName]
+        dbInv.invitedPlayers = self.tblInvited
+    end
 end
 function invite:canAddPlayer(pName, zone, showError, force)
-    if not pName then return false
-    elseif not self.tblInvited then invite:load() end
+    if not self.tblInvited then invite:updateDB() end
 
     local canAddPlayer = nil
     if not force and self.tblInvited[pName] then canAddPlayer = 'INVITED'
     elseif ns.BlackList:IsOnBlackList(pName) then canAddPlayer = 'BLACKLIST'
     elseif zone and ns.datasets.tblBadZones[zone] then canAddPlayer = 'ZONE' end
 
-    if not showError and not canAddPlayer then return true
-    elseif not showError and canAddPlayer then return false
-    elseif not canAddPlayer then return true
-    elseif canAddPlayer == 'INVITED' then ns.code:consoleOut(pName..' has been invited recently.')
-    elseif canAddPlayer == 'BLACKLIST' then ns.code:consoleOut(pName..' has been black listed, remove before inviting.')
-    elseif canAddPlayer == 'ZONE' then ns.code:consoleOut(pName..' is in an instanced zone.') end
+    if showError then
+        if canAddPlayer == 'INVITED' then ns.code:consoleOut(pName..' has been invited recently.')
+        elseif canAddPlayer == 'BLACKLIST' then ns.code:consoleOut(pName..' has been black listed, remove before inviting.')
+        elseif canAddPlayer == 'ZONE' then ns.code:consoleOut(pName..' is in an instanced zone.') end
+    end
+
+    return not (canAddPlayer or false)
 end
-function invite:logInvite(pName, class)
-    if not pName or not class or not self.tblInvited or not self.tblInvited[pName] then return
-    elseif g.rememberPlayers then
-        if not self.tblInvited then invite:load() end
-        self.tblInvited[pName] = invite:new(class)
-        invite:save()
+function invite:invitePlayer(pName, msg, sendInvite, _, class)
+    if not self.tblInvited then invite:updateDB() end
+
+    class = class and class or select(2, UnitClass(pName))
+    if pName and CanGuildInvite() and not GetGuildInfo(pName) then
+        if msg and p.inviteFormat ~= 4 then
+            if not showWhispers then
+                sentMsg = msg
+                ns.code:consoleOut('Sent invite to '..(ns.code:cPlayer(pName, class) or pName))
+
+                if not self.chatWhisperInform then
+                    self.chatWhisperInform = true
+                    ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER_INFORM", MyWhisperFilter)
+                end
+            end
+            SendChatMessage(msg, 'WHISPER', nil, pName)
+        end
+
+        if sendInvite then GuildInvite(pName) end
+        invite:recordInvite(pName, class)
     end
 end
-function invite:ChatMessageHandler(msg)
-    if not self.tblSentInvite then self.tblSentInvite = {} end
+-- Chat Message Handler
+function invite:ChatMsgHandler(msg)
+    if not self.tblInvited then invite:updateDB() end
 
     local function eraseRecord(pName)
         if not pName or not self.tblSentInvite[pName] then return
@@ -77,14 +92,13 @@ function invite:ChatMessageHandler(msg)
     end
 
     local pName = msg:match('(.-) ')
+    pName = gsub(pName, '-'..GetRealmName(), '')
     if not strmatch(msg, 'guild') then return
     elseif strmatch(msg, 'to join your guild') then
-        local trimmed = gsub(msg, 'You have invited ', '')
-        pName = trimmed:match('(.-) ') or nil
-        if pName then self.tblSentInvite[pName] = true end
-        ns.Analytics:add('Invited_Players')
-    elseif strmatch(msg, 'joined the guild') and self.tblInvited and self.tblInvited[pName] then
-        ns.Analytics:add('Accepted_Invite')
+        if pName and not self.tblSentInvite[pName] then
+            invite:recordInvite(pName, select(2, UnitClass(pName)) or nil)
+        end
+    elseif strmatch(msg, 'joined the guild') and self.tblSentInvite and self.tblSentInvite[pName] then
         if not self.waitWelcome and p.showGreeting and p.greeting then
             self.waitWelcome = true
             C_Timer.After(5, function()
@@ -93,40 +107,41 @@ function invite:ChatMessageHandler(msg)
             end)
         end
         eraseRecord(pName)
+        ns.Analytics:add('Accepted_Invite')
     elseif strmatch(msg, 'declines your guild') then
         ns.Analytics:add('Declined_Invite')
         eraseRecord(pName)
     end
+end
+function invite:ProcessGuildInvite()
+    self.waitWelcome = false
 
     local c = 0
-    if self.tblSentInvite then
-        for _ in pairs(self.tblSentInvite) do c = c + 1 end
-    end
-end
-function invite:invitePlayer(pName, msg, sendInvite, _, class)
-    if not pName then return end
+    for _ in pairs(self.tblSentInvite) do c = c + 1 end
 
-    invite:updateDB()
-    class = class and class or select(2, UnitClass(pName))
-    if pName and CanGuildInvite() and not GetGuildInfo(pName) then
-        if msg and p.inviteFormat ~= 4 then
-            if not g.showMsg then
-                sentMsg = msg
-                SendChatMessage(msg, 'WHISPER', nil, pName)
-                if g.showMsg then
-                    ns.code:consoleOut('Sent invite to '..(ns.code:cPlayer(pName, class) or pName)) end
+    if c > 0 then
+        C_GuildInfo.GuildRoster()
+
+        local sendWelcome = false
+        for index=1,GetNumGuildMembers() do
+            local name = gsub(GetGuildRosterInfo(index), '-'..GetRealmName(), '')
+            if self.tblSentInvite[name] then
+                sendWelcome = true
+
+                self.tblSentInvite[name] = nil
+                ns.Analytics:add('Accepted_Invite')
             end
         end
 
-        if sendInvite then GuildInvite(pName)
-        else
-            self.tblSentInvite[pName] = true
-            ns.Analytics:add('Invited_Players')
-        end
-
-        invite:logInvite(pName, class)
+        if sendWelcome and p.showGreeting and p.greeting then
+            SendChatMessage(p.greeting, 'GUILD') end
     end
-
-    --if #self.tblSentInvite == 0 then GRADDON:UnregisterEvent('CHAT_MSG_SYSTEM') end
+end
+function invite:GuildRosterHandler(rosterUpdate)
+    if rosterUpdate and not self.waitWelcome then
+        C_GuildInfo.GuildRoster()
+        self.waitWelcome = true
+        C_Timer.After(5, function() ns.Invite:ProcessGuildInvite() end)
+    end
 end
 invite:Init()

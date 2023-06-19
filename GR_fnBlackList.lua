@@ -34,7 +34,8 @@ function blackList:add(name)
     if not name then return end
     g = ns.dbBL.global
 
-    blName = name
+    local realm = '-'..GetRealmName()
+    blName = not name:match(realm) and name..realm or name
 
     tblBlackList = g.blackList or {}
     if tblBlackList[blName] then
@@ -47,7 +48,7 @@ function blackList:add(name)
 end
 function blackList:IsOnBlackList(name)
     local realm = '-'..GetRealmName()
-    name = gsub(name, realm, '')
+    name = name:match(realm) or name..realm
     g = ns.dbBL.global
     tblBlackList = g.blackList or {}
     return (tblBlackList[name] and not tblBlackList[name].markedForDelete) and true or false

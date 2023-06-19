@@ -11,6 +11,7 @@ local dOptions = {
         showWho = false,
         remember = true,
         rememberTime = '7',
+        compactMode = false, -- Add
     },
     global = {
         showIcon = true,
@@ -18,7 +19,7 @@ local dOptions = {
         showMenu = true,
         showSystem = false,
         showWhisper = true,
-        showWhoQuery = false,
+        showWhoQuery = false, -- Add
         scanTime = '2',
         msgInviteDesc = '',
         msgInvite = '',
@@ -58,6 +59,7 @@ function GRADDON:OnInitialize()
     ns.dbAnal = GRADDON.dbAnal
 
     ns:SetOptionsDB()
+    ns.datasets:saveOptions()
     if not C_Club.GetGuildClubId() and not ns.db.profile.guildInfo.guildName then return end
     ns.datasets:saveOptions() -- Udpates the db in options
     AC:RegisterOptionsTable('GR_Options', ns.options)
