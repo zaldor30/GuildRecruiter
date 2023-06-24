@@ -1,8 +1,9 @@
--- Functions for everyone
 local _, ns = ... -- Namespace (myaddon, namespace)
+
+--[[ This is for reusable code found throughout the addon ]]
+
 ns.code = {}
 local code = ns.code
-
 function code:Init()
     self.fPlayerName = code:cPlayer('player')
     self.originalClickSound = GetCVar("Sound_EnableSFX")
@@ -24,15 +25,23 @@ end
 function code:consoleOut(msg, color)
     print('|c'..(color or 'FF3EB9D8')..'GR: '..(msg or 'did not get message')..'|r')
 end
-function code:TruncateString(msg, length)
-    return strlen(msg) > length and strsub(msg,1,length)..'...' or msg
+function code:createTooltip(text, body)
+    local uiScale, x, y = UIParent:GetEffectiveScale(), GetCursorPosition()
+    CreateFrame("GameTooltip", nil, nil, "GameTooltipTemplate")
+    GameTooltip_SetDefaultAnchor(GameTooltip, UIParent)
+    GameTooltip:SetOwner(UIParent, "ANCHOR_CURSOR") -- Attaches the tooltip to cursor
+    GameTooltip:SetPoint("BOTTOMLEFT", nil, "BOTTOMLEFT", x / uiScale, y / uiScale)
+    GameTooltip:SetText(text)
+    if body then GameTooltip:AddLine(body,1,1,1) end
+    GameTooltip:Show()
 end
 function code:GuildReplace(msg)
-    if not msg then return end
+    if not ns.db then return end
 
-    local gi = ns.db.profile.guildInfo
+    local gi = ns.db.guildInfo
+    if not gi or not msg then return end
+
     local gLink, gName = gi.guildLink or nil, gi.guildName or nil
-
     if gName and msg then
         msg = gLink and gsub(msg, 'GUILDLINK', gLink and gLink or 'No Guild Link') or msg
         msg = gName and gsub(msg, 'GUILDNAME', gName and '<'..gName..'>' or 'No Guild Name') or msg
@@ -95,35 +104,3 @@ function widgets:createLabel(text, width, font, fontSize)
     return label
 end
 widgets:Init()
-
-ns.maint = {}
-local maint = ns.maint
-local global, dbInv = nil, nil
-function maint:Init()
-    self.maintenanceActive = false
-end
-function maint:StartMaintenance()
-    global, dbInv = ns.db.global, ns.dbInv.global
-
-    local removeCount = 0
-    local cutOffTime = C_DateAndTime.GetServerTimeLocal() - ((global.rememberTime or 7) * 86400)
-
-    self.maintenanceActive = true
-    ns.MainScreen:DoingMaintenance()
-
-    ns.code:consoleOut('Starting database maintenance...')
-    for _,r in pairs(dbInv.invitedPlayers or {}) do
-        local invitedOn = (type(r) == 'table' and r.invitedOn) and (type(r.invitedOn) == 'string' and tonumber(r.invitedOn) or r.invitedOn) or nil
-        if invitedOn and invitedOn <= cutOffTime then
-            r = nil
-            removeCount = removeCount + 1
-        elseif not invitedOn then r = nil end
-    end
-    if global.showSystem then
-        ns.code:consoleOut(removeCount..' were removed from the invitied players list.') end
-
-    self.maintenanceActive = false
-    ns.MainScreen:DoingMaintenance()
-    ns.code:consoleOut('Database maintenance complete.')
-end
-maint:Init()

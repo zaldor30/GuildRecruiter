@@ -1,16 +1,14 @@
--- Namespace Setup
 local _, ns = ... -- Namespace (myaddon, namespace)
-ns = {}
 local iconPath = 'Interface\\Icons\\'
+ns = {}
 
 -- Application Initialization
 -- Uses: AceConsole-3.0, AceEvent-3.0, AceComm-3.0, AceHook-3.0, AceSerializer-3.0
-GRADDON = LibStub('AceAddon-3.0'):NewAddon('GuildRecruiter', 'AceConsole-3.0', 'AceEvent-3.0', 'AceComm-3.0', 'AceHook-3.0', 'AceSerializer-3.0')
-GRADDON.playerFaction = UnitFactionGroup('player') == 'Horde' and 2 or 1
+GRADDON = LibStub('AceAddon-3.0'):NewAddon('GuildRecruiter', 'AceConsole-3.0', 'AceEvent-3.0', 'AceHook-3.0', 'AceComm-3.0', 'AceSerializer-3.0')
 GRADDON.version = GetAddOnMetadata('GuildRecruiter', 'Version')
 GRADDON.realmID = GetRealmID()
 GRADDON.prefix = 'GuildRecruiter'
-GRADDON.whoQuery = {}
+GRADDON.clubID = nil
 GRADDON.classInfo = {
 	WARRIOR = {fClass = 'Warrior', color = 'ffc79c6e', icon = iconPath..'ClassIcon_Warrior'},
 	PALADIN = {fClass = 'Paladin', color = 'fff58cba', icon = iconPath..'ClassIcon_Paladin'},
@@ -26,16 +24,16 @@ GRADDON.classInfo = {
 	DEMONHUNTER = {fClass = 'Demon Hunter', color = 'ffa330c9', icon = iconPath..'ClassIcon_DemonHunter'},
 	EVOKER = {fClass = 'Evoker', color = 'ff308a77', icon = iconPath..'ClassIcon_Evoker'},
 }
-GRADDON.addonPrefix = 'GuildRecruiter'
 
 GuildRecruiter = {}
 _G['GuildRecruiter'] = GuildRecruiter
 
 -- Constant Variables
 GR_VERSION_INFO = 'Guild Recruiter v'..GRADDON.version..' (Release Candidate)'
-SCAN_WAIT_TIME = 2
+SCAN_WAIT_TIME = 3
 PLAYER_PROFILE = UnitName('player')..' - '..GetRealmName()
 MAX_CHARACTER_LEVEL = GetMaxPlayerLevel()
+SECONDS_IN_A_DAY = 86400
 
 DEFAULT_FONT = 'Fonts\\FRIZQT__.ttf'
 ARIAL_FONT = 'Fonts\\ARIAN.ttf'

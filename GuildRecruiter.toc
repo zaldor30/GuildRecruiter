@@ -1,5 +1,5 @@
 ## Interface: 100100
-## Version: 1.0.2
+## Version: 1.0.7
 ## Title: GuildRecruiter
 ## Notes: Allows guild officers to recruite new members
 ## Author: Moonfury
@@ -19,15 +19,14 @@ Libs\AceConfig-3.0\AceConfig-3.0.xml
 GR_AppInit.lua
 GR_Datasets.lua
 
-GR_fnGeneral.lua
-GR_fnAnalytics.lua
-
 GR_fnSync.lua
+GR_fnGeneral.lua
 GR_fnBlackList.lua
-GR_fnGuildInvite.lua
+GR_fnAnalytics.lua
+GR_fnEventHandlers.lua
 
-GR_Options.lua
 GR_Core.lua
+GR_Options.lua
 
 GR_ScreenMain.lua
 GR_ScreenScanner.lua

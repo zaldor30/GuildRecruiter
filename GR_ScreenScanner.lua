@@ -1,23 +1,22 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
 local aceGUI, aceTimer = LibStub('AceGUI-3.0'), LibStub('AceTimer-3.0')
-local p,g = nil, nil
 
 local INVITE_PREFIX = 'Invites Found: '
 local STATUS_TEXT_DEFAULT = 'Guild Recruiter'
 local SEARCH_BUTTON_PREFIX = 'Search for Players'
 
-local function ChatMsgHandler(_, msg) ns.Invite:ChatMsgHandler(msg) end
-local function GuildRosterHandler(_, rosterUpdate) ns.Invite:GuildRosterHandler(rosterUpdate) end
-
-ns.ScreenInvite, ns.InvitePlayers = {}, {}
-local si, ip = ns.ScreenInvite, ns.InvitePlayers
-local function CallBackWhoQueryResults(...) si:CallBackWhoQueryResults() end
+ns.ScreenInvite, ns.Invite = {}, {}
+local si, invite = ns.ScreenInvite, ns.Invite
 
 function si:Init()
+    self.isStarted = false
     self.isCompact = false
     self.showWhoQuery = false
     self.compactActive = false
     self.chatMsgCallBack = false
+
+    self.mssage = nil
+    self.totalFilters = 0
 
     self.tblLog = {}
     self.tblFound = {}
@@ -37,172 +36,92 @@ function si:Init()
     self.labelFound = aceGUI:Create("Label")
     self.labelNextFilter = aceGUI:Create("Label")
 end
-function si:hideWhoQueryWindow(show)
-    ns.code:ClickSound('DISABLE')
-    if self.showWhoQuery and not FriendsFrame:IsVisible() then
-        FriendsFrame:Show()
-        ns.code:ClickSound('ENABLE')
-        return
-    end
-
-    if show then FriendsFrame:Show()
-    else FriendsFrame:Hide() end
-    ns.code:ClickSound('ENABLE')
-end
-function si:performQuery()
-    local function createQueries()
-        self.tblFilter = table.wipe(self.tblFilter) or {}
-        local min, max = (p and p.minLevel or 1), (p and p.maxLevel or MAX_CHARACTER_LEVEL)
-
-        local function createClassFilter()
-            for _,r in pairs(ns.datasets.tblAllClasses) do
-                local class = r.classFile:gsub('DEATHKNIGHT', 'DEATH KNIGHT'):gsub('DEMONHUNTER', 'DEMON HUNTER')
-                local filter = 'c-"'..class..'"'
-                local level, lMax = min, max
-                if lMax - level > 5 and max ~= level then
-                    while level <= lMax do
-                        if level > lMax then level = level-5 end
-                        table.insert(self.tblFilter, filter..' '..level..'-'..(level + 5 <= lMax and level + 5 or lMax))
-                        level = level + 5
-                    end
-                else table.insert(self.tblFilter, filter..' '..min..'-'..max) end
-            end
-        end
-        local function createRaceFilter()
-            for _,r in pairs(ns.datasets.tblAllRaces) do
-                local filter = 'r-"'..r..'"'
-                local level, lMax = min, max
-                if lMax - level > 5 then
-                    while level <= lMax do
-                        if level > lMax then level = level-5 end
-                        table.insert(self.tblFilter, filter..' '..level..'-'..(level + 5 <= lMax and level + 5 or lMax))
-                        level = level + 5
-                    end
-                else table.insert(self.tblFilter, filter..' '..min..'-'..max) end
-            end
-        end
-
-        local filterID = p and p.activeFilter or 1
-        if filterID == 1 then createClassFilter()
-        elseif filterID == 2 then createRaceFilter()
-        else
-            local filter = g.filter[filterID].filter
-            if not filter then
-                UIErrorsFrame:AddMessage('Filter Missing', 1.0, 0.1, 0.1, 1.0)
-            else self.tblFilter = filter end
-        end
-
-        self.totalFilters = #self.tblFilter
-        si:performQuery()
-    end
-    local function nextQuery()
-        if not self.tblFilter or #self.tblFilter == 0 then
-            createQueries()
-            return
-        end
-
-        local filter = table.remove(self.tblFilter, 1)
-        local searchMessage = self.isCompact and SEARCH_BUTTON_PREFIX or SEARCH_BUTTON_PREFIX..' ('..(self.tblFilter[1] or '<none>')..')'
-        local function waitTimer(remain, nextFilter)
-            if remain <= 0 then
-                self.btnSearch:SetDisabled(false)
-                self.btnSearch:SetText(searchMessage)
-            else
-                self.btnSearch:SetDisabled(true)
-                self.btnSearch:SetText(SEARCH_BUTTON_PREFIX..' ('.. remain..')')
-                remain = remain - 1
-                C_Timer.After(1, function() waitTimer(remain, nextFilter) end)
-            end
-        end
-
-        self.btnSearch:SetText(searchMessage)
-        if not self.isCompact then
-            self.labelNextFilter:SetText('Current Filter: '..(filter or 'Press "Seach for Players" to restart filter.'), self.MAX_LENGTH) end
-        -- Show query window, search then hide again.
-        si:hideWhoQueryWindow(true)
-        C_FriendList.SendWho(filter)
-        si:hideWhoQueryWindow()
-
-        local percent = (self.totalFilters - #self.tblFilter) / self.totalFilters
-        local statusMsg = self.isCompact and FormatPercentage(percent, 2) or STATUS_TEXT_DEFAULT..' (Filter progress: '..FormatPercentage(percent, 2)..')'
-        self.f:SetStatusText(statusMsg)
-
-        if FriendsFrame:IsVisible() then
-            C_Timer.After(.5, function() si:hideWhoQueryWindow() end)
-        end
-        waitTimer((g.scantime or SCAN_WAIT_TIME), (filter or '<none>'))
-    end
-
-    nextQuery()
-end
-
--- Build/Startup of Screen Scanner
 function si:StartScreenScanner()
-    p,g = ns.db.profile, ns.db.global
+    if not self.isStarted then
+        self.isStarted = true
+        self.isCompact = ns.db.settings.compactMode or false
+        self.showWhoQuery = ns.db.settings.showWho or false
+    end
 
-    self.showWhoQuery = (p.showWhoQuery or false)
-    ns.MainScreen.f:Hide()
+    self.message = (ns.db.messages and ns.db.messages.activeMessage) and ns.code:GuildReplace(ns.db.messages.messageList[ns.db.messages.activeMessage].message) or nil
 
-    self.isCompact = not self.f and p.compactMode or self.isCompact
     if self.f and self.isCompact == self.compactActive then self.f:Show()
-    else
-        if self.f then
-            self.f:Hide()
-            self.f = nil
-        end
-        if self.isCompact then
-            self.compactActive = true
-            si:CompactModeScanner()
-            self.btnSearch:SetText(SEARCH_BUTTON_PREFIX)
-            self.f:Show()
-        else
-            self.compactActive = false
-            si:FullSizeScreenScanner()
-            self.f:Show()
-        end
-        -- Initial registration of event, OnShow does not work on build
-        GRADDON:RegisterEvent('WHO_LIST_UPDATE', CallBackWhoQueryResults)
-        si:CreateResultWindows()
-    end
+    elseif self.isCompact then si:CompactModeScanner()
+    else si:FullSizeScreenScanner() end
 
-    local count = 0
-    for _ in pairs(self.tblFilter or {}) do count = count + 1 end
-    if count == 0 then si:performQuery() end
-
-    if not self.chatMsgCallBack then
-        self.chatMsgCallBack = true
-        GRADDON:RegisterEvent('CHAT_MSG_SYSTEM', ChatMsgHandler)
-        GRADDON:RegisterEvent('GUILD_ROSTER_UPDATE', GuildRosterHandler)
-    end
+    ns.events:RegisterEvent('WHO_LIST_UPDATE')
+    si:performQuery('SKIP_NEXT')
 end
+
+-- Creation of Scanner Screen
 function si:ScannerOnClose()
-    if ip.invitedCount > 0 then
-        ns.code:consoleOut('You invited '..ip.invitedCount..' players to the guild.') end
-    if ip.removedCount > 0 then
-        ns.code:consoleOut('You added '..ip.removedCount..' players to the black list.') end
-    ip.invitedCount, ip.removedCount = 0, 0
+    if (invite.invitedCount or 0) > 0 then
+        ns.code:consoleOut('You invited '..invite.invitedCount..' players to the guild.') end
+    if (invite.removedCount or 0) > 0 then
+        ns.code:consoleOut('You added '..invite.removedCount..' players to the black list.') end
+    invite.invitedCount, invite.removedCount = 0, 0
+
     aceTimer:CancelAllTimers()
-    GRADDON:UnregisterEvent('WHO_LIST_UPDATE')
-    C_Timer.After(120, function()
-        if not self.f:IsShown() then
-            ns.Invite.chatMsgCallBack = false
-            GRADDON:UnregisterEvent('CHAT_MSG_SYSTEM')
-            GRADDON:UnregisterEvent('GUILD_ROSTER_UPDATE')
-        end
+    ns.events:UnregisterEvent('WHO_LIST_UPDATE')
+    --[[C_Timer.After(120, function()
+        if self.f and self.f:IsShown() then return end
+        ns.events:UnregisterEvent('ALL')
+    end)--]]
+    self.f:Hide()
+end
+function si:CompactModeScanner()
+    self.compactActive = true
+
+    self.f = nil
+    self.f = aceGUI:Create('Frame')
+    self.f:SetTitle('Recruiter Scanning')
+    self.f:EnableResize(false)
+    self.f:SetWidth(210)
+    self.f:SetHeight(480)
+    self.f:SetLayout('flow')
+    self.f:SetCallback('OnClose', function() si:ScannerOnClose() end)
+
+    local btn = aceGUI:Create('Button')
+    btn:SetText('Full Size')
+    btn:SetFullWidth(true)
+    btn:SetCallback('OnClick', function()
+        self.f:Hide()
+        self.isCompact = false
+        si:StartScreenScanner()
     end)
+    self.f:AddChild(btn)
+
+    btn = aceGUI:Create('Button')
+    btn:SetText('Reset Filter')
+    btn:SetFullWidth(true)
+    btn:SetCallback('OnClick', function() si:performQuery('RESET_FILTER') end)
+    self.f:AddChild(btn)
+
+    si:InviteGroup()
+    si:FooterGroup()
+    si:WhoGroup()
+
+    btn = aceGUI:Create('Button')
+    btn:SetText('Main Screen')
+    btn:SetFullWidth(true)
+    btn:SetCallback('OnClick', function()
+        si:ScannerOnClose()
+        ns.MainScreen:ShowMainScreen()
+        self.f:Hide()
+    end)
+    self.f:AddChild(btn)
 end
 function si:FullSizeScreenScanner()
-    self.f = self.f or aceGUI:Create('Frame')
+    self.compactActive = false
+
+    self.f = nil
+    self.f = aceGUI:Create('Frame')
     self.f:SetTitle('Guild Recruiter Scanning')
     self.f:SetStatusText(GR_VERSION_INFO)
     self.f:EnableResize(false)
     self.f:SetWidth(600)
-    self.f:SetHeight(500)
+    self.f:SetHeight(510)
     self.f:SetLayout('flow')
-    self.f:SetCallback('OnShow', function()
-        self.showWho = p.showWho or false
-        GRADDON:RegisterEvent('WHO_LIST_UPDATE', CallBackWhoQueryResults)
-    end)
     self.f:SetCallback('OnClose', function() si:ScannerOnClose() end)
 
     si:InviteGroup()
@@ -213,7 +132,6 @@ function si:FullSizeScreenScanner()
     btn:SetText('Settings')
     btn:SetRelativeWidth(.5)
     btn:SetCallback('OnClick', function()
-        GRADDON:UnregisterEvent('WHO_LIST_UPDATE')
         InterfaceOptionsFrame_OpenToCategory(ns.addonOptions)
         self.f:Hide()
     end)
@@ -223,47 +141,13 @@ function si:FullSizeScreenScanner()
     btn:SetText('Main Screen')
     btn:SetRelativeWidth(.5)
     btn:SetCallback('OnClick', function()
-        GRADDON:UnregisterEvent('WHO_LIST_UPDATE')
         ns.MainScreen:ShowMainScreen()
         self.f:Hide()
     end)
     self.f:AddChild(btn)
 end
--- Compact Mode Scanner
-function si:CompactModeScanner()
-    self.f = self.f or aceGUI:Create('Frame')
-    self.f:SetTitle('Recruiter Scanning')
-    self.f:EnableResize(false)
-    self.f:SetWidth(210)
-    self.f:SetHeight(455)
-    self.f:SetLayout('flow')
-    self.f:SetCallback('OnClose', function() si:ScannerOnClose() end)
 
-    local btn = aceGUI:Create('Button')
-    btn:SetText('Full Size')
-    btn:SetFullWidth(true)
-    btn:SetCallback('OnClick', function()
-        self.isCompact = false
-        si:StartScreenScanner()
-    end)
-    self.f:AddChild(btn)
-
-    si:InviteGroup()
-    si:FooterGroup()
-
-    si:WhoGroup()
-
-    btn = aceGUI:Create('Button')
-    btn:SetText('Main Screen')
-    btn:SetFullWidth(true)
-    btn:SetCallback('OnClick', function()
-        GRADDON:UnregisterEvent('WHO_LIST_UPDATE')
-        ns.MainScreen:ShowMainScreen()
-        self.f:Hide()
-    end)
-    self.f:AddChild(btn)
-end
--- Shared Widgets between Compact and Full Size
+-- Screen Scanner Sections and Widgets
 function si:InviteGroup()
     local pfGroup = aceGUI:Create('InlineGroup') -- Potential invite group
     pfGroup:SetTitle('Players Found')
@@ -276,6 +160,7 @@ function si:InviteGroup()
         btn:SetText('Compact Mode')
         btn:SetFullWidth(true)
         btn:SetCallback('OnClick', function()
+            self.f:Hide()
             self.isCompact = true
             si:StartScreenScanner()
         end)
@@ -298,7 +183,7 @@ function si:InviteGroup()
         ns.widgets:createTooltip(title, body)
     end)
     btnInvite:SetCallback('OnLeave', function() GameTooltip:Hide() end)
-    btnInvite:SetCallback('OnClick', function() ip:InvitePlayers() end)
+    btnInvite:SetCallback('OnClick', function() invite:ScannerInvitePlayer() end)
     pfGroup:AddChild(btnInvite)
 
     local btnRemove = self.btnRemove
@@ -314,7 +199,7 @@ function si:InviteGroup()
     btnRemove:SetCallback('OnClick', function()
         for k, r in pairs(self.tblFound or {}) do
             if r.checked then
-                ip.removedCount = ip.removedCount + 1
+                invite.removedCount = invite.removedCount + 1
                 ns.BlackList:add(k)
                 self.tblFound[k] = nil
             end
@@ -341,7 +226,7 @@ function si:WhoGroup()
         local whoScroll = self.whoScroll
         whoScroll:SetLayout("Flow")
         whoScroll:SetFullWidth(true)
-        whoScroll:SetHeight(230)
+        whoScroll:SetHeight(255)
         whoGroup:AddChild(whoScroll)
     end
 
@@ -361,10 +246,16 @@ function si:FooterGroup()
         footerGroup:SetFullWidth(true)
         self.f:AddChild(footerGroup)
 
-        self.labelNextFilter:SetFullWidth(true)
+        self.labelNextFilter:SetWidth(340)
         self.labelNextFilter:SetText('Filter active: <none>')
         self.labelNextFilter:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
         footerGroup:AddChild(self.labelNextFilter)
+
+        local btn = aceGUI:Create('Button')
+        btn:SetText('Reset Filter')
+        btn:SetWidth(200)
+        btn:SetCallback('OnClick', function() si:performQuery('RESET_FILTER') end)
+        footerGroup:AddChild(btn)
     end
 
     local parent = (footerGroup or self.f)
@@ -374,7 +265,27 @@ function si:FooterGroup()
     parent:AddChild(self.btnSearch)
 end
 
--- Function Event Call Backs
+-- Call Back Routines and Create Found/Log
+function si:eventWhoQueryResults()
+    self.tblLog = table.wipe(self.tblLog) or {}
+    self.tblFound = self.tblFound or {}
+
+    si:hideWhoQueryWindow()
+
+    for i=1,C_FriendList.GetNumWhoResults() do
+        local info = C_FriendList.GetWhoInfo(i)
+        local pName = gsub(info.fullName, '-'..GetRealmName(), '')
+        local rec = {name = pName, class = info.filename, level = info.level, guild = (info.fullGuildName or ''), info.area}
+
+        if not self.isCompact then table.insert(self.tblLog, rec) end
+        if rec.guild == '' then
+            self.tblFound[pName] = {name = pName, class = info.filename, zone = info.area, level = info.level, checked = false}
+        end
+    end
+
+    si:CreateResultWindows('BOTH', C_FriendList.GetNumWhoResults())
+    ns.Analytics:add('Players_Scanned', C_FriendList.GetNumWhoResults())
+end
 function si:CreateResultWindows(whichOne, resultCount)
     local function createWhoResults()
         self.whoScroll:ReleaseChildren()
@@ -394,7 +305,7 @@ function si:CreateResultWindows(whichOne, resultCount)
             group:AddChild(icon)
 
             group:AddChild(ns.widgets:createLabel(ns.code:cPlayer(tbl.name, tbl.class), 100))
-            group:AddChild(ns.widgets:createLabel(tbl.level, 20))
+            group:AddChild(ns.widgets:createLabel(tbl.level, 25))
             group:AddChild(ns.widgets:createLabel(tbl.guild, 150))
 
             tbl = table.remove(self.tblLog, 1)
@@ -407,7 +318,7 @@ function si:CreateResultWindows(whichOne, resultCount)
             if ns.Invite:canAddPlayer(k, r.zone) then
                 rCount = rCount + 1
                 local checkBox = aceGUI:Create('CheckBox')
-                checkBox:SetLabel(ns.code:cPlayer(k, r.class or nil))
+                checkBox:SetLabel(ns.code:cPlayer(k, r.class or nil)..' ('..r.level..')')
                 checkBox:SetFullWidth(true)
                 checkBox:SetCallback('OnValueChanged', function(val)
                     local name = k
@@ -423,7 +334,7 @@ function si:CreateResultWindows(whichOne, resultCount)
                 self.pfScroll:AddChild(checkBox)
             else self.tblFound[k] = nil end
         end
-        ip.totalFound = rCount
+        invite.totalFound = rCount
 
         self.labelFound:SetText(INVITE_PREFIX..rCount)
         self.btnInvite:SetDisabled(rCount == 0)
@@ -437,35 +348,241 @@ function si:CreateResultWindows(whichOne, resultCount)
     elseif whichOne == 'PLAYERS_FOUND' then createPlayersFound()
     elseif whichOne == 'WHO_RESULTS' then createWhoResults() end
 end
-function si:CallBackWhoQueryResults()
-    self.tblLog = table.wipe(self.tblLog) or {}
-    self.tblFound = self.tblFound or {}
 
-    for i=1,C_FriendList.GetNumWhoResults() do
-        local info = C_FriendList.GetWhoInfo(i)
-        local pName = gsub(info.fullName, '-'..GetRealmName(), '')
-        local rec = {name = pName, class = info.filename, level = info.level, guild = (info.fullGuildName or ''), info.area}
+-- Perform Query Routines
+function si:hideWhoQueryWindow()
+    ns.code:ClickSound('DISABLE')
+    if not FriendsFrame:IsVisible() and self.showWhoQuery then FriendsFrame:Show()
+    elseif not self.showWhoQuery and FriendsFrame:IsVisible() then FriendsFrame:Hide() end
+    ns.code:ClickSound('ENABLE')
+end
+function si:performQuery(reset)
+    local function createQueries()
+        local db, dbFilter = ns.db.settings, ns.db.filter
+        self.tblFilter = table.wipe(self.tblFilter) or {}
+        local min, max = (db.minLevel or 1), (db.maxLevel or MAX_CHARACTER_LEVEL)
 
-        if not self.isCompact then table.insert(self.tblLog, rec) end
-        if rec.guild == '' then
-            self.tblFound[pName] = {name = pName, class = info.filename, checked = false}
+        local function createClassFilter()
+            for _,r in pairs(ns.datasets.tblAllClasses or {}) do
+                local class = r.classFile:gsub('DEATHKNIGHT', 'DEATH KNIGHT'):gsub('DEMONHUNTER', 'DEMON HUNTER')
+                local filter = 'c-"'..class..'"'
+                local level, lMax = min, max
+                if lMax - level > 5 and max ~= level then
+                    while level <= lMax do
+                        if level > lMax then level = level-5 end
+                        table.insert(self.tblFilter, filter..' '..level..'-'..(level + 5 <= lMax and level + 5 or lMax))
+                        level = level + 5
+                    end
+                else table.insert(self.tblFilter, filter..' '..min..'-'..max) end
+            end
         end
+        local function createRaceFilter()
+            for _,r in pairs(ns.datasets.tblAllRaces) do
+                local filter = 'r-"'..r..'"'
+                local level, lMax = min, max
+                if lMax - level > 5 then
+                    while level <= lMax do
+                        if level > lMax then level = level-5 end
+                        table.insert(self.tblFilter, filter..' '..level..'-'..(level + 5 <= lMax and level + 5 or lMax))
+                        level = level + 5
+                    end
+                else table.insert(self.tblFilter, filter..' '..min..'-'..max) end
+            end
+        end
+
+        local filterID = (dbFilter and dbFilter.activeFilter) or 1
+        if filterID == 1 then createClassFilter()
+        elseif filterID == 2 then createRaceFilter()
+        else
+            local filter = dbFilter.filterList[filterID].filter
+            if not filter then
+                UIErrorsFrame:AddMessage('Filter Missing', 1.0, 0.1, 0.1, 1.0)
+            else self.tblFilter = filter end
+        end
+
+        self.totalFilters = #self.tblFilter
+        local searchMessage = self.isCompact and SEARCH_BUTTON_PREFIX or SEARCH_BUTTON_PREFIX..' ('..(self.tblFilter[1] or '<none>')..')'
+        self.btnSearch:SetText(searchMessage)
+        if not self.isCompact then
+            self.labelNextFilter:SetText('Current Filter: '..(self.tblFilter[2] or 'Press "Seach for Players" to restart filter.'), self.MAX_LENGTH) end
+        if reset ~= 'SKIP_NEXT' and reset ~= 'RESET_FILTER' then si:performQuery() end
+    end
+    local function nextQuery()
+        if reset == 'RESET_FILTER' or not self.tblFilter or #self.tblFilter == 0 then
+            createQueries()
+            return
+        end
+
+        local filter = table.remove(self.tblFilter, 1)
+        local searchMessage = self.isCompact and SEARCH_BUTTON_PREFIX or SEARCH_BUTTON_PREFIX..' ('..(self.tblFilter[1] or '<none>')..')'
+        local function waitTimer(remain, nextFilter)
+            if remain <= 0 then
+                self.btnSearch:SetDisabled(false)
+                self.btnSearch:SetText(searchMessage)
+            else
+                self.btnSearch:SetDisabled(true)
+                self.btnSearch:SetText(SEARCH_BUTTON_PREFIX..' ('.. remain..')')
+                remain = remain - 1
+                C_Timer.After(1, function() waitTimer(remain, nextFilter) end)
+            end
+        end
+
+        self.btnSearch:SetText(searchMessage)
+        if not self.isCompact then
+            self.labelNextFilter:SetText('Current Filter: '..(filter or 'Press "Seach for Players" to restart filter.'), self.MAX_LENGTH) end
+        -- Show query window, search then hide again.
+        C_FriendList.SendWho(filter)
+        si:hideWhoQueryWindow()
+
+        local percent = (self.totalFilters - #self.tblFilter) / self.totalFilters
+        local statusMsg = self.isCompact and FormatPercentage(percent, 2) or STATUS_TEXT_DEFAULT..' (Filter progress: '..FormatPercentage(percent, 2)..')'
+        self.f:SetStatusText(statusMsg)
+        waitTimer((ns.db.settings.scanWaitTime or SCAN_WAIT_TIME), (filter or '<none>'))
     end
 
-    si:CreateResultWindows('BOTH', C_FriendList.GetNumWhoResults())
-    ns.Analytics:add('Players_Scanned', C_FriendList.GetNumWhoResults())
-    si:hideWhoQueryWindow()
+    nextQuery()
 end
 si:Init()
 
-function ip:Init()
+function invite:Init()
+    self.tblInvited = nil
+    self.tblSentInvite = {}
+
+    self.waitWelcome = false
+    self.welcomeWaitTime = 5
+
+    self.antiSpam = true
+    self.showWhispers = false
+
+    -- Session Counts
     self.totalFound = 0
     self.removedCount = 0
     self.invitedCount = 0
 end
-function ip:InvitePlayers()
-    local msg = (p.inviteFormat ~= 2 and p.activeMessage) and ns.code:GuildReplace(g.messages[p.activeMessage].message) or nil
-    local sendInvite = p.inviteFormat ~= 1 or false
+function invite:InitializeInvite()
+    self.tblInvited = ns.dbInv.invitedPlayers or {}
+    self.antiSpam = ns.db.settings.antiSpam or true
+    self.showWhispers = ns.db.settings.showWhispers or false
+end
+function invite:new(class)
+    return {
+        ['playerClass'] = class or '',
+        ['invitedBy'] = UnitGUID('player'),
+        ['invitedOn'] = C_DateAndTime.GetServerTimeLocal(),
+    }
+end
+function invite:canAddPlayer(pName, zone, showError, force)
+    local canAddPlayer = nil
+    if not force and self.tblInvited[pName] then canAddPlayer = 'INVITED'
+    elseif ns.BlackList:IsOnBlackList(pName) then canAddPlayer = 'BLACKLIST'
+    elseif zone and ns.datasets.tblBadByName[zone] then canAddPlayer = 'ZONE' end
+
+    if showError then
+        if canAddPlayer == 'INVITED' then ns.code:consoleOut(pName..' has been invited recently.')
+        elseif canAddPlayer == 'BLACKLIST' then ns.code:consoleOut(pName..' has been black listed, remove before inviting.')
+        elseif canAddPlayer == 'ZONE' then ns.code:consoleOut(pName..' is in an instanced zone.') end
+    end
+
+    return not (canAddPlayer or false)
+end
+function invite:recordInvite(pName, class)
+    ns.Analytics:add('Invited_Players')
+    if not pName or not class then return
+    elseif self.antiSpam then
+        pName = gsub(pName, '-'..GetRealmName(), '')
+        self.tblInvited[pName] = invite:new(class)
+        self.tblSentInvite[pName] = self.tblInvited[pName]
+        ns.dbInv.invitedPlayers = self.tblInvited
+    end
+end
+function invite:invitePlayer(pName, msg, sendInvite, _, class)
+    local function MyWhisperFilter(_,_, message)
+        if msg == message then return not ns.Invite.showWhispers
+        else return false end -- Returning true will hide the message
+    end
+
+    class = class and class or select(2, UnitClass(pName))
+    if pName and CanGuildInvite() and not GetGuildInfo(pName) then
+        if sendInvite then GuildInvite(pName) end
+        if msg and ns.db.settings.inviteFormat ~= 2 then
+            if not self.showWhispers then
+                ns.code:consoleOut('Sent invite to '..(ns.code:cPlayer(pName, class) or pName))
+                ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER_INFORM", MyWhisperFilter, msg)
+            end
+            SendChatMessage(msg, 'WHISPER', nil, pName)
+        end
+        invite:recordInvite(pName, class)
+    end
+end
+
+-- Event Call Back Routines
+function invite:ChatMsgHandler(...)
+    local _, msg =  ...
+    if not msg then return end
+
+    local function eraseRecord(pName)
+        if not pName or not self.tblSentInvite[pName] then return
+        else self.tblSentInvite[pName] = nil end
+    end
+
+    local pName = msg:match('(.-) ')
+    pName = gsub(pName, '-'..GetRealmName(), '')
+
+    if not strmatch(msg, 'guild') then return
+    elseif strmatch(msg, 'joined the guild') and self.tblSentInvite and self.tblSentInvite[pName] then
+        if not self.waitWelcome and ns.db.settings.sendGreeting and ns.db.settings.greetingMsg then
+            self.waitWelcome = true
+            C_Timer.After(5, function()
+                ns.Invite.waitWelcome = false
+                SendChatMessage(ns.db.settings.greetingMsg, 'GUILD')
+            end)
+        end
+        eraseRecord(pName)
+        ns.Analytics:add('Accepted_Invite')
+    elseif strmatch(msg, 'declines your guild') then
+        ns.Analytics:add('Declined_Invite')
+        eraseRecord(pName)
+    end
+end
+function invite:GuildRosterHandler(...)
+    local _, rosterUpdate = ...
+
+    local function ProcessGuildInvite()
+        self.waitWelcome = false
+
+        local c = 0
+        for _ in pairs(ns.Invite.tblSentInvite) do c = c + 1 end
+
+        if c > 0 then
+            C_GuildInfo.GuildRoster()
+
+            local sendWelcome = false
+            for index=1,GetNumGuildMembers() do
+                local name = gsub(GetGuildRosterInfo(index), '-'..GetRealmName(), '')
+                if self.tblSentInvite[name] then
+                    sendWelcome = true
+
+                    self.tblSentInvite[name] = nil
+                    ns.Analytics:add('Accepted_Invite')
+                end
+            end
+
+            if sendWelcome and ns.db.settings.sendGreeting and ns.db.settings.greetingMsg then
+                SendChatMessage(ns.db.settings.greetingMsg, 'GUILD') end
+        end
+    end
+
+    if rosterUpdate and not self.waitWelcome then
+        self.waitWelcome = true
+        C_Timer.After(self.welcomeWaitTime or 5, function() ProcessGuildInvite() end)
+    end
+end
+function invite:ScannerInvitePlayer()
+    local db, dbMsg = ns.db.settings, ns.db.messages
+    local inviteFormat = db.inviteFormat
+
+    local msg = (inviteFormat ~= 2 and dbMsg.activeMessage) and ns.code:GuildReplace(dbMsg.messageList[dbMsg.activeMessage].message) or nil
+    local sendInvite = inviteFormat ~= 1 or false
 
     local key = next(si.tblFound or {})
     local tbl = si.tblFound[key]
@@ -480,4 +597,4 @@ function ip:InvitePlayers()
     si.btnSearch:SetDisabled(true)
     C_Timer.After(2, function() si.btnSearch:SetDisabled(false) end)
 end
-ip:Init()
+invite:Init()

@@ -7,6 +7,8 @@ local ds = ns.datasets
 function ds:Init()
     self.tblAllRaces = ds:races() -- Only for player faction
     self.tblAllClasses = ds:classes()
+
+    self.tblBadByName = {}
     self.tblBadZones = ds:invalidZones()
 end
 function ds:classes()
@@ -59,7 +61,7 @@ function ds:races()
     return tbl
 end
 function ds:invalidZones()
-    return {
+    local tbl = {
         --battlegrounds
         [30] = "Alterac Valley",
         [489] = "Warsong Gulch",
@@ -106,26 +108,9 @@ function ds:invalidZones()
         [1458] = "Neltharion's Lair",
         [657] = "The Vortex Pinnacle", 
     }
-end
-function ds:saveOptions()
-    local p,g = ns.db.profile, ns.db.global
 
-    g.showMsg = g.showMsg or false
-    g.scanWait = g.scanWait or SCAN_WAIT_TIME
-	g.showMenu = g.showMenu or true
-    g.rememberTime = g.rememberTime or 7
-	g.rememberPlayers = g.rememberPlayers or true
+    for k, r in pairs(tbl) do self.tblBadByName[r] = k end
 
-    local isGM = IsGuildLeader()
-    if (not p.guildInfo or not p.guildInfo.guildName) or (isGM and not p.guildInfo.guildLink) then
-        local clubID = C_Club.GetGuildClubId() or nil
-        local club = clubID and C_ClubFinder.GetRecruitingClubInfoFromClubID(clubID) or nil
-        if club then
-            local gName, gLink = club.name, GetClubFinderLink(club.clubFinderGUID, club.name)
-            p.guildInfo = {clubID = clubID, guildName = gName, guildLink = gLink }
-        elseif clubID and C_Club.GetClubInfo(clubID) then
-            p.guildInfo = {clubID = clubID, guildName = C_Club.GetClubInfo(clubID).name, guildLink = nil }
-        end
-    end
+    return tbl
 end
 ds:Init()
