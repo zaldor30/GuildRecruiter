@@ -80,15 +80,13 @@ function mainScreen:GetMessageList()
         self.cmbMessages:SetValue(dbMsg.activeMessage)
     end
 end
-function mainScreen:FilterList()
+function mainScreen:FilterList() -- Add 10 to custom index to compensate for defaults
     local db = ns.db
     local tbl = {
         [1] = 'Default Class Filter',
         [2] = 'Default Race Filter',
     }
-    for k, r in pairs(db.filter.filterList or {}) do
-        table(tbl, {[k] = db.filterList[r].desc})
-    end
+    for k, r in pairs(db.filter.filterList or {}) do tbl[k+10] = r.desc end
 
     db.filter.activeFilter = (not db.filter or not db.filter.activeFilter) and 1 or (db.filter.activeFilter == 99 and 1 or (db.filter.activeFilter or 1))
     self.filterDrop:SetList(tbl)

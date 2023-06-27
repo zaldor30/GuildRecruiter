@@ -360,44 +360,78 @@ function si:performQuery(reset)
     local function createQueries()
         local db, dbFilter = ns.db.settings, ns.db.filter
         self.tblFilter = table.wipe(self.tblFilter) or {}
-        local min, max = (db.minLevel or 1), (db.maxLevel or MAX_CHARACTER_LEVEL)
+        local min, max = (tonumber(db.minLevel) or 1), (tonumber(db.maxLevel) or MAX_CHARACTER_LEVEL)
 
         local function createClassFilter()
             for _,r in pairs(ns.datasets.tblAllClasses or {}) do
                 local class = r.classFile:gsub('DEATHKNIGHT', 'DEATH KNIGHT'):gsub('DEMONHUNTER', 'DEMON HUNTER')
                 local filter = 'c-"'..class..'"'
-                local level, lMax = min, max
-                if lMax - level > 5 and max ~= level then
-                    while level <= lMax do
-                        if level > lMax then level = level-5 end
-                        table.insert(self.tblFilter, filter..' '..level..'-'..(level + 5 <= lMax and level + 5 or lMax))
-                        level = level + 5
-                    end
-                else table.insert(self.tblFilter, filter..' '..min..'-'..max) end
+                for i=min, max, 5 do
+                    local rangeStart, rangeEnd = i, i + 4
+                    if rangeEnd > max then rangeEnd = max and max or (MAX_CHARACTER_LEVEL or 70) end
+                    table.insert(self.tblFilter, filter..' '..rangeStart..'-'..rangeEnd)
+                end
             end
         end
         local function createRaceFilter()
             for _,r in pairs(ns.datasets.tblAllRaces) do
                 local filter = 'r-"'..r..'"'
-                local level, lMax = min, max
-                if lMax - level > 5 then
-                    while level <= lMax do
-                        if level > lMax then level = level-5 end
-                        table.insert(self.tblFilter, filter..' '..level..'-'..(level + 5 <= lMax and level + 5 or lMax))
-                        level = level + 5
-                    end
-                else table.insert(self.tblFilter, filter..' '..min..'-'..max) end
+                for i=min, max, 5 do
+                    local rangeStart, rangeEnd = i, i + 4
+                    if rangeEnd > max then rangeEnd = max and max or (MAX_CHARACTER_LEVEL or 70) end
+                    table.insert(self.tblFilter, filter..' '..rangeStart..'-'..rangeEnd)
+                end
             end
+        end
+        local function buildCustomFilter(filterList)
+            if not filterList then return end
+            local tblAllClasses = ns.datasets.tblAllClasses or {}
+
+            local minLevel, maxLevel = tonumber(db.minLevel), tonumber(db.maxLevel)
+            local raceKey = next(filterList.race)
+            local classKey = next(filterList.class)
+
+            local raceType = raceKey:match('ALL') and 'ALL_RACES' or nil
+            local classType = classKey:match('ALL') and strlower(classKey:gsub('ALL_', '')) or nil
+            local tblClass = classType and tblAllClasses or filterList.class
+
+            local tbl = {}
+            local function buildLevelFilter(filterOut)
+                for i=minLevel, maxLevel, 5 do
+                    local rangeStart, rangeEnd = i, i + 4
+                    if rangeEnd > maxLevel then rangeEnd = maxLevel and maxLevel or (MAX_CHARACTER_LEVEL or 70) end
+                    table.insert(tbl, filterOut..' '..rangeStart..'-'..rangeEnd)
+                end
+            end
+
+            for cKey in pairs(tblClass or {}) do
+                local key = strupper(cKey:gsub(' ',''))
+                if not classType or classType == 'classes' or (classType and tblClass[key] and tblClass[key][classType]) then
+                    local classOut = 'c-"'..cKey..'"'
+                    local filterOut = classOut
+                    if raceType ~= 'ALL_RACES' then
+                        for rKey in pairs(filterList.race or {}) do
+                            local raceOut = ' r-"'..rKey..'"'
+                            filterOut = classOut..raceOut
+                            buildLevelFilter(filterOut)
+                        end
+                    else buildLevelFilter(filterOut) end
+                end
+            end
+
+            return tbl
         end
 
         local filterID = (dbFilter and dbFilter.activeFilter) or 1
         if filterID == 1 then createClassFilter()
         elseif filterID == 2 then createRaceFilter()
-        else
-            local filter = dbFilter.filterList[filterID].filter
+        elseif filterID > 10 then
+            filterID = filterID - 10
+            local filter = dbFilter.filterList[filterID] or nil
             if not filter then
                 UIErrorsFrame:AddMessage('Filter Missing', 1.0, 0.1, 0.1, 1.0)
-            else self.tblFilter = filter end
+                return
+            else self.tblFilter = buildCustomFilter(filter) end
         end
 
         self.totalFilters = #self.tblFilter
@@ -514,6 +548,26 @@ function invite:invitePlayer(pName, msg, sendInvite, _, class)
         invite:recordInvite(pName, class)
     end
 end
+function invite:ScannerInvitePlayer()
+    local db, dbMsg = ns.db.settings, ns.db.messages
+    local inviteFormat = db.inviteFormat
+
+    local msg = (inviteFormat ~= 2 and dbMsg.activeMessage) and ns.code:GuildReplace(dbMsg.messageList[dbMsg.activeMessage].message) or nil
+    local sendInvite = inviteFormat ~= 1 or false
+
+    local key = next(si.tblFound or {})
+    local tbl = si.tblFound[key]
+    if not tbl or tbl.checked then return end
+
+    si.tblFound[key] = nil
+    self.invitedCount = self.invitedCount + 1
+    si.labelFound:SetText(INVITE_PREFIX..self.totalFound - self.invitedCount)
+    ns.Invite:invitePlayer(key, msg, sendInvite, false, tbl.class)
+    si:CreateResultWindows('PLAYERS_FOUND')
+
+    si.btnSearch:SetDisabled(true)
+    C_Timer.After(2, function() si.btnSearch:SetDisabled(false) end)
+end
 
 -- Event Call Back Routines
 function invite:ChatMsgHandler(...)
@@ -530,6 +584,7 @@ function invite:ChatMsgHandler(...)
 
     if not strmatch(msg, 'guild') then return
     elseif strmatch(msg, 'joined the guild') and self.tblSentInvite and self.tblSentInvite[pName] then
+        ns.Analytics:add('Accepted_Invite')
         if not self.waitWelcome and ns.db.settings.sendGreeting and ns.db.settings.greetingMsg then
             self.waitWelcome = true
             C_Timer.After(5, function()
@@ -538,7 +593,6 @@ function invite:ChatMsgHandler(...)
             end)
         end
         eraseRecord(pName)
-        ns.Analytics:add('Accepted_Invite')
     elseif strmatch(msg, 'declines your guild') then
         ns.Analytics:add('Declined_Invite')
         eraseRecord(pName)
@@ -576,25 +630,5 @@ function invite:GuildRosterHandler(...)
         self.waitWelcome = true
         C_Timer.After(self.welcomeWaitTime or 5, function() ProcessGuildInvite() end)
     end
-end
-function invite:ScannerInvitePlayer()
-    local db, dbMsg = ns.db.settings, ns.db.messages
-    local inviteFormat = db.inviteFormat
-
-    local msg = (inviteFormat ~= 2 and dbMsg.activeMessage) and ns.code:GuildReplace(dbMsg.messageList[dbMsg.activeMessage].message) or nil
-    local sendInvite = inviteFormat ~= 1 or false
-
-    local key = next(si.tblFound or {})
-    local tbl = si.tblFound[key]
-    if not tbl or tbl.checked then return end
-
-    si.tblFound[key] = nil
-    self.invitedCount = self.invitedCount + 1
-    si.labelFound:SetText(INVITE_PREFIX..self.totalFound - self.invitedCount)
-    ns.Invite:invitePlayer(key, msg, sendInvite, false, tbl.class)
-    si:CreateResultWindows('PLAYERS_FOUND')
-
-    si.btnSearch:SetDisabled(true)
-    C_Timer.After(2, function() si.btnSearch:SetDisabled(false) end)
 end
 invite:Init()

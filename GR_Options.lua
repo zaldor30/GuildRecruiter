@@ -2,7 +2,7 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
 local icon = LibStub('LibDBIcon-1.0')
 
-local fPreview, selectedMessage = nil, nil
+local mPreview, selectedMessage, selectedFilter, filterOld = nil, nil, nil, nil
 
 local optTables = {}
 function optTables:newMsg()
@@ -13,17 +13,55 @@ function optTables:newMsg()
 end
 function optTables:newFilter()
     return {
-        lvlMin = 1,
-        lvlMax = MAX_CHARACTER_LEVEL,
-        race = nil,
-        class = nil,
+        race = {},
+        class = {},
         filter = nil,
         desc = nil,
     }
 end
+function optTables:newClass()
+    local tbl = {}
+    tbl['ALL_CLASSES'] = { name = ns.code:cText('FF00FF00', 'All Classes'), group = true, checked = true }
+    tbl['ALL_TANKS'] = { name = ns.code:cText('FF00FF00', 'Tanks Only'), group = true, checked = false }
+    tbl['ALL_HEALS'] = { name = ns.code:cText('FF00FF00', 'Healing Only'), group = true, checked = false }
+    tbl['ALL_MELEE'] = { name = ns.code:cText('FF00FF00', 'Melee Only'), group = true, checked = false }
+    tbl['ALL_RANGED'] = { name = ns.code:cText('FF00FF00', 'Ranged Only'), group = true, checked = false }
+    for k in pairs(ns.datasets.tblClassesByName or {}) do
+        tbl[k] = { name = k, group = false, checked = false }
+    end
+    return tbl
+end
+function optTables:newRace()
+    local tbl = {}
+        tbl['ALL_RACES'] = { name = ns.code:cText('FF00FF00', 'All Races'), group = true, checked = true }
+        for k in pairs(ns.datasets.tblAllRaces or {}) do
+            tbl[k] = { name = k, group = false, checked = false }
+        end
+    return tbl
+end
 
-local tblFilter = optTables:newFilter()
 local tblMessage = optTables:newMsg()
+
+
+local tblRaces = optTables:newRace()
+local tblFilter = optTables:newFilter()
+local tblClasses = optTables:newClass()
+
+local function createFilterPreview()
+    local out = nil
+    for k, r in pairs(tblClasses) do
+        local group = (r.checked and (r.name:match('All') or r.name:match('Only'))) and k or nil
+        if r.checked and group then out = '-c"'..k..'" ' break
+        elseif r.checked then out = '-c"SELECTED CLASSES" ' break end
+    end
+    for k, r in pairs(tblRaces) do
+        local group = (r.checked and (r.name:match('All') or r.name:match('Only'))) and k or nil
+        if r.checked and group then out = (out or '')..'-r"'..k..'"' break
+        elseif r.checked then out = (out or '')..'-r"SELECTED RACES"' break end
+    end
+
+    tblFilter.filter = out
+end
 
 ns.addonSettings = {
     name = GR_VERSION_INFO,
@@ -112,8 +150,8 @@ ns.addonSettings = {
                 },
                 msgPreview = {
                     name = function()
-                        fPreview = ns.code:GuildReplace(tblMessage.message)
-                        return (ns.code:cText('FFFF80FF', 'To [')..ns.code.fPlayerName..ns.code:cText('FFFF80FF', ']: '..(fPreview or ''))) or ''
+                        mPreview = ns.code:GuildReplace(tblMessage.message)
+                        return (ns.code:cText('FFFF80FF', 'To [')..ns.code.fPlayerName..ns.code:cText('FFFF80FF', ']: '..(mPreview or ''))) or ''
                     end,
                     type = 'description',
                     order = 8,
@@ -137,7 +175,7 @@ ns.addonSettings = {
                 },
                 msgPreviewCount = {
                     name = function()
-                        local count = string.len(fPreview or '')
+                        local count = string.len(mPreview or '')
                         local color = count < 255 and 'FF00FF00' or 'FFFF0000'
                         return 'Message Length: '..ns.code:cText(color, count)..' (255 characters per message)'
                     end,
@@ -155,6 +193,7 @@ ns.addonSettings = {
                     name = 'Delete',
                     desc = 'Delete the selected message.',
                     type = 'execute',
+                    confirm = function() return 'Are you sure you want to delete this message?' end,
                     width = .5,
                     disabled = function() return not selectedMessage and true or false end,
                     func = function()
@@ -191,10 +230,303 @@ ns.addonSettings = {
                 }
             },
         },
+        mnuFilterList = {
+            name = 'Custom Filters',
+            type = 'group',
+            order = 2,
+            args = {
+                filterHeader1 = {
+                    name = 'Filter Editor',
+                    type = 'header',
+                    order = 1,
+                },
+                filterEdit = {
+                    name = 'Select a filter to edit',
+                    type = 'select',
+                    style = 'dropdown',
+                    order = 2,
+                    width = 1.5,
+                    values = function()
+                        local tbl = {}
+                        for k, r in pairs(ns.db.filter.filterList or {}) do tbl[k] = r.desc end
+                        return tbl
+                    end,
+                    set = function(_, val) selectedFilter = val end,
+                    get = function()
+                        if filterOld == selectedFilter then return selectedFilter end
+                        local filter = ns.db.filter.filterList and ns.db.filter.filterList[selectedFilter] or nil
+                        if selectedFilter and filter then
+                            tblRaces = optTables:newRace()
+                            tblFilter = optTables:newFilter()
+                            tblClasses = optTables:newClass()
+
+                            tblFilter.desc = filter.desc
+                            tblFilter.filter = filter.filter
+
+                            tblClasses['ALL_CLASSES'].checked = false
+                            for k in pairs(filter.class or {}) do
+                                if tblClasses[k] then tblClasses[k].checked = true end
+                            end
+
+                            tblRaces['ALL_RACES'].checked = false
+                            for k in pairs(filter.race or {}) do
+                                if tblRaces[k] then tblRaces[k].checked = true end
+                            end
+                        elseif not filter then selectedFilter, filterOld = nil, nil end
+
+                        filterOld = selectedFilter
+                        return selectedFilter
+                    end,
+                },
+                filterNewBtn = {
+                    name = 'New',
+                    desc = 'Create a new filter.',
+                    type = 'execute',
+                    width = .5,
+                    order = 3,
+                    disabled = function() return not selectedFilter end,
+                    func = function()
+                        selectedFilter, filterOld = nil, nil
+                        tblRaces = optTables:newRace()
+                        tblFilter = optTables:newFilter()
+                        tblClasses = optTables:newClass()
+                    end,
+                },
+                filterHeader2 = {
+                    name = 'Filter Creator',
+                    type = 'header',
+                    order = 9,
+                },
+                filterDesc = {
+                    name = 'Filter Description',
+                    desc = 'Short description of the filter.',
+                    type = 'input',
+                    multiline = false,
+                    order = 10,
+                    width = 1.5,
+                    set = function(_, val) tblFilter.desc = val end,
+                    get = function() return tblFilter.desc or '' end,
+                },
+                filterSave = {
+                    name = 'Save',
+                    type = 'execute',
+                    width = .5,
+                    order = 12,
+                    disabled = function()
+                        return not ((strlen(tblFilter.desc or '') > 0 and strlen(tblFilter.filter or '') > 0) or false)
+                    end,
+                    func = function()
+                        local checkFound = false
+                        local tblClassList, tblRaceList = {}, {}
+                        for k, r in pairs(tblClasses) do
+                            if r.checked then
+                                checkFound = true
+                                tblClassList[k] = r.name
+                            end
+                        end
+                        if not checkFound then
+                            UIErrorsFrame('You much select a class or a group.')
+                            return
+                        end
+
+                        checkFound = false
+                        for k, r in pairs(tblRaces) do
+                            if r.checked then
+                                checkFound = true
+                                tblRaceList[k] = r.name
+                            end
+                        end
+                        if not checkFound then
+                            UIErrorsFrame('You much select a race or a group.')
+                            return
+                        end
+
+                        local filterList = ns.db.filter.filterList
+                        tblFilter.class = tblClassList
+                        tblFilter.race = tblRaceList
+                        if selectedFilter and filterList[selectedFilter] then filterList[selectedFilter] = tblFilter
+                        else table.insert(filterList, tblFilter) end
+
+                        selectedFilter, filterOld = nil, nil
+                        tblRaces = optTables:newRace()
+                        tblFilter = optTables:newFilter()
+                        tblClasses = optTables:newClass()
+                    end,
+                },
+                filterDelete = {
+                    name = 'Delete',
+                    type = 'execute',
+                    width = .5,
+                    order = 13,
+                    disabled = function() return not selectedFilter end,
+                    confirm = function() return 'Are you sure you want to delete this record?' end,
+                    func = function()
+                        local filterList = ns.db.filter.filterList
+                        filterList[selectedFilter] = nil
+
+                        selectedFilter, filterOld = nil, nil
+                        tblRaces = optTables:newRace()
+                        tblFilter = optTables:newFilter()
+                        tblClasses = optTables:newClass()
+                    end,
+                },
+                filterCustom = {
+                    name = 'Custom filter',
+                    desc = 'Edit and/or create your filter.',
+                    type = 'input',
+                    multiline = false,
+                    order = 14,
+                    width = 'full',
+                    set = function(_, val) tblFilter.filter = val end,
+                    get = function() createFilterPreview() return tblFilter.filter or '' end,
+                },
+                filterClass = {
+                    name = 'Classes (Only select 1 group or multiple classes)',
+                    desc = 'Specific class, classes with type of damage, heals or tanks, etc.',
+                    type = 'multiselect',
+                    style = 'dropdown',
+                    order = 20,
+                    width = 'FULL',
+                    validate = (function(_, field, value)
+                        if not value then return true end
+                        local group = tblClasses[field].group or false
+                        if not group then
+                            for k,r in pairs(tblClasses) do
+                                if r.group and r.checked then group = k break end
+                            end
+                        end
+                        if group then
+                            for k,r in pairs(tblClasses) do
+                                if group and r.checked and field ~= k then
+                                    return 'You can only select one group or multiple classes.'
+                                end
+                            end
+                        end
+                        return true
+                    end),
+                    values = function()
+                        local tbl = {}
+                        for k,r in pairs(tblClasses) do tbl[k] = r.name end
+                        return tbl
+                    end,
+                    set = function(_, key, val)
+                        tblClasses[key].checked = val
+                        createFilterPreview()
+                    end,
+                    get = function(_, key) return tblClasses[key].checked end,
+                },
+                filterRaces = {
+                    name = 'Races',
+                    desc = 'All races or specific races.',
+                    type = 'multiselect',
+                    style = 'dropdown',
+                    order = 21,
+                    width = 'FULL',
+                    validate = (function(_, field, value)
+                        if not value then return true end
+                        local group = tblRaces[field].group or false
+                        if not group then
+                            for k,r in pairs(tblRaces) do
+                                if r.group and r.checked then group = k break end
+                            end
+                        end
+                        if group then
+                            for k,r in pairs(tblRaces) do
+                                if group and r.checked and field ~= k then
+                                    return 'You can only select one group or multiple races.'
+                                end
+                            end
+                        end
+                        return true
+                    end),
+                    values = function()
+                        local tbl = {}
+                        for k,r in pairs(tblRaces) do tbl[k] = r.name end
+                        return tbl
+                    end,
+                    set = function(_, key, val)
+                        tblRaces[key].checked = val
+                        createFilterPreview()
+                    end,
+                    get = function(_, key) return tblRaces[key].checked end,
+                },
+                filterHeader3 = {
+                    name = 'Custom Filter Commands',
+                    type = 'header',
+                    order = 80,
+                },
+                filterDesc1 = {
+                    name = '\nThe following commands can be used in filters:',
+                    type = 'description',
+                    fontSize = 'medium',
+                    order = 92,
+                },
+                filterDesc2 = {
+                    name = 'Name ('..ns.code:cText('FFFFFF00', 'n-"<char name>"')..'): Used to search for a specific character.',
+                    type = 'description',
+                    fontSize = 'medium',
+                    order = 93,
+                },
+                filterDesc3 = {
+                    name = 'Zone ('..ns.code:cText('FFFFFF00', 'z-"<zone name>"')..'): Used to search a specific zone.',
+                    type = 'description',
+                    fontSize = 'medium',
+                    order = 94,
+                },
+                filterDesc4 = {
+                    name = 'Race ('..ns.code:cText('FFFFFF00', 'r-"<race name>"')..'): Used to search a specific race.',
+                    type = 'description',
+                    fontSize = 'medium',
+                    order = 94,
+                },
+                filterDesc5 = {
+                    name = 'Class ('..ns.code:cText('FFFFFF00', 'c-"<class name>"')..'): Used to search a specific class.',
+                    type = 'description',
+                    fontSize = 'medium',
+                    order = 95,
+                },
+                filterDesc6 = {
+                    name = '\nNotes:\nFollow the exact format in the parenthesis.',
+                    type = 'description',
+                    fontSize = 'medium',
+                    order = 97,
+                },
+                filterDesc7 = {
+                    name = 'Replace the <command> with correct value.',
+                    type = 'description',
+                    fontSize = 'medium',
+                    order = 98,
+                },
+                filterDesc8 = {
+                    name = 'Example: '..ns.code:cText('FFFFFF00', 'c-"<class name>"')..' would be '..ns.code:cText('FFFFFF00', 'c-"mage"'),
+                    type = 'description',
+                    fontSize = 'medium',
+                    order = 99,
+                },
+                filterDesc9 = {
+                    name = 'Each filter can be seperated by a space.',
+                    type = 'description',
+                    fontSize = 'medium',
+                    order = 100,
+                },
+                filterDesc10 = {
+                    name = 'Use the selections first, then add custom commands to the filter.',
+                    type = 'description',
+                    fontSize = 'medium',
+                    order = 101,
+                },
+                filterDesc11 = {
+                    name = ns.code:cText('FF00FF00', 'DO NOT: Specify levels, that is controlled by the main screen.'),
+                    type = 'description',
+                    fontSize = 'medium',
+                    order = 102,
+                },
+            }
+        },
         mnuOptions = {
             name = 'GR Options',
             type = 'group',
-            order = 1,
+            order = 3,
             args = {
                 msgHeader1 = {
                     name = 'General Settings',
@@ -341,7 +673,7 @@ ns.addonSettings = {
         mnuBlackList = {
             name = 'Black List',
             type = 'group',
-            order = 3,
+            order = 99,
             args = {
                 blDesc = {
                     name = 'Players marked in '..ns.code:cText('FFFF0000', 'RED')..' are marked for deletion.\nPlayers marked in '..ns.code:cText('FF00FF00', 'GREEN')..' are active black listed players.',

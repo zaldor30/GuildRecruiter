@@ -22,8 +22,9 @@ function code:cPlayer(uName, class)
     if not cClass then return uName
     else return code:cText(cClass, uName) end
 end
-function code:consoleOut(msg, color)
-    print('|c'..(color or 'FF3EB9D8')..'GR: '..(msg or 'did not get message')..'|r')
+function code:consoleOut(msg, color, noPrefix)
+    local prefix = not noPrefix and 'GR: ' or ''
+    print('|c'..(color or 'FF3EB9D8')..prefix..(msg or 'did not get message')..'|r')
 end
 function code:createTooltip(text, body)
     local uiScale, x, y = UIParent:GetEffectiveScale(), GetCursorPosition()

@@ -7,18 +7,36 @@ local ds = ns.datasets
 function ds:Init()
     self.tblAllRaces = ds:races() -- Only for player faction
     self.tblAllClasses = ds:classes()
+    self.tblClassesByName = ds:classesByName()
 
     self.tblBadByName = {}
     self.tblBadZones = ds:invalidZones()
 end
 function ds:classes()
+    return {
+        ['WARRIOR'] = { id = 1, name = 'Warrior', classFile = 'WARRIOR', tank = true, healer = false, melee = true, ranged = false },
+        ['PALADIN'] = { id = 2, name = 'Paladin', classFile = 'PALADIN', tank = true, healer = true, melee = true, ranged = false },
+        ['HUNTER'] = { id = 3, name = 'Hunter', classFile = 'HUNTER', tank = false, healer = false, melee = false, ranged = true },
+        ['ROUGE'] = { id = 4, name = 'Rouge', classFile = 'ROUGE', tank = false, healer = false, melee = true, ranged = false },
+        ['PRIEST'] = { id = 5, name = 'Priest', classFile = 'PRIEST', tank = false, healer = false, melee = false, ranged = true },
+        ['DEATHKNIGHT'] = { id = 6, name = 'Death Knight', classFile = 'DEATHKNIGHT', tank = true, healer = false, melee = true, ranged = false },
+        ['SHAMAN'] = { id = 7, name = 'Shaman', classFile = 'SHAMAN', tank = false, healer = true, melee = true, ranged = true },
+        ['MAGE'] = { id = 8, name = 'Mage', classFile = 'MAGE', tank = false, healer = false, melee = false, ranged = true },
+        ['WARLOCK'] = { id = 9, name = 'Warlock', classFile = 'WARLOCK', tank = false, healer = false, melee = false, ranged = true },
+        ['MONK'] = { id = 10, name = 'Monk', classFile = 'MONK', tank = true, healer = true, melee = true, ranged = false },
+        ['DRUID'] = { id = 11, name = 'Druid', classFile = 'DRUID', tank = true, healer = true, melee = true, ranged = true },
+        ['DEMONHUNTER'] = { id = 12, name = 'Demon Hunter', classFile = 'DEMONHUNTER', tank = true, healer = false, melee = true, ranged = false },
+        ['EVOKER'] = { id = 13, name = 'Evoker', classFile = 'EVOKER', tank = false, healer = true, melee = false, ranged = true },
+    }
+end
+function ds:classesByName()
     local tbl = {}
 	for i=1,GetNumClasses() do
 		local class = C_CreatureInfo.GetClassInfo(i)
 		if class then
-			tbl[class.classID] = { classFile = class.classFile, className = class.className }
+			tbl[class.className] = { classID = class.classID, classFile = class.classFile }
 		end
-        tbl[13] = { classFile = 'EVOKER', className = 'Evoker'}
+        tbl['Evoker'] = { classID = 13, className = 'Evoker'}
 	end
 
 	return tbl
@@ -35,14 +53,13 @@ function ds:races()
             [6] = "Horde",       -- Tauren
             [7] = "Alliance",    -- Gnome
             [8] = "Horde",       -- Troll
-            [9] = "Alliance",    -- Goblin
+            [9] = "Hode",        -- Goblin
             [10] = "Horde",      -- Blood Elf
             [11] = "Alliance",   -- Draenei
             [22] = "Alliance",   -- Worgen
-            [24] = "Neutral",    -- Pandaren (can choose either faction)
             [25] = "Horde",      -- Horde Pandaren
             [26] = "Alliance",   -- Alliance Pandaren
-            [27] = "Alliance",   -- Nightborne
+            [27] = "Horde",      -- Nightborne
             [28] = "Horde",      -- Highmountain Tauren
             [29] = "Alliance",   -- Void Elf
             [30] = "Alliance",   -- Lightforged Draenei
@@ -54,7 +71,14 @@ function ds:races()
         }
 
         if raceFactions[raceID] == faction or raceFactions[raceID] == 'Neutral' then
-        tbl[raceID] = C_CreatureInfo.GetRaceInfo(raceID).clientFileString end
+            local raceInfo = C_CreatureInfo.GetRaceInfo(raceID)
+            if raceInfo then
+                tbl[raceInfo.raceName] = {
+                    ['id'] = raceInfo.raceID,
+                    ['fileName'] = raceInfo.clientFileString,
+                }
+            end
+        end
         raceID = raceID + 1
     end
 

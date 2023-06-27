@@ -1,21 +1,79 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
+--[[ Register and Unregister events
+    Add event to table
+    Add event to Register event ]]
+ns.core, ns.events = {}, {}
+local core, events = ns.core, ns.events
+function events:Init()
+    self.tblEvents = events:CreateTableEvents()
+end
+function events:CreateTableEvents()
+    return {
+        ['WHO_LIST_UPDATE'] = {active = false, installed = true},
+        ['CHAT_MSG_SYSTEM'] = {active = false, installed = true},
+        ['GUILD_ROSTER_UPDATE'] = {active = false, installed = true},
+        ['PLAYER_LOGIN'] = {active = false, installed = true},
+    }
+end
+function events:RegisterEvent(event, action)
+    if self.tblEvents[event].active then ns.code:consoleOut(event..' event is already registered in fnEventHandlers.') return
+    elseif not self.tblEvents[event] and not self.tblEvents.installed then ns.code:consoleOut(event..' event is not registered in fnEventHandlers.') end
 
-ns.core = {}
-local core = {}
-local AceGUI = LibStub("AceGUI-3.0")
+    local function eventCallBack(...)
+        self.tblEvents[...].active = true
+        if action then
+            if 'InitializeAddon' then ns.core:InitializeAddon(...) end
+        elseif event == 'WHO_LIST_UPDATE' then ns.ScreenInvite:eventWhoQueryResults()
+        elseif event == 'CHAT_MSG_SYSTEM' then ns.Invite:ChatMsgHandler(...)
+        elseif event == 'GUILD_ROSTER_UPDATE' then ns.Invite:GuildRosterHandler(...)
+        elseif event == 'PLAYER_LOGIN' then ns.core:InitializeAddon(...) end
+    end
+
+    GRADDON:RegisterEvent(event, eventCallBack)
+end
+function events:UnregisterEvent(event)
+    if strupper(event) == 'ALL' then
+        for k, r in pairs(self.tblEvents) do
+            if r.active then GRADDON:UnregisterEvent(k) end
+        end
+    elseif event and self.tblEvents[event] then
+        self.tblEvents[event].active = false
+        GRADDON:UnregisterEvent(event)
+    end
+end
+events:Init()
+
+local AceGUI, AceTimer = LibStub("AceGUI-3.0"), LibStub("AceTimer-3.0")
 local AC, ACD = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0')
 local icon, DB = LibStub('LibDBIcon-1.0'), LibStub('AceDB-3.0')
 
+function AceTimer:TimerCallBack()
+    if ns.core.started then return end
+
+    ns.core.started = true
+    ns.events:UnregisterEvent('PLAYER_LOGIN')
+    ns.code:consoleOut('Guild not detected, Guild Recruiter is not available.')
+end
 function GRADDON:OnInitialize()
-    GRADDON:RegisterChatCommand('rl', function() ReloadUI() end)
-    C_Timer.After(5, function() core:Initialize() end)
+    if not ns.core.timerStarted then
+        ns.core.timerStarted = true
+        GRADDON:RegisterChatCommand('rl', function() ReloadUI() end)
+        ns.events:RegisterEvent('PLAYER_LOGIN', 'InitializeAddon')
+        AceTimer:ScheduleTimer('TimerCallBack', 60)
+    end
 end
 
 function core:Init()
-    self.isEnabled = false
+    self.started = false
+    self.timerStarted = false
+
+    self.slashCommand = 'recruiter'
 
     self.addonSettings = {
         profile = {
+            -- Starting Levels
+            minLevel = MAX_CHARACTER_LEVEL - 4,
+            maxLevel = MAX_CHARACTER_LEVEL,
             -- App Settings
             minimap = { hide = false, },
             showContext = true,
@@ -35,20 +93,27 @@ function core:Init()
 
     self.f = AceGUI:Create('InlineGroup')
 end
-function core:Initialize()
+function core:InitializeAddon(...) -- Continue Initialize After Player Enters world
+    if ... ~= 'PLAYER_LOGIN' then return end
+    ns.events:UnregisterEvent('PLAYER_LOGIN')
+    if ns.core.started then return else ns.core.started = true end
+
     GRADDON.db = DB:New('GR_SettingsDB', self.addonSettings, PLAYER_PROFILE)
     GRADDON.dbBl = DB:New('GR_BlackListDB', nil, PLAYER_PROFILE)
     GRADDON.dbInv = DB:New('GR_InvitedPlayersDB', nil, PLAYER_PROFILE)
     GRADDON.dbAnal = DB:New('GR_AnalyticsDB', nil, PLAYER_PROFILE)
 
     ns.db = GRADDON.db.profile
-    if not core:RegisterGuild() then return end
-
     ns.dbBL = GRADDON.dbBl.global
     ns.dbInv = GRADDON.dbInv.global
     ns.dbAnal = GRADDON.dbAnal
 
+    if not core:RegisterGuild() then return end
+    if not GRADDON.clubID and not ns.db.guildInfo then return
+    elseif ns.db.guildInfo then GRADDON.clubID = ns.db.guildInfo.clubID end
+
     if not ns.db.filter then ns.db.filter = {} end
+    if not ns.db.filter.filterList then ns.db.filter.filterList = {} end
     if not ns.db.messages then ns.db.messages = {} end
     if not ns.db.settings then ns.db.settings = self.addonSettings.profile end
     ns.dbInv[GRADDON.clubID] = ns.dbInv[GRADDON.clubID] or {}
@@ -56,22 +121,30 @@ function core:Initialize()
 
     AC:RegisterOptionsTable('GR_Options', ns.addonSettings)
     ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
-    GRADDON:RegisterChatCommand('gr', function(input) core:SlashCommand(input) end)
-    GRADDON:RegisterChatCommand('recruiter', function(input) core:SlashCommand(input) end)
+    if not SlashCmdList['GR'] then
+        self.slashCommand = 'gr'
+        GRADDON:RegisterChatCommand('gr', function(...) core:SlashCommand(...) end)
+    else GRADDON:RegisterChatCommand('recruiter', function(input) core:SlashCommand(input) end) end
 
+    if not GRADDON.clubID or not IsInGuild() then
+        ns.code:consoleOut('You are not currently in a guild.')
+        ns.code:consoleOut('Guild Recruiter will be disabled.')
+        return
+    end
     core:CreateMiniMapIcon()
     core:StartMaintenance()
 
     ns.Invite:InitializeInvite()
+    ns.code:consoleOut(GR_VERSION_INFO..' is active.', nil, true)
+    ns.code:consoleOut('You can use "/'..self.slashCommand..' help" to get a list of commands.', nil, true)
 
     function GRADDON:OnCommReceived(prefix, message, distribution, sender)
         ns.Sync:OnCommReceived(prefix, message, distribution, sender) end
     GRADDON:RegisterComm(GRADDON.prefix, 'OnCommReceived')
 end
-function core:SlashCommand(input)
-    local msg = input:trim()
-
-    if not msg or msg == '' then -- open Main screen
+function core:SlashCommand(msg)
+    msg = msg:trim()
+    if not msg or msg == '' then ns.MainScreen:ShowMainScreen()
     elseif strlower(msg) == 'help' then
         ns.code:consoleOut(GR_VERSION_INFO..' - Help')
         ns.code:consoleOut('You can use /gr or /recruiter to access the commands bellow.')
@@ -103,27 +176,24 @@ function core:CreateMiniMapIcon()
     icon:Register('GR_Icon', iconData, ns.db.settings.minimap)
 end
 function core:RegisterGuild()
-    local clubID = C_Club.GetGuildClubId() or nil
-    if not clubID or not C_Club.GetClubInfo(clubID) then
+    local clubID = C_Club.GetGuildClubId() or (ns.db.guildInfo.clubID or nil)
+    if not clubID and not C_Club.GetClubInfo(clubID) then
         self.isEnabled = false
         ns.code:consoleOut('Could not find an active guild, Guild Recruiter is not available.')
         return false
-    else self.isEnabled = true end
-    GRADDON.clubID = clubID
+    end
 
+    GRADDON.clubID = clubID
     local club = clubID and C_ClubFinder.GetRecruitingClubInfoFromClubID(clubID) or nil
     if club then
         local gName, gLink = club.name, GetClubFinderLink(club.clubFinderGUID, club.name)
         ns.db.guildInfo = {clubID = clubID, guildName = gName, guildLink = gLink }
-    else ns.db.guildInfo = {clubID = clubID, guildName = C_Club.GetClubInfo(clubID).name, guildLink = nil } end
+    elseif C_Club.GetClubInfo(clubID) then ns.db.guildInfo = {clubID = clubID, guildName = C_Club.GetClubInfo(clubID).name, guildLink = nil } end
 
-    ns.code:consoleOut(GR_VERSION_INFO..' is active.')
-    return true
+    return clubID or false
 end
 function core:StartMaintenance()
     local db, dbInv, dbBL = ns.db.settings, ns.dbInv, ns.dbBL
-
-    ns.code:consoleOut('Starting database maintenance...')
 
     local removeCount = 0
     local cutOffTime = C_DateAndTime.GetServerTimeLocal() - ((db.rememberTime or 7) * SECONDS_IN_A_DAY)
@@ -150,8 +220,6 @@ function core:StartMaintenance()
 
     if removeCount > 0 then
         ns.code:consoleOut(removeCount..' were removed from the black list after the 30 day wait period.') end
-
-    ns.code:consoleOut('Database maintenance complete.')
 end
 core:Init()
 
