@@ -16,7 +16,7 @@ function events:CreateTableEvents()
     }
 end
 function events:RegisterEvent(event, action)
-    if self.tblEvents[event].active then ns.code:consoleOut(event..' event is already registered in fnEventHandlers.') return
+    if self.tblEvents[event].active then return-- ns.code:consoleOut(event..' event is already registered in fnEventHandlers.') return
     elseif not self.tblEvents[event] and not self.tblEvents.installed then ns.code:consoleOut(event..' event is not registered in fnEventHandlers.') end
 
     local function eventCallBack(...)
@@ -55,11 +55,14 @@ function AceTimer:TimerCallBack()
     ns.code:consoleOut('Guild not detected, Guild Recruiter is not available.')
 end
 function GRADDON:OnInitialize()
+    local function startInitialize()
+        C_Timer.After(3, function() core:InitializeAddon() end)
+        AceTimer:ScheduleTimer('TimerCallBack', 60)
+    end
     if not ns.core.timerStarted then
         ns.core.timerStarted = true
         GRADDON:RegisterChatCommand('rl', function() ReloadUI() end)
-        ns.events:RegisterEvent('PLAYER_LOGIN', 'InitializeAddon')
-        AceTimer:ScheduleTimer('TimerCallBack', 60)
+        ns.events:RegisterEvent('PLAYER_LOGIN', 'startInitialize')
     end
 end
 
@@ -121,22 +124,25 @@ function core:InitializeAddon(...) -- Continue Initialize After Player Enters wo
 
     AC:RegisterOptionsTable('GR_Options', ns.addonSettings)
     ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
-    if not SlashCmdList['GR'] then
-        self.slashCommand = 'gr'
-        GRADDON:RegisterChatCommand('gr', function(...) core:SlashCommand(...) end)
-    else GRADDON:RegisterChatCommand('recruiter', function(input) core:SlashCommand(input) end) end
 
     if not GRADDON.clubID or not IsInGuild() then
         ns.code:consoleOut('You are not currently in a guild.')
         ns.code:consoleOut('Guild Recruiter will be disabled.')
         return
     end
+
+    if not SlashCmdList['GR'] then
+        self.slashCommand = 'gr'
+        GRADDON:RegisterChatCommand('gr', function(...) core:SlashCommand(...) end)
+    else self.slashCommand = 'recruiter' end
+    GRADDON:RegisterChatCommand('recruiter', function(input) core:SlashCommand(input) end)
+
     core:CreateMiniMapIcon()
     core:StartMaintenance()
 
     ns.Invite:InitializeInvite()
     ns.code:consoleOut(GR_VERSION_INFO..' is active.', nil, true)
-    ns.code:consoleOut('You can use "/'..self.slashCommand..' help" to get a list of commands.', nil, true)
+    ns.code:consoleOut('You can use "/'..(self.slashCommand == 'gr' and 'gr or /recruiter' or '/'..self.slashCommand)..' help" to get a list of commands.', nil, true)
 
     function GRADDON:OnCommReceived(prefix, message, distribution, sender)
         ns.Sync:OnCommReceived(prefix, message, distribution, sender) end
@@ -152,7 +158,10 @@ function core:SlashCommand(msg)
         ns.code:consoleOut('blacklist <player name> - This will add player to the black list (do not use the <>)')
         ns.code:consoleOut('You can type /rl to reload your UI (same as /reload).')
     elseif strlower(msg) == 'config' then
-    elseif strlower(msg) == 'blacklist' then
+    elseif strlower(msg):match('blacklist') then
+        msg = strlower(msg):gsub('blacklist', ''):trim()
+        local name = strupper(strsub(msg,1,1))..strlower(strsub(msg,2))
+        ns.BlackList:add(name)
     end
 end
 function core:CreateMiniMapIcon()
@@ -233,7 +242,7 @@ local function HandlesGlobalMouseEvent(self, button, event)
 	return false
 end
 local function DropDownOnShow(self)
-    if not core.isEnabled or not ns.db or not ns.db.settings.showContext or not self.dropdown then return end
+    if not ns.db or not ns.db.settings.showContext then return end
 
     local dropdown = self.dropdown
     local function FinishFrame()
@@ -252,11 +261,8 @@ local function DropDownOnShow(self)
         else f.frame:SetPoint('BOTTOMLEFT', self, 'BOTTOMRIGHT',0,0) end
     end
 
-    if f then
-        FinishFrame()
-        f.frame:Show()
-        return
-    else f = AceGUI:Create('InlineGroup') end
+    if f then f = nil end
+    f = AceGUI:Create('InlineGroup')
     f:SetWidth(135)
     f:SetLayout('flow')
 
