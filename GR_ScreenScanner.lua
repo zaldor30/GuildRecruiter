@@ -529,13 +529,14 @@ function invite:recordInvite(pName, class)
         ns.dbInv.invitedPlayers = self.tblInvited
     end
 end
-function invite:invitePlayer(pName, msg, sendInvite, _, class)
+function invite:invitePlayer(pName, msg, sendInvite, force, class)
     local function MyWhisperFilter(_,_, message)
         if msg == message then return not ns.Invite.showWhispers
         else return false end -- Returning true will hide the message
     end
 
     class = class and class or select(2, UnitClass(pName))
+    print('invite, pName')
     if pName and CanGuildInvite() and not GetGuildInfo(pName) then
         if sendInvite then GuildInvite(pName) end
         if msg and ns.db.settings.inviteFormat ~= 2 then

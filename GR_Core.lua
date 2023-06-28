@@ -111,14 +111,16 @@ function core:InitializeAddon(...) -- Continue Initialize After Player Enters wo
     ns.dbInv = GRADDON.dbInv.global
     ns.dbAnal = GRADDON.dbAnal
 
-    if not core:RegisterGuild() then return end
-    if not GRADDON.clubID and not ns.db.guildInfo then return
-    elseif ns.db.guildInfo then GRADDON.clubID = ns.db.guildInfo.clubID end
-
     if not ns.db.filter then ns.db.filter = {} end
     if not ns.db.filter.filterList then ns.db.filter.filterList = {} end
     if not ns.db.messages then ns.db.messages = {} end
     if not ns.db.settings then ns.db.settings = self.addonSettings.profile end
+    if not ns.db.guildInfo then ns.db.guildInfo = {} end
+
+    if not core:RegisterGuild() then return end
+    if not GRADDON.clubID and not ns.db.guildInfo then return
+    elseif ns.db.guildInfo then GRADDON.clubID = ns.db.guildInfo.clubID end
+
     ns.dbInv[GRADDON.clubID] = ns.dbInv[GRADDON.clubID] or {}
     ns.dbInv = ns.dbInv[GRADDON.clubID]
 
@@ -186,7 +188,7 @@ function core:CreateMiniMapIcon()
 end
 function core:RegisterGuild()
     local clubID = C_Club.GetGuildClubId() or (ns.db.guildInfo.clubID or nil)
-    if not clubID and not C_Club.GetClubInfo(clubID) then
+    if not clubID or not C_Club.GetClubInfo(clubID) then
         self.isEnabled = false
         ns.code:consoleOut('Could not find an active guild, Guild Recruiter is not available.')
         return false
@@ -232,11 +234,10 @@ function core:StartMaintenance()
 end
 core:Init()
 
---[[ Context Menu Routine ]]
 local f = nil
 local function HandlesGlobalMouseEvent(self, button, event)
 	if event == 'GLOBAL_MOUSE_DOWN' and (button == 'LeftButton' or button == 'RightButton')then
-        if not ns.db.settings.showMenu then return false end
+        if not ns.db.settings.showContext then return false end
 		return true
 	end
 	return false
