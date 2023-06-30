@@ -218,7 +218,7 @@ ns.addonSettings = {
                         local msg = ns.db.messages and ns.db.messages.messageList or {}
                         local active = selectedMessage
                         if not active then
-                            table.insert(msg, tblMessage)
+                            tinsert(msg, tblMessage)
                             active = #msg
                         else msg[active] = tblMessage end
                         ns.db.messages.messageList = msg
@@ -345,7 +345,7 @@ ns.addonSettings = {
                         tblFilter.class = tblClassList
                         tblFilter.race = tblRaceList
                         if selectedFilter and filterList[selectedFilter] then filterList[selectedFilter] = tblFilter
-                        else table.insert(filterList, tblFilter) end
+                        else tinsert(filterList, tblFilter) end
 
                         selectedFilter, filterOld = nil, nil
                         tblRaces = optTables:newRace()
@@ -588,12 +588,21 @@ ns.addonSettings = {
                     type = 'header',
                     order = 10,
                 },
+                optShowStats = {
+                    name = 'Show invite summary after finishing scans.',
+                    desc = 'This shows, # of invites, accepted, deleted and pending.',
+                    type = 'toggle',
+                    width = 'full',
+                    order = 12,
+                    set = function(_, val) ns.db.settings.showSummary = val end,
+                    get = function() return ns.db.settings.showSummary end,
+                },
                 optShowInvite = {
                     name = 'Show your whisper when sending invite messages.',
                     desc = 'This will show or hide whisper messages to recruits, suggest going to social and turn on in-line whispers for best results.',
                     type = 'toggle',
                     width = 'full',
-                    order = 11,
+                    order = 13,
                     set = function(_, val) ns.db.settings.showWhispers = val end,
                     get = function() return ns.db.settings.showWhispers end,
                 },
@@ -602,7 +611,7 @@ ns.addonSettings = {
                     desc = 'Enable/disable greeting message to newly joined players.',
                     type = 'toggle',
                     width = 'full',
-                    order = 12,
+                    order = 14,
                     set = function(_, val) ns.db.settings.sendGreeting = val end,
                     get = function() return ns.db.settings.sendGreeting end,
                 },
@@ -611,7 +620,7 @@ ns.addonSettings = {
                     desc = 'This message will be sent to guild chat when a player accepts invite.',
                     type = 'input',
                     width = 'full',
-                    order = 13,
+                    order = 15,
                     set = function(_, val) ns.db.settings.greetingMsg = val end,
                     get = function() return ns.db.settings.greetingMsg end,
                 },
@@ -620,12 +629,19 @@ ns.addonSettings = {
                     desc = 'WoW requires a cooldown period between /who scans, this is the time that the system will wait between scans.',
                     type = 'input',
                     width = 'full',
-                    order = 14,
+                    order = 16,
                     set = function(_, val)
                         if tonumber(val) >=2 and tonumber(val) < 10 then ns.db.settings.scanWaitTime = tonumber(val)
                         else return tostring(ns.db.settings.scanWaitTime) end
                     end,
                     get = function() return tostring(ns.db.settings.scanWaitTime) end,
+                },
+                optWhoNote = {
+                    name = ns.code:cText('FFFFFF00', 'NOTE: ')..'After much testing, the default 6 seconds seems to consistently give results, less wait time seems to not always return data.',
+                    type = 'description',
+                    order = 17,
+                    width = 'full',
+                    fontSize = 'medium'
                 },
                 msgHeader3 = {
                     name = 'Guild Master Settings',

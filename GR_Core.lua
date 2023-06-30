@@ -83,8 +83,9 @@ function core:Init()
             showAppMsgs = false,
             -- Invite Settings
             compactMode = false,
-            scanWaitTime = 3,
+            scanWaitTime = 6,
             showWho = false,
+            showSummary = true,
             showWhispers = false,
             sendGreeting = false,
             greetingMsg = '',
@@ -188,7 +189,7 @@ function core:CreateMiniMapIcon()
 end
 function core:RegisterGuild()
     local clubID = C_Club.GetGuildClubId() or (ns.db.guildInfo.clubID or nil)
-    if not clubID or not C_Club.GetClubInfo(clubID) then
+    if not clubID or not IsInGuild() then
         self.isEnabled = false
         ns.code:consoleOut('Could not find an active guild, Guild Recruiter is not available.')
         return false

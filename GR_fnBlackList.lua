@@ -9,8 +9,9 @@ function blackList:add(name)
     if not name then return end
 
     local POPUP_REASON, blName = "inputReason", nil
+    local fName = select(2, UnitClass(name)) and ns.code:cPlayer(name, select(2, UnitClass(name))) or name
     StaticPopupDialogs[POPUP_REASON] = {
-        text = "Enter a reason:",
+        text = "Why do you want to black list:\n"..fName,
         button1 = "OK",
         button2 = "Cancel",
         OnAccept = function(data)
@@ -22,6 +23,7 @@ function blackList:add(name)
             ns.Analytics:add('Black_Listed')
             ns.code:consoleOut(blName..' was added to the black list with \"'..value..'\" as a reason.')
         end,
+        OnCancel = function() UIErrorsFrame:AddMessage(name..' was not added to Black List.') end,
         timeout = 0,
         whileDead = true,
         hideOnEscape = true,

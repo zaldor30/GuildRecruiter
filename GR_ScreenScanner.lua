@@ -28,6 +28,7 @@ function si:Init()
     self.pfScroll = aceGUI:Create("ScrollFrame")
     self.whoScroll = aceGUI:Create("ScrollFrame")
 
+    self.btnReset = aceGUI:Create('Button')
     self.btnSearch = aceGUI:Create('Button')
     self.btnInvite = aceGUI:Create('Button')
     self.btnRemove = aceGUI:Create('Button')
@@ -49,24 +50,96 @@ function si:StartScreenScanner()
     elseif self.isCompact then si:CompactModeScanner()
     else si:FullSizeScreenScanner() end
 
-    ns.events:RegisterEvent('WHO_LIST_UPDATE')
+    _G["GuildRecruiter"] = self.f
+    tinsert(UISpecialFrames, "GuildRecruiter")
+
     si:performQuery('SKIP_NEXT')
 end
 
 -- Creation of Scanner Screen
+function si:ResetFilter()
+    local recFound = next(self.tblFound)
+    if not recFound then
+        si:performQuery('RESET_FILTER')
+        ns.code:consoleOut('Filter has been reset.')
+        return
+    end
+    StaticPopupDialogs["MY_YES_NO_DIALOG"] = {
+        text = "Do you want to reset players found?",
+        button1 = "Yes",
+        button2 = "No",
+        OnAccept = function()
+            self.tblFound = table.wipe(self.tblFound) or {}
+            si:CreateResultWindows('PLAYERS_FOUND')
+            si:performQuery('RESET_FILTER')
+            ns.code:consoleOut('Filter has been reset.')
+        end,
+        OnCancel = function()
+            si:performQuery('RESET_FILTER')
+            ns.code:consoleOut('Filter has been reset.')
+        end,
+        timeout = 10,
+        whileDead = true,
+        hideOnEscape = false,
+    }
+    StaticPopup_Show("MY_YES_NO_DIALOG")
+end
+function si:ConfirmBlackList()
+    StaticPopupDialogs["MY_YES_NO_DIALOG"] = {
+        text = "Are you sure you want to Black List\nthe selected players?",
+        button1 = "Yes",
+        button2 = "No",
+        OnAccept = function()
+            for k, r in pairs(self.tblFound or {}) do
+                if r.checked then
+                    invite.removedCount = invite.removedCount + 1
+                    ns.BlackList:add(k)
+                    self.tblFound[k] = nil
+                end
+            end
+            si:CreateResultWindows('PLAYERS_FOUND')
+        end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = false,
+    }
+    StaticPopup_Show("MY_YES_NO_DIALOG")
+end
+function si:SaveShowType()
+    local msg = 'Would you like to make '..(self.isCompact and 'full screen mode' or 'compact screen mode'..'\nyour default for next time?')
+
+    self.f:Hide()
+    self.isCompact = not self.isCompact
+    si:StartScreenScanner()
+    StaticPopupDialogs["MY_YES_NO_DIALOG"] = {
+        text = msg,
+        button1 = "Yes",
+        button2 = "No",
+        OnAccept = function()
+            ns.db.settings.compactMode = self.isCompact
+        end,
+        timeout = 10,
+        whileDead = true,
+        hideOnEscape = true,
+    }
+    if ns.db.settings.compactMode ~= self.isCompact then
+        StaticPopup_Show("MY_YES_NO_DIALOG") end
+end
 function si:ScannerOnClose()
-    if (invite.invitedCount or 0) > 0 then
-        ns.code:consoleOut('You invited '..invite.invitedCount..' players to the guild.') end
-    if (invite.removedCount or 0) > 0 then
-        ns.code:consoleOut('You added '..invite.removedCount..' players to the black list.') end
+    if ns.db.settings.showSummary then
+        if (invite.removedCount or 0) > 0 then
+            ns.code:consoleOut('You added '..invite.removedCount..' players to the black list.') end
+        if (invite.invitedCount or 0) > 0 then
+            ns.code:consoleOut('You invited '..invite.invitedCount..' players to the guild.')
+            ns.code:consoleOut(invite.acceptedCount..' players accepted the guild invite.')
+            ns.code:consoleOut(invite.declinedCount..' players declined the guild invite.')
+            local remain = invite.invitedCount - (invite.acceptedCount + invite.declinedCount)
+            if remain > 0 then ns.code:consoleOut(remain..' player have not responed at this time.') end
+        end
+    end
     invite.invitedCount, invite.removedCount = 0, 0
 
     aceTimer:CancelAllTimers()
-    ns.events:UnregisterEvent('WHO_LIST_UPDATE')
-    --[[C_Timer.After(120, function()
-        if self.f and self.f:IsShown() then return end
-        ns.events:UnregisterEvent('ALL')
-    end)--]]
     self.f:Hide()
 end
 function si:CompactModeScanner()
@@ -84,17 +157,13 @@ function si:CompactModeScanner()
     local btn = aceGUI:Create('Button')
     btn:SetText('Full Size')
     btn:SetFullWidth(true)
-    btn:SetCallback('OnClick', function()
-        self.f:Hide()
-        self.isCompact = false
-        si:StartScreenScanner()
-    end)
+    btn:SetCallback('OnClick', function() si:SaveShowType() end)
     self.f:AddChild(btn)
 
-    btn = aceGUI:Create('Button')
+    btn = self.btnReset
     btn:SetText('Reset Filter')
     btn:SetFullWidth(true)
-    btn:SetCallback('OnClick', function() si:performQuery('RESET_FILTER') end)
+    btn:SetCallback('OnClick', function() si:ResetFilter() end)
     self.f:AddChild(btn)
 
     si:InviteGroup()
@@ -159,11 +228,7 @@ function si:InviteGroup()
         local btn = aceGUI:Create('Button')
         btn:SetText('Compact Mode')
         btn:SetFullWidth(true)
-        btn:SetCallback('OnClick', function()
-            self.f:Hide()
-            self.isCompact = true
-            si:StartScreenScanner()
-        end)
+        btn:SetCallback('OnClick', function() si:SaveShowType() end)
         pfGroup:AddChild(btn)
     end
 
@@ -196,16 +261,7 @@ function si:InviteGroup()
         ns.widgets:createTooltip(title, body)
     end)
     btnRemove:SetCallback('OnLeave', function() GameTooltip:Hide() end)
-    btnRemove:SetCallback('OnClick', function()
-        for k, r in pairs(self.tblFound or {}) do
-            if r.checked then
-                invite.removedCount = invite.removedCount + 1
-                ns.BlackList:add(k)
-                self.tblFound[k] = nil
-            end
-        end
-        si:CreateResultWindows('PLAYERS_FOUND')
-    end)
+    btnRemove:SetCallback('OnClick', function() si:ConfirmBlackList() end)
     pfGroup:AddChild(btnRemove)
 
     local labelFound = self.labelFound
@@ -247,14 +303,15 @@ function si:FooterGroup()
         self.f:AddChild(footerGroup)
 
         self.labelNextFilter:SetWidth(340)
-        self.labelNextFilter:SetText('Filter active: <none>')
+        self.labelNextFilter:SetText('Filter active: <Reset Filter>')
         self.labelNextFilter:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
         footerGroup:AddChild(self.labelNextFilter)
 
-        local btn = aceGUI:Create('Button')
+        local btn = self.btnReset
         btn:SetText('Reset Filter')
+        btn:SetFullWidth(false)
         btn:SetWidth(200)
-        btn:SetCallback('OnClick', function() si:performQuery('RESET_FILTER') end)
+        btn:SetCallback('OnClick', function() si:ResetFilter() end)
         footerGroup:AddChild(btn)
     end
 
@@ -270,14 +327,13 @@ function si:eventWhoQueryResults()
     self.tblLog = table.wipe(self.tblLog) or {}
     self.tblFound = self.tblFound or {}
 
-    si:hideWhoQueryWindow()
-
+    ns.events:UnregisterEvent('WHO_LIST_UPDATE')
     for i=1,C_FriendList.GetNumWhoResults() do
         local info = C_FriendList.GetWhoInfo(i)
         local pName = gsub(info.fullName, '-'..GetRealmName(), '')
         local rec = {name = pName, class = info.filename, level = info.level, guild = (info.fullGuildName or ''), info.area}
 
-        if not self.isCompact then table.insert(self.tblLog, rec) end
+        if not self.isCompact then tinsert(self.tblLog, rec) end
         if rec.guild == '' then
             self.tblFound[pName] = {name = pName, class = info.filename, zone = info.area, level = info.level, checked = false}
         end
@@ -350,12 +406,6 @@ function si:CreateResultWindows(whichOne, resultCount)
 end
 
 -- Perform Query Routines
-function si:hideWhoQueryWindow()
-    ns.code:ClickSound('DISABLE')
-    if not FriendsFrame:IsVisible() and self.showWhoQuery then FriendsFrame:Show()
-    elseif not self.showWhoQuery and FriendsFrame:IsVisible() then FriendsFrame:Hide() end
-    ns.code:ClickSound('ENABLE')
-end
 function si:performQuery(reset)
     local function createQueries()
         local db, dbFilter = ns.db.settings, ns.db.filter
@@ -369,7 +419,7 @@ function si:performQuery(reset)
                 for i=min, max, 5 do
                     local rangeStart, rangeEnd = i, i + 4
                     if rangeEnd > max then rangeEnd = max and max or (MAX_CHARACTER_LEVEL or 70) end
-                    table.insert(self.tblFilter, filter..' '..rangeStart..'-'..rangeEnd)
+                    tinsert(self.tblFilter, filter..' '..rangeStart..'-'..rangeEnd)
                 end
             end
         end
@@ -379,7 +429,7 @@ function si:performQuery(reset)
                 for i=min, max, 5 do
                     local rangeStart, rangeEnd = i, i + 4
                     if rangeEnd > max then rangeEnd = max and max or (MAX_CHARACTER_LEVEL or 70) end
-                    table.insert(self.tblFilter, filter..' '..rangeStart..'-'..rangeEnd)
+                    tinsert(self.tblFilter, filter..' '..rangeStart..'-'..rangeEnd)
                 end
             end
         end
@@ -400,7 +450,7 @@ function si:performQuery(reset)
                 for i=minLevel, maxLevel, 5 do
                     local rangeStart, rangeEnd = i, i + 4
                     if rangeEnd > maxLevel then rangeEnd = maxLevel and maxLevel or (MAX_CHARACTER_LEVEL or 70) end
-                    table.insert(tbl, filterOut..' '..rangeStart..'-'..rangeEnd)
+                    tinsert(tbl, filterOut..' '..rangeStart..'-'..rangeEnd)
                 end
             end
 
@@ -445,15 +495,31 @@ function si:performQuery(reset)
         if reset == 'RESET_FILTER' or not self.tblFilter or #self.tblFilter == 0 then
             createQueries()
             return
+        elseif reset == 'SKIP_NEXT' then return end
+
+
+        local function GetWho(query)
+            ns.events:RegisterEvent('WHO_LIST_UPDATE')
+
+            if FriendsFrame:IsShown() then
+                FriendsFrame:RegisterEvent("WHO_LIST_UPDATE");
+            elseif not ns.db.settings.showWho then
+                FriendsFrame:UnregisterEvent("WHO_LIST_UPDATE");
+            end
+
+            C_FriendList.SetWhoToUi(true)
+            C_FriendList.SendWho(query)
         end
 
         local filter = table.remove(self.tblFilter, 1)
-        local searchMessage = self.isCompact and SEARCH_BUTTON_PREFIX or SEARCH_BUTTON_PREFIX..' ('..(self.tblFilter[1] or '<none>')..')'
+        local searchMessage = self.isCompact and SEARCH_BUTTON_PREFIX or SEARCH_BUTTON_PREFIX..' ('..(self.tblFilter[1] or '<Reset Filter>')..')'
         local function waitTimer(remain, nextFilter)
             if remain <= 0 then
+                self.btnReset:SetDisabled(false)
                 self.btnSearch:SetDisabled(false)
                 self.btnSearch:SetText(searchMessage)
             else
+                self.btnReset:SetDisabled(true)
                 self.btnSearch:SetDisabled(true)
                 self.btnSearch:SetText(SEARCH_BUTTON_PREFIX..' ('.. remain..')')
                 remain = remain - 1
@@ -464,14 +530,13 @@ function si:performQuery(reset)
         self.btnSearch:SetText(searchMessage)
         if not self.isCompact then
             self.labelNextFilter:SetText('Current Filter: '..(filter or 'Press "Seach for Players" to restart filter.'), self.MAX_LENGTH) end
-        -- Show query window, search then hide again.
-        C_FriendList.SendWho(filter)
-        si:hideWhoQueryWindow()
+
+        GetWho(filter)
 
         local percent = (self.totalFilters - #self.tblFilter) / self.totalFilters
         local statusMsg = self.isCompact and FormatPercentage(percent, 2) or STATUS_TEXT_DEFAULT..' (Filter progress: '..FormatPercentage(percent, 2)..')'
         self.f:SetStatusText(statusMsg)
-        waitTimer((ns.db.settings.scanWaitTime or SCAN_WAIT_TIME), (filter or '<none>'))
+        waitTimer((ns.db.settings.scanWaitTime or SCAN_WAIT_TIME), (filter or '<Resetting Filter>'))
     end
 
     nextQuery()
@@ -492,6 +557,8 @@ function invite:Init()
     self.totalFound = 0
     self.removedCount = 0
     self.invitedCount = 0
+    self.acceptedCount = 0
+    self.declinedCount = 0
 end
 function invite:InitializeInvite()
     self.tblInvited = ns.dbInv.invitedPlayers or {}
@@ -536,12 +603,12 @@ function invite:invitePlayer(pName, msg, sendInvite, force, class)
     end
 
     class = class and class or select(2, UnitClass(pName))
-    print('invite, pName')
     if pName and CanGuildInvite() and not GetGuildInfo(pName) then
         if sendInvite then GuildInvite(pName) end
         if msg and ns.db.settings.inviteFormat ~= 2 then
             if not self.showWhispers then
-                ns.code:consoleOut('Sent invite to '..(ns.code:cPlayer(pName, class) or pName))
+                local msgOut = sendInvite and 'Sent invite and message to ' or 'Sent invite message to '
+                ns.code:consoleOut(msgOut..(ns.code:cPlayer(pName, class) or pName))
                 ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER_INFORM", MyWhisperFilter, msg)
             end
             SendChatMessage(msg, 'WHISPER', nil, pName)
@@ -583,9 +650,14 @@ function invite:ChatMsgHandler(...)
     local pName = msg:match('(.-) ')
     pName = gsub(pName, '-'..GetRealmName(), '')
 
-    if not strmatch(msg, 'guild') then return
+    if msg:match('not found') then
+        self.invitedCount = self.invitedCount - 1
+        ns.Analytics:add('Invited_Players', -1)
+        eraseRecord(pName)
+    elseif not strmatch(msg, 'guild') then return
     elseif strmatch(msg, 'joined the guild') and self.tblSentInvite and self.tblSentInvite[pName] then
         ns.Analytics:add('Accepted_Invite')
+        self.acceptedCount = self.acceptedCount + 1
         if not self.waitWelcome and ns.db.settings.sendGreeting and ns.db.settings.greetingMsg then
             self.waitWelcome = true
             C_Timer.After(5, function()
@@ -595,6 +667,7 @@ function invite:ChatMsgHandler(...)
         end
         eraseRecord(pName)
     elseif strmatch(msg, 'declines your guild') then
+        self.declinedCount = self.declinedCount + 1
         ns.Analytics:add('Declined_Invite')
         eraseRecord(pName)
     end

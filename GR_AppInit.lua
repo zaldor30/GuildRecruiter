@@ -29,7 +29,7 @@ GuildRecruiter = {}
 _G['GuildRecruiter'] = GuildRecruiter
 
 -- Constant Variables
-GR_VERSION_INFO = 'Guild Recruiter v'..GRADDON.version..' (Release Candidate)'
+GR_VERSION_INFO = 'Guild Recruiter v'..GRADDON.version
 SCAN_WAIT_TIME = 3
 PLAYER_PROFILE = UnitName('player')..' - '..GetRealmName()
 MAX_CHARACTER_LEVEL = GetMaxPlayerLevel()

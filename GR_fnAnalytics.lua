@@ -39,6 +39,6 @@ function analytics:add(key, amt)
 end
 function analytics:getFields()
     local tbl, tblSource = {}, analytics:new()
-    for k in pairs(tblSource) do table.insert(tbl, k) end
+    for k in pairs(tblSource) do tinsert(tbl, k) end
     return tbl
 end
