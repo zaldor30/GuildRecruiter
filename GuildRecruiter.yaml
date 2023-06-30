@@ -22,14 +22,7 @@ ignore:
   - .gitignore
   - .vscode
   - .github/ISSUE_TEMPLATE
-
-# Localization files
-localization:
-  # Specify the path to localization files and include pattern
-  locale:
-    path: Locales
-    pattern: "*.lua"
-
+  
 # Additional options
 options:
   # Specify any additional packaging options
