@@ -1,10 +1,9 @@
 <div align="center">
-    
-# Guild Recruiter
+
+![Logo](https://i.imgur.com/JiIb8K3.png)
 
 [![Guild Recruiter on Discord](https://img.shields.io/badge/discord-Always%20Be%20Convoking-7289DA?style=flat)](https://discord.gg/ZtS6Q2sKRH)
 
-![Logo](https://i.imgur.com/JiIb8K3.png)
 </div>
 
 Guild Recruiter is a powerful tool for getting new guild members to join.
