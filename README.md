@@ -1,22 +1,28 @@
-Description
-Guild Recruiter Features:
+<div align="center">
+    
+# Guild Recruiter
 
-    Custom messages to send potential guild members.
-    Custom filters for the /who search.
-    A welcome message that appears when a guild member joins.
-    Anti-spam, to prevent re-inviting a player within a certain number of days (controlled by the GM).
-    Full sync system, to maintain invited player list, black list, and other data.
-    Contains a list of zones (dungeons and raids) that will ignore players in those zones to now irritate them.
+[![Guild Recruiter on Discord](https://img.shields.io/badge/discord-weakauras-738bd7.svg?style=flat)](https://discord.gg/ZtS6Q2sKRH)
+</div>
 
- 
-How to use:
+Guild Recruiter is a powerful tool for getting new guild members to join.
 
-    You can use /gr or /recruiter help (i.e. /gr help) to get a list of commands
-    Settings will allow you to create messages to be sent to players.
-    Settings will also all you to create custom filters.
-        There are 2 default filters included with the addon to get you started.
+## Features
 
- 
+* Custom messages with ability to embed your guild link.
+* Welcome message option for when players join the guild.
+* Guild Master controlled antispam, keeps track of invites so you don't spam players.
+* Full sync with other Guid Recruiter users.
+* Antispam zones, if a player is in a current raid, dungeon, battleground etc, they will not get an invite.
+* Much more!
 
+## Documentation
+* Use /gr or /recruiter to access the addon outside the minimap icon.
+* /gr help or /recruiter help to see a list of options you can use.
+* Make sure you go into the settings to add a message, custom filters etc.
+
+There is a filter by class and another by race that is included with the addon.
+
+## Miscellaneous
 This is a new addon and while I have been working hard to debug it, I am sure there will be issues.
 You can join my support Discord at https://discord.gg/ZtS6Q2sKRH.
