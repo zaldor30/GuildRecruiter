@@ -21,8 +21,8 @@ ignore:
   - .github
   - .gitignore
   - .vscode
+  - README.md
+  - CHANGELOG.md
   
 # Additional options
-options:
-  # Specify any additional packaging options
-  - skip-changelog: false
+manual-changelog: CHANGELOG.md
