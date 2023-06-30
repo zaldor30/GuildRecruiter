@@ -1,5 +1,7 @@
 ## v1.0.12
 * Changed Minimap Icon
+* Added GM messages
+    - GM can create messages that will be synced to other officers.
 
 ## v1.0.11
 

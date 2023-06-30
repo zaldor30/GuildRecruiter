@@ -67,11 +67,14 @@ function mainScreen:GetMessageList()
     local db, dbMsg = ns.db, ns.db.messages
 
     if dbMsg then
-        local tbl = {}
-        local hasGuildLink = db.guildInfo.guildLink or false
-        for k, r in pairs(dbMsg.messageList or {}) do
+        local tbl, hasGuildLink = {}, db.guildInfo.guildLink or false
+
+        ns.datasets:GMessages()
+        for k, r in pairs(ns.datasets.tblGMMessages or {}) do
             local gLinkFound = strfind(r.message, 'GUILDLINK') or false
-            if not gLinkFound or (gLinkFound and hasGuildLink)  then tbl[k] = r.desc
+            if not gLinkFound or (gLinkFound and hasGuildLink)  then
+                if not r.gmMessage then tbl[k] = r.desc
+                elseif r.gmMessage then tbl[k] = ns.code:cText('FFAF640C', r.desc) end
             elseif not hasGuildLink and gLinkFound and k == dbMsg.activeMessage then dbMsg.activeMessage = nil end
         end
         self.cmbMessages:SetList(tbl)
@@ -239,8 +242,9 @@ function mainScreen:Top()
 
     -- Dropdown of messages to send
     local cmb = self.cmbMessages
-    cmb:SetLabel('Active Message')
-    -- setlist in mainScreen:GetMessageList()
+    cmb:SetLabel('Active Invite Message')
+    cmb:SetCallback('OnEnter', function() ns.widgets:createTooltip('Invite Messages', 'Highlighted messages are GM approved.') end)
+    cmb:SetCallback('OnLeave', function() GameTooltip:Hide() end)
     cmb:SetCallback('OnValueChanged', function(_,_, val)
         ns.db.messages.activeMessage = val
         mainScreen:SetButtons()

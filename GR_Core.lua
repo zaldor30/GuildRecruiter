@@ -107,7 +107,7 @@ function core:InitializeAddon(...) -- Continue Initialize After Player Enters wo
     GRADDON.dbInv = DB:New('GR_InvitedPlayersDB', nil, PLAYER_PROFILE)
     GRADDON.dbAnal = DB:New('GR_AnalyticsDB', nil, PLAYER_PROFILE)
 
-    ns.db = GRADDON.db.profile
+    ns.db, ns.dbGlobal = GRADDON.db.profile, GRADDON.db.global
     ns.dbBL = GRADDON.dbBl.global
     ns.dbInv = GRADDON.dbInv.global
     ns.dbAnal = GRADDON.dbAnal
@@ -122,17 +122,20 @@ function core:InitializeAddon(...) -- Continue Initialize After Player Enters wo
     if not GRADDON.clubID and not ns.db.guildInfo then return
     elseif ns.db.guildInfo then GRADDON.clubID = ns.db.guildInfo.clubID end
 
-    ns.dbInv[GRADDON.clubID] = ns.dbInv[GRADDON.clubID] or {}
-    ns.dbInv = ns.dbInv[GRADDON.clubID]
-
-    AC:RegisterOptionsTable('GR_Options', ns.addonSettings)
-    ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
-
     if not GRADDON.clubID or not IsInGuild() then
         ns.code:consoleOut('You are not currently in a guild.')
         ns.code:consoleOut('Guild Recruiter will be disabled.')
         return
     end
+
+    ns.dbInv[GRADDON.clubID] = ns.dbInv[GRADDON.clubID] or {}
+    ns.dbGlobal[GRADDON.clubID] = ns.dbGlobal[GRADDON.clubID] or {}
+
+    ns.dbInv = ns.dbInv[GRADDON.clubID]
+    ns.dbGlobal = ns.dbGlobal[GRADDON.clubID]
+
+    AC:RegisterOptionsTable('GR_Options', ns.addonSettings)
+    ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
 
     if not SlashCmdList['GR'] then
         self.slashCommand = 'gr'

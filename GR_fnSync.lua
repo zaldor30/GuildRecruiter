@@ -17,8 +17,9 @@ function sync:Init()
     self.autoSync = true
     self.commRegistered = false
 
-    self.master = false
+    self.gmFound = false
     self.syncMaster = nil
+    self.masterName = nil
     self.tblSyncClient = {}
 
     self.syncStart, self.startCount = nil, 0
@@ -29,18 +30,16 @@ function sync:consoleOut(msg)
 end
 function sync:StartStatusUpdate(starting, failed)
     local syncTime = date('%H:%M %m/%d/%Y')
-    local master = self.master and 'Master' or 'Client'
+    local master = self.syncMaster and 'Master' or 'Client'
 
     if starting then
         self.syncStart = GetTime()
         ns.code:consoleOut(master..' sync started at '..syncTime)
-        ns.MainScreen:SyncStatus(true, self.master, ns.code:cText('FF00FF00', 'Performing Sync'))
+        ns.MainScreen:SyncStatus(true, self.syncMaster, ns.code:cText('FF00FF00', 'Performing Sync'))
     else
-        self.master, self.syncMaster = nil, nil
-
         if not failed then ns.db.settings.lastSync = syncTime end
         ns.code:consoleOut(master..' sync complete at '..syncTime)
-        if self.master then
+        if self.syncMaster then
             ns.code:consoleOut('Total sync time '..(GetTime() - self.syncStart)) end
         ns.MainScreen:SyncStatus(false)
     end
@@ -54,7 +53,7 @@ end
 -- Call Back Routines
 function sync:OnCommReceived(prefix, message, distribution, sender)
     local distroOk = (distribution == 'GUILD' or distribution == 'WHISPER') and true or false
-    if not distroOk or sender == UnitName('player') or prefix ~= GRADDON.prefix or not message then return end
+    if (not distroOk or sender == UnitName('player')) or prefix ~= GRADDON.prefix or not message then return end
 
     local success, tblData = false, nil
     if not message:match('SYNC_') then
@@ -66,13 +65,13 @@ function sync:OnCommReceived(prefix, message, distribution, sender)
         else sync:consoleOut(sender..' message FAILED to decode.') end
     end
 
-    if self.master then -- Master Communications
+    if self.syncMaster then -- Master Communications
         -- Expected Messages: SYNC_NEED_CONFIRM, DATA_RECEIVED
-        if self.master and success then sync:MasterSync('DATA_RECEIVED', sender, tblData)
+        if self.syncMaster and success then sync:MasterSync('DATA_RECEIVED', sender, tblData)
         else sync:MasterSync(message, sender) end
-    elseif not self.master then -- Client Communications
+    elseif not self.syncMaster then -- Client Communications
         -- Expected Messages: SYNC_REQUEST, SYNC_DATA_REQUEST, DATA_RECEIVED
-        if self.syncMaster == sender and success then sync:ClientSync('DATA_RECEIVED', sender, tblData)
+        if self.masterName == sender and success then sync:ClientSync('DATA_RECEIVED', sender, tblData)
         else sync:ClientSync(message, sender) end
     end
 end
@@ -81,7 +80,7 @@ end
 function sync:StartSyncMaster()
     sync:StartStatusUpdate(true)
 
-    self.master, self.syncMaster = true, false
+    self.gmFound, self.syncMaster, self.masterName = true, true, UnitName('player')
     self.totalInvited, self.totalBlackListed = 0, 0
     self.tblSyncClient = table.wipe(self.tblSyncClient) or {}
 
@@ -146,12 +145,12 @@ end
 -- Client Sync Routines
 function sync:ClientSync(msg, sender, ...)
     if msg == 'SYNC_REQUEST' then
-        self.master, self.syncMaster = false, sender
+        self.syncMaster, self.masterName = false, sender
         sync:SendCommMessage('SYNC_NEED_CONFIRM', 'WHISPER', sender)
     elseif msg == 'SYNC_DATA_REQUEST' then
         sync:StartStatusUpdate(true)
         local syncData = sync:PrepareData()
-        sync:SendCommMessage(syncData, 'WHISPER', self.syncMaster)
+        sync:SendCommMessage(syncData, 'WHISPER', self.masterName)
     elseif msg == 'DATA_RECEIVED' then
         sync:ParseSyncData(..., sender)
         sync:StartStatusUpdate(false)
@@ -164,13 +163,16 @@ function sync:PrepareData()
 
     self.totalInvited, self.totalBlackListed = 0, 0
     local tblSync = {
-        greetingMessage = (IsGuildLeader() and ns.db.settings.greetingMsg) and ns.db.settings.greetingMsg or nil,
+        isGuildLeader = IsGuildLeader() or false,
+        greetingMessage = ns.db.settings.greetingMsg or nil,
+        messageList = ns.dbGlobal.messageList or {},
         rememberPlayers = ns.db.settings.antiSpam or false,
         rememberTime = ns.db.settings.reinviteAfter or 5,
         guildLink = (ns.db.guildInfo and ns.db.guildInfo.guildLink) and ns.db.guildInfo.guildLink or nil,
         invitedPlayers = ns.dbInv.invitedPlayers or {},
         blackList = ns.dbBL.blackList or {},
     }
+
     local serializedData = GRADDON:Serialize(tblSync)
     local compressedData = LibDeflate:CompressDeflate(serializedData)
     return LibDeflate:EncodeForWoWAddonChannel(compressedData)
@@ -178,8 +180,12 @@ end
 function sync:ParseSyncData(tblData, sender)
     local invitedCount, blackListCount, blRemovedCount = 0, 0, 0
 
-    if (tblData.guildLink and ns.db.guildInfo.guildLink) and not not IsGuildLeader() then ns.db.guildInfo.guildLink = tblData.guildLink end
-    if not IsGuildLeader() then
+    print('Parsing Data')
+    if not self.gmFound and not IsGuildLeader() then
+        self.gmFound = tblData.isGuildLeader or self.gmFound
+        if (tblData.guildLink and ns.db.guildInfo.guildLink) and not IsGuildLeader() then
+            ns.db.guildInfo.guildLink = tblData.guildLink end
+        ns.dbGlobal.messageList = tblData.messageList or {}
         ns.db.settings.greetingMsg = ((not ns.db.settings.greetingMsg or ns.db.settings.greetingMsg:trim() == '') and tblData.greetingMessage) and tblData.greetingMessage or (ns.db.settings.greetingMsg or nil)
         ns.db.settings.antiSpam = tblData.rememberPlayers or false
         ns.db.settings.reinviteAfter = tblData.rememberTime or 5
