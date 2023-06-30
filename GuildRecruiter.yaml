@@ -21,7 +21,6 @@ ignore:
   - .github
   - .gitignore
   - .vscode
-  - .github/ISSUE_TEMPLATE
   
 # Additional options
 options:
