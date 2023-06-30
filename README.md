@@ -2,7 +2,9 @@
     
 # Guild Recruiter
 
-[![Guild Recruiter on Discord](https://img.shields.io/badge/discord-weakauras-738bd7.svg?style=flat)](https://discord.gg/ZtS6Q2sKRH)
+[![Guild Recruiter on Discord](https://img.shields.io/badge/discord-Always%20Be%20Convoking-7289DA?style=flat)](https://discord.gg/ZtS6Q2sKRH)
+
+![Logo](https://i.imgur.com/JiIb8K3.png)
 </div>
 
 Guild Recruiter is a powerful tool for getting new guild members to join.
@@ -25,4 +27,3 @@ There is a filter by class and another by race that is included with the addon.
 
 ## Miscellaneous
 This is a new addon and while I have been working hard to debug it, I am sure there will be issues.
-You can join my support Discord at https://discord.gg/ZtS6Q2sKRH.
