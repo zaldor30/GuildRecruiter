@@ -21,7 +21,6 @@ manual-changelog:
   markup-type: markdown
 
 ignore:
-  # List any files or folders to exclude from packaging
   - .git
   - .github
   - .gitignore
