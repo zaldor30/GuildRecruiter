@@ -11,6 +11,8 @@ function ds:Init()
 
     self.tblBadByName = {}
     self.tblBadZones = ds:invalidZones()
+
+    self.tblGMMessages = {}
 end
 function ds:classes()
     return {
@@ -136,5 +138,18 @@ function ds:invalidZones()
     for k, r in pairs(tbl) do self.tblBadByName[r] = k end
 
     return tbl
+end
+function ds:GMessages()
+    local dbMessages = ns.db.messages.messageList or nil
+    local dbGMessages = ns.dbGlobal.messageList or {}
+
+    -- GM messages then personal
+    local tbl = {}
+    for _,r in pairs(dbGMessages) do
+        r.gmMessage = true
+        tinsert(tbl, r)
+    end
+    for _,r in pairs(dbMessages) do tinsert(tbl, r) end
+    self.tblGMMessages = tbl
 end
 ds:Init()

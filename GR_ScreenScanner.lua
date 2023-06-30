@@ -44,7 +44,8 @@ function si:StartScreenScanner()
         self.showWhoQuery = ns.db.settings.showWho or false
     end
 
-    self.message = (ns.db.messages and ns.db.messages.activeMessage) and ns.code:GuildReplace(ns.db.messages.messageList[ns.db.messages.activeMessage].message) or nil
+    local dbMessageList = ns.datasets.tblGMMessages or {}
+    self.message = ns.db.messages.activeMessage and ns.code:GuildReplace(dbMessageList[ns.db.messages.activeMessage].message) or nil
 
     if self.f and self.isCompact == self.compactActive then self.f:Show()
     elseif self.isCompact then si:CompactModeScanner()
@@ -604,7 +605,7 @@ function invite:invitePlayer(pName, msg, sendInvite, force, class)
 
     class = class and class or select(2, UnitClass(pName))
     if pName and CanGuildInvite() and not GetGuildInfo(pName) then
-        if sendInvite then GuildInvite(pName) end
+        --if sendInvite then GuildInvite(pName) end
         if msg and ns.db.settings.inviteFormat ~= 2 then
             if not self.showWhispers then
                 local msgOut = sendInvite and 'Sent invite and message to ' or 'Sent invite message to '
@@ -617,10 +618,10 @@ function invite:invitePlayer(pName, msg, sendInvite, force, class)
     end
 end
 function invite:ScannerInvitePlayer()
-    local db, dbMsg = ns.db.settings, ns.db.messages
+    local db, dbMsg, msgList = ns.db.settings, ns.db.messages, ns.datasets.tblGMMessages or {}
     local inviteFormat = db.inviteFormat
 
-    local msg = (inviteFormat ~= 2 and dbMsg.activeMessage) and ns.code:GuildReplace(dbMsg.messageList[dbMsg.activeMessage].message) or nil
+    local msg = (inviteFormat ~= 2 and dbMsg.activeMessage) and ns.code:GuildReplace(msgList[dbMsg.activeMessage].message) or nil
     local sendInvite = inviteFormat ~= 1 or false
 
     local key = next(si.tblFound or {})
