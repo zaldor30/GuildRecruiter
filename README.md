@@ -19,5 +19,4 @@ How to use:
  
 
 This is a new addon and while I have been working hard to debug it, I am sure there will be issues.
-
 You can join my support Discord at https://discord.gg/ZtS6Q2sKRH.
