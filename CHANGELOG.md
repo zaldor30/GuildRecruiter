@@ -1,4 +1,4 @@
-## v1.0.16
+## v1.0.17
 * Fixed misspelling of Rogue
 * Fixed counter for summary after scanning
 
