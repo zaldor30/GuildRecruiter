@@ -1,6 +1,6 @@
 ## v1.0.16
-    - Fixed misspelling of Rogue
-    - Fixed counter for summary after scanning
+* Fixed misspelling of Rogue
+* Fixed counter for summary after scanning
 
 ## v1.0.15
 * Fix to messages so scan button works
