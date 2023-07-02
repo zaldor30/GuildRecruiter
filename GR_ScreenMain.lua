@@ -8,6 +8,8 @@ function mainScreen:Init()
     self.maintActive = false
     self.scanIsDisabled = false
 
+    self.tblMessages = {}
+
     self.defaultStatus = GR_VERSION_INFO
 
     self.tblFormat = {
@@ -48,10 +50,10 @@ function mainScreen:SetButtons()
 
     self.btnScan:SetDisabled(false)
     if dbMsg and dbMsg.activeMessage then
-        dbMsg.activeMessage = (not dbMsg or not dbMsg.activeMessage) and nil or ((not dbMsg.messageList or not dbMsg.messageList[dbMsg.activeMessage]) and nil or ((dbMsg and dbMsg.activeMessage) or nil))
+        dbMsg.activeMessage = (not dbMsg or not dbMsg.activeMessage) and nil or (not self.tblMessages[dbMsg.activeMessage] and nil or ((dbMsg and dbMsg.activeMessage) or nil))
     end
     if db.inviteFormat == 2 then self.errLabel:SetText('') return
-    elseif not dbMsg or ((not db.inviteFormat or db.inviteFormat ~= 2) and (not dbMsg.messageList or #dbMsg.messageList == 0)) then
+    elseif not (not db.inviteFormat or db.inviteFormat ~= 2) and (not next(self.tblMessages)) then
         msg = 'No messages created in settings.'
         self.errLabel:SetText(msg)
         self.btnScan:SetDisabled(true)
@@ -77,9 +79,10 @@ function mainScreen:GetMessageList()
                 elseif r.gmMessage then tbl[k] = ns.code:cText('FFAF640C', r.desc) end
             elseif not hasGuildLink and gLinkFound and k == dbMsg.activeMessage then dbMsg.activeMessage = nil end
         end
-        self.cmbMessages:SetList(tbl)
+        self.tblMessages = tbl
+        self.cmbMessages:SetList(self.tblMessages)
 
-        dbMsg.activeMessage = (dbMsg.activeMessage and tbl[dbMsg.activeMessage]) and dbMsg.activeMessage or nil
+        dbMsg.activeMessage = (dbMsg.activeMessage and self.tblMessages[dbMsg.activeMessage]) and dbMsg.activeMessage or nil
         self.cmbMessages:SetValue(dbMsg.activeMessage)
     end
 end
