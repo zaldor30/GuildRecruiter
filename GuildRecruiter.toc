@@ -1,5 +1,5 @@
 ## Interface: 100100
-## Version: 1.0.14
+## Version: 1.0.15
 ## Title: GuildRecruiter
 ## Notes: Allows guild officers to recruite new members
 ## Author: Moonfury

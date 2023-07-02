@@ -605,7 +605,7 @@ function invite:invitePlayer(pName, msg, sendInvite, force, class)
 
     class = class and class or select(2, UnitClass(pName))
     if pName and CanGuildInvite() and not GetGuildInfo(pName) then
-        --if sendInvite then GuildInvite(pName) end
+        if sendInvite then GuildInvite(pName) end
         if msg and ns.db.settings.inviteFormat ~= 2 then
             if not self.showWhispers then
                 local msgOut = sendInvite and 'Sent invite and message to ' or 'Sent invite message to '
