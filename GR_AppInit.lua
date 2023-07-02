@@ -13,7 +13,7 @@ GRADDON.classInfo = {
 	WARRIOR = {fClass = 'Warrior', color = 'ffc79c6e', icon = iconPath..'ClassIcon_Warrior'},
 	PALADIN = {fClass = 'Paladin', color = 'fff58cba', icon = iconPath..'ClassIcon_Paladin'},
 	HUNTER = {fClass = 'Hunter', color = 'ffabd473', icon = iconPath..'ClassIcon_Hunter'},
-	ROGUE = {fClass = 'Rouge', color = 'fffff569', icon = iconPath..'ClassIcon_Rogue'},
+	ROGUE = {fClass = 'Rogue', color = 'fffff569', icon = iconPath..'ClassIcon_Rogue'},
 	PRIEST = {fClass = 'Priest', color = 'ffffffff', icon = iconPath..'ClassIcon_Priest'},
 	DEATHKNIGHT = {fClass = 'Death Knight', color = 'ffc41f3b', icon = iconPath..'ClassIcon_DeathKnight'},
 	SHAMAN = {fClass = 'Shaman', color = 'ff0070de', icon = iconPath..'ClassIcon_Saman'},

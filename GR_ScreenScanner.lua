@@ -138,7 +138,7 @@ function si:ScannerOnClose()
             if remain > 0 then ns.code:consoleOut(remain..' player have not responed at this time.') end
         end
     end
-    invite.invitedCount, invite.removedCount = 0, 0
+    invite.invitedCount, invite.removedCount, self.acceptedCount, self.declinedCount = 0, 0, 0, 0
 
     aceTimer:CancelAllTimers()
     self.f:Hide()
