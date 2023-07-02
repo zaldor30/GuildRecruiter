@@ -19,7 +19,7 @@ function ds:classes()
         ['WARRIOR'] = { id = 1, name = 'Warrior', classFile = 'WARRIOR', tank = true, healer = false, melee = true, ranged = false },
         ['PALADIN'] = { id = 2, name = 'Paladin', classFile = 'PALADIN', tank = true, healer = true, melee = true, ranged = false },
         ['HUNTER'] = { id = 3, name = 'Hunter', classFile = 'HUNTER', tank = false, healer = false, melee = false, ranged = true },
-        ['ROUGE'] = { id = 4, name = 'Rouge', classFile = 'ROUGE', tank = false, healer = false, melee = true, ranged = false },
+        ['ROGUE'] = { id = 4, name = 'Rogue', classFile = 'ROGUE', tank = false, healer = false, melee = true, ranged = false },
         ['PRIEST'] = { id = 5, name = 'Priest', classFile = 'PRIEST', tank = false, healer = false, melee = false, ranged = true },
         ['DEATHKNIGHT'] = { id = 6, name = 'Death Knight', classFile = 'DEATHKNIGHT', tank = true, healer = false, melee = true, ranged = false },
         ['SHAMAN'] = { id = 7, name = 'Shaman', classFile = 'SHAMAN', tank = false, healer = true, melee = true, ranged = true },
