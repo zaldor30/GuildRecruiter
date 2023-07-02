@@ -3,8 +3,8 @@
     - Fixed counter for summary after scanning
 
 ## v1.0.15
-    * Fix to messages so scan button works
-    * Fix to actually send invite to player
+* Fix to messages so scan button works
+* Fix to actually send invite to player
 
 ## v1.0.14
 * Changed Minimap Icon
