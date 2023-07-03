@@ -149,7 +149,7 @@ function ds:GMessages()
         r.gmMessage = true
         tinsert(tbl, r)
     end
-    for _,r in pairs(dbMessages) do tinsert(tbl, r) end
+    for _,r in pairs(dbMessages or {}) do tinsert(tbl, r) end
     self.tblGMMessages = tbl
 end
 ds:Init()
