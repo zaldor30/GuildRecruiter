@@ -41,6 +41,8 @@ function sync:StartStatusUpdate(starting, failed)
         ns.code:consoleOut(master..' sync complete at '..syncTime)
         if self.syncMaster then
             ns.code:consoleOut('Total sync time '..(GetTime() - self.syncStart)) end
+            self.syncMaster, self.masterName = nil, nil
+            ns.MainScreen:GetMessageList()
         ns.MainScreen:SyncStatus(false)
     end
 end
@@ -217,3 +219,7 @@ function sync:ParseSyncData(tblData, sender)
     sync:consoleOut('Finished sync with '..sender)
 end
 sync:Init()
+
+local function OnCommReceived(prefix, message, distribution, sender)
+    sync:OnCommReceived(prefix, message, distribution, sender) end
+GRADDON:RegisterComm(GRADDON.prefix, OnCommReceived)

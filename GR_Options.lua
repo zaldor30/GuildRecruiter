@@ -68,201 +68,10 @@ ns.addonSettings = {
     name = GR_VERSION_INFO,
     type = 'group',
     args = {
-        mnuGMMsg = {
-            type = 'group',
-            name = 'GM: Messages',
-            hidden = function() return not IsGuildLeader() end,
-            order = 0,
-            args = {
-                msgGMHeader1 = {
-                    name = 'Message Formatting',
-                    type = 'header',
-                    order = 0,
-                },
-                msgGMDesc = {
-                    name = ns.code:cText('FF00FF00', 'These messages will be pushed out to other officers that can invite players.\n\n')..ns.code:cText('FFFFFF00', 'NAME')..': Player name that is being invited to the guild.\n'..ns.code:cText('FFFFFF00', 'GUILDLINK')..': Clickable link to allow player to join the guild.\n'..ns.code:cText('FFFFFF00', 'GUILDNAME')..': Guild name in format <ShadowBound>.',
-                    type = 'description',
-                    fontSize = 'medium',
-                    order = 1,
-                },
-                msgGMHeader2 = {
-                    name = '',
-                    type = 'header',
-                    order = 2,
-                },
-                msgGMActive = {
-                    name = 'Invite Messages',
-                    desc = 'The messges that will be sent to potential recruits.',
-                    type = 'select',
-                    style = 'dropdown',
-                    order = 3,
-                    width = 2,
-                    values = function()
-                        local tbl = {}
-                        for k, r in pairs(ns.dbGlobal.messageList or {}) do tbl[k] = r.desc end
-                        return tbl
-                    end,
-                    set = function(_, val) selectedGMMessage = val end,
-                    get = function()
-                        local msg = ns.dbGlobal.messageList or nil
-                        local active = selectedGMMessage or nil
-
-                        if active and msg then tblGMMessage = msg[active] or optTables:newMsg()
-                        elseif not msg then selectedGMMessage = nil end
-
-                        return active
-                    end,
-                },
-                msgGMNewBtn = {
-                    name = 'New',
-                    desc = 'Create a new message.',
-                    type = 'execute',
-                    width = .5,
-                    order = 4,
-                    disabled = function() return not selectedGMMessage end,
-                    func = function()
-                        tblGMMessage = optTables:newMsg()
-                        selectedGMMessage = nil
-                    end,
-                },
-                msgGMInviteDesc = {
-                    name = 'Invite Description',
-                    desc = 'Short description of the message.',
-                    type = 'input',
-                    multiline = false,
-                    order = 5,
-                    width = 'full',
-                    set = function(_, val) tblGMMessage.desc = val end,
-                    get = function() return tblGMMessage.desc or '' end,
-                },
-                msgGMInvite = {
-                    name = 'Invite Message',
-                    type = 'input',
-                    multiline = 10,
-                    order = 6,
-                    width = 'full',
-                    set = function(_, val) tblGMMessage.message = val end,
-                    get = function() return tblGMMessage.message or '' end,
-                },
-                msgGMHeader3 = {
-                    name = 'Message Preview',
-                    type = 'header',
-                    order = 7,
-                },
-                msgGMPreview = {
-                    name = function()
-                        gmPreview = ns.code:GuildReplace(tblGMMessage.message)
-                        return (ns.code:cText('FFFF80FF', 'To [')..ns.code.fPlayerName..ns.code:cText('FFFF80FF', ']: '..(gmPreview or ''))) or ''
-                    end,
-                    type = 'description',
-                    order = 8,
-                    width = 'full',
-                    fontSize = 'medium'
-                },
-                msgGMHeader4 = {
-                    name = '',
-                    type = 'header',
-                    order = 10
-                },
-                msgGMPreviewCount = {
-                    name = function()
-                        local count = string.len(gmPreview or '')
-                        local color = count < 255 and 'FF00FF00' or 'FFFF0000'
-                        return 'Message Length: '..ns.code:cText(color, count)..' (255 characters per message)'
-                    end,
-                    type = 'description',
-                    order = 11,
-                    width = 'full',
-                    fontSize = 'medium'
-                },
-                msgGMHeader5 = {
-                    name = '',
-                    type = 'header',
-                    order = 12,
-                },
-                msgGMInviteDel = {
-                    name = 'Delete',
-                    desc = 'Delete the selected message.',
-                    type = 'execute',
-                    confirm = function() return 'Are you sure you want to delete this message?' end,
-                    width = .5,
-                    disabled = function() return not selectedGMMessage and true or false end,
-                    func = function()
-                        local msg = ns.dbGlobal.messageList or nil
-                        local active = selectedGMMessage or nil
-                        if active and msg and msg[active] then
-                            msg[active] = nil
-                            selectedGMMessage = nil
-                            tblGMMessage = optTables:newMsg()
-                        end
-                    end,
-                },
-                msgGMInviteSave = {
-                    name = 'Save',
-                    desc = 'Save the selected message.',
-                    type = 'execute',
-                    width = .5,
-                    disabled = function()
-                        if not tblGMMessage then return true end
-                        return not ((tblGMMessage.desc and strlen(tblGMMessage.desc) > 0) and (tblGMMessage.message and strlen(tblGMMessage.message) > 0)) end,
-                    func = function()
-                        local msg = ns.dbGlobal.messageList or {}
-                        local active = selectedGMMessage
-
-                        if not active then
-                            tinsert(msg, tblGMMessage)
-                            active = #msg
-                        else msg[active] = tblGMMessage end
-                        ns.dbGlobal.messageList = msg
-
-                        tblGMMessage = optTables:newMsg()
-                        selectedGMMessage = nil
-                        UIErrorsFrame:AddMessage('Message Saved', 1.0, 0.1, 0.1, 1.0)
-                    end,
-                }
-            }
-        },
-        mnuGMOptions = {
-            type = 'group',
-            name = 'GM: Options',
-            hidden = function() return not IsGuildLeader() end,
-            order = 1,
-            args = {
-                optRememberInvite = {
-                    name = 'Anti guild spam protection.',
-                    desc = "Remembers invited players so you don't constantly spam them invites",
-                    type = 'toggle',
-                    disabled = not IsGuildLeader(),
-                    width = 1.5,
-                    order = 22,
-                    set = function(_, val) ns.db.settings.antiSpam = val end,
-                    get = function() return ns.db.settings.antiSpam end,
-                },
-                optReInvite = {
-                    name = 'Reinvite players after:',
-                    desc = 'Number of days before resetting invite status.',
-                    type = 'select',
-                    style = 'dropdown',
-                    order = 23,
-                    width = 1,
-                    disabled = not IsGuildLeader(),
-                    values = function()
-                        return {
-                            [1] = '1 day',
-                            [3] = '3 days',
-                            [5] = '5 days',
-                            [7] = '7 days',
-                        }
-                    end,
-                    set = function(_, val) ns.db.settings.reinviteAfter = tonumber(val) end,
-                    get = function() return ns.db.settings.reinviteAfter end,
-                },
-            }
-        },
         mnuMsg = {
             name = 'Messages',
             type = 'group',
-            order = 10,
+            order = 0,
             args = {
                 msgHeader1 = {
                     name = 'Message Formatting',
@@ -422,10 +231,166 @@ ns.addonSettings = {
                 }
             },
         },
+        mnuGMMsg = {
+            type = 'group',
+            name = 'GM: Messages',
+            order = 1,
+            args = {
+                msgGMHeader1 = {
+                    name = 'Message Formatting',
+                    type = 'header',
+                    order = 0,
+                },
+                msgGMDesc = {
+                    name = ns.code:cText('FF00FF00', 'These messages will be pushed out to other officers that can invite players.\n\n')..ns.code:cText('FFFFFF00', 'NAME')..': Player name that is being invited to the guild.\n'..ns.code:cText('FFFFFF00', 'GUILDLINK')..': Clickable link to allow player to join the guild.\n'..ns.code:cText('FFFFFF00', 'GUILDNAME')..': Guild name in format <ShadowBound>.',
+                    type = 'description',
+                    fontSize = 'medium',
+                    order = 1,
+                },
+                msgGMHeader2 = {
+                    name = '',
+                    type = 'header',
+                    order = 2,
+                },
+                msgGMActive = {
+                    name = 'Invite Messages',
+                    desc = 'The messges that will be sent to potential recruits.',
+                    type = 'select',
+                    style = 'dropdown',
+                    order = 3,
+                    width = 2,
+                    values = function()
+                        local tbl = {}
+                        for k, r in pairs(ns.dbGlobal.messageList or {}) do tbl[k] = r.desc end
+                        return tbl
+                    end,
+                    set = function(_, val) selectedGMMessage = val end,
+                    get = function()
+                        local msg = ns.dbGlobal.messageList or nil
+                        local active = selectedGMMessage or nil
+
+                        if active and msg then tblGMMessage = msg[active] or optTables:newMsg()
+                        elseif not msg then selectedGMMessage = nil end
+
+                        return active
+                    end,
+                },
+                msgGMNewBtn = {
+                    name = 'New',
+                    desc = 'Create a new message.',
+                    type = 'execute',
+                    width = .5,
+                    order = 4,
+                    disabled = function() return not selectedGMMessage end,
+                    hidden = function() return not IsGuildLeader() end,
+                    func = function()
+                        tblGMMessage = optTables:newMsg()
+                        selectedGMMessage = nil
+                    end,
+                },
+                msgGMInviteDesc = {
+                    name = 'Invite Description',
+                    desc = 'Short description of the message.',
+                    type = 'input',
+                    multiline = false,
+                    order = 5,
+                    width = 'full',
+                    set = function(_, val) tblGMMessage.desc = val end,
+                    get = function() return tblGMMessage.desc or '' end,
+                },
+                msgGMInvite = {
+                    name = 'Invite Message',
+                    type = 'input',
+                    multiline = 10,
+                    order = 6,
+                    width = 'full',
+                    set = function(_, val) tblGMMessage.message = val end,
+                    get = function() return tblGMMessage.message or '' end,
+                },
+                msgGMHeader3 = {
+                    name = 'Message Preview',
+                    type = 'header',
+                    order = 7,
+                },
+                msgGMPreview = {
+                    name = function()
+                        gmPreview = ns.code:GuildReplace(tblGMMessage.message)
+                        return (ns.code:cText('FFFF80FF', 'To [')..ns.code.fPlayerName..ns.code:cText('FFFF80FF', ']: '..(gmPreview or ''))) or ''
+                    end,
+                    type = 'description',
+                    order = 8,
+                    width = 'full',
+                    fontSize = 'medium'
+                },
+                msgGMHeader4 = {
+                    name = '',
+                    type = 'header',
+                    order = 10
+                },
+                msgGMPreviewCount = {
+                    name = function()
+                        local count = string.len(gmPreview or '')
+                        local color = count < 255 and 'FF00FF00' or 'FFFF0000'
+                        return 'Message Length: '..ns.code:cText(color, count)..' (255 characters per message)'
+                    end,
+                    type = 'description',
+                    order = 11,
+                    width = 'full',
+                    fontSize = 'medium'
+                },
+                msgGMHeader5 = {
+                    name = '',
+                    type = 'header',
+                    order = 12,
+                },
+                msgGMInviteDel = {
+                    name = 'Delete',
+                    desc = 'Delete the selected message.',
+                    type = 'execute',
+                    confirm = function() return 'Are you sure you want to delete this message?' end,
+                    width = .5,
+                    disabled = function() return not selectedGMMessage and true or false end,
+                    hidden = function() return not IsGuildLeader() end,
+                    func = function()
+                        local msg = ns.dbGlobal.messageList or nil
+                        local active = selectedGMMessage or nil
+                        if active and msg and msg[active] then
+                            msg[active] = nil
+                            selectedGMMessage = nil
+                            tblGMMessage = optTables:newMsg()
+                        end
+                    end,
+                },
+                msgGMInviteSave = {
+                    name = 'Save',
+                    desc = 'Save the selected message.',
+                    type = 'execute',
+                    width = .5,
+                    disabled = function()
+                        if not tblGMMessage then return true end
+                        return not ((tblGMMessage.desc and strlen(tblGMMessage.desc) > 0) and (tblGMMessage.message and strlen(tblGMMessage.message) > 0)) end,
+                    hidden = function() return not IsGuildLeader() end,
+                    func = function()
+                        local msg = ns.dbGlobal.messageList or {}
+                        local active = selectedGMMessage
+
+                        if not active then
+                            tinsert(msg, tblGMMessage)
+                            active = #msg
+                        else msg[active] = tblGMMessage end
+                        ns.dbGlobal.messageList = msg
+
+                        tblGMMessage = optTables:newMsg()
+                        selectedGMMessage = nil
+                        UIErrorsFrame:AddMessage('Message Saved', 1.0, 0.1, 0.1, 1.0)
+                    end,
+                }
+            }
+        },
         mnuFilterList = {
             name = 'Custom Filters',
             type = 'group',
-            order = 11,
+            order = 10,
             args = {
                 filterHeader1 = {
                     name = 'Filter Editor',
@@ -715,10 +680,70 @@ ns.addonSettings = {
                 },
             }
         },
+        mnuBlackList = {
+            name = 'Black List',
+            type = 'group',
+            order = 11,
+            args = {
+                blDesc = {
+                    name = 'Players marked in '..ns.code:cText('FFFF0000', 'RED')..' are marked for deletion.\nPlayers marked in '..ns.code:cText('FF00FF00', 'GREEN')..' are active black listed players.',
+                    type = 'description',
+                    fontSize = 'medium',
+                    order = 1,
+                },
+                blRemoveButton = {
+                    name = 'Toggle Selected Black List Entries',
+                    desc = 'Black List entries marked for deletion will be perinately removed 30 days after marked.  During this time, the addon will ignore the selected Black List entries.',
+                    type = 'execute',
+                    width = 'full',
+                    order = 2,
+                    func = function()
+                        for _,r in pairs(ns.dbBL.blackList) do
+                            if r.selected and not r.markedForDelete then
+                                r.markedForDelete = true
+                                r.expirationDate = C_DateAndTime.GetServerTimeLocal() + (30 * SECONDS_IN_A_DAY)
+                            elseif r.selected and r.markedForDelete then
+                                r.markedForDelete = false
+                                r.expirationDate = nil
+                            end
+
+                            r.selected = false
+                        end
+                    end,
+                },
+                blMultiSelect = {
+                    type = 'multiselect',
+                    name = 'Black Listed Players',
+                    width = 'full',
+                    values = function()
+                        local tbl = {}
+                        for k, r in pairs(ns.dbBL.blackList or {}) do
+                            local name = k:gsub('-'..GetRealmName(), '')
+                            name = r.markedForDelete and ns.code:cText('FFFF0000', name) or ns.code:cText('FF00FF00', name)
+                            tbl[k] = (name..': '..r.reason) or ''
+                        end
+
+                        return tbl
+                    end,
+                    set = function(_, key, val)
+                        local r = ns.dbBL.blackList[key]
+                        ns.dbBL.blackList[key] = {
+                            dateBlackList = r.dateBlackList,
+                            markedForDelete = r.markedForDelete,
+                            whoDidIt = r.whoDidIt,
+                            reason = r.reason,
+                            selected = val,
+                            expirationDate = r.expirationDate,
+                        }
+                    end,
+                    get = function(_, key) return ns.dbBL.blackList[key].selected or false end,
+                }
+            }
+        },
         mnuOptions = {
             name = 'GR Options',
             type = 'group',
-            order = 12,
+            order = 20,
             args = {
                 msgHeader1 = {
                     name = 'General Settings',
@@ -837,64 +862,41 @@ ns.addonSettings = {
                 },
             }
         },
-        mnuBlackList = {
-            name = 'Black List',
+        mnuGMOptions = {
             type = 'group',
-            order = 99,
+            name = 'GM: Options',
+            hidden = function() return not IsGuildLeader() end,
+            order = 21,
             args = {
-                blDesc = {
-                    name = 'Players marked in '..ns.code:cText('FFFF0000', 'RED')..' are marked for deletion.\nPlayers marked in '..ns.code:cText('FF00FF00', 'GREEN')..' are active black listed players.',
-                    type = 'description',
-                    fontSize = 'medium',
-                    order = 1,
+                optRememberInvite = {
+                    name = 'Anti guild spam protection.',
+                    desc = "Remembers invited players so you don't constantly spam them invites",
+                    type = 'toggle',
+                    disabled = not IsGuildLeader(),
+                    width = 1.5,
+                    order = 22,
+                    set = function(_, val) ns.db.settings.antiSpam = val end,
+                    get = function() return ns.db.settings.antiSpam end,
                 },
-                blRemoveButton = {
-                    name = 'Toggle Selected Black List Entries',
-                    desc = 'Black List entries marked for deletion will be perinately removed 30 days after marked.  During this time, the addon will ignore the selected Black List entries.',
-                    type = 'execute',
-                    width = 'full',
-                    order = 2,
-                    func = function()
-                        for _,r in pairs(ns.dbBL.blackList) do
-                            if r.selected and not r.markedForDelete then
-                                r.markedForDelete = true
-                                r.expirationDate = C_DateAndTime.GetServerTimeLocal() + (30 * SECONDS_IN_A_DAY)
-                            elseif r.selected and r.markedForDelete then
-                                r.markedForDelete = false
-                                r.expirationDate = nil
-                            end
-
-                            r.selected = false
-                        end
-                    end,
-                },
-                blMultiSelect = {
-                    type = 'multiselect',
-                    name = 'Black Listed Players',
-                    width = 'full',
+                optReInvite = {
+                    name = 'Reinvite players after:',
+                    desc = 'Number of days before resetting invite status.',
+                    type = 'select',
+                    style = 'dropdown',
+                    order = 23,
+                    width = 1,
+                    disabled = not IsGuildLeader(),
                     values = function()
-                        local tbl = {}
-                        for k, r in pairs(ns.dbBL.blackList or {}) do
-                            local name = k:gsub('-'..GetRealmName(), '')
-                            name = r.markedForDelete and ns.code:cText('FFFF0000', name) or ns.code:cText('FF00FF00', name)
-                            tbl[k] = (name..': '..r.reason) or ''
-                        end
-
-                        return tbl
-                    end,
-                    set = function(_, key, val)
-                        local r = ns.dbBL.blackList[key]
-                        ns.dbBL.blackList[key] = {
-                            dateBlackList = r.dateBlackList,
-                            markedForDelete = r.markedForDelete,
-                            whoDidIt = r.whoDidIt,
-                            reason = r.reason,
-                            selected = val,
-                            expirationDate = r.expirationDate,
+                        return {
+                            [1] = '1 day',
+                            [3] = '3 days',
+                            [5] = '5 days',
+                            [7] = '7 days',
                         }
                     end,
-                    get = function(_, key) return ns.dbBL.blackList[key].selected or false end,
-                }
+                    set = function(_, val) ns.db.settings.reinviteAfter = tonumber(val) end,
+                    get = function() return ns.db.settings.reinviteAfter end,
+                },
             }
         },
     }
