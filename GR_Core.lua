@@ -149,10 +149,6 @@ function core:InitializeAddon(...) -- Continue Initialize After Player Enters wo
     ns.Invite:InitializeInvite()
     ns.code:consoleOut(GR_VERSION_INFO..' is active.', nil, true)
     ns.code:consoleOut('You can use "/'..(self.slashCommand == 'gr' and 'gr or /recruiter' or '/'..self.slashCommand)..' help" to get a list of commands.', nil, true)
-
-    function GRADDON:OnCommReceived(prefix, message, distribution, sender)
-        ns.Sync:OnCommReceived(prefix, message, distribution, sender) end
-    GRADDON:RegisterComm(GRADDON.prefix, 'OnCommReceived')
 end
 function core:SlashCommand(msg)
     msg = msg:trim()

@@ -1,3 +1,8 @@
+## v1.0.22
+* Fixed issue with sync not resetting for new sync.
+* Synced GM messages should show up in main window.
+* Made GM messages viewable by non-GM characters.
+
 ## v1.0.21
 * Fixed an issue if there are no profile messages
 

@@ -1,6 +1,6 @@
 ## Interface: 100100
-## Version: 1.0.21
-## Title: GuildRecruiter
+## Version: 1.0.22
+## Title: Guild Recruiter
 ## Notes: Allows guild officers to recruite new members
 ## Author: Moonfury
 ## SavedVariables: GR_SettingsDB, GR_InvitedPlayersDB, GR_BlackListDB, GR_AnalyticsDB
