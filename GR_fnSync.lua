@@ -182,7 +182,6 @@ end
 function sync:ParseSyncData(tblData, sender)
     local invitedCount, blackListCount, blRemovedCount = 0, 0, 0
 
-    print('Parsing Data')
     if not self.gmFound and not IsGuildLeader() then
         self.gmFound = tblData.isGuildLeader or self.gmFound
         if (tblData.guildLink and ns.db.guildInfo.guildLink) and not IsGuildLeader() then

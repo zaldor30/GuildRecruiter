@@ -1,5 +1,5 @@
 ## Interface: 100100
-## Version: 1.0.22
+## Version: 1.0.23
 ## Title: Guild Recruiter
 ## Notes: Allows guild officers to recruite new members
 ## Author: Moonfury

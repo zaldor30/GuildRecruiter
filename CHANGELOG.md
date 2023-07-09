@@ -1,3 +1,6 @@
+## v.1.0.23 (07/09/2023)
+* Removed a chat debug message
+
 ## v1.0.22
 * Fixed issue with sync not resetting for new sync.
 * Synced GM messages should show up in main window.
