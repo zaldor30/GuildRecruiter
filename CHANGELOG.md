@@ -1,4 +1,4 @@
-## v.1.0.24 (07/09/2023)
+## v.1.0.24 (07/11/2023)
 * Added icon when enable/disable addons
 * Update TOC for 10.1.5
 
