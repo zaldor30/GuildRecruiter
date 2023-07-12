@@ -165,12 +165,10 @@ function sync:PrepareData()
 
     self.totalInvited, self.totalBlackListed = 0, 0
     local tblSync = {
-        isGuildLeader = IsGuildLeader() or false,
-        greetingMessage = ns.db.settings.greetingMsg or nil,
-        messageList = ns.dbGlobal.messageList or {},
-        rememberPlayers = ns.db.settings.antiSpam or false,
-        rememberTime = ns.db.settings.reinviteAfter or 5,
+        version = GRADDON.version,
         guildLink = (ns.db.guildInfo and ns.db.guildInfo.guildLink) and ns.db.guildInfo.guildLink or nil,
+        isGuildLeader = IsGuildLeader() or false,
+        gmData = ns.dbGlobal or {},
         invitedPlayers = ns.dbInv.invitedPlayers or {},
         blackList = ns.dbBL.blackList or {},
     }
@@ -181,15 +179,22 @@ function sync:PrepareData()
 end
 function sync:ParseSyncData(tblData, sender)
     local invitedCount, blackListCount, blRemovedCount = 0, 0, 0
+    if GRADDON.version ~= tblData.version then print('AGAIN NOT FUCKING EQUAL') end
+    if not tblData.version or GRADDON.version ~= tblData.version then
+        ns.code:consoleOut('Version mismatch with '..sender, 'FFFFFF00')
+        ns.code:consoleOut('Your version: '..GRADDON.version, 'FFFF0000')
+        ns.code:consoleOut('Their version: '..(tblData.version or 'Unknown'), 'FFFF0000')
+        return
+    end
 
-    if not self.gmFound and not IsGuildLeader() then
-        self.gmFound = tblData.isGuildLeader or self.gmFound
+    if tblData.isGuildLeader and not IsGuildLeader() then
         if (tblData.guildLink and ns.db.guildInfo.guildLink) and not IsGuildLeader() then
             ns.db.guildInfo.guildLink = tblData.guildLink end
-        ns.dbGlobal.messageList = tblData.messageList or {}
-        ns.db.settings.greetingMsg = ((not ns.db.settings.greetingMsg or ns.db.settings.greetingMsg:trim() == '') and tblData.greetingMessage) and tblData.greetingMessage or (ns.db.settings.greetingMsg or nil)
-        ns.db.settings.antiSpam = tblData.rememberPlayers or false
-        ns.db.settings.reinviteAfter = tblData.rememberTime or 5
+        ns.dbGlobal.messageList = tblData.gmData.messageList or {}
+        ns.dbGlobal.greeting = tblData.gmData.greeting or false
+        ns.dbGlobal.greetingMsg = tblData.gmData.greetingMsg or nil
+        ns.dbGlobal.antiSpam = tblData.gmData.antiSpam or false
+        ns.dbGlobal.reinviteAfter = tblData.gmData.rememberTime or 5
     end
 
     local tblInvited = ns.dbInv.invitedPlayers or {}

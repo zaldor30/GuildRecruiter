@@ -1,8 +1,15 @@
-## v.1.0.24 (07/11/2023)
+## v1.0.25 (Beta) (07/12/2023)
+* Added an about page in settings
+* Added force to use welcome message from GM
+* Added GM suggested welcome message
+* Added version check for sync
+
+
+## v1.0.24 (07/11/2023)
 * Added icon when enable/disable addons
 * Update TOC for 10.1.5
 
-## v.1.0.23 (07/09/2023)
+## v1.0.23 (07/09/2023)
 * Removed a chat debug message
 
 ## v1.0.22
