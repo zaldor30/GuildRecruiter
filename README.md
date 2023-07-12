@@ -2,7 +2,7 @@
 
 ![Logo](https://i.imgur.com/JiIb8K3.png)
 
-[![Guild Recruiter on Discord](https://img.shields.io/badge/discord-Always%20Be%20Convoking-7289DA?style=flat)](https://discord.gg/ZtS6Q2sKRH)
+[![Guild Recruiter on Discord](https://img.shields.io/badge/discord-Always%20Be%20Convoking-7289DA?style=flat)](https://discord.gg/ZtS6Q2sKRH) [![Buy Me a Cofee](https://img.shields.io/badge/Buy-orange?style=flat&label=Buy%20Me%20a%20Coffee)](https://bmc.link/alwaysbeconvoking)
 
 </div>
 

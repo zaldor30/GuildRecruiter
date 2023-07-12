@@ -659,11 +659,13 @@ function invite:ChatMsgHandler(...)
     elseif strmatch(msg, 'joined the guild') and self.tblSentInvite and self.tblSentInvite[pName] then
         ns.Analytics:add('Accepted_Invite')
         self.acceptedCount = self.acceptedCount + 1
-        if not self.waitWelcome and ns.db.settings.sendGreeting and ns.db.settings.greetingMsg then
+        local sendGreeting = (not ns.dbGlobal.greeting and ns.db.settings.sendGreeting) and ns.db.settings.greetingMsg or ns.dbGlobal.greeting
+        local greetingMessage = ns.dbGlobal.greeting and ns.dbGlobal.greetingMsg or ns.db.settings.greetingMsg
+        if not self.waitWelcome and sendGreeting and greetingMessage ~= '' then
             self.waitWelcome = true
             C_Timer.After(5, function()
                 ns.Invite.waitWelcome = false
-                SendChatMessage(ns.db.settings.greetingMsg, 'GUILD')
+                SendChatMessage(greetingMessage, 'GUILD')
             end)
         end
         eraseRecord(pName)

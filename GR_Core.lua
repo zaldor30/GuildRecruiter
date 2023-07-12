@@ -89,9 +89,13 @@ function core:Init()
             showWhispers = false,
             sendGreeting = false,
             greetingMsg = '',
-            -- GM Settings
-            antiSpam = true,
+        },
+        global = {
             reinviteAfter = 5,
+            antiSpam = true,
+            greeting = false,
+            greetingMsg = '',
+            messageList = {},
         }
     }
 
@@ -133,6 +137,8 @@ function core:InitializeAddon(...) -- Continue Initialize After Player Enters wo
 
     ns.dbInv = ns.dbInv[GRADDON.clubID]
     ns.dbGlobal = ns.dbGlobal[GRADDON.clubID]
+    if not ns.dbGlobal.messageList then ns.dbGlobal = self.addonSettings.global end
+    core:dbChanges()
 
     AC:RegisterOptionsTable('GR_Options', ns.addonSettings)
     ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
@@ -149,6 +155,19 @@ function core:InitializeAddon(...) -- Continue Initialize After Player Enters wo
     ns.Invite:InitializeInvite()
     ns.code:consoleOut(GR_VERSION_INFO..' is active.', nil, true)
     ns.code:consoleOut('You can use "/'..(self.slashCommand == 'gr' and 'gr or /recruiter' or '/'..self.slashCommand)..' help" to get a list of commands.', nil, true)
+end
+function core:dbChanges()
+    if not ns.dbGlobal.reinviteAfter then
+        local msgs = ns.dbGlobal.messageList or {}
+        ns.dbGlobal.antiSpam = ns.db.settings.antiSpam or self.addonSettings.global.antiSpam
+        ns.dbGlobal.reinviteAfter = ns.db.settings.reinviteAfter or self.addonSettings.global.reinviteAfter
+        ns.dbGlobal.greeting = self.addonSettings.global.greeting or false
+        ns.dbGlobal.greetingMsg = self.addonSettings.global.greetingMsg or nil
+        ns.dbGlobal.messageList = msgs
+
+        ns.db.settings.antiSpam = nil
+        ns.db.settings.reinviteAfter = nil
+    end
 end
 function core:SlashCommand(msg)
     msg = msg:trim()

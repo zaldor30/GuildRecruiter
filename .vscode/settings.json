@@ -112,7 +112,9 @@
         "GetCursorPosition",
         "GameTooltip_SetDefaultAnchor",
         "NORMAL_FONT_COLOR_CODE",
-        "FONT_COLOR_CODE_CLOSE"
+        "FONT_COLOR_CODE_CLOSE",
+        "RACES",
+        "class"
     ],
     "Lua.diagnostics.disable": [
         "undefined-field",
