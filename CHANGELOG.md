@@ -1,8 +1,9 @@
-## v1.0.25 (Beta) (07/12/2023)
+## v1.0.25 (07/13/2023)
 * Added an about page in settings
 * Added force to use welcome message from GM
 * Added GM suggested welcome message
 * Added version check for sync
+* Made changes to detecting guild, especially for first use
 
 
 ## v1.0.24 (07/11/2023)
