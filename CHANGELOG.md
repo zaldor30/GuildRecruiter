@@ -1,3 +1,6 @@
+## v1.0.26 (07/13/2023)
+* Take out of debug routines
+
 ## v1.0.25 (07/13/2023)
 * Added an about page in settings
 * Added force to use welcome message from GM

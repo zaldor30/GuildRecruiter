@@ -179,7 +179,6 @@ function sync:PrepareData()
 end
 function sync:ParseSyncData(tblData, sender)
     local invitedCount, blackListCount, blRemovedCount = 0, 0, 0
-    if GRADDON.version ~= tblData.version then print('AGAIN NOT FUCKING EQUAL') end
     if not tblData.version or GRADDON.version ~= tblData.version then
         ns.code:consoleOut('Version mismatch with '..sender, 'FFFFFF00')
         ns.code:consoleOut('Your version: '..GRADDON.version, 'FFFF0000')
