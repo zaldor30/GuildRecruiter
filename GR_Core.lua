@@ -101,26 +101,8 @@ function core:Init()
 
     self.f = AceGUI:Create('InlineGroup')
 end
-function core:InitializeAddon(...) -- Continue Initialize After Player Enters world
-    if ... ~= 'PLAYER_LOGIN' then return end
-    ns.events:UnregisterEvent('PLAYER_LOGIN')
-    if ns.core.started then return else ns.core.started = true end
-
-    GRADDON.db = DB:New('GR_SettingsDB', self.addonSettings, PLAYER_PROFILE)
-    GRADDON.dbBl = DB:New('GR_BlackListDB', nil, PLAYER_PROFILE)
-    GRADDON.dbInv = DB:New('GR_InvitedPlayersDB', nil, PLAYER_PROFILE)
-    GRADDON.dbAnal = DB:New('GR_AnalyticsDB', nil, PLAYER_PROFILE)
-
-    ns.db, ns.dbGlobal = GRADDON.db.profile, GRADDON.db.global
-    ns.dbBL = GRADDON.dbBl.global
-    ns.dbInv = GRADDON.dbInv.global
-    ns.dbAnal = GRADDON.dbAnal
-
-    if not ns.db.filter then ns.db.filter = {} end
-    if not ns.db.filter.filterList then ns.db.filter.filterList = {} end
-    if not ns.db.messages then ns.db.messages = {} end
-    if not ns.db.settings then ns.db.settings = self.addonSettings.profile end
-    if not ns.db.guildInfo then ns.db.guildInfo = {} end
+function core:OnPlayerLoggedIn()
+    GRADDON:UnregisterEvent('PLAYER_LOGIN')
 
     if not core:RegisterGuild() then return end
     if not GRADDON.clubID and not ns.db.guildInfo then return
@@ -155,6 +137,36 @@ function core:InitializeAddon(...) -- Continue Initialize After Player Enters wo
     ns.Invite:InitializeInvite()
     ns.code:consoleOut(GR_VERSION_INFO..' is active.', nil, true)
     ns.code:consoleOut('You can use "/'..(self.slashCommand == 'gr' and 'gr or /recruiter' or '/'..self.slashCommand)..' help" to get a list of commands.', nil, true)
+end
+function core:InitializeAddon(...) -- Continue Initialize After Player Enters world
+    if ... ~= 'PLAYER_LOGIN' then return end
+    ns.events:UnregisterEvent('PLAYER_LOGIN')
+    if ns.core.started then return else ns.core.started = true end
+
+    GRADDON.db = DB:New('GR_SettingsDB', self.addonSettings, PLAYER_PROFILE)
+    GRADDON.dbBl = DB:New('GR_BlackListDB', nil, PLAYER_PROFILE)
+    GRADDON.dbInv = DB:New('GR_InvitedPlayersDB', nil, PLAYER_PROFILE)
+    GRADDON.dbAnal = DB:New('GR_AnalyticsDB', nil, PLAYER_PROFILE)
+
+    ns.db, ns.dbGlobal = GRADDON.db.profile, GRADDON.db.global
+    ns.dbBL = GRADDON.dbBl.global
+    ns.dbInv = GRADDON.dbInv.global
+    ns.dbAnal = GRADDON.dbAnal
+
+    if not ns.db.filter then ns.db.filter = {} end
+    if not ns.db.filter.filterList then ns.db.filter.filterList = {} end
+    if not ns.db.messages then ns.db.messages = {} end
+    if not ns.db.settings then ns.db.settings = self.addonSettings.profile end
+    if not ns.db.guildInfo then ns.db.guildInfo = {} end
+
+    local function checkForMap()
+        C_Timer.After(1, function()
+            if C_Map.GetBestMapForUnit("player") then
+                core:OnPlayerLoggedIn()
+            else checkForMap() end
+        end)
+    end
+    checkForMap()
 end
 function core:dbChanges()
     if not ns.dbGlobal.reinviteAfter then
