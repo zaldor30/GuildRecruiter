@@ -1,3 +1,7 @@
+## v1.0.28 (Beta) (07/18/2023)
+* Added personal welcome message for each player in guild chat.
+* Changed the welcome message to be whispered to the new player.
+
 ## v1.0.27 (07/17/2023)
 * Added a timer to welcome message to try to cut spam down
 * Added an option to set the wait time for the timer

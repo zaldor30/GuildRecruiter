@@ -533,7 +533,7 @@ ns.addonSettings = {
                     set = function(_, val) ns.db.settings.showWhispers = val end,
                     get = function() return ns.db.settings.showWhispers end,
                 },
-                optShowAccepted = {
+                optShowPersonalGreeting = {
                     name = 'Send guild greeting message when invite is accepted.',
                     desc = 'Enable/disable greeting message to newly joined players.',
                     type = 'toggle',
@@ -543,24 +543,7 @@ ns.addonSettings = {
                     set = function(_, val) ns.db.settings.sendGreeting = val end,
                     get = function() return ns.dbGlobal.greeting or ns.db.settings.sendGreeting end,
                 },
-                optOnlyGMWelcome = {
-                    name = 'Wait time to send greeting.',
-                    desc = "This is the number of seconds to wait after player joins the guild to show wait message.",
-                    type = 'input',
-                    width = 'full',
-                    order = 16,
-                    validate = (function(_, _, value)
-                        if value < 1 or value > 600 then return 'Value must be between 1 and 600 seconds.' end
-
-                        return true
-                    end),
-                    set = function(_, val) ns.db.settings.sendGreetWait = tonumber(val) end,
-                    get = function()
-                        ns.db.settings.sendGreetWait = ns.db.settings.sendGreetWait or 30
-                        return tostring(ns.db.settings.sendGreetWait)
-                    end,
-                },
-                optShowAcceptedMsg = {
+                optPersonalGreetingMsg = {
                     name = 'Greeting Message',
                     desc = 'This message will be sent to guild chat when a player accepts invite.',
                     type = 'input',
@@ -572,6 +555,29 @@ ns.addonSettings = {
                         print(ns.dbGlobal.greetingMsg)
                         if ns.dbGlobal.greeting then return ns.dbGlobal.greetingMsg
                         else return (not ns.db.settings.greetingMsg or ns.db.settings.greetingMsg == '') and (ns.dbGlobal.greetingMsg or '') or (ns.db.settings.greetingMsg or '') end
+                    end,
+                },
+                optShowPersonalWelcome = {
+                    name = 'Send to guild chat personalized welcome message.',
+                    desc = 'This will welcome each player that joins and is seperate from the greeting message.',
+                    type = 'toggle',
+                    width = 'full',
+                    order = 16,
+                    --disabled = function() return not IsGuildLeader() and ns.dbGlobal.greeting end,
+                    set = function(_, val) ns.db.settings.sendWelcome = val end,
+                    get = function() return ns.db.settings.sendWelcome end,
+                },
+                optPersonalWelcomeMsg = {
+                    name = 'Individual Greeting Message',
+                    desc = 'This will make the greeting individualized and shown in guild chat.\nUse NAME (in caps) to substitute the name of the player that joined.',
+                    type = 'input',
+                    width = 'full',
+                    order = 17,
+                    --disabled = function() return not IsGuildLeader() and ns.dbGlobal.greeting end,
+                    set = function(_, val) ns.db.settings.welcomeMessage = val end,
+                    get = function()
+                        ns.db.settings.welcomeMessage = ns.db.settings.welcomeMessage or DEFAULT_GUILD_WELCOME
+                        return ns.db.settings.welcomeMessage
                     end,
                 },
                 optScanInterval = {

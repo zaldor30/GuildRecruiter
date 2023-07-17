@@ -36,7 +36,7 @@ function code:createTooltip(text, body)
     if body then GameTooltip:AddLine(body,1,1,1) end
     GameTooltip:Show()
 end
-function code:GuildReplace(msg)
+function code:GuildReplace(msg, playerName)
     if not ns.db then return end
 
     local gi = ns.db.guildInfo
@@ -46,7 +46,7 @@ function code:GuildReplace(msg)
     if gName and msg then
         msg = gLink and gsub(msg, 'GUILDLINK', gLink and gLink or 'No Guild Link') or msg
         msg = gName and gsub(msg, 'GUILDNAME', gName and '<'..gName..'>' or 'No Guild Name') or msg
-        msg = gsub(msg, 'NAME', UnitName('player') or 'PLAYERNAME')
+        msg = gsub(msg, 'NAME', playerName or 'player')
     end
 
     return msg

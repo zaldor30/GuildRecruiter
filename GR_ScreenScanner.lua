@@ -621,12 +621,13 @@ function invite:ScannerInvitePlayer()
     local db, dbMsg, msgList = ns.db.settings, ns.db.messages, ns.datasets.tblGMMessages or {}
     local inviteFormat = db.inviteFormat
 
-    local msg = (inviteFormat ~= 2 and dbMsg.activeMessage) and ns.code:GuildReplace(msgList[dbMsg.activeMessage].message) or nil
     local sendInvite = inviteFormat ~= 1 or false
 
     local key = next(si.tblFound or {})
     local tbl = si.tblFound[key]
     if not tbl or tbl.checked then return end
+
+    local msg = (inviteFormat ~= 2 and dbMsg.activeMessage) and ns.code:GuildReplace(msgList[dbMsg.activeMessage].message, si.tblFound[key].name) or nil
 
     si.tblFound[key] = nil
     self.invitedCount = self.invitedCount + 1
@@ -663,10 +664,15 @@ function invite:ChatMsgHandler(...)
         local greetingMessage = ns.dbGlobal.greeting and ns.dbGlobal.greetingMsg or ns.db.settings.greetingMsg
         if not self.waitWelcome and sendGreeting and greetingMessage ~= '' then
             self.waitWelcome = true
-            C_Timer.After(ns.db.settings.sendGreetWait or 30, function()
+            C_Timer.After(ns.db.settings.sendGreetWait or 2, function()
                 ns.Invite.waitWelcome = false
-                SendChatMessage(greetingMessage, 'GUILD')
+                SendChatMessage(greetingMessage, 'WHISPER', nil, pName)
             end)
+        end
+        if ns.db.settings.sendWelcome and ns.db.settings.welcomeMessage ~= '' then
+            local welcomeMsg = ns.code:GuildReplace(ns.db.settings.welcomeMessage, pName)
+            welcomeMsg = welcomeMsg and welcomeMsg:gsub('<', ''):gsub('>', '') or ''
+            C_Timer.After(math.random(3,8), function() SendChatMessage(welcomeMsg, 'GUILD') end)
         end
         eraseRecord(pName)
     elseif strmatch(msg, 'declines your guild') then
