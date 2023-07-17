@@ -1,3 +1,11 @@
+## v1.0.27 (07/17/2023)
+* Added a timer to welcome message to try to cut spam down
+* Added an option to set the wait time for the timer
+* Fixed show GM only and GM greeting message in GR Options
+* Note: I am going to change the welcome message to be whispered to
+    the new player and have an option to greet by name with custom message
+    for each player that joins the guild.
+
 ## v1.0.26 (07/13/2023)
 * Take out of debug routines
 

@@ -264,7 +264,7 @@ ns.addonSettings = {
                     desc = "This will prevent officers from sending their own welcome message.",
                     type = 'toggle',
                     disabled = not IsGuildLeader(),
-                    width = 1.5,
+                    width = 'full',
                     order = 3,
                     set = function(_, val) ns.dbGlobal.greeting = val end,
                     get = function() return ns.dbGlobal.greeting end,
@@ -274,7 +274,7 @@ ns.addonSettings = {
                     desc = 'This message will be sent to guild chat when a player accepts invite.',
                     type = 'input',
                     width = 'full',
-                    order = 15,
+                    order = 4,
                     disabled = not IsGuildLeader(),
                     set = function(_, val) ns.dbGlobal.greetingMsg = val end,
                     get = function() return ns.dbGlobal.greetingMsg end,
@@ -541,7 +541,24 @@ ns.addonSettings = {
                     order = 14,
                     disabled = function() return not IsGuildLeader() and ns.dbGlobal.greeting end,
                     set = function(_, val) ns.db.settings.sendGreeting = val end,
-                    get = function() return ns.db.settings.sendGreeting end,
+                    get = function() return ns.dbGlobal.greeting or ns.db.settings.sendGreeting end,
+                },
+                optOnlyGMWelcome = {
+                    name = 'Wait time to send greeting.',
+                    desc = "This is the number of seconds to wait after player joins the guild to show wait message.",
+                    type = 'input',
+                    width = 'full',
+                    order = 16,
+                    validate = (function(_, _, value)
+                        if value < 1 or value > 600 then return 'Value must be between 1 and 600 seconds.' end
+
+                        return true
+                    end),
+                    set = function(_, val) ns.db.settings.sendGreetWait = tonumber(val) end,
+                    get = function()
+                        ns.db.settings.sendGreetWait = ns.db.settings.sendGreetWait or 30
+                        return tostring(ns.db.settings.sendGreetWait)
+                    end,
                 },
                 optShowAcceptedMsg = {
                     name = 'Greeting Message',
@@ -552,7 +569,8 @@ ns.addonSettings = {
                     disabled = function() return not IsGuildLeader() and ns.dbGlobal.greeting end,
                     set = function(_, val) ns.db.settings.greetingMsg = val end,
                     get = function()
-                        if ns.dbGlobal.greeting then return ns.db.settings.greetingMsg
+                        print(ns.dbGlobal.greetingMsg)
+                        if ns.dbGlobal.greeting then return ns.dbGlobal.greetingMsg
                         else return (not ns.db.settings.greetingMsg or ns.db.settings.greetingMsg == '') and (ns.dbGlobal.greetingMsg or '') or (ns.db.settings.greetingMsg or '') end
                     end,
                 },
@@ -561,7 +579,7 @@ ns.addonSettings = {
                     desc = 'WoW requires a cooldown period between /who scans, this is the time that the system will wait between scans.',
                     type = 'input',
                     width = 'full',
-                    order = 16,
+                    order = 17,
                     set = function(_, val)
                         if tonumber(val) >=2 and tonumber(val) < 10 then ns.db.settings.scanWaitTime = tonumber(val)
                         else return tostring(ns.db.settings.scanWaitTime) end
@@ -571,7 +589,7 @@ ns.addonSettings = {
                 optWhoNote = {
                     name = ns.code:cText('FFFFFF00', 'NOTE: ')..'After much testing, the default 6 seconds seems to consistently give results, less wait time seems to not always return data.',
                     type = 'description',
-                    order = 17,
+                    order = 18,
                     width = 'full',
                     fontSize = 'medium'
                 },

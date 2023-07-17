@@ -88,6 +88,7 @@ function core:Init()
             showSummary = true,
             showWhispers = false,
             sendGreeting = false,
+            sendGreetWait = 30,
             greetingMsg = '',
         },
         global = {
