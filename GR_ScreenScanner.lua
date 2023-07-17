@@ -663,7 +663,7 @@ function invite:ChatMsgHandler(...)
         local greetingMessage = ns.dbGlobal.greeting and ns.dbGlobal.greetingMsg or ns.db.settings.greetingMsg
         if not self.waitWelcome and sendGreeting and greetingMessage ~= '' then
             self.waitWelcome = true
-            C_Timer.After(5, function()
+            C_Timer.After(ns.db.settings.sendGreetWait or 30, function()
                 ns.Invite.waitWelcome = false
                 SendChatMessage(greetingMessage, 'GUILD')
             end)
