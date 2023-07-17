@@ -552,7 +552,6 @@ ns.addonSettings = {
                     disabled = function() return not IsGuildLeader() and ns.dbGlobal.greeting end,
                     set = function(_, val) ns.db.settings.greetingMsg = val end,
                     get = function()
-                        print(ns.dbGlobal.greetingMsg)
                         if ns.dbGlobal.greeting then return ns.dbGlobal.greetingMsg
                         else return (not ns.db.settings.greetingMsg or ns.db.settings.greetingMsg == '') and (ns.dbGlobal.greetingMsg or '') or (ns.db.settings.greetingMsg or '') end
                     end,
