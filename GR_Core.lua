@@ -88,8 +88,9 @@ function core:Init()
             showSummary = true,
             showWhispers = false,
             sendGreeting = false,
-            sendGreetWait = 30,
             greetingMsg = '',
+            sendWelcome = true,
+            welcomeMessage = DEFAULT_GUILD_WELCOME
         },
         global = {
             reinviteAfter = 5,
@@ -172,6 +173,7 @@ end
 function core:dbChanges()
     if not ns.dbGlobal.reinviteAfter then
         local msgs = ns.dbGlobal.messageList or {}
+        if ns.db.settings.sendGreetWait then ns.db.settings.sendGreetWait = nil end
         ns.dbGlobal.antiSpam = ns.db.settings.antiSpam or self.addonSettings.global.antiSpam
         ns.dbGlobal.reinviteAfter = ns.db.settings.reinviteAfter or self.addonSettings.global.reinviteAfter
         ns.dbGlobal.greeting = self.addonSettings.global.greeting or false

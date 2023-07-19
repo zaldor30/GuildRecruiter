@@ -114,7 +114,8 @@
         "NORMAL_FONT_COLOR_CODE",
         "FONT_COLOR_CODE_CLOSE",
         "RACES",
-        "class"
+        "class",
+        "DEFAULT"
     ],
     "Lua.diagnostics.disable": [
         "undefined-field",
