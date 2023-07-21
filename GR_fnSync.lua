@@ -35,15 +35,14 @@ function sync:StartStatusUpdate(starting, failed)
     if starting then
         self.syncStart = GetTime()
         ns.code:consoleOut(master..' sync started at '..syncTime)
-        ns.MainScreen:SyncStatus(true, self.syncMaster, ns.code:cText('FF00FF00', 'Performing Sync'))
+        ns.screen:UpdateStatus(true)
     else
         if not failed then ns.db.settings.lastSync = syncTime end
         ns.code:consoleOut(master..' sync complete at '..syncTime)
         if self.syncMaster then
-            ns.code:consoleOut('Total sync time '..(GetTime() - self.syncStart)) end
+            ns.code:consoleOut('Total sync time '..format('%.02f', GetTime() - self.syncStart)) end
             self.syncMaster, self.masterName = nil, nil
-            ns.MainScreen:GetMessageList()
-        ns.MainScreen:SyncStatus(false)
+        ns.screen:UpdateStatus(false)
     end
 end
 function sync:SendCommMessage(msg, chatType, target)
@@ -80,6 +79,7 @@ end
 
 -- Master Sync Routines
 function sync:StartSyncMaster()
+    if ns.screen.syncState then return end
     sync:StartStatusUpdate(true)
 
     self.gmFound, self.syncMaster, self.masterName = true, true, UnitName('player')

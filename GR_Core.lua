@@ -1,4 +1,6 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
+ns.tblEvents = {} -- Registered Events
+
 --[[ Register and Unregister events
     Add event to table
     Add event to Register event ]]
@@ -81,6 +83,7 @@ function core:Init()
             minimap = { hide = false, },
             showContext = true,
             showAppMsgs = false,
+            showTooltips = true,
             -- Invite Settings
             compactMode = false,
             scanWaitTime = 6,
@@ -136,7 +139,9 @@ function core:OnPlayerLoggedIn()
     core:CreateMiniMapIcon()
     core:StartMaintenance()
 
-    ns.Invite:InitializeInvite()
+    ns.invite:InitializeInvite()
+    ns.blackList:InitializeBlackList()
+
     ns.code:consoleOut(GR_VERSION_INFO..' is active.', nil, true)
     ns.code:consoleOut('You can use "/'..(self.slashCommand == 'gr' and 'gr or /recruiter' or '/'..self.slashCommand)..' help" to get a list of commands.', nil, true)
 end
@@ -204,9 +209,9 @@ function core:CreateMiniMapIcon()
     local code = ns.code
     local iconData = LibStub("LibDataBroker-1.1"):NewDataObject("GuildRecruiter", { -- Minimap Icon Settings
         type = 'data source',
-        icon = 'Interface\\AddOns\\GuildRecruiter\\imgs\\gr_minimap',
+        icon = GRADDON.icon,
         OnClick = function(_, button)
-            if button == 'LeftButton' then ns.MainScreen:ShowMainScreen()
+            if button == 'LeftButton' then ns.screen:StartGuildRecruiter()
             elseif button == 'RightButton' then InterfaceOptionsFrame_OpenToCategory(ns.addonOptions) end
         end,
         OnTooltipShow = function(GameTooltip)
@@ -214,7 +219,7 @@ function core:CreateMiniMapIcon()
             local body = code:cText('FFFFFFFF', 'LMB - Start Recruit Search\n')
             body = body..code:cText('FFFFFFFF', 'RMB - Open Configuration')
 
-            ns.code:createTooltip(title, body)
+            ns.widgets:createTooltip(title, body, 'FORCE_TOOLTIP')
         end,
     })
 

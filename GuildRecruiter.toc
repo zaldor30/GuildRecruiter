@@ -1,10 +1,10 @@
 ## Interface: 100105
-## Version: 1.0.28
+## Version: 1.1.29
 ## Title: Guild Recruiter
 ## Notes: Allows guild officers to recruite new members
 ## Author: Moonfury
 ## SavedVariables: GR_SettingsDB, GR_InvitedPlayersDB, GR_BlackListDB, GR_AnalyticsDB
-## IconTexture: Interface\AddOns\GuildRecruiter\imgs\gr_minimap
+## IconTexture: Interface\AddOns\GuildRecruiter\Images\GR_Icon
 ## OptionalDeps: Ace3
 
 Libs\LibStub\LibStub.lua
@@ -35,5 +35,6 @@ GR_fnAnalytics.lua
 GR_Core.lua
 GR_Options.lua
 
-GR_ScreenMain.lua
-GR_ScreenScanner.lua
+GR_Screen.lua
+GR_Screen_Main.lua
+GR_Screen_Scanner.lua

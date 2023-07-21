@@ -1,6 +1,13 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
 
---[[ This is for reusable code found throughout the addon ]]
+--[[ This is for reusable code found throughout the addon
+    This code contains the following namespaces:
+        ns.code
+        ns.invite
+        ns.widgets
+        ns.analytics
+        ns.blackList
+]]
 
 ns.code = {}
 local code = ns.code
@@ -26,16 +33,6 @@ function code:consoleOut(msg, color, noPrefix)
     local prefix = not noPrefix and 'GR: ' or ''
     print('|c'..(color or 'FF3EB9D8')..prefix..(msg or 'did not get message')..'|r')
 end
-function code:createTooltip(text, body)
-    local uiScale, x, y = UIParent:GetEffectiveScale(), GetCursorPosition()
-    CreateFrame("GameTooltip", nil, nil, "GameTooltipTemplate")
-    GameTooltip_SetDefaultAnchor(GameTooltip, UIParent)
-    GameTooltip:SetOwner(UIParent, "ANCHOR_CURSOR") -- Attaches the tooltip to cursor
-    GameTooltip:SetPoint("BOTTOMLEFT", nil, "BOTTOMLEFT", x / uiScale, y / uiScale)
-    GameTooltip:SetText(text)
-    if body then GameTooltip:AddLine(body,1,1,1) end
-    GameTooltip:Show()
-end
 function code:GuildReplace(msg, playerName)
     if not ns.db then return end
 
@@ -58,13 +55,107 @@ function code:ClickSound(enable)
 end
 code:Init()
 
+ns.invite = {}
+local invite = ns.invite
+function invite:Init()
+    self.antiSpam = false
+    self.showWhispers = false
+
+    self.tblInvited = nil
+end
+function invite:InitializeInvite()
+    self.antiSpam = ns.db.settings.antiSpam or true
+    self.tblInvited = ns.dbInv.invitedPlayers or {}
+    self.showWhispers = ns.db.settings.showWhispers or false
+end
+function invite:new(class)
+    return {
+        ['playerClass'] = class or '',
+        ['invitedBy'] = UnitGUID('player'),
+        ['invitedOn'] = C_DateAndTime.GetServerTimeLocal(),
+    }
+end
+function invite:CheckAbilityToInvite(player, zone, skipChecks)
+    if skipChecks then return true
+    elseif not player or not zone then return false
+    else
+        if self.tblInvited[player] then return false
+        elseif ns.blackList:CheckBlackList(player) then return false
+        elseif ns.datasets.tblBadByName[zone] then return false end
+    end
+
+    return true
+end
+invite:Init()
+
+ns.blackList = {}
+local blackList = ns.blackList
+function blackList:Init()
+    self.tblBlackList = nil
+end
+function blackList:InitializeBlackList()
+    self.tblBlackList = ns.dbInv.blackList or {}
+end
+function blackList:CheckBlackList(name)
+    local realm = '-'..GetRealmName()
+    name = name:gsub(realm, '')
+    name = strupper(name:sub(1,1))..name:sub(2)..realm
+
+    return (self.tblBlackList[name] and not self.tblBlackList[name].markedForDelete) and true or false
+end
+function blackList:AddToBlackList(name)
+    if not name then return end
+
+    local POPUP_REASON, blName = "inputReason", nil
+    local fName = select(2, UnitClass(name)) and ns.code:cPlayer(name, select(2, UnitClass(name))) or name
+    StaticPopupDialogs[POPUP_REASON] = {
+        text = "Why do you want to black list:\n"..fName,
+        button1 = "OK",
+        button2 = "Cancel",
+        OnAccept = function(data)
+            local value = data.editBox:GetText()
+            value = strlen(value) > 0 and value or 'No reason'
+
+            ns.BlackList.tblBlackList[blName] = { reason = value, whoDidIt = UnitGUID('player'), dateBlackList = C_DateAndTime.GetServerTimeLocal(), markedForDelete = false }
+            ns.dbBL.blackList = ns.BlackList.tblBlackList
+            ns.Analytics:add('Black_Listed')
+            ns.code:consoleOut(blName..' was added to the black list with \"'..value..'\" as a reason.')
+        end,
+        OnCancel = function() UIErrorsFrame:AddMessage(name..' was not added to Black List.', 1.0, 0.1, 0.1, 1.0) end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+        preferredIndex = 3,
+        hasEditBox = true,
+        maxLetters = 255,
+        -- You can add more properties as needed
+    }
+
+    local realm = '-'..GetRealmName()
+    blName = not name:match(realm) and name..realm or name
+
+    if self.tblBlackList[blName] then
+        local dateTable = date("*t", self.tblBlackList[blName].dateBlackList)
+        local formattedTime = string.format("%02d/%02d/%04d", dateTable.month, dateTable.day, dateTable.year)
+        ns.code:consoleOut(blName..' is already black listed with \"'..self.tblBlackList[blName].reason..'\" as a reason on '..formattedTime..'.')
+        return
+    end
+    StaticPopup_Show(POPUP_REASON)
+end
+function blackList:RemoveFromBlackList(player)
+    if not player then return end
+    self.tblBlackList[player] = nil
+end
+blackList:Init()
+
 ns.widgets = {}
 local widgets = ns.widgets
 
 function widgets:Init()
     self.defaultTimeout = 10
 end
-function widgets:createTooltip(text, body)
+function widgets:createTooltip(text, body, force)
+    if not force and not ns.db.settings.showTooltips then return end
     local uiScale, x, y = UIParent:GetEffectiveScale(), GetCursorPosition()
     CreateFrame("GameTooltip", nil, nil, "GameTooltipTemplate")
     GameTooltip_SetDefaultAnchor(GameTooltip, UIParent)
@@ -105,3 +196,31 @@ function widgets:createLabel(text, width, font, fontSize)
     return label
 end
 widgets:Init()
+
+ns.analytics = {}
+local analytics, p, g = ns.analytics, nil, nil
+function analytics:Scanned(amt)
+    p, g = ns.dbAnal.profile.analytics, ns.dbAnal.global.analytics
+    p.Players_Scanned = code:inc(p.Players_Scanned or 0, amt)
+    g.Players_Scanned = code:inc(g.Players_Scanned or 0, amt)
+end
+function analytics:Invited(amt)
+    p, g = ns.dbAnal.profile.analytics, ns.dbAnal.global.analytics
+    p.Invited_Players = code:inc(p.Invited_Players or 0, amt)
+    g.Invited_Players = code:inc(g.Invited_Players or 0, amt)
+end
+function analytics:BlackListed(amt)
+    p, g = ns.dbAnal.profile.analytics, ns.dbAnal.global.analytics
+    p.Black_Listed = code:inc(p.Black_Listed or 0, amt)
+    g.Black_Listed = code:inc(g.Black_Listed or 0, amt)
+end
+function analytics:Accepted(amt)
+    p, g = ns.dbAnal.profile.analytics, ns.dbAnal.global.analytics
+    p.Accepted_Invite = code:inc(p.Accepted_Invite or 0, amt)
+    g.Accepted_Invite = code:inc(g.Accepted_Invite or 0, amt)
+end
+function analytics:Declined(amt)
+    p, g = ns.dbAnal.profile.analytics, ns.dbAnal.global.analytics
+    p.Declined_Invite = code:inc(p.Declined_Invite or 0, amt)
+    g.Declined_Invite = code:inc(g.Declined_Invite or 0, amt)
+end
