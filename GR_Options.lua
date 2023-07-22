@@ -71,10 +71,10 @@ ns.addonSettings = {
         mnuGMMsg = {
             type = 'group',
             name = 'GM: Messages',
-            order = 1,
+            order = 0,
             args = {
                 msgGMHeader1 = {
-                    name = 'Message Formatting',
+                    name = IsGuildLeader() and 'Message Formatting' or 'Message Formatting (View Only)',
                     type = 'header',
                     order = 0,
                 },
@@ -226,10 +226,15 @@ ns.addonSettings = {
         },
         mnuGMOptions = {
             type = 'group',
-            name = 'GM: Options',
+            name = 'GM: Settings',
             --hidden = function() return not IsGuildLeader() end,
             order = 2,
             args = {
+                optGMHeader1 = {
+                    name = IsGuildLeader() and 'Guild Master Settings' or 'Guild Master Settings (View Only)',
+                    type = 'header',
+                    order = 0,
+                },
                 optRememberInvite = {
                     name = 'Anti guild spam protection.',
                     desc = "Remembers invited players so you don't constantly spam them invites",
@@ -237,8 +242,8 @@ ns.addonSettings = {
                     disabled = not IsGuildLeader(),
                     width = 1.5,
                     order = 1,
-                    set = function(_, val) ns.dbGlobal.antiSpam = val end,
-                    get = function() return ns.dbGlobal.antiSpam end,
+                    set = function(_, val) ns.dbGlobal.guildInfo.antiSpam = val end,
+                    get = function() return ns.dbGlobal.guildInfo.antiSpam end,
                 },
                 optReInvite = {
                     name = 'Reinvite players after:',
@@ -256,8 +261,8 @@ ns.addonSettings = {
                             [7] = '7 days',
                         }
                     end,
-                    set = function(_, val) ns.dbGlobal.reinviteAfter = tonumber(val) end,
-                    get = function() return ns.dbGlobal.reinviteAfter end,
+                    set = function(_, val) ns.dbGlobal.guildInfo.reinviteAfter = tonumber(val) end,
+                    get = function() return ns.dbGlobal.guildInfo.reinviteAfter end,
                 },
                 optOnlyGMWelcome = {
                     name = 'Use only GM welcome message.',
@@ -266,8 +271,8 @@ ns.addonSettings = {
                     disabled = not IsGuildLeader(),
                     width = 'full',
                     order = 3,
-                    set = function(_, val) ns.dbGlobal.greeting = val end,
-                    get = function() return ns.dbGlobal.greeting end,
+                    set = function(_, val) ns.dbGlobal.guildInfo.greeting = val end,
+                    get = function() return ns.dbGlobal.guildInfo.greeting end,
                 },
                 optGMWelcomeMsg = {
                     name = 'Greeting Message',
@@ -276,8 +281,8 @@ ns.addonSettings = {
                     width = 'full',
                     order = 4,
                     disabled = not IsGuildLeader(),
-                    set = function(_, val) ns.dbGlobal.greetingMsg = val end,
-                    get = function() return ns.dbGlobal.greetingMsg end,
+                    set = function(_, val) ns.dbGlobal.guildInfo.greetingMsg = val end,
+                    get = function() return ns.dbGlobal.guildInfo.greetingMsg end,
                 }
             }
         },
@@ -287,10 +292,174 @@ ns.addonSettings = {
             order = 10,
             args = {}
         },
-        mnuMsg = {
-            name = 'Messages',
+        mnuGenOptions = {
+            name = 'GR Settings',
             type = 'group',
             order = 11,
+            args = {
+                msgHeader1 = {
+                    name = 'General Settings',
+                    type = 'header',
+                    width = 'full',
+                    order = 0,
+                },
+                optIcon = {
+                    name = 'Show icon on minimap',
+                    desc = 'Toggles the visibility of the minimap icon.  You can use /gr or /gr config to access the addon.',
+                    type = 'toggle',
+                    width = 'full',
+                    order = 1,
+                    set = function(_, val) ns.db.settings.minimap = { hide = not val } end,
+                    get = function()
+                        if not ns.db.settings.minimap.hide then icon:Show('GR_Icon')
+                        else icon:Hide('GR_Icon') end
+                        return not ns.db.settings.minimap.hide
+                    end,
+                },
+                optSystemMsg = {
+                    name = 'Show addon messages in chat.',
+                    desc = 'Shows verbose addon messages in chat, suggest disabling.',
+                    type = 'toggle',
+                    width = 'full',
+                    order = 2,
+                    set = function(_, val) ns.db.settings.showAppMsgs = val end,
+                    get = function() return ns.db.settings.showAppMsgs end,
+                },
+                optContextMnu = {
+                    name = 'Show context menu for guild invite/black list.',
+                    desc = 'When you right click on a player in chat, an extra menu will appear to invite to guild or black list.',
+                    type = 'toggle',
+                    width = 'full',
+                    order = 3,
+                    set = function(_, val) ns.db.settings.showContext = val end,
+                    get = function() return ns.db.settings.showContext end,
+                },
+                optTooltipsMnu = {
+                    name = 'Show tooltips',
+                    desc = 'Will hide non-essental tooltips when overing over icons.',
+                    type = 'toggle',
+                    width = 'full',
+                    order = 4,
+                    set = function(_, val) ns.db.settings.showTooltips = val end,
+                    get = function() return ns.db.settings.showTooltips end,
+                },
+                optWhoQuery = {
+                    name = 'Show the /who query window.',
+                    desc = 'This will show the /who query window when scanning.',
+                    type = 'toggle',
+                    width = 'full',
+                    order = 5,
+                    set = function(_, val) ns.db.settings.showWho = val end,
+                    get = function() return ns.db.settings.showWho end,
+                },
+                optCompant = {
+                    name = 'Scanning window defaults to compact.',
+                    desc = 'Size of the recruit scanning window.',
+                    type = 'toggle',
+                    width = 'full',
+                    order = 6,
+                    set = function(_, val) ns.db.settings.compactMode = val end,
+                    get = function() return ns.db.settings.compactMode end,
+                },
+            }
+        },
+        mnuInviteOptions = {
+            name = 'Invite Settings',
+            type = 'group',
+            order = 12,
+            args = {
+
+                msgHeader2 = {
+                    name = 'Invite Settings',
+                    type = 'header',
+                    order = 10,
+                },
+                optShowStats = {
+                    name = 'Show invite summary after finishing scans.',
+                    desc = 'This shows, # of invites, accepted, deleted and pending.',
+                    type = 'toggle',
+                    width = 'full',
+                    order = 12,
+                    set = function(_, val) ns.db.settings.showSummary = val end,
+                    get = function() return ns.db.settings.showSummary end,
+                },
+                optShowInvite = {
+                    name = 'Show your whisper when sending invite messages.',
+                    desc = 'This will show or hide whisper messages to recruits, suggest going to social and turn on in-line whispers for best results.',
+                    type = 'toggle',
+                    width = 'full',
+                    order = 13,
+                    set = function(_, val) ns.db.settings.showWhispers = val end,
+                    get = function() return ns.db.settings.showWhispers end,
+                },
+                optShowPersonalGreeting = {
+                    name = 'Send guild greeting message when invite is accepted.',
+                    desc = 'Enable/disable greeting message to newly joined players.',
+                    type = 'toggle',
+                    width = 'full',
+                    order = 14,
+                    disabled = function() return not IsGuildLeader() and ns.dbGlobal.guildInfo.greeting end,
+                    set = function(_, val) ns.db.settings.sendGreeting = val end,
+                    get = function() return ns.dbGlobal.guildInfo.greeting or ns.db.settings.sendGreeting end,
+                },
+                optPersonalGreetingMsg = {
+                    name = 'Greeting Message',
+                    desc = 'This message will be sent to guild chat when a player accepts invite.',
+                    type = 'input',
+                    width = 'full',
+                    order = 15,
+                    disabled = function() return not IsGuildLeader() and ns.dbGlobal.guildInfo.greeting end,
+                    set = function(_, val) ns.db.settings.greetingMsg = val end,
+                    get = function() return ns.dbGlobal.guildInfo.greeting and ns.dbGlobal.guildInfo.greetingMsg or ns.db.settings.greetingMsg end,
+                },
+                optShowPersonalWelcome = {
+                    name = 'Send to guild chat personalized welcome message.',
+                    desc = 'This will welcome each player that joins and is seperate from the greeting message.',
+                    type = 'toggle',
+                    width = 'full',
+                    order = 16,
+                    --disabled = function() return not IsGuildLeader() and ns.dbGlobal.greeting end,
+                    set = function(_, val) ns.db.settings.sendWelcome = val end,
+                    get = function() return ns.db.settings.sendWelcome end,
+                },
+                optPersonalWelcomeMsg = {
+                    name = 'Individual Greeting Message',
+                    desc = 'This will make the greeting individualized and shown in guild chat.\nUse NAME (in caps) to substitute the name of the player that joined.',
+                    type = 'input',
+                    width = 'full',
+                    order = 17,
+                    --disabled = function() return not IsGuildLeader() and ns.dbGlobal.greeting end,
+                    set = function(_, val) ns.db.settings.welcomeMessage = val end,
+                    get = function()
+                        ns.db.settings.welcomeMessage = ns.db.settings.welcomeMessage or DEFAULT_GUILD_WELCOME
+                        return ns.db.settings.welcomeMessage
+                    end,
+                },
+                optScanInterval = {
+                    name = 'Time to wait between scans (default recommended).',
+                    desc = 'WoW requires a cooldown period between /who scans, this is the time that the system will wait between scans.',
+                    type = 'input',
+                    width = 'full',
+                    order = 17,
+                    set = function(_, val)
+                        if tonumber(val) >=2 and tonumber(val) < 10 then ns.db.settings.scanWaitTime = tonumber(val)
+                        else return tostring(ns.db.settings.scanWaitTime) end
+                    end,
+                    get = function() return tostring(ns.db.settings.scanWaitTime) end,
+                },
+                optWhoNote = {
+                    name = ns.code:cText('FFFFFF00', 'NOTE: ')..'After much testing, the default 6 seconds seems to consistently give results, less wait time seems to not always return data.',
+                    type = 'description',
+                    order = 18,
+                    width = 'full',
+                    fontSize = 'medium'
+                },
+            }
+        },
+        mnuMsg = {
+            name = 'Invite Messages',
+            type = 'group',
+            order = 13,
             args = {
                 msgHeader1 = {
                     name = 'Message Formatting',
@@ -380,7 +549,7 @@ ns.addonSettings = {
                 },
                 msgNotGM = {
                     name = function()
-                        local errMsg = (tblMessage.message and strfind(tblMessage.message, 'GUILDLINK') and not ns.db.guildInfo.guildLink and not IsGuildLeader()) and 'WARNING: You are not a GM, so GUILDLINK is an invalid option.' or nil
+                        local errMsg = (tblMessage.message and strfind(tblMessage.message, 'GUILDLINK') and not ns.dbGlobal.guildLink and not IsGuildLeader()) and 'WARNING: You are not a GM, so GUILDLINK is an invalid option.' or nil
                         return errMsg and ns.code:cText('FFFF0000', errMsg) or ' '
                     end,
                     type = 'description',
@@ -450,160 +619,10 @@ ns.addonSettings = {
                 }
             },
         },
-        mnuOptions = {
-            name = 'GR Options',
-            type = 'group',
-            order = 12,
-            args = {
-                msgHeader1 = {
-                    name = 'General Settings',
-                    type = 'header',
-                    width = 'full',
-                    order = 0,
-                },
-                optIcon = {
-                    name = 'Show icon on minimap',
-                    desc = 'Toggles the visibility of the minimap icon.  You can use /gr or /gr config to access the addon.',
-                    type = 'toggle',
-                    width = 'full',
-                    order = 1,
-                    set = function(_, val) ns.db.settings.minimap = { hide = not val } end,
-                    get = function()
-                        if not ns.db.settings.minimap.hide then icon:Show('GR_Icon')
-                        else icon:Hide('GR_Icon') end
-                        return not ns.db.settings.minimap.hide
-                    end,
-                },
-                optSystemMsg = {
-                    name = 'Show addon messages in chat.',
-                    desc = 'Shows verbose addon messages in chat, suggest disabling.',
-                    type = 'toggle',
-                    width = 'full',
-                    order = 2,
-                    set = function(_, val) ns.db.settings.showAppMsgs = val end,
-                    get = function() return ns.db.settings.showAppMsgs end,
-                },
-                optContextMnu = {
-                    name = 'Show context menu for guild invite/black list.',
-                    desc = 'When you right click on a player in chat, an extra menu will appear to invite to guild or black list.',
-                    type = 'toggle',
-                    width = 'full',
-                    order = 3,
-                    set = function(_, val) ns.db.settings.showContext = val end,
-                    get = function() return ns.db.settings.showContext end,
-                },
-                optWhoQuery = {
-                    name = 'Show the /who query window.',
-                    desc = 'This will show the /who query window when scanning.',
-                    type = 'toggle',
-                    width = 'full',
-                    order = 4,
-                    set = function(_, val) ns.db.settings.showWho = val end,
-                    get = function() return ns.db.settings.showWho end,
-                },
-                optCompant = {
-                    name = 'Scanning window defaults to compact.',
-                    desc = 'Size of the recruit scanning window.',
-                    type = 'toggle',
-                    width = 'full',
-                    order = 5,
-                    set = function(_, val) ns.db.settings.compactMode = val end,
-                    get = function() return ns.db.settings.compactMode end,
-                },
-                msgHeader2 = {
-                    name = 'Invite Settings',
-                    type = 'header',
-                    order = 10,
-                },
-                optShowStats = {
-                    name = 'Show invite summary after finishing scans.',
-                    desc = 'This shows, # of invites, accepted, deleted and pending.',
-                    type = 'toggle',
-                    width = 'full',
-                    order = 12,
-                    set = function(_, val) ns.db.settings.showSummary = val end,
-                    get = function() return ns.db.settings.showSummary end,
-                },
-                optShowInvite = {
-                    name = 'Show your whisper when sending invite messages.',
-                    desc = 'This will show or hide whisper messages to recruits, suggest going to social and turn on in-line whispers for best results.',
-                    type = 'toggle',
-                    width = 'full',
-                    order = 13,
-                    set = function(_, val) ns.db.settings.showWhispers = val end,
-                    get = function() return ns.db.settings.showWhispers end,
-                },
-                optShowPersonalGreeting = {
-                    name = 'Send guild greeting message when invite is accepted.',
-                    desc = 'Enable/disable greeting message to newly joined players.',
-                    type = 'toggle',
-                    width = 'full',
-                    order = 14,
-                    disabled = function() return not IsGuildLeader() and ns.dbGlobal.greeting end,
-                    set = function(_, val) ns.db.settings.sendGreeting = val end,
-                    get = function() return ns.dbGlobal.greeting or ns.db.settings.sendGreeting end,
-                },
-                optPersonalGreetingMsg = {
-                    name = 'Greeting Message',
-                    desc = 'This message will be sent to guild chat when a player accepts invite.',
-                    type = 'input',
-                    width = 'full',
-                    order = 15,
-                    disabled = function() return not IsGuildLeader() and ns.dbGlobal.greeting end,
-                    set = function(_, val) ns.db.settings.greetingMsg = val end,
-                    get = function()
-                        if ns.dbGlobal.greeting then return ns.dbGlobal.greetingMsg
-                        else return (not ns.db.settings.greetingMsg or ns.db.settings.greetingMsg == '') and (ns.dbGlobal.greetingMsg or '') or (ns.db.settings.greetingMsg or '') end
-                    end,
-                },
-                optShowPersonalWelcome = {
-                    name = 'Send to guild chat personalized welcome message.',
-                    desc = 'This will welcome each player that joins and is seperate from the greeting message.',
-                    type = 'toggle',
-                    width = 'full',
-                    order = 16,
-                    --disabled = function() return not IsGuildLeader() and ns.dbGlobal.greeting end,
-                    set = function(_, val) ns.db.settings.sendWelcome = val end,
-                    get = function() return ns.db.settings.sendWelcome end,
-                },
-                optPersonalWelcomeMsg = {
-                    name = 'Individual Greeting Message',
-                    desc = 'This will make the greeting individualized and shown in guild chat.\nUse NAME (in caps) to substitute the name of the player that joined.',
-                    type = 'input',
-                    width = 'full',
-                    order = 17,
-                    --disabled = function() return not IsGuildLeader() and ns.dbGlobal.greeting end,
-                    set = function(_, val) ns.db.settings.welcomeMessage = val end,
-                    get = function()
-                        ns.db.settings.welcomeMessage = ns.db.settings.welcomeMessage or DEFAULT_GUILD_WELCOME
-                        return ns.db.settings.welcomeMessage
-                    end,
-                },
-                optScanInterval = {
-                    name = 'Time to wait between scans (default recommended).',
-                    desc = 'WoW requires a cooldown period between /who scans, this is the time that the system will wait between scans.',
-                    type = 'input',
-                    width = 'full',
-                    order = 17,
-                    set = function(_, val)
-                        if tonumber(val) >=2 and tonumber(val) < 10 then ns.db.settings.scanWaitTime = tonumber(val)
-                        else return tostring(ns.db.settings.scanWaitTime) end
-                    end,
-                    get = function() return tostring(ns.db.settings.scanWaitTime) end,
-                },
-                optWhoNote = {
-                    name = ns.code:cText('FFFFFF00', 'NOTE: ')..'After much testing, the default 6 seconds seems to consistently give results, less wait time seems to not always return data.',
-                    type = 'description',
-                    order = 18,
-                    width = 'full',
-                    fontSize = 'medium'
-                },
-            }
-        },
         mnuFilterList = {
             name = 'Custom Filters',
             type = 'group',
-            order = 13,
+            order = 14,
             args = {
                 filterHeader1 = {
                     name = 'Filter Editor',
@@ -896,7 +915,7 @@ ns.addonSettings = {
         mnuBlackList = {
             name = 'Black List',
             type = 'group',
-            order = 14,
+            order = 15,
             args = {
                 blDesc = {
                     name = 'Players marked in '..ns.code:cText('FFFF0000', 'RED')..' are marked for deletion.\nPlayers marked in '..ns.code:cText('FF00FF00', 'GREEN')..' are active black listed players.',
@@ -911,7 +930,7 @@ ns.addonSettings = {
                     width = 'full',
                     order = 2,
                     func = function()
-                        for _,r in pairs(ns.dbBL.blackList) do
+                        for _,r in pairs(ns.dbBL) do
                             if r.selected and not r.markedForDelete then
                                 r.markedForDelete = true
                                 r.expirationDate = C_DateAndTime.GetServerTimeLocal() + (30 * SECONDS_IN_A_DAY)
@@ -930,7 +949,7 @@ ns.addonSettings = {
                     width = 'full',
                     values = function()
                         local tbl = {}
-                        for k, r in pairs(ns.dbBL.blackList or {}) do
+                        for k, r in pairs(ns.dbBL or {}) do
                             local name = k:gsub('-'..GetRealmName(), '')
                             name = r.markedForDelete and ns.code:cText('FFFF0000', name) or ns.code:cText('FF00FF00', name)
                             tbl[k] = (name..': '..r.reason) or ''
@@ -939,8 +958,8 @@ ns.addonSettings = {
                         return tbl
                     end,
                     set = function(_, key, val)
-                        local r = ns.dbBL.blackList[key]
-                        ns.dbBL.blackList[key] = {
+                        local r = ns.dbBL[key]
+                        ns.dbBL[key] = {
                             dateBlackList = r.dateBlackList,
                             markedForDelete = r.markedForDelete,
                             whoDidIt = r.whoDidIt,
@@ -949,7 +968,7 @@ ns.addonSettings = {
                             expirationDate = r.expirationDate,
                         }
                     end,
-                    get = function(_, key) return ns.dbBL.blackList[key].selected or false end,
+                    get = function(_, key) return ns.dbBL[key].selected or false end,
                 }
             }
         },
@@ -967,14 +986,14 @@ ns.addonSettings = {
                 aboutDesc1 = {
                     name = 'Guild Recruiter',
                     type = 'description',
-                    image = 'Interface\\AddOns\\GuildRecruiter\\imgs\\GR_Logo',
+                    image = ICON_PATH..'GR_Logo',
                     imageWidth = 32,
                     imageHeight = 32,
                     fontSize = 'medium',
                     order = 0,
                 },
                 aboutDesc2 = {
-                    name = 'Thank you for using Guild Recruiter, I hope you find this addon useful!',
+                    name = '\nThank you for using Guild Recruiter, I hope you find this addon useful!',
                     type = 'description',
                     fontSize = 'medium',
                     order = 1,

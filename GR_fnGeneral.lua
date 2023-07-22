@@ -36,7 +36,7 @@ end
 function code:GuildReplace(msg, playerName)
     if not ns.db then return end
 
-    local gi = ns.db.guildInfo
+    local gi = ns.dbGlobal
     if not gi or not msg then return end
 
     local gLink, gName = gi.guildLink or nil, gi.guildName or nil
@@ -59,14 +59,31 @@ ns.invite = {}
 local invite = ns.invite
 function invite:Init()
     self.antiSpam = false
+    self.showWelcome = false
     self.showWhispers = false
+    self.showGreeting = false
 
-    self.tblInvited = nil
+    self.msgWelcome = ''
+    self.msgGreeting = ''
+
+    self.tblSent = {}
+    self.tblInvited = {}
 end
 function invite:InitializeInvite()
+    self.tblInvited = ns.dbInv or {}
+
     self.antiSpam = ns.db.settings.antiSpam or true
-    self.tblInvited = ns.dbInv.invitedPlayers or {}
     self.showWhispers = ns.db.settings.showWhispers or false
+
+    self.showGreeting = ns.db.settings.showWelcome or ns.dbGlobal.guildInfo.greeting or false
+    self.showGreeting = (self.showGreeting and (ns.db.settings.greetingMsg ~= '' or ns.dbGlobal.guildInfo.greetingMsg ~= '')) and true or false
+
+    self.msgGreeting = (ns.dbGlobal.guildInfo.greeting and ns.dbGlobal.guildInfo.greetingMsg ~= '') and ns.dbGlobal.guildInfo.greetingMsg or ns.db.settings.greetingMsg
+
+    self.showWelcome = ns.db.settings.showWelcome or false
+    self.showWelcome = (self.showWelcome and ns.db.settings.welcomeMessage ~= '') and true or false
+
+    self.msgWelcome = ns.db.settings.welcomeMessage
 end
 function invite:new(class)
     return {
@@ -76,6 +93,8 @@ function invite:new(class)
     }
 end
 function invite:CheckAbilityToInvite(player, zone, skipChecks)
+    invite:InitializeInvite()
+
     if skipChecks then return true
     elseif not player or not zone then return false
     else
@@ -85,6 +104,76 @@ function invite:CheckAbilityToInvite(player, zone, skipChecks)
     end
 
     return true
+end
+function invite:SendInviteToPlayer(pName, msg, sendInvite, class)
+    pName = gsub(pName, '-'..GetRealmName(), '')
+    if self.tblSent[pName] then return end
+
+    invite:InitializeInvite()
+
+    local function MyWhisperFilter(_,_, message)
+        if msg == message then return not self.showWhispers
+        else return false end -- Returning true will hide the message
+    end
+
+    class = class and class or select(2, UnitClass(pName))
+    if pName and CanGuildInvite() and not GetGuildInfo(pName) then
+        if sendInvite then GuildInvite(pName) end
+        if msg and ns.db.settings.inviteFormat ~= 2 then
+            if not self.showWhispers then
+                local msgOut = sendInvite and 'Sent invite and message to ' or 'Sent invite message to '
+                ns.code:consoleOut(msgOut..(ns.code:cPlayer(pName, class) or pName))
+                ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER_INFORM", MyWhisperFilter, msg)
+            end
+            SendChatMessage(msg, 'WHISPER', nil, pName)
+        end
+
+        self.tblSent[pName] = true
+
+        ns.scanner.analytics:WaitingOn()
+        ns.scanner.analytics:TotalInvites()
+
+        if self.antiSpam then
+            self.tblInvited[pName] = invite:new(class)
+            ns.dbInv[pName] = self.tblInvited[pName]
+        end
+
+        invite:RegisterGuildInviteEvent()
+    else ns.code:consoleOut('You do not have invite permissions or not in a guild.') end
+end
+function invite:RegisterGuildInviteEvent()
+    if ns.tblEvents['CHAT_MSG_SYSTEM'] then return end
+
+    local function GuildRosterHandler(...)
+        local _, msg =  ...
+        if not msg then return end
+
+        local pName = msg:match('(.-) ')
+        pName = gsub(pName, '-'..GetRealmName(), '')
+
+        if not self.tblSent[pName] then return
+        elseif msg:match('not found') then ns.scanner.analytics:TotalInvites(-1)
+        elseif msg:match('is not online') then ns.scanner.analytics:TotalInvites(-1)
+        elseif not msg:match('guild') then return
+        elseif msg:match('is already in a guild') then ns.scanner.analytics:TotalInvites(-1)
+        elseif msg:match('has joined the guild') then
+            ns.scanner.analytics:TotalAccepted()
+
+            if self.showWelcome then
+                SendChatMessage(self.msgGreeting, 'WHISPER', nil, pName)
+            end
+            if self.showGreeting then
+                C_Timer.After(math.random(3-10), function()
+                    SendChatMessage(ns.code:GuildReplace(self.msgWelcome, pName), 'GUILD')
+                end)
+            end
+        elseif msg:match('declines your guild invitation') then ns.scanner.analytics:TotalDeclined() end
+
+        invite.tblSent[pName] = nil
+        ns.scanner.analytics:WaitingOn(-1)
+    end
+
+    GRADDON:RegisterEvent('CHAT_MSG_SYSTEM', GuildRosterHandler)
 end
 invite:Init()
 
@@ -200,27 +289,27 @@ widgets:Init()
 ns.analytics = {}
 local analytics, p, g = ns.analytics, nil, nil
 function analytics:Scanned(amt)
-    p, g = ns.dbAnal.profile.analytics, ns.dbAnal.global.analytics
-    p.Players_Scanned = code:inc(p.Players_Scanned or 0, amt)
-    g.Players_Scanned = code:inc(g.Players_Scanned or 0, amt)
+    p, g = ns.dbAnal, ns.dbGAnal
+    p.Players_Scanned = code:inc(p.Players_Scanned or 0, amt or 1)
+    g.Players_Scanned = code:inc(g.Players_Scanned or 0, amt or 1)
 end
 function analytics:Invited(amt)
-    p, g = ns.dbAnal.profile.analytics, ns.dbAnal.global.analytics
-    p.Invited_Players = code:inc(p.Invited_Players or 0, amt)
-    g.Invited_Players = code:inc(g.Invited_Players or 0, amt)
+    p, g = ns.dbAnal, ns.dbGAnal
+    p.Invited_Players = code:inc(p.Invited_Players or 0, amt or 1)
+    g.Invited_Players = code:inc(g.Invited_Players or 0, amt or 1)
 end
 function analytics:BlackListed(amt)
-    p, g = ns.dbAnal.profile.analytics, ns.dbAnal.global.analytics
-    p.Black_Listed = code:inc(p.Black_Listed or 0, amt)
-    g.Black_Listed = code:inc(g.Black_Listed or 0, amt)
+    p, g = ns.dbAnal, ns.dbGAnal
+    p.Black_Listed = code:inc(p.Black_Listed or 0, amt or 1)
+    g.Black_Listed = code:inc(g.Black_Listed or 0, amt or 1)
 end
 function analytics:Accepted(amt)
-    p, g = ns.dbAnal.profile.analytics, ns.dbAnal.global.analytics
-    p.Accepted_Invite = code:inc(p.Accepted_Invite or 0, amt)
-    g.Accepted_Invite = code:inc(g.Accepted_Invite or 0, amt)
+    p, g = ns.dbAnal, ns.dbGAnal
+    p.Accepted_Invite = code:inc(p.Accepted_Invite or 0, amt or 1)
+    g.Accepted_Invite = code:inc(g.Accepted_Invite or 0, amt or 1)
 end
 function analytics:Declined(amt)
-    p, g = ns.dbAnal.profile.analytics, ns.dbAnal.global.analytics
-    p.Declined_Invite = code:inc(p.Declined_Invite or 0, amt)
-    g.Declined_Invite = code:inc(g.Declined_Invite or 0, amt)
+    p, g = ns.dbAnal, ns.dbGAnal
+    p.Declined_Invite = code:inc(p.Declined_Invite or 0, amt or 1)
+    g.Declined_Invite = code:inc(g.Declined_Invite or 0, amt or 1)
 end

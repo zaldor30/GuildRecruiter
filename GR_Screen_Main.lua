@@ -41,13 +41,15 @@ function main:ScannerSettingsLayout()
 
     local msgDrop = aceGUI:Create('Dropdown') -- Select invite type
     if not msgDrop then aceGUI:Create('Dropdown') end
-    msgDrop:SetLabel('Message to recruit:')
+    msgDrop:SetLabel('Recruit Invite Format:')
     msgDrop:SetRelativeWidth(.5)
     msgDrop:SetList(self.tblFormat)
     msgDrop:SetValue(ns.db.settings.inviteFormat or 2)
     msgDrop:SetCallback('OnValueChanged', function(_, _, val)
         ns.db.settings.inviteFormat = tonumber(val)
+
         main:CreatePreview()
+        main:SetButtonStates()
     end)
     inline:AddChild(msgDrop)
 
@@ -117,26 +119,33 @@ function main:ScannerSettingsLayout()
     main:FilterList()
     main:MessagePreview()
 end
+function main:SetButtonStates()
+    local db = ns.db
+    local msgID = db.messages.activeMessage
+    local msg = self.tblMessages[msgID] and self.tblMessages[msgID].message or nil
+    local invFormat = db.settings.inviteFormat
+
+    if (not msgID or not msg) and invFormat ~= 2 then
+        self.btnScan:SetDisabled(true)
+        ns.screen.status:SetText(ns.code:cText('FFFF0000', 'Select message or create one in settings.'))
+        return
+    else self.btnScan:SetDisabled(false) end
+    if ns.screen.status:GetText() and string.match(ns.screen.status:GetText(), 'Select message') then ns.screen.status:SetText('') end
+end
 
 function main:GetMessageList()
-    local tbl = {}
+    local tbl, mCount = {}, 0
     local db, dbMsg = ns.db, ns.db.messages
 
     local msgDrop = aceGUI:Create('Dropdown') -- Select invite type
     msgDrop:SetLabel('Message to recruit:')
     msgDrop:SetRelativeWidth(.5)
-    msgDrop:SetList(tbl)
-    msgDrop:SetValue(ns.db.messages.activeMessage or nil)
-    msgDrop:SetCallback('OnValueChanged', function(_,_, val)
-        ns.db.messages.activeMessage = val
-        main:CreatePreview()
-    end)
 
     if dbMsg then
-        local hasGuildLink = db.guildInfo.guildLink or false
+        local hasGuildLink = ns.dbGlobal.guildLink or false
 
-        ns.datasets:GMessages()
-        for k, r in pairs(ns.datasets.tblGMMessages or {}) do
+        ns.datasets:AllMessages()
+        for k, r in pairs(ns.datasets.tblAllMessages or {}) do
             local gLinkFound = strfind(r.message, 'GUILDLINK') or false
             if not gLinkFound or (gLinkFound and hasGuildLink)  then
                 if not r.gmMessage then tbl[k] = r.desc
@@ -145,12 +154,25 @@ function main:GetMessageList()
             elseif not hasGuildLink and gLinkFound and k == dbMsg.activeMessage then dbMsg.activeMessage = nil end
         end
 
+        for _ in pairs(self.tblMessages) do mCount = mCount + 1 end
+
         dbMsg.activeMessage = (dbMsg.activeMessage and self.tblMessages[dbMsg.activeMessage]) and dbMsg.activeMessage or nil
-        msgDrop:SetValue(dbMsg.activeMessage)
     end
+
+    msgDrop:SetList(tbl)
+    msgDrop:SetValue(dbMsg.activeMessage or nil)
+    msgDrop:SetDisabled(mCount == 0 or false)
+    msgDrop:SetCallback('OnValueChanged', function(_,_, val)
+        dbMsg.activeMessage = val
+
+        main:CreatePreview()
+        main:SetButtonStates()
+    end)
 
     self.cmbMessages = msgDrop
     self.inLine:AddChild(msgDrop)
+
+    main:SetButtonStates()
 end
 function main:FilterList() -- Add 10 to custom index to compensate for defaults
     local dropdown = aceGUI:Create('Dropdown')
@@ -211,7 +233,7 @@ function main:CreatePreview()
     if ns.db.settings.inviteFormat == 2 then msg = 'No message will be sent. Only guild invite will be sent.'
     else
         local activeMsg = ns.db.messages.activeMessage or nil
-        if not activeMsg then msg = ns.code:cText('FFFF0000', 'No message selected. Please select a message from the dropdown.')
+        if not activeMsg then msg = ''
         else
             local preview = self.tblMessages[activeMsg].message or nil
             msg = ns.code:cText('FFFF80FF', 'To [')..ns.code.fPlayerName

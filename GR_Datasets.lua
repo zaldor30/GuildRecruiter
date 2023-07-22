@@ -12,7 +12,7 @@ function ds:Init()
     self.tblBadByName = {}
     self.tblBadZones = ds:invalidZones()
 
-    self.tblGMMessages = {}
+    self.tblAllMessages = {}
 end
 function ds:classes()
     return {
@@ -139,7 +139,7 @@ function ds:invalidZones()
 
     return tbl
 end
-function ds:GMessages()
+function ds:AllMessages()
     local dbMessages = ns.db.messages.messageList or nil
     local dbGMessages = ns.dbGlobal.messageList or {}
 
@@ -150,6 +150,6 @@ function ds:GMessages()
         tinsert(tbl, r)
     end
     for _,r in pairs(dbMessages or {}) do tinsert(tbl, r) end
-    self.tblGMMessages = tbl
+    self.tblAllMessages = tbl
 end
 ds:Init()

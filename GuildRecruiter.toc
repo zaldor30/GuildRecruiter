@@ -29,12 +29,11 @@ GR_Datasets.lua
 
 GR_fnSync.lua
 GR_fnGeneral.lua
-GR_fnBlackList.lua
-GR_fnAnalytics.lua
 
 GR_Core.lua
 GR_Options.lua
 
 GR_Screen.lua
 GR_Screen_Main.lua
+GR_Screen_About.lua
 GR_Screen_Scanner.lua

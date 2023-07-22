@@ -1,10 +1,19 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
 local aceGUI = LibStub("AceGUI-3.0")
 
+local INVITE_WAIT_TIME = 1
+
 ns.scanner = {}
 local scanner = ns.scanner
 function scanner:Init()
     self.analytics = self:analytics()
+
+    self.message = nil -- Message from main
+
+    -- Data Tables
+    self.tblWho = {}
+    self.tblFound = {}
+    self.tblFilter = {}
 
     -- Filter Variables
     self.totalFilters = 0
@@ -13,11 +22,6 @@ function scanner:Init()
     self.filter = nil
     self.min = nil
     self.max = nil
-
-    -- Data Tables
-    self.tblWho = {}
-    self.tblFound = {}
-    self.tblFilter = {}
 
     -- Session Analytics Variables
     self.totalInvites = 0
@@ -51,11 +55,12 @@ function scanner:Init()
 end
 function scanner:SetButtonStates()
     local foundCount, checkCount = 0, 0
-    for k, r in pairs(self.tblFound) do
+    for _, r in pairs(self.tblFound) do
         foundCount = foundCount + 1
         if r.isChecked then checkCount = checkCount + 1 end
     end
 
+    self.lblFound:SetText('Ready for invite: '..foundCount)
     if foundCount == 0 then
         self.btnInvite:SetDisabled(true)
         self.btnRemove:SetDisabled(true)
@@ -106,7 +111,7 @@ function scanner:StartScanner(message, min, max)
         ns.widgets:createTooltip(title, body)
     end)
     btnInvite:SetCallback('OnLeave', function() GameTooltip:Hide() end)
-    btnInvite:SetCallback('OnClick', function() --[[invite:ScannerInvitePlayer()--]] end)
+    btnInvite:SetCallback('OnClick', function() scanner:InvitePlayer() end)
     inlineInivte:AddChild(btnInvite)
 
     local btnRemove = self.btnRemove
@@ -115,7 +120,7 @@ function scanner:StartScanner(message, min, max)
     btnRemove:SetDisabled(true)
     btnRemove:SetCallback('OnEnter', function()
         local title = 'Black List Players'
-        local body = 'Checked players will be added to black list.'
+        local body = 'Selected players will be added to the black list.'
         ns.widgets:createTooltip(title, body)
     end)
     btnRemove:SetCallback('OnLeave', function() GameTooltip:Hide() end)
@@ -166,7 +171,7 @@ function scanner:StartScanner(message, min, max)
 
     local lblNextTitle = aceGUI:Create("Label")
     lblNextTitle:SetText('Next filter: ')
-    lblNextTitle:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+    lblNextTitle:SetFont(DEFAULT_FONT, 10, 'OUTLINE')
     lblNextTitle:SetFullWidth(true)
     searchScroll:AddChild(lblNextTitle)
 
@@ -233,6 +238,34 @@ function scanner:StartScanner(message, min, max)
 
     scanner:SetupFilter()
     scanner:SetButtonStates()
+end
+function scanner:InvitePlayer()
+    local db = ns.db.settings
+
+    local pName = next(self.tblFound or {})
+    if not pName or self.tblFound[pName].checked then return end
+
+    local sendInvite = db.inviteFormat ~= 1 or false
+    local invMessage = ns.code:GuildReplace(self.message, pName) or ''
+    ns.invite:SendInviteToPlayer(pName, invMessage, sendInvite, self.tblFound[pName].class or nil)
+    self.tblFound[pName] = nil
+
+    scanner:SetButtonStates()
+    scanner:ShowResults('INVITE')
+
+    local function invWait(remain)
+        if remain > 0 then
+            self.btnInvite:SetDisabled(true)
+            self.btnInvite:SetText('Waiting...')
+            C_Timer.After(1, function() invWait(remain - 1) end)
+        else
+            scanner:SetButtonStates()
+            self.btnInvite:SetText('Invite')
+        end
+    end
+    scanner:SetButtonStates()
+    self.btnInvite:SetDisabled(true)
+    invWait(INVITE_WAIT_TIME)
 end
 function scanner:SetupFilter()
     local db, dbFilter = ns.db.settings, ns.db.filter
@@ -376,7 +409,7 @@ function scanner:NextQuery()
     waitTimer((ns.db.settings.scanWaitTime or SCAN_WAIT_TIME), filter)
 end
 function scanner:ShowResults(ShowWhich)
-    local tblPotential = self.tblWho or {}
+    local tblPotential = self.tblWho or self.tblFound or {}
 
     local function createCheckBox(pName, pClass, pLevel)
         local level = pLevel == MAX_CHARACTER_LEVEL and ns.code:cText('FF00FF00', pLevel) or (pLevel >= MAX_CHARACTER_LEVEL - 10 and ns.code:cText('FFFFFF00', pLevel) or pLevel)
@@ -460,7 +493,7 @@ function scanner:analytics()
         ns.analytics:Scanned(amt)
     end
     function tbl:TotalInvites(amt)
-        ns.scanner.totalInvites = ns.scanner.TotalInvites + (amt or 1)
+        ns.scanner.totalInvites = ns.scanner.totalInvites + (amt or 1)
         ns.scanner.lblTotalInvites:SetText('Total Invites: '..ns.scanner.totalInvites)
 
         ns.analytics:Invited(amt)
@@ -468,18 +501,24 @@ function scanner:analytics()
     function tbl:TotalBlackList(amt)
         ns.scanner.totalBlackList = ns.scanner.totalBlackList + (amt or 1)
         ns.scanner.lblTotalBlackList:SetText('Total Black List: '..ns.scanner.totalBlackList)
+
+        ns.analytics:BlackListed(amt)
     end
     function tbl:TotalDeclined(amt)
         ns.scanner.totalDeclined = ns.scanner.totalDeclined + (amt or 1)
         ns.scanner.lblTotalDeclined:SetText('Total Declined: '..ns.scanner.totalDeclined)
+
+        ns.analytics:Declined(amt)
     end
     function tbl:TotalAccepted(amt)
         ns.scanner.totalAccepted = ns.scanner.totalAccepted + (amt or 1)
         ns.scanner.lblTotalAccepted:SetText('Total Accepted: '..ns.scanner.totalAccepted)
+
+        ns.analytics:Accepted(amt)
     end
-    function tbl:TotalUnknown(amt)
+    function tbl:WaitingOn(amt)
         ns.scanner.totalUnknown = ns.scanner.totalUnknown + (amt or 1)
-        ns.scanner.lblUnknown:SetText('Total Unknown: '..ns.scanner.totalUnknown)
+        ns.scanner.lblUnknown:SetText('Waiting On: '..ns.scanner.totalUnknown)
     end
     return tbl
 end

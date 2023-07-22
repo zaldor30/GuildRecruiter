@@ -166,7 +166,7 @@ function sync:PrepareData()
     self.totalInvited, self.totalBlackListed = 0, 0
     local tblSync = {
         version = GRADDON.version,
-        guildLink = (ns.db.guildInfo and ns.db.guildInfo.guildLink) and ns.db.guildInfo.guildLink or nil,
+        guildLink = (ns.dbGlobal.guildLink and ns.dbGlobal.guildLink) and ns.dbGlobal.guildLink or nil,
         isGuildLeader = IsGuildLeader() or false,
         gmData = ns.dbGlobal or {},
         invitedPlayers = ns.dbInv.invitedPlayers or {},
@@ -187,8 +187,8 @@ function sync:ParseSyncData(tblData, sender)
     end
 
     if tblData.isGuildLeader and not IsGuildLeader() then
-        if (tblData.guildLink and ns.db.guildInfo.guildLink) and not IsGuildLeader() then
-            ns.db.guildInfo.guildLink = tblData.guildLink end
+        if (tblData.guildLink and ns.dbGlobal.guildLink) and not IsGuildLeader() then
+            ns.dbGlobal.guildLink = tblData.guildLink end
         ns.dbGlobal.messageList = tblData.gmData.messageList or {}
         ns.dbGlobal.greeting = tblData.gmData.greeting or false
         ns.dbGlobal.greetingMsg = tblData.gmData.greetingMsg or nil

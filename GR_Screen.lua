@@ -74,7 +74,6 @@ function screen:buildScreen()
     f:EnableKeyboard(true)
     f:SetFrameStrata(DEFAULT_STRATA)
     f:SetClampedToScreen(true)
-    --f:SetScript('OnKeyDown', function(_, key) if key == 'ESCAPE' then screen:HideScreen() end end)
     f:SetScript('OnMouseDown', OnDragStart)
     f:SetScript('OnMouseUp', OnDragStop)
     f:Show()
@@ -82,7 +81,39 @@ function screen:buildScreen()
     _G["GuildRecruiter"] = f
     tinsert(UISpecialFrames, "GuildRecruiter")
 
-    local fTop = CreateFrame('Frame', 'TOP_Screen_Frame', f, 'BackdropTemplate')
+    screen:CreateIconBar()
+
+    local fBottom = CreateFrame('Frame', 'BOTTOM_Screen_Frame', f, 'BackdropTemplate')
+    fBottom:SetBackdrop({
+        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+        insets = { left = 0, right = 0, top = 0, bottom = 0 }
+    })
+    fBottom:SetBackdropColor(0, 0, 0, .5)
+    fBottom:SetBackdropBorderColor(1, 1, 1, 1)
+    fBottom:SetPoint('BOTTOM', f, 'BOTTOM', 0, 5)
+    fBottom:SetSize(f:GetWidth() - 8, 15)
+
+    local lineTexture = fBottom:CreateTexture(nil, "ARTWORK")
+    lineTexture:SetColorTexture(.25, .25, .25)
+    lineTexture:SetHeight(1)
+    lineTexture:SetPoint("TOPLEFT", fBottom, "TOPLEFT", 0, 0)
+    lineTexture:SetPoint("TOPRIGHT", fBottom, "TOPRIGHT", 0, 0)
+
+    self.status = fBottom:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local textString = self.status
+    textString:SetPoint("LEFT", fBottom, "LEFT", 2, -1) -- Set the text position
+    textString:SetText('')
+    textString:SetTextColor(1, 1, 1, 1) -- Set the text color (r,g,b,a) values
+
+    textString = fBottom:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    textString:SetPoint("RIGHT", fBottom, "RIGHT", -2, -1) -- Set the text position
+    textString:SetTextColor(1, 1, 1, 1) -- Set the text color (r,g,b,a) values
+    self.textSync = textString
+
+    screen:UpdateLastSync()
+end
+function screen:CreateIconBar()
+    local fTop = CreateFrame('Frame', 'TOP_Screen_Frame', self.fMain, 'BackdropTemplate')
     self.fTop = fTop
     fTop:SetBackdrop({
         bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
@@ -119,7 +150,7 @@ function screen:buildScreen()
         return fIcon
     end
 
-    local fTop_Icon = CreateFrame('Frame', 'TOP_Screen_Frame', f, 'BackdropTemplate')
+    local fTop_Icon = CreateFrame('Frame', 'TOP_Screen_Frame', self.fMain, 'BackdropTemplate')
     fTop_Icon:SetBackdrop({
         bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
         insets = { left = 0, right = 0, top = 0, bottom = 0 }
@@ -130,7 +161,8 @@ function screen:buildScreen()
     fTop_Icon:SetSize(self.fMain:GetWidth() - 8, 20)
     self.fTop_Icon = fTop_Icon
 
-    local prevFrame = createTopBarIcons(fTop, GRADDON.icon, 'About '..GRADDON.title, 'Shows information about this addon.', nil, 3, 1, nil, 15, 15)
+    local prevFrame = createTopBarIcons(fTop, GRADDON.icon, 'About '..GRADDON.title, 'Guide, support and other information that might be helpful.', nil, 3, 1, nil, 15, 15)
+    prevFrame:SetScript('OnMouseUp', function() ns.about:StartAboutScreen() end)
     prevFrame = createTopBarIcons(fTop, ICON_PATH..'GR_Exit', 'Exit '..GRADDON.title, 'Closes the addon.', 'RIGHT', -3, 1, 'RIGHT', 15, 15)
     prevFrame:SetScript('OnMouseUp', function() screen:HideScreen() end)
 
@@ -146,35 +178,6 @@ function screen:buildScreen()
     self.iconReset:SetScript('OnClick', function() ns.scanner:SetupFilter() end)
 
     self.iconBack = createTopBarIcons(fTop_Icon, ICON_PATH..'GR_Back', 'Back', 'Returns to the main screen.', 'RIGHT', -3, 0, 'RIGHT')
-
-    local fBottom = CreateFrame('Frame', 'BOTTOM_Screen_Frame', f, 'BackdropTemplate')
-    fBottom:SetBackdrop({
-        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-        insets = { left = 0, right = 0, top = 0, bottom = 0 }
-    })
-    fBottom:SetBackdropColor(0, 0, 0, .5)
-    fBottom:SetBackdropBorderColor(1, 1, 1, 1)
-    fBottom:SetPoint('BOTTOM', f, 'BOTTOM', 0, 5)
-    fBottom:SetSize(f:GetWidth() - 8, 15)
-
-    lineTexture = fBottom:CreateTexture(nil, "ARTWORK")
-    lineTexture:SetColorTexture(.25, .25, .25)
-    lineTexture:SetHeight(1)
-    lineTexture:SetPoint("TOPLEFT", fBottom, "TOPLEFT", 0, 0)
-    lineTexture:SetPoint("TOPRIGHT", fBottom, "TOPRIGHT", 0, 0)
-
-    self.status = fBottom:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    textString = self.status
-    textString:SetPoint("LEFT", fBottom, "LEFT", 2, -1) -- Set the text position
-    textString:SetText('')
-    textString:SetTextColor(1, 1, 1, 1) -- Set the text color (r,g,b,a) values
-
-    textString = fBottom:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    textString:SetPoint("RIGHT", fBottom, "RIGHT", -2, -1) -- Set the text position
-    textString:SetTextColor(1, 1, 1, 1) -- Set the text color (r,g,b,a) values
-    self.textSync = textString
-
-    screen:UpdateLastSync()
 end
 function screen:HideScreen()
     -- Do closing routines for active screens
@@ -218,7 +221,6 @@ function screen:UpdateStatus(state)
         self.iconSync:SetNormalTexture(ICON_PATH..'GR_Sync')
         self.iconSync:SetHighlightTexture(ICON_PATH..'GR_Sync')
         screen:UpdateLastSync()
-        print(self.statusHold or 'no status')
         self.status:SetText(self.statusHold)
     end
 end

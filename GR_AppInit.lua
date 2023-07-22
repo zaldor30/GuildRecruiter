@@ -7,6 +7,7 @@ ns = {}
 GRADDON = LibStub('AceAddon-3.0'):NewAddon('GuildRecruiter', 'AceConsole-3.0', 'AceEvent-3.0', 'AceHook-3.0', 'AceComm-3.0', 'AceSerializer-3.0')
 GRADDON.title = GetAddOnMetadata('GuildRecruiter', 'Title')
 GRADDON.version = GetAddOnMetadata('GuildRecruiter', 'Version')
+GRADDON.author = GetAddOnMetadata('GuildRecruiter', 'Author')
 GRADDON.icon = ICON_PATH..'GR_Icon'
 GRADDON.realmID = GetRealmID()
 GRADDON.prefix = 'GuildRecruiter'

@@ -10,7 +10,16 @@
 	"settings": {
 		"Lua.diagnostics.globals": [
 			"UIErrorsFrame",
-			"PLAYER"
+			"PLAYER",
+			"INVITE",
+			"StaticPopupDialogs",
+			"StaticPopup_Show",
+			"GameTooltip_SetDefaultAnchor",
+			"GetCursorPosition",
+			"UISpecialFrames",
+			"InterfaceOptionsFrame_OpenToCategory",
+			"class",
+			"ChatFrame_AddMessageEventFilter"
 		]
 	}
 }
