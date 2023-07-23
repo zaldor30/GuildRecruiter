@@ -175,8 +175,6 @@ function core:OnPlayerLoggedIn()
     core:StartMaintenance()
     for _, r in pairs(ns.dbBL) do r.selected = false end -- Reset selection state for options
 
-    ns.blackList:InitializeBlackList()
-
     ns.code:consoleOut(GR_VERSION_INFO..' is active.', nil, true)
     ns.code:consoleOut('Database version: '..ns.db.settings.dbVer, nil, true)
     ns.code:consoleOut('You can use "/'..(self.slashCommand == 'gr' and 'gr or /recruiter' or '/'..self.slashCommand)..' help" to get a list of commands.', nil, true)

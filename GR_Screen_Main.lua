@@ -26,10 +26,13 @@ function main:Init()
     }
 end
 function main:ScannerSettingsLayout()
+    ns.screen.fMain:SetSize(500, 255)
     ns.screen:ResetMain()
+
     ns.screen.iconBack:Hide()
     ns.screen.iconReset:Hide()
-    ns.screen.fMain:SetSize(500, 255)
+    ns.screen.iconCompact:Hide()
+    ns.screen.iconRestore:Hide()
     ns.screen:UpdateLastSync()
 
     local inline = aceGUI:Create('InlineGroup')

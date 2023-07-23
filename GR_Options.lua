@@ -358,7 +358,10 @@ ns.addonSettings = {
                     type = 'toggle',
                     width = 'full',
                     order = 6,
-                    set = function(_, val) ns.db.settings.compactMode = val end,
+                    set = function(_, val)
+                        ns.screen.isCompactOveride = false
+                        ns.db.settings.compactMode = val
+                    end,
                     get = function() return ns.db.settings.compactMode end,
                 },
             }

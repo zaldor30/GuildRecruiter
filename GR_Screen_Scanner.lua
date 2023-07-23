@@ -9,6 +9,8 @@ function scanner:Init()
     self.analytics = self:analytics()
 
     self.message = nil -- Message from main
+    self.isCompact = false
+    self.isCompactOveride = false
 
     -- Data Tables
     self.tblWho = {}
@@ -40,18 +42,22 @@ function scanner:Init()
     self.lblTotalScanned = aceGUI:Create("Label")
 
     -- Invite Inline Group Widgets
+    self.invInline = nil
     self.invScroll = aceGUI:Create("ScrollFrame")
     self.btnInvite = aceGUI:Create('Button')
     self.btnRemove = aceGUI:Create('Button')
     self.lblFound = aceGUI:Create("Label")
 
     -- Who Inline Group Widgets
+    self.whoInline = nil
     self.whoScroll = aceGUI:Create("ScrollFrame")
     self.lblWho = aceGUI:Create("Label")
 
     -- Recruit Scanning Inline Group Widgets
     self.btnSearch = aceGUI:Create('Button')
     self.lblNextFilter = aceGUI:Create("Label")
+
+    self.statsInline = nil
 end
 function scanner:SetButtonStates()
     local foundCount, checkCount = 0, 0
@@ -73,14 +79,35 @@ function scanner:SetButtonStates()
     end
 end
 function scanner:StartScanner(message, min, max)
+    self.isCompact = self.isCompactOveride and self.isCompact or (ns.db.settings.compactMode or false)
+    if self.isCompact then ns.screen.fMain:SetSize(200, 405)
+    else ns.screen.fMain:SetSize(500, 405) end
     ns.screen:ResetMain()
+
     ns.screen.aMain.frame:SetPoint("TOP", ns.screen.fTop_Icon, "BOTTOM", 1, 3)
     ns.screen.textSync:SetText()
+
+    ns.screen.iconCompact:Hide()
+    ns.screen.iconRestore:Hide()
 
     ns.screen.iconReset:Show()
     ns.screen.iconBack:Show()
     ns.screen.iconBack:SetScript('OnMouseUp', function() ns.main:ScannerSettingsLayout() end)
-    ns.screen.fMain:SetSize(500, 405)
+    if not self.isCompact then
+        ns.screen.iconCompact:Show()
+        ns.screen.iconCompact:SetScript('OnMouseUp', function()
+            self.isCompact = true
+            self.isCompactOveride = true
+            ns.scanner:StartScanner()
+        end)
+    elseif self.isCompact then
+        ns.screen.iconRestore:Show()
+        ns.screen.iconRestore:SetScript('OnClick', function()
+            self.isCompact = false
+            self.isCompactOveride = true
+            ns.scanner:StartScanner()
+        end)
+    end
 
     self.min = min
     self.max = max
@@ -88,10 +115,11 @@ function scanner:StartScanner(message, min, max)
     self.message = message
     self.inviteFormat = ns.db.settings.inviteFormat or 2
 
-    local inlineInivte = aceGUI:Create('InlineGroup')
+    self.invInline = aceGUI:Create('InlineGroup')
+    local inlineInivte = self.invInline
     inlineInivte:SetTitle('Invites:')
     inlineInivte:SetLayout('Flow')
-    inlineInivte:SetRelativeWidth(.4)
+    inlineInivte:SetRelativeWidth(self.isCompact and 1 or .4)
     inlineInivte:SetHeight(200)
     ns.screen.aMain:AddChild(inlineInivte)
 
@@ -124,7 +152,17 @@ function scanner:StartScanner(message, min, max)
         ns.widgets:createTooltip(title, body)
     end)
     btnRemove:SetCallback('OnLeave', function() GameTooltip:Hide() end)
-    btnRemove:SetCallback('OnClick', function() --[[si:ConfirmBlackList()--]] end)
+    btnRemove:SetCallback('OnClick', function()
+        local msg = 'Are you sure you want to add then\nselected players to the black list?'
+        local func = function()
+            local tbl = {}
+            for k, r in pairs(ns.scanner.tblFound) do
+                if r.isChecked then tbl[k] = true end
+            end
+            ns.blackList:BulkAddToBlackList(tbl)
+        end
+        ns.widgets:Confirmation(msg, func)
+    end)
     inlineInivte:AddChild(btnRemove)
 
     self.lblFound = aceGUI:Create("Label")
@@ -132,28 +170,31 @@ function scanner:StartScanner(message, min, max)
     self.lblFound:SetFullWidth(true)
     inlineInivte:AddChild(self.lblFound)
 
-    local inlineWho = aceGUI:Create('InlineGroup')
-    inlineWho:SetTitle('Who Results:')
-    inlineWho:SetLayout('Flow')
-    inlineWho:SetRelativeWidth(.6)
-    inlineWho:SetHeight(200)
-    ns.screen.aMain:AddChild(inlineWho)
+    if not self.isCompact then
+        self.whoInline = aceGUI:Create('InlineGroup')
+        local inlineWho = self.whoInline
+        inlineWho:SetTitle('Who Results:')
+        inlineWho:SetLayout('Flow')
+        inlineWho:SetRelativeWidth(.6)
+        inlineWho:SetHeight(200)
+        ns.screen.aMain:AddChild(inlineWho)
 
-    local whoScroll = self.whoScroll
-    whoScroll:SetLayout("Flow")
-    whoScroll:SetFullWidth(true)
-    whoScroll:SetHeight(187)
-    inlineWho:AddChild(whoScroll)
+        local whoScroll = self.whoScroll
+        whoScroll:SetLayout("Flow")
+        whoScroll:SetFullWidth(true)
+        whoScroll:SetHeight(187)
+        inlineWho:AddChild(whoScroll)
 
-    local lblWho = self.lblWho
-    lblWho:SetText('Number of players found: '..#self.tblFound)
-    lblWho:SetFullWidth(true)
-    inlineWho:AddChild(lblWho)
+        local lblWho = self.lblWho
+        lblWho:SetText('Number of players found: '..#self.tblFound)
+        lblWho:SetFullWidth(true)
+        inlineWho:AddChild(lblWho)
+    end
 
     local inlineBottomLeft = aceGUI:Create('InlineGroup')
     inlineBottomLeft:SetTitle('Recruit Scanning:')
     inlineBottomLeft:SetLayout('Flow')
-    inlineBottomLeft:SetRelativeWidth(.4)
+    inlineBottomLeft:SetRelativeWidth(self.isCompact and 1 or .4)
     inlineBottomLeft:SetHeight(100)
     ns.screen.aMain:AddChild(inlineBottomLeft)
 
@@ -181,60 +222,63 @@ function scanner:StartScanner(message, min, max)
     lblNextFilter:SetFullWidth(true)
     searchScroll:AddChild(lblNextFilter)
 
-    local inlineBottomRight = aceGUI:Create('InlineGroup')
-    inlineBottomRight:SetTitle('Session Stats:')
-    inlineBottomRight:SetLayout('Flow')
-    inlineBottomRight:SetRelativeWidth(.6)
-    inlineBottomRight:SetHeight(100)
-    ns.screen.aMain:AddChild(inlineBottomRight)
+    if not self.isCompact then
+        self.statsInline = aceGUI:Create('InlineGroup')
+        local inlineBottomRight = self.statsInline
+        inlineBottomRight:SetTitle('Session Stats:')
+        inlineBottomRight:SetLayout('Flow')
+        inlineBottomRight:SetRelativeWidth(.6)
+        inlineBottomRight:SetHeight(100)
+        ns.screen.aMain:AddChild(inlineBottomRight)
 
-    local statsScroll1 = aceGUI:Create("ScrollFrame")
-    statsScroll1:SetLayout("Flow")
-    statsScroll1:SetRelativeWidth(.5)
-    statsScroll1:SetHeight(55)
-    inlineBottomRight:AddChild(statsScroll1)
+        local statsScroll1 = aceGUI:Create("ScrollFrame")
+        statsScroll1:SetLayout("Flow")
+        statsScroll1:SetRelativeWidth(.5)
+        statsScroll1:SetHeight(55)
+        inlineBottomRight:AddChild(statsScroll1)
 
-    local lblTotalScanned = self.lblTotalScanned
-    lblTotalScanned:SetText('Total Scanned: '..self.totalScanned)
-    lblTotalScanned:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
-    lblTotalScanned:SetFullWidth(true)
-    statsScroll1:AddChild(lblTotalScanned)
+        local lblTotalScanned = self.lblTotalScanned
+        lblTotalScanned:SetText('Total Scanned: '..self.totalScanned)
+        lblTotalScanned:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+        lblTotalScanned:SetFullWidth(true)
+        statsScroll1:AddChild(lblTotalScanned)
 
-    local lblTotalInvites = self.lblTotalInvites
-    lblTotalInvites:SetText('Total Invites: '..self.totalInvites)
-    lblTotalInvites:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
-    lblTotalInvites:SetFullWidth(true)
-    statsScroll1:AddChild(lblTotalInvites)
+        local lblTotalInvites = self.lblTotalInvites
+        lblTotalInvites:SetText('Total Invites: '..self.totalInvites)
+        lblTotalInvites:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+        lblTotalInvites:SetFullWidth(true)
+        statsScroll1:AddChild(lblTotalInvites)
 
-    local lblUnknown = self.lblUnknown
-    lblUnknown:SetText('Waiting On: '..self.totalUnknown)
-    lblUnknown:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
-    lblUnknown:SetFullWidth(true)
-    statsScroll1:AddChild(lblUnknown)
+        local lblUnknown = self.lblUnknown
+        lblUnknown:SetText('Waiting On: '..self.totalUnknown)
+        lblUnknown:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+        lblUnknown:SetFullWidth(true)
+        statsScroll1:AddChild(lblUnknown)
 
-    local statsScroll2 = aceGUI:Create("ScrollFrame")
-    statsScroll2:SetLayout("Flow")
-    statsScroll2:SetRelativeWidth(.5)
-    statsScroll2:SetHeight(55)
-    inlineBottomRight:AddChild(statsScroll2)
+        local statsScroll2 = aceGUI:Create("ScrollFrame")
+        statsScroll2:SetLayout("Flow")
+        statsScroll2:SetRelativeWidth(.5)
+        statsScroll2:SetHeight(55)
+        inlineBottomRight:AddChild(statsScroll2)
 
-    local lblTotalDeclined = self.lblTotalDeclined
-    lblTotalDeclined:SetText('Total Declined: '..self.totalDeclined)
-    lblTotalDeclined:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
-    lblTotalDeclined:SetFullWidth(true)
-    statsScroll2:AddChild(lblTotalDeclined)
+        local lblTotalDeclined = self.lblTotalDeclined
+        lblTotalDeclined:SetText('Total Declined: '..self.totalDeclined)
+        lblTotalDeclined:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+        lblTotalDeclined:SetFullWidth(true)
+        statsScroll2:AddChild(lblTotalDeclined)
 
-    local lblTotalAccepted = self.lblTotalAccepted
-    lblTotalAccepted:SetText('Total Accepted: '..self.totalAccepted)
-    lblTotalAccepted:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
-    lblTotalAccepted:SetFullWidth(true)
-    statsScroll2:AddChild(lblTotalAccepted)
+        local lblTotalAccepted = self.lblTotalAccepted
+        lblTotalAccepted:SetText('Total Accepted: '..self.totalAccepted)
+        lblTotalAccepted:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+        lblTotalAccepted:SetFullWidth(true)
+        statsScroll2:AddChild(lblTotalAccepted)
 
-    local lblTotalBlackList = self.lblTotalBlackList
-    lblTotalBlackList:SetText('Total Black List: '..self.totalBlackList)
-    lblTotalBlackList:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
-    lblTotalBlackList:SetFullWidth(true)
-    statsScroll2:AddChild(lblTotalBlackList)
+        local lblTotalBlackList = self.lblTotalBlackList
+        lblTotalBlackList:SetText('Total Black List: '..self.totalBlackList)
+        lblTotalBlackList:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+        lblTotalBlackList:SetFullWidth(true)
+        statsScroll2:AddChild(lblTotalBlackList)
+    end
 
     scanner:SetupFilter()
     scanner:SetButtonStates()
@@ -378,10 +422,12 @@ function scanner:NextQuery()
                 local pName = gsub(info.fullName, '-'..GetRealmName(), '')
                 local rec = {name = pName, class = info.filename, level = info.level, guild = (info.fullGuildName or ''), zone = info.area}
 
-                if not self.isCompact then tinsert(self.tblWho, rec) end
+                tinsert(self.tblWho, rec)
             end
 
-            self.lblWho:SetText('Number of players found: '..C_FriendList.GetNumWhoResults())
+            if not self.isCompact then
+                self.lblWho:SetText('Number of players found: '..C_FriendList.GetNumWhoResults())
+            end
             self.analytics:TotalScanned(C_FriendList.GetNumWhoResults())
             scanner:ShowResults('BOTH')
         end
@@ -450,6 +496,12 @@ function scanner:ShowResults(ShowWhich)
         self.whoScroll:AddChild(lblGuild)
     end
     local function showWho()
+        for i=1, #self.tblWho do
+            local rec = self.tblWho[i]
+            print(rec.name, rec.class, rec.level, rec.guild)
+        end
+        if self.isCompact then return end
+
         self.whoScroll:ReleaseChildren()
         for i=1, #self.tblWho do
             local rec = self.tblWho[i]

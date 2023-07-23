@@ -180,12 +180,11 @@ invite:Init()
 ns.blackList = {}
 local blackList = ns.blackList
 function blackList:Init()
-    self.tblBlackList = nil
-end
-function blackList:InitializeBlackList()
-    self.tblBlackList = ns.dbInv.blackList or {}
+    self.tblBlackList = {}
 end
 function blackList:CheckBlackList(name)
+    self.tblBlackList = ns.dbBL or {}
+
     local realm = '-'..GetRealmName()
     name = name:gsub(realm, '')
     name = strupper(name:sub(1,1))..name:sub(2)..realm
@@ -194,6 +193,7 @@ function blackList:CheckBlackList(name)
 end
 function blackList:AddToBlackList(name)
     if not name then return end
+    self.tblBlackList = ns.dbBL or {}
 
     local POPUP_REASON, blName = "inputReason", nil
     local fName = select(2, UnitClass(name)) and ns.code:cPlayer(name, select(2, UnitClass(name))) or name
@@ -231,9 +231,21 @@ function blackList:AddToBlackList(name)
     end
     StaticPopup_Show(POPUP_REASON)
 end
-function blackList:RemoveFromBlackList(player)
-    if not player then return end
-    self.tblBlackList[player] = nil
+function blackList:BulkAddToBlackList(tbl)
+    self.tblBlackList = ns.dbBL or {}
+
+    local realm, bCount, tCount = '-'..GetRealmName(), 0, 0
+    for k in pairs(tbl) do
+        tCount = tCount + 1
+        local name = not k:match(realm) and k..realm or k
+        if not self.tblBlackList[name] then
+            bCount = bCount + 1
+            ns.dbBL[name] = { reason = 'Bulk Add', whoDidIt = UnitGUID('player'), dateBlackList = C_DateAndTime.GetServerTimeLocal(), selected = false, markedForDelete = false }
+        end
+    end
+
+    ns.scanner.analytics:TotalBlackList(bCount)
+    ns.code:consoleOut(bCount..' of '..tCount..' players were added to the black list.')
 end
 blackList:Init()
 
@@ -283,6 +295,18 @@ function widgets:createLabel(text, width, font, fontSize)
     if width == 'full' then label:SetFullWidth(true)
     else label:SetWidth(width) end
     return label
+end
+function widgets:Confirmation(msg, func)
+    StaticPopupDialogs["MY_YES_NO_DIALOG"] = {
+        text = msg,
+        button1 = "Yes",
+        button2 = "No",
+        OnAccept = func,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = false,
+    }
+    StaticPopup_Show("MY_YES_NO_DIALOG")
 end
 widgets:Init()
 

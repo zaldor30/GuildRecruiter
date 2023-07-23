@@ -15,6 +15,7 @@ end
 
 function screen:Init()
     self.fTop = nil
+    self.fBottom = nil
     self.fTopIcon = nil
     self.fMain = nil
     self.aMain = nil
@@ -27,6 +28,8 @@ function screen:Init()
     self.iconStats = nil
     self.iconReset = nil
     self.syncState = false
+    self.iconRestore = nil
+    self.iconCompact = nil
 
     self.textSync = nil
     self.activeScreen = nil
@@ -92,6 +95,7 @@ function screen:buildScreen()
     fBottom:SetBackdropBorderColor(1, 1, 1, 1)
     fBottom:SetPoint('BOTTOM', f, 'BOTTOM', 0, 5)
     fBottom:SetSize(f:GetWidth() - 8, 15)
+    self.fBottom = fBottom
 
     local lineTexture = fBottom:CreateTexture(nil, "ARTWORK")
     lineTexture:SetColorTexture(.25, .25, .25)
@@ -178,6 +182,8 @@ function screen:CreateIconBar()
     self.iconReset:SetScript('OnClick', function() ns.scanner:SetupFilter() end)
 
     self.iconBack = createTopBarIcons(fTop_Icon, ICON_PATH..'GR_Back', 'Back', 'Returns to the main screen.', 'RIGHT', -3, 0, 'RIGHT')
+    self.iconRestore = createTopBarIcons(self.iconBack, ICON_PATH..'GR_Not_Compact', 'Restore Defaults', 'Restore default settings.\nYou can set compact mode in settings.', 'LEFT', 0, 0, 'RIGHT')
+    self.iconCompact = createTopBarIcons(self.iconBack, ICON_PATH..'GR_Compact', 'Compact Mode', 'Scanner in compact mode.\nYou can set compact mode in settings.', 'LEFT', 0, 0, 'RIGHT')
 end
 function screen:HideScreen()
     -- Do closing routines for active screens
@@ -196,6 +202,10 @@ function screen:ResetMain()
         self.aMain:SetParent(UIParent)
         self.aMain = nil
     end
+
+    self.fTop:SetSize(self.fMain:GetWidth() - 8, 18)
+    self.fTop_Icon:SetSize(self.fMain:GetWidth() - 8, 18)
+    self.fBottom:SetSize(self.fMain:GetWidth() - 8, 18)
 
     local aMain = aceGUI:Create('SimpleGroup')
     aMain:SetWidth(self.fMain:GetWidth() - 10)
