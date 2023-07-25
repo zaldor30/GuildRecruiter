@@ -120,14 +120,14 @@ function core:OnPlayerLoggedIn()
         if r.selected then r.selected = false end
     end -- Reset selection state for options
 
-    ns.code:consoleOut(GR_VERSION_INFO..' is active.', nil, true)
-    ns.code:consoleOut('Database version: '..ns.db.settings.dbVer, nil, true)
-    ns.code:consoleOut('You can use "/'..(self.slashCommand == 'gr' and 'gr or /recruiter' or '/'..self.slashCommand)..' help" to get a list of commands.', nil, true)
-
     if not ns.db.settings.ver or ns.db.settings.ver ~= '2.0.0' then
         ns.db.settings.ver = '2.0.0'
         ns.infoScreen()
     end
+
+    ns.code:consoleOut(GR_VERSION_INFO..' is active.', nil, true)
+    ns.code:consoleOut('Database version: '..ns.db.settings.dbVer, nil, true)
+    ns.code:consoleOut('You can use "/'..(self.slashCommand == 'gr' and 'gr or /recruiter' or '/'..self.slashCommand)..' help" to get a list of commands.', nil, true)
 end
 
 function GRADDON:OnInitialize(...) -- Continue Initialize After Player Enters world
