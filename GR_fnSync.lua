@@ -167,8 +167,8 @@ function sync:PrepareData()
     self.totalInvited, self.totalBlackListed = 0, 0
     local tblSync = {
         version = GRADDON.version,
-        guildLink = ns.dbGlobal.guildData and dbGlobal.guildData.guildLink or nil,
-        guildInfo = dbGlobal.guildInfo or nil,
+        guildLink = ns.dbGlobal.guildData and (dbGlobal.guildData.guildLink or '') or '',
+        guildInfo = dbGlobal.guildInfo or '',
         isGuildLeader = IsGuildLeader() or false,
         invitedPlayers = ns.dbInv or {},
         blackList = ns.dbBL or {},
@@ -190,14 +190,16 @@ function sync:ParseSyncData(tblData, sender)
 
     if tblData.isGuildLeader then
         dbGlobal.guildInfo = tblData.guildInfo
-        dbGlobal.guildData.guildLink = tblData.guildLink
+        dbGlobal.guildData.guildLink = tblData.guildLink ~= '' and tblData.guildLink or (dbGlobal.guildData.guildLink or nil)
     elseif not IsGuildLeader() then
-        dbGlobal.guildData.guildLink = dbGlobal.guildData or tblData.guildLink
-        dbGlobal.guildInfo.messageList = tblData.guildInfo.messageList and #tblData.guildInfo.messageList > 0 and tblData.guildInfo.messageList or dbGlobal.guildInfo.messageList
-        dbGlobal.guildInfo.antiSpam = tblData.guildInfo.antiSpam and tblData.guildInfo.antiSpam or dbGlobal.guildInfo.antiSpam
-        dbGlobal.guildInfo.reinviteAfter = tblData.guildInfo.reinviteAfter and tblData.guildInfo.reinviteAfter or dbGlobal.guildInfo.reinviteAfter
-        dbGlobal.guildInfo.greeting = tblData.guildInfo.greeting
-        dbGlobal.guildInfo.greetingMsg = tblData.guildInfo.greetingMsg
+        dbGlobal.guildData.guildLink = tblData.guildLink ~= '' and tblData.guildLink or (dbGlobal.guildData.guildLink or nil)
+        if dbGlobal.guildInfo ~= '' then
+            dbGlobal.guildInfo.messageList = tblData.guildInfo.messageList and #tblData.guildInfo.messageList > 0 and tblData.guildInfo.messageList or dbGlobal.guildInfo.messageList
+            dbGlobal.guildInfo.antiSpam = tblData.guildInfo.antiSpam and tblData.guildInfo.antiSpam or dbGlobal.guildInfo.antiSpam
+            dbGlobal.guildInfo.reinviteAfter = tblData.guildInfo.reinviteAfter and tblData.guildInfo.reinviteAfter or dbGlobal.guildInfo.reinviteAfter
+            dbGlobal.guildInfo.greeting = tblData.guildInfo.greeting
+            dbGlobal.guildInfo.greetingMsg = tblData.guildInfo.greetingMsg
+        end
     end
 
     local tblInvited = ns.dbInv or {}

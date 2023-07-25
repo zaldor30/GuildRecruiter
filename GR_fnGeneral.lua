@@ -354,7 +354,6 @@ function blackList:FormAddToBlackList()
         name = name and strupper(strsub(name,1,1))..strlower(strsub(name,2)) or name
         local lookup = (name and name:match('-'..GetRealmName())) and name or name..'-'..GetRealmName()
 
-        print(name, lookup, UnitExists('Dianix'), UnitIsPlayer('Dianix'))
         if not name or name == '' then
             ns.widgets:createErorrWindow('You must enter a name to add to the black list.', true, frame)
         elseif ns.blackList.tblBlackList[lookup] then

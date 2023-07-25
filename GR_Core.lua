@@ -1,7 +1,7 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
 ns.tblEvents = {} -- Registered Events
 
-local WAIT_BEFORE_INIT = 5
+local WAIT_BEFORE_INIT = 2
 
 local AceGUI = LibStub("AceGUI-3.0")
 local AC, ACD = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0')
@@ -227,9 +227,16 @@ function core:RegisterGuild()
         return false
     end
 
+    local gLink, dbMatch = nil, false
     GRADDON.clubID = clubID
     local g = ns.dbGlobal[clubID] or nil
-    if not g or not ns.dbGlobal[clubID] or not ns.dbGlobal[clubID].guildInfo or (not ns.dbGlobal[clubID].dbVer or ns.dbGlobal[clubID].dbVer ~= self.addonSettings.global.dbVer) then
+    if g then
+        dbMatch = (ns.db.settings.dbVer == self.addonSettings.profile.settings.dbVer) or false
+        gLink = g and g.guildData.guildLink ~= '' and g.guildLink or ((g and g.guildData.guildLink) and g.guildData.guildLink or nil)
+    end
+    print(gLink or 'no guild link')
+
+    if not g or not ns.dbGlobal[clubID] or not ns.dbGlobal[clubID].guildInfo or dbMatch then
         ns.dbGlobal[clubID] = {}
         ns.dbGlobal[clubID] = self.addonSettings.global -- Contains guildInfo
         g = ns.dbGlobal[clubID]
@@ -240,11 +247,13 @@ function core:RegisterGuild()
         return
     end
 
+
     local club = clubID and C_ClubFinder.GetRecruitingClubInfoFromClubID(clubID) or nil
     if club then
-        local gName, gLink = club.name, GetClubFinderLink(club.clubFinderGUID, club.name)
+        local gName = club.name
+        gLink = GetClubFinderLink(club.clubFinderGUID, club.name)
         g.guildData = {clubID = clubID, guildName = gName, guildLink = gLink }
-    elseif C_Club.GetClubInfo(clubID) then g.guildData = {clubID = clubID, guildName = C_Club.GetClubInfo(clubID).name, guildLink = (g.guildData.guildLink or nil) } end
+    elseif C_Club.GetClubInfo(clubID) then g.guildData = {clubID = clubID, guildName = C_Club.GetClubInfo(clubID).name, guildLink = (g.guildData.guildLink or gLink or nil) } end
 
     return clubID or false
 end
