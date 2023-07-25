@@ -79,7 +79,7 @@ ns.addonSettings = {
                     order = 0,
                 },
                 msgGMDesc = {
-                    name = ns.code:cText('FF00FF00', 'These messages will be pushed out to other officers that can invite players.\n\n')..ns.code:cText('FFFFFF00', 'NAME')..': Player name that is being invited to the guild.\n'..ns.code:cText('FFFFFF00', 'GUILDLINK')..': Clickable link to allow player to join the guild.\n'..ns.code:cText('FFFFFF00', 'GUILDNAME')..': Guild name in format <ShadowBound>.',
+                    name = ns.code:cText('FF00FF00', 'These messages will be pushed out to other officers that can invite players.\n\n')..ns.code:cText('FFFFFF00', 'GUILDLINK')..': Clickable link to allow player to join the guild.\n'..ns.code:cText('FFFFFF00', 'GUILDNAME')..': Guild name in format <Shadowbound>.\n'..ns.code:cText('FFFFFF00', 'PLAYERNAME')..': Player name that is being invited to the guild.',
                     type = 'description',
                     fontSize = 'medium',
                     order = 1,
@@ -98,12 +98,12 @@ ns.addonSettings = {
                     width = 2,
                     values = function()
                         local tbl = {}
-                        for k, r in pairs(ns.dbGlobal.messageList or {}) do tbl[k] = r.desc end
+                        for k, r in pairs(ns.dbGlobal.guildInfo.messageList or {}) do tbl[k] = r.desc end
                         return tbl
                     end,
                     set = function(_, val) selectedGMMessage = val end,
                     get = function()
-                        local msg = ns.dbGlobal.messageList or nil
+                        local msg = ns.dbGlobal.guildInfo.messageList or nil
                         local active = selectedGMMessage or nil
 
                         if active and msg then tblGMMessage = msg[active] or optTables:newMsg()
@@ -138,7 +138,7 @@ ns.addonSettings = {
                 msgGMInvite = {
                     name = 'Invite Message',
                     type = 'input',
-                    multiline = 10,
+                    multiline = 7,
                     order = 6,
                     width = 'full',
                     set = function(_, val) tblGMMessage.message = val end,
@@ -151,7 +151,8 @@ ns.addonSettings = {
                 },
                 msgGMPreview = {
                     name = function()
-                        gmPreview = ns.code:GuildReplace(tblGMMessage.message)
+                        gmPreview = ns.code:GuildReplace(tblGMMessage.message, UnitName('player'))
+                        if gmPreview == '' then return '' end
                         return (ns.code:cText('FFFF80FF', 'To [')..ns.code.fPlayerName..ns.code:cText('FFFF80FF', ']: '..(gmPreview or ''))) or ''
                     end,
                     type = 'description',
@@ -166,7 +167,9 @@ ns.addonSettings = {
                 },
                 msgGMPreviewCount = {
                     name = function()
-                        local count = string.len(gmPreview or '')
+                        local gi = ns.dbGlobal.guildData
+                        local gName = gi.guildName or nil
+                        local count = string.len(tblGMMessage.message:gsub('GUILDLINK', (gName or 'GUILDLINK')):gsub('GUILDNAME', '<'..gName..'>'):gsub('PLAYERNAME', 'PLAYERNAME12')) or 0
                         local color = count < 255 and 'FF00FF00' or 'FFFF0000'
                         return 'Message Length: '..ns.code:cText(color, count)..' (255 characters per message)'
                     end,
@@ -189,7 +192,7 @@ ns.addonSettings = {
                     disabled = function() return not selectedGMMessage and true or false end,
                     hidden = function() return not IsGuildLeader() end,
                     func = function()
-                        local msg = ns.dbGlobal.messageList or nil
+                        local msg = ns.dbGlobal.guildInfo.messageList or nil
                         local active = selectedGMMessage or nil
                         if active and msg and msg[active] then
                             msg[active] = nil
@@ -208,14 +211,14 @@ ns.addonSettings = {
                         return not ((tblGMMessage.desc and strlen(tblGMMessage.desc) > 0) and (tblGMMessage.message and strlen(tblGMMessage.message) > 0)) end,
                     hidden = function() return not IsGuildLeader() end,
                     func = function()
-                        local msg = ns.dbGlobal.messageList or {}
+                        local msg = ns.dbGlobal.guildInfo.messageList or {}
                         local active = selectedGMMessage
 
                         if not active then
                             tinsert(msg, tblGMMessage)
                             active = #msg
                         else msg[active] = tblGMMessage end
-                        ns.dbGlobal.messageList = msg
+                        ns.dbGlobal.guildInfo.messageList = msg
 
                         tblGMMessage = optTables:newMsg()
                         selectedGMMessage = nil
@@ -427,7 +430,7 @@ ns.addonSettings = {
                 },
                 optPersonalWelcomeMsg = {
                     name = 'Individual Greeting Message',
-                    desc = 'This will make the greeting individualized and shown in guild chat.\nUse NAME (in caps) to substitute the name of the player that joined.',
+                    desc = 'This will make the greeting individualized and shown in guild chat.\nUse PLAYERNAME (in caps) to substitute the name of the player that joined.',
                     type = 'input',
                     width = 'full',
                     order = 17,
@@ -470,7 +473,7 @@ ns.addonSettings = {
                     order = 0,
                 },
                 msgDesc = {
-                    name = ns.code:cText('FFFFFF00', 'NAME')..': Player name that is being invited to the guild.\n'..ns.code:cText('FFFFFF00', 'GUILDLINK')..': Clickable link to allow player to join the guild.\n'..ns.code:cText('FFFFFF00', 'GUILDNAME')..': Guild name in format <ShadowBound>.',
+                    name = ns.code:cText('FFFFFF00', 'GUILDLINK')..': Clickable link to allow player to join the guild.\n'..ns.code:cText('FFFFFF00', 'GUILDNAME')..': Guild name in format <Shadowbound>.\n'..ns.code:cText('FFFFFF00', 'PLAYERNAME')..': Player name that is being invited to the guild.',
                     type = 'description',
                     fontSize = 'medium',
                     order = 1,
@@ -529,7 +532,7 @@ ns.addonSettings = {
                 msgInvite = {
                     name = 'Invite Message',
                     type = 'input',
-                    multiline = 10,
+                    multiline =  7,
                     order = 6,
                     width = 'full',
                     set = function(_, val) tblMessage.message = val end,
@@ -542,7 +545,8 @@ ns.addonSettings = {
                 },
                 msgPreview = {
                     name = function()
-                        mPreview = ns.code:GuildReplace(tblMessage.message)
+                        mPreview = ns.code:GuildReplace(tblMessage.message, UnitName('player'))
+                        if mPreview == '' then return '' end
                         return (ns.code:cText('FFFF80FF', 'To [')..ns.code.fPlayerName..ns.code:cText('FFFF80FF', ']: '..(mPreview or ''))) or ''
                     end,
                     type = 'description',
@@ -552,7 +556,7 @@ ns.addonSettings = {
                 },
                 msgNotGM = {
                     name = function()
-                        local errMsg = (tblMessage.message and strfind(tblMessage.message, 'GUILDLINK') and not ns.dbGlobal.guildLink and not IsGuildLeader()) and 'WARNING: You are not a GM, so GUILDLINK is an invalid option.' or nil
+                        local errMsg = (tblMessage.message and strfind(tblMessage.message, 'guildData') and not ns.dbGlobal.guildData and not IsGuildLeader()) and 'WARNING: You are not a GM, so guildData is an invalid option.' or nil
                         return errMsg and ns.code:cText('FFFF0000', errMsg) or ' '
                     end,
                     type = 'description',
@@ -567,7 +571,9 @@ ns.addonSettings = {
                 },
                 msgPreviewCount = {
                     name = function()
-                        local count = string.len(mPreview or '')
+                        local gi = ns.dbGlobal.guildData
+                        local gName = gi.guildName or nil
+                        local count = string.len(tblMessage.message:gsub('GUILDLINK', (gName or 'GUILDLINK')):gsub('GUILDNAME', '<'..gName..'>'):gsub('PLAYERNAME', 'PLAYERNAME12')) or 0
                         local color = count < 255 and 'FF00FF00' or 'FFFF0000'
                         return 'Message Length: '..ns.code:cText(color, count)..' (255 characters per message)'
                     end,

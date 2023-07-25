@@ -7,8 +7,6 @@ function about:StartAboutScreen()
     ns.screen.fMain:SetSize(500, 335)
     ns.screen:ResetMain()
 
-    ns.screen.iconCompact:Hide()
-    ns.screen.iconRestore:Hide()
     ns.screen.iconBack:Show()
     ns.screen.iconBack:SetScript('OnMouseUp', function() ns.main:ScannerSettingsLayout() end)
 

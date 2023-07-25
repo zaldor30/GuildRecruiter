@@ -28,11 +28,6 @@ end
 function main:ScannerSettingsLayout()
     ns.screen.fMain:SetSize(500, 255)
     ns.screen:ResetMain()
-
-    ns.screen.iconBack:Hide()
-    ns.screen.iconReset:Hide()
-    ns.screen.iconCompact:Hide()
-    ns.screen.iconRestore:Hide()
     ns.screen:UpdateLastSync()
 
     local inline = aceGUI:Create('InlineGroup')
@@ -107,6 +102,7 @@ function main:ScannerSettingsLayout()
     self.max = ns.db.settings.maxLevel or MAX_CHARACTER_LEVEL
 
     ns.widgets:createPadding(inline, .03)
+
     self.btnScan:SetText('Start') -- Scan button
     self.btnScan:SetRelativeWidth(.15)
     self.btnScan:SetCallback('OnClick', function()
@@ -138,29 +134,26 @@ end
 
 function main:GetMessageList()
     local tbl, mCount = {}, 0
-    local db, dbMsg = ns.db, ns.db.messages
+    local dbMsg = ns.db.messages
 
     local msgDrop = aceGUI:Create('Dropdown') -- Select invite type
     msgDrop:SetLabel('Message to recruit:')
     msgDrop:SetRelativeWidth(.5)
 
-    if dbMsg then
-        local hasGuildLink = ns.dbGlobal.guildLink or false
-
-        ns.datasets:AllMessages()
-        for k, r in pairs(ns.datasets.tblAllMessages or {}) do
-            local gLinkFound = strfind(r.message, 'GUILDLINK') or false
-            if not gLinkFound or (gLinkFound and hasGuildLink)  then
-                if not r.gmMessage then tbl[k] = r.desc
-                elseif r.gmMessage then tbl[k] = ns.code:cText('FFAF640C', r.desc) end
-                self.tblMessages[k] = { desc = r.desc, message = r.message }
-            elseif not hasGuildLink and gLinkFound and k == dbMsg.activeMessage then dbMsg.activeMessage = nil end
-        end
-
-        for _ in pairs(self.tblMessages) do mCount = mCount + 1 end
-
-        dbMsg.activeMessage = (dbMsg.activeMessage and self.tblMessages[dbMsg.activeMessage]) and dbMsg.activeMessage or nil
+    ns.datasets:AllMessages()
+    local haveGuildLink = (ns.db.guildData and ns.db.guildData.guildLink) or false
+    for k, r in pairs(ns.datasets.tblAllMessages or {}) do
+        local gLinkFound = strfind(r.message, 'guildData') or false
+        if not gLinkFound or (gLinkFound and haveGuildLink)  then
+            if not r.gmMessage then tbl[k] = r.desc
+            elseif r.gmMessage then tbl[k] = ns.code:cText('FFAF640C', r.desc) end
+            self.tblMessages[k] = { desc = r.desc, message = r.message }
+        elseif not haveGuildLink and gLinkFound and k == dbMsg.activeMessage then dbMsg.activeMessage = nil end
     end
+
+    for _ in pairs(self.tblMessages) do mCount = mCount + 1 end
+
+    dbMsg.activeMessage = (dbMsg.activeMessage and self.tblMessages[dbMsg.activeMessage]) and dbMsg.activeMessage or nil
 
     msgDrop:SetList(tbl)
     msgDrop:SetValue(dbMsg.activeMessage or nil)
@@ -200,7 +193,7 @@ end
 function main:MessagePreview()
     local f = CreateFrame('Frame', 'Message_Preview_Frame', ns.screen.fMain, 'BackdropTemplate')
     f:SetSize(ns.screen.fMain:GetWidth() - 18, 50)
-    f:SetPoint('BOTTOM', ns.screen.fMain, 'BOTTOM', 0, 20)
+    f:SetPoint('BOTTOM', ns.screen.fMain, 'BOTTOM', 0, 25)
     f:SetBackdrop({
         bgFile = 'Interface\\DialogFrame\\UI-DialogBox-Background',
         edgeFile = 'Interface\\Tooltips\\UI-Tooltip-Border',

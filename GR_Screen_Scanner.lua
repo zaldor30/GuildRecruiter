@@ -96,16 +96,16 @@ function scanner:StartScanner(message, min, max)
     if not self.isCompact then
         ns.screen.iconCompact:Show()
         ns.screen.iconCompact:SetScript('OnMouseUp', function()
-            self.isCompact = true
+            self.isCompact = not self.isCompact
             self.isCompactOveride = true
-            ns.scanner:StartScanner()
+            scanner:StartScanner(self.message, self.min, self.max)
         end)
     elseif self.isCompact then
         ns.screen.iconRestore:Show()
         ns.screen.iconRestore:SetScript('OnClick', function()
             self.isCompact = false
             self.isCompactOveride = true
-            ns.scanner:StartScanner()
+            scanner:StartScanner(self.message, self.min, self.max)
         end)
     end
 
@@ -157,9 +157,14 @@ function scanner:StartScanner(message, min, max)
         local func = function()
             local tbl = {}
             for k, r in pairs(ns.scanner.tblFound) do
-                if r.isChecked then tbl[k] = true end
+                if r.isChecked then
+                    tbl[k] = true
+                    ns.scanner.tblFound[k] = nil
+                end
             end
             ns.blackList:BulkAddToBlackList(tbl)
+            scanner:ShowResults('INVITE')
+            scanner:SetButtonStates()
         end
         ns.widgets:Confirmation(msg, func)
     end)
@@ -309,7 +314,7 @@ function scanner:InvitePlayer()
     end
     scanner:SetButtonStates()
     self.btnInvite:SetDisabled(true)
-    invWait(INVITE_WAIT_TIME)
+    invWait(0)
 end
 function scanner:SetupFilter()
     local db, dbFilter = ns.db.settings, ns.db.filter
@@ -416,7 +421,6 @@ function scanner:NextQuery()
             self.tblWho = table.wipe(self.tblWho) or {}
             self.tblFound = self.tblFound or {}
 
-            ns.events:UnregisterEvent('WHO_LIST_UPDATE')
             for i=1,C_FriendList.GetNumWhoResults() do
                 local info = C_FriendList.GetWhoInfo(i)
                 local pName = gsub(info.fullName, '-'..GetRealmName(), '')
@@ -496,10 +500,6 @@ function scanner:ShowResults(ShowWhich)
         self.whoScroll:AddChild(lblGuild)
     end
     local function showWho()
-        for i=1, #self.tblWho do
-            local rec = self.tblWho[i]
-            print(rec.name, rec.class, rec.level, rec.guild)
-        end
         if self.isCompact then return end
 
         self.whoScroll:ReleaseChildren()

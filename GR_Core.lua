@@ -1,77 +1,17 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
 ns.tblEvents = {} -- Registered Events
 
-local WAIT_BEFORE_INIT = 3
+local WAIT_BEFORE_INIT = 5
 
---[[ Register and Unregister events
-    Add event to table
-    Add event to Register event ]]
-ns.core, ns.events = {}, {}
-local core, events = ns.core, ns.events
-function events:Init()
-    self.tblEvents = events:CreateTableEvents()
-end
-function events:CreateTableEvents()
-    return {
-        ['WHO_LIST_UPDATE'] = {active = false, installed = true},
-        ['CHAT_MSG_SYSTEM'] = {active = false, installed = true},
-        ['GUILD_ROSTER_UPDATE'] = {active = false, installed = true},
-        ['PLAYER_LOGIN'] = {active = false, installed = true},
-    }
-end
-function events:RegisterEvent(event, action)
-    if self.tblEvents[event].active then return-- ns.code:consoleOut(event..' event is already registered in fnEventHandlers.') return
-    elseif not self.tblEvents[event] and not self.tblEvents.installed then ns.code:consoleOut(event..' event is not registered in fnEventHandlers.') end
-
-    local function eventCallBack(...)
-        self.tblEvents[...].active = true
-        if action then
-            if 'InitializeAddon' then ns.core:InitializeAddon(...) end
-        elseif event == 'WHO_LIST_UPDATE' then ns.ScreenInvite:eventWhoQueryResults()
-        elseif event == 'CHAT_MSG_SYSTEM' then ns.Invite:ChatMsgHandler(...)
-        elseif event == 'GUILD_ROSTER_UPDATE' then ns.Invite:GuildRosterHandler(...)
-        elseif event == 'PLAYER_LOGIN' then ns.core:InitializeAddon(...) end
-    end
-
-    GRADDON:RegisterEvent(event, eventCallBack)
-end
-function events:UnregisterEvent(event)
-    if strupper(event) == 'ALL' then
-        for k, r in pairs(self.tblEvents) do
-            if r.active then GRADDON:UnregisterEvent(k) end
-        end
-    elseif event and self.tblEvents[event] then
-        self.tblEvents[event].active = false
-        GRADDON:UnregisterEvent(event)
-    end
-end
-events:Init()
-
-local AceGUI, AceTimer = LibStub("AceGUI-3.0"), LibStub("AceTimer-3.0")
+local AceGUI = LibStub("AceGUI-3.0")
 local AC, ACD = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0')
 local icon, DB = LibStub('LibDBIcon-1.0'), LibStub('AceDB-3.0')
 
-function AceTimer:TimerCallBack()
-    if ns.core.started then return end
-
-    ns.core.started = true
-    ns.events:UnregisterEvent('PLAYER_LOGIN')
-    ns.code:consoleOut('Guild not detected, Guild Recruiter is not available.')
-end
-function GRADDON:OnInitialize()
-    local function startInitialize()
-        C_Timer.After(3, function() core:InitializeAddon() end)
-        AceTimer:ScheduleTimer('TimerCallBack', 60)
-    end
-    if not ns.core.timerStarted then
-        ns.core.timerStarted = true
-        GRADDON:RegisterChatCommand('rl', function() ReloadUI() end)
-        ns.events:RegisterEvent('PLAYER_LOGIN', 'startInitialize')
-    end
-end
-
+ns.core = {}
+local core = ns.core
 function core:Init()
     self.started = false
+    self.shutdown = false
     self.timerStarted = false
 
     self.slashCommand = 'recruiter'
@@ -110,6 +50,7 @@ function core:Init()
             },
         },
         global = {
+            dbVer = '1.1.29',
             guildInfo = {
                 antiSpam = true,
                 reinviteAfter = 5,
@@ -146,16 +87,19 @@ function core:OnPlayerLoggedIn()
     end
 
     if not core:RegisterGuild() then return end
-    if not GRADDON.clubID and not ns.dbGlobal.guildLink then return
-    elseif ns.dbGlobal.guildLink then GRADDON.clubID = ns.dbGlobal.guildLink.clubID end
+    if not GRADDON.clubID and not ns.dbGlobal.guildData then return
+    elseif ns.dbGlobal.guildData then GRADDON.clubID = ns.dbGlobal.guildData.clubID end
 
     if not GRADDON.clubID or not IsInGuild() then
         ns.code:consoleOut('You are not currently in a guild.')
         ns.code:consoleOut('Guild Recruiter will be disabled.')
         return
     end
+    if not GRADDON.db.global[GRADDON.clubID] then return end
 
-    if not isSettings or not dbMatch then core:dbChanges(isSettings) end
+    if not isSettings or not dbMatch then core:dbChanges() end
+    if self.shutdown then return end
+
     ns.dbGlobal = GRADDON.db.global[GRADDON.clubID]
     ns.dbBL =  GRADDON.dbBl.global[GRADDON.clubID]
     ns.dbInv = GRADDON.dbInv.global[GRADDON.clubID]
@@ -173,62 +117,64 @@ function core:OnPlayerLoggedIn()
 
     core:CreateMiniMapIcon()
     core:StartMaintenance()
-    for _, r in pairs(ns.dbBL) do r.selected = false end -- Reset selection state for options
+    for k, r in pairs(ns.dbBL or {}) do
+        if r.selected then r.selected = false end
+    end -- Reset selection state for options
 
     ns.code:consoleOut(GR_VERSION_INFO..' is active.', nil, true)
     ns.code:consoleOut('Database version: '..ns.db.settings.dbVer, nil, true)
     ns.code:consoleOut('You can use "/'..(self.slashCommand == 'gr' and 'gr or /recruiter' or '/'..self.slashCommand)..' help" to get a list of commands.', nil, true)
 end
-function core:InitializeAddon(...) -- Continue Initialize After Player Enters world
-    if ... ~= 'PLAYER_LOGIN' then return end
-    ns.events:UnregisterEvent('PLAYER_LOGIN')
-    if ns.core.started then return else ns.core.started = true end
 
-    local function checkForMap()
-        C_Timer.After(1, function()
-            if C_Map.GetBestMapForUnit("player") then
-                C_Timer.After(WAIT_BEFORE_INIT, function() core:OnPlayerLoggedIn() end)
-            else checkForMap() end
-        end)
-    end
-    checkForMap()
-end
-function core:dbChanges(isSettings)
-    local tblInvited, tblBlackList, tblAnalytics = nil, nil, {}
-    if ns.dbInv and ns.dbInv[GRADDON.clubID] and ns.dbInv[GRADDON.clubID].invitedPlayers then tblInvited = ns.dbInv[GRADDON.clubID].invitedPlayers end
-    if ns.dbBL and ns.dbBL[GRADDON.clubID] and ns.dbBL[GRADDON.clubID].blackList then tblBlackList = ns.dbBL[GRADDON.clubID].blackList end
-    if ns.dbBL and ns.dbBL.blackList then tblBlackList = ns.dbBL.blackList end
-    if ns.dbAnal.profile and ns.dbAnal.profile.analytics then tblAnalytics.profile = ns.dbAnal.profile.analytics end
-    if ns.dbAnal.global and ns.dbAnal.global.analytics then tblAnalytics.global = ns.dbAnal.global.analytics end
+function GRADDON:OnInitialize(...) -- Continue Initialize After Player Enters world
+    GRADDON:RegisterChatCommand('rl', function() ReloadUI() end)
 
-    if ns.dbAnal.profile.analytics then ns.dbAnal.profile.analytics = nil end
-    if ns.dbAnal.global and ns.dbAnal.global.analytics then ns.dbAnal.global.analytics = nil end
-    if ns.dbBL and ns.dbBL.blackList then ns.dbBL.blackList = nil end
-    if ns.dbInv and ns.dbInv[GRADDON.clubID] and ns.dbInv[GRADDON.clubID].invitedPlayers then ns.dbInv[GRADDON.clubID].invitedPlayers = nil end
-
-    if not isSettings then
-        ns.db.settings = self.addonSettings.profile.settings
-        ns.db.messages = self.addonSettings.profile.messages
-        ns.db.filter = self.addonSettings.profile.filter
-    end
-    if not ns.dbGlobal then ns.dbGlobal = self.addonSettings.global end
-
-    if not GRADDON.dbBl.global[GRADDON.clubID] then GRADDON.dbBl.global[GRADDON.clubID] = {} end
-    GRADDON.dbBl.global[GRADDON.clubID] = tblBlackList or {}
-    if not GRADDON.dbInv.global[GRADDON.clubID] then GRADDON.dbInv.global[GRADDON.clubID] = {} end
-    GRADDON.dbInv.global[GRADDON.clubID] = tblInvited or {}
-    if not ns.dbAnal.global[GRADDON.clubID] then ns.dbAnal.global[GRADDON.clubID] = {} end
-    ns.dbAnal.global[GRADDON.clubID].analytics = (tblAnalytics and tblAnalytics.global) and tblAnalytics.global or {}
-    ns.dbAnal.profile.analytics = (tblAnalytics and tblAnalytics.profile) and tblAnalytics.profile or {}
-    ns.dbAnal.profile.analytics.startDate = ns.dbAnal.profile.analytics.startDate or C_DateAndTime.GetServerTimeLocal()
-
-    local clubID = C_Club.GetGuildClubId() or nil
-    if clubID and ns.dbGlobal[clubID] then ns.dbGlobal[clubID] = nil end
-    C_Timer.After(.1, function()
-        ns.code:consoleOut(ns.code:cText('FFFF0000', 'Guild Recruiter data has been reset!!'))
-        ns.code:consoleOut('Your black list, invite log and analytics should be saved.')
-        ns.code:consoleOut('Please reconfigure your settings.')
+    GRADDON:RegisterEvent('PLAYER_LOGIN', function()
+        local function checkForMap()
+            C_Timer.After(1, function()
+                if C_Map.GetBestMapForUnit("player") then
+                    C_Timer.After(WAIT_BEFORE_INIT, function() core:OnPlayerLoggedIn() end)
+                else checkForMap() end
+            end)
+        end
+        checkForMap()
     end)
+end
+function core:dbChanges()
+    local clubID = C_Club.GetGuildClubId() or GRADDON.clubID or nil
+    if ns.db.settings and not ns.db.reloaded then
+        ns.db.reloaded = true
+        ns.infoScreen()
+        C_Timer.After(.1, function()
+            ns.code:consoleOut(ns.code:cText('FFFF0000', 'Guild Recruiter data has been reset!!'))
+            ns.code:consoleOut('Your black list, invite log and analytics should be saved.')
+            ns.code:consoleOut(ns.code:cText('FF00FF00', 'Please type /rl to reload your UI!'))
+            ns.code:consoleOut('Please reconfigure your settings.')
+        end)
+        ns.core.shutdown = true
+        return
+    end
+
+    ns.db.reloaded = nil
+    ns.db.settings = self.addonSettings.profile.settings
+    ns.db.filter = self.addonSettings.profile.filter
+    ns.db.messages = self.addonSettings.profile.messages
+
+    clubID = GRADDON.clubID
+    local tblInvited = ns.dbInv[clubID] and (ns.dbInv[clubID].invited or ns.dbInv[clubID]) or {}
+    ns.dbInv[clubID] = tblInvited
+
+    local tblBlackList = ns.dbBL[clubID] and (ns.dbBL[clubID].blackList or ns.dbBL[clubID]) or {}
+    ns.dbBL[clubID] = tblBlackList
+
+    local tblAnalytics = ns.dbAnal.profile.analytics and (ns.dbAnal.profile.analytics.analytics or ns.dbAnal.profile.analytics or ns.dbAnal.profile) or {}
+    ns.dbAnal.profile.analytics = tblAnalytics or {}
+    ns.dbAnal.profile.analytics.startDate = (ns.dbAnal.profile.analytics and ns.dbAnal.profile.analytics.startDate) and ns.dbAnal.profile.analytics.startDate or C_DateAndTime.GetServerTimeLocal()
+
+    ns.dbAnal.global[clubID] = ns.dbAnal.global[clubID] or {}
+    local tblGlobalAnalytics = (ns.dbAnal.global[clubID] and ns.dbAnal.global[clubID].analytics) and (ns.dbAnal.global[clubID].analytics.analytics or ns.dbAnal.global[clubID].analytics or ns.dbAnal.global[clubID]) or {}
+    ns.dbAnal.global[clubID].analytics = tblGlobalAnalytics or {}
+    ns.dbAnal.global[clubID].analytics.startDate = (ns.dbAnal.global[clubID] and ns.dbAnal.global[clubID].analytics.startDate) and ns.dbAnal.global[clubID].analytics.startDate or C_DateAndTime.GetServerTimeLocal()
 end
 function core:SlashCommand(msg)
     msg = msg:trim()
@@ -243,7 +189,7 @@ function core:SlashCommand(msg)
     elseif strlower(msg):match('blacklist') then
         msg = strlower(msg):gsub('blacklist', ''):trim()
         local name = strupper(strsub(msg,1,1))..strlower(strsub(msg,2))
-        ns.BlackList:add(name)
+        ns:add(name)
     end
 end
 function core:CreateMiniMapIcon()
@@ -279,10 +225,11 @@ function core:RegisterGuild()
 
     GRADDON.clubID = clubID
     local g = ns.dbGlobal[clubID] or nil
-    if not g or not ns.dbGlobal[clubID] then
+    if not g or not ns.dbGlobal[clubID] or not ns.dbGlobal[clubID].guildInfo or (not ns.dbGlobal[clubID].dbVer or ns.dbGlobal[clubID].dbVer ~= self.addonSettings.global.dbVer) then
         ns.dbGlobal[clubID] = {}
-        ns.dbGlobal[clubID] = self.addonSettings.global
+        ns.dbGlobal[clubID] = self.addonSettings.global -- Contains guildInfo
         g = ns.dbGlobal[clubID]
+        g.guildData = {}
     end
     if not g then
         ns.code:consoleOut('There was an issue accessing the guild data.')
@@ -292,8 +239,8 @@ function core:RegisterGuild()
     local club = clubID and C_ClubFinder.GetRecruitingClubInfoFromClubID(clubID) or nil
     if club then
         local gName, gLink = club.name, GetClubFinderLink(club.clubFinderGUID, club.name)
-        g.guildLink = {clubID = clubID, guildName = gName, guildLink = gLink }
-    elseif C_Club.GetClubInfo(clubID) then g.guildLink = {clubID = clubID, guildName = C_Club.GetClubInfo(clubID).name, guildLink = nil } end
+        g.guildData = {clubID = clubID, guildName = gName, guildLink = gLink }
+    elseif C_Club.GetClubInfo(clubID) then g.guildData = {clubID = clubID, guildName = C_Club.GetClubInfo(clubID).name, guildLink = (g.guildData.guildLink or nil) } end
 
     return clubID or false
 end
@@ -303,12 +250,12 @@ function core:StartMaintenance()
     local removeCount = 0
     local cutOffTime = C_DateAndTime.GetServerTimeLocal() - ((db.rememberTime or 7) * SECONDS_IN_A_DAY)
 
-    for k,r in pairs((dbInv and dbInv.invitedPlayers) or {}) do
+    for k,r in pairs((dbInv and dbInv) or {}) do
         local invitedOn = (type(r) == 'table' and r.invitedOn) and (type(r.invitedOn) == 'string' and tonumber(r.invitedOn) or r.invitedOn) or nil
         if invitedOn and invitedOn <= cutOffTime then
-            dbInv.invitedPlayers[k] = nil
+            dbInv[k] = nil
             removeCount = removeCount + 1
-        elseif not invitedOn then dbInv.invitedPlayers[k] = nil end
+        elseif not invitedOn then dbInv[k] = nil end
     end
 
     if removeCount > 0 then
@@ -316,10 +263,10 @@ function core:StartMaintenance()
 
     removeCount = 0
     cutOffTime = C_DateAndTime.GetServerTimeLocal()
-    for k,r in pairs(dbBL.blackList or {}) do
+    for k,r in pairs(dbBL or {}) do
         if r.expirationDate and cutOffTime >= r.expirationDate then
             removeCount = removeCount + 1
-            dbBL.blackList[k] = nil
+            dbBL[k] = nil
         end
     end
 
@@ -386,7 +333,7 @@ local function DropDownOnShow(self)
     lblBlackList:SetCallback('OnClick', function()
         if f.name then
             ns.code:consoleOut('Adding '..f.name..' to blacklist list.')
-            ns.BlackList:add(f.name)
+            ns:add(f.name)
         end
         CloseDropDownMenus()
     end)

@@ -10,9 +10,13 @@ function ds:Init()
     self.tblClassesByName = ds:classesByName()
 
     self.tblBadByName = {}
-    self.tblBadZones = ds:invalidZones()
 
     self.tblAllMessages = {}
+end
+function ds:WhatsNew()
+    local msg = ns.code:cText('FFFFFF00', "What's new in v2.0.0?").."\n \nI have completely rewrote the whole addon.  Why did I do this?  Because I hated the previous interface and while I reused most of the code, I went through it as I rebuilt the interface.  Still needs more tweaking, but is much better than before.\n \nI have added some about screens which have links to support options, I would appreciate feedback and any issues you may encounter.\n \n"..ns.code:cText('FFFFFF00', "Changes in 2.0:").."\nYou can now move the screen and it will retain its new position.\nMajorly overhauled the database.\nOne account can be in multiple guilds with this addon.\nDid a lot of work in the settings.\nLots of code fixes and clean up.\n \nYou will need to reload your interface, use \\rl or click the button bellow."
+
+    return msg
 end
 function ds:classes()
     return {
@@ -141,7 +145,7 @@ function ds:invalidZones()
 end
 function ds:AllMessages()
     local dbMessages = ns.db.messages.messageList or nil
-    local dbGMessages = ns.dbGlobal.messageList or {}
+    local dbGMessages = ns.dbGlobal.guildInfo.messageList or {}
 
     -- GM messages then personal
     local tbl = {}

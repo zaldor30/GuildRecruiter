@@ -88,7 +88,7 @@ function sync:StartSyncMaster()
 
     if ns.db.settings.showAppMsgs then
         local c = 0
-        for _ in pairs(ns.dbInv.invitedPlayers or {}) do c = c + 1 end
+        for _ in pairs(ns.dbInv or {}) do c = c + 1 end
         self.startCount = c
     end
 
@@ -132,7 +132,7 @@ function sync:MasterSync(msg, sender, ...)
         if allDone then
             if self.showConsole then
                 local c = 0
-                for _ in pairs(ns.dbInv.invitedPlayers or {}) do c = c + 1 end
+                for _ in pairs(ns.dbInv or {}) do c = c + 1 end
                 sync:consoleOut('You started with '..self.startCount..' invited players.')
                 sync:consoleOut('You now have '..c..' players that have received and invite.')
             end
@@ -162,15 +162,16 @@ end
 -- Data Routines
 function sync:PrepareData()
     if not ns.db then return end
+    local dbGlobal = ns.dbGlobal or {}
 
     self.totalInvited, self.totalBlackListed = 0, 0
     local tblSync = {
         version = GRADDON.version,
-        guildLink = (ns.dbGlobal.guildLink and ns.dbGlobal.guildLink) and ns.dbGlobal.guildLink or nil,
+        guildLink = ns.dbGlobal.guildData and dbGlobal.guildData.guildLink or nil,
+        guildInfo = dbGlobal.guildInfo or nil,
         isGuildLeader = IsGuildLeader() or false,
-        gmData = ns.dbGlobal or {},
-        invitedPlayers = ns.dbInv.invitedPlayers or {},
-        blackList = ns.dbBL.blackList or {},
+        invitedPlayers = ns.dbInv or {},
+        blackList = ns.dbBL or {},
     }
 
     local serializedData = GRADDON:Serialize(tblSync)
@@ -178,6 +179,7 @@ function sync:PrepareData()
     return LibDeflate:EncodeForWoWAddonChannel(compressedData)
 end
 function sync:ParseSyncData(tblData, sender)
+    local dbGlobal = ns.dbGlobal or {}
     local invitedCount, blackListCount, blRemovedCount = 0, 0, 0
     if not tblData.version or GRADDON.version ~= tblData.version then
         ns.code:consoleOut('Version mismatch with '..sender, 'FFFFFF00')
@@ -186,28 +188,30 @@ function sync:ParseSyncData(tblData, sender)
         return
     end
 
-    if tblData.isGuildLeader and not IsGuildLeader() then
-        if (tblData.guildLink and ns.dbGlobal.guildLink) and not IsGuildLeader() then
-            ns.dbGlobal.guildLink = tblData.guildLink end
-        ns.dbGlobal.messageList = tblData.gmData.messageList or {}
-        ns.dbGlobal.greeting = tblData.gmData.greeting or false
-        ns.dbGlobal.greetingMsg = tblData.gmData.greetingMsg or nil
-        ns.dbGlobal.antiSpam = tblData.gmData.antiSpam or false
-        ns.dbGlobal.reinviteAfter = tblData.gmData.rememberTime or 5
+    if tblData.isGuildLeader then
+        dbGlobal.guildInfo = tblData.guildInfo
+        dbGlobal.guildData.guildLink = tblData.guildLink
+    elseif not IsGuildLeader() then
+        dbGlobal.guildData.guildLink = dbGlobal.guildData or tblData.guildLink
+        dbGlobal.guildInfo.messageList = tblData.guildInfo.messageList and #tblData.guildInfo.messageList > 0 and tblData.guildInfo.messageList or dbGlobal.guildInfo.messageList
+        dbGlobal.guildInfo.antiSpam = tblData.guildInfo.antiSpam and tblData.guildInfo.antiSpam or dbGlobal.guildInfo.antiSpam
+        dbGlobal.guildInfo.reinviteAfter = tblData.guildInfo.reinviteAfter and tblData.guildInfo.reinviteAfter or dbGlobal.guildInfo.reinviteAfter
+        dbGlobal.guildInfo.greeting = tblData.guildInfo.greeting
+        dbGlobal.guildInfo.greetingMsg = tblData.guildInfo.greetingMsg
     end
 
-    local tblInvited = ns.dbInv.invitedPlayers or {}
+    local tblInvited = ns.dbInv or {}
     for k,r in pairs(tblData.invitedPlayers or {}) do
         if not tblInvited[k] then
             invitedCount = invitedCount + 1
             tblInvited[k] = r
         end
     end
-    ns.dbInv.invitedPlayers = tblInvited
+    ns.dbInv = tblInvited
 
-    local tblBlackList = ns.dbBL.blackList or {}
+    local tblBlackList = ns.dbBL or {}
     for k,r in pairs(tblData.blackList or {}) do
-        if r.markForDelete then
+        if r.markedForDelete then
             blRemovedCount = blRemovedCount + 1
             tblBlackList[k].markedForDelete = true
         elseif not tblBlackList[k] then
@@ -215,7 +219,7 @@ function sync:ParseSyncData(tblData, sender)
             tblBlackList[k] = r
         end
     end
-    ns.dbBL.blackList = tblBlackList
+    ns.dbBL = tblBlackList
 
     sync:consoleOut(sender..' added '..invitedCount..' new invited players.')
     sync:consoleOut(sender..' added '..blackListCount..' new black listed players.')

@@ -19,7 +19,13 @@
 			"UISpecialFrames",
 			"InterfaceOptionsFrame_OpenToCategory",
 			"class",
-			"ChatFrame_AddMessageEventFilter"
+			"ChatFrame_AddMessageEventFilter",
+			"IsGuildLeader",
+			"GetMaxPlayerLevel",
+			"GetNumClasses",
+			"SendChatMessage",
+			"issecurevariable",
+			"securecallfunction"
 		]
 	}
 }

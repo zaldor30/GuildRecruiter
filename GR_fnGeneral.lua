@@ -34,17 +34,17 @@ function code:consoleOut(msg, color, noPrefix)
     print('|c'..(color or 'FF3EB9D8')..prefix..(msg or 'did not get message')..'|r')
 end
 function code:GuildReplace(msg, playerName)
-    if not ns.db then return end
-
-    local gi = ns.dbGlobal
+    local gi = ns.dbGlobal.guildData
     if not gi or not msg then return end
 
     local gLink, gName = gi.guildLink or nil, gi.guildName or nil
-    if gName and msg then
-        msg = gLink and gsub(msg, 'GUILDLINK', gLink and gLink or 'No Guild Link') or msg
-        msg = gName and gsub(msg, 'GUILDNAME', gName and '<'..gName..'>' or 'No Guild Name') or msg
-        msg = gsub(msg, 'NAME', playerName or 'player')
-    end
+    local needGlink = msg:match('GUILDLINK') and true or false
+    local needGname = msg:match('GUILDNAME') and true or false
+    local needPlayer = msg:match('PLAYERNAME') and true or false
+
+    msg = (gLink and needGlink) and gsub(msg, 'GUILDLINK', gLink or 'No Guild Link') or msg
+    msg = (gName and needGname) and gsub(msg, 'GUILDNAME', gName and '<'..gName..'>' or 'No Guild Name') or msg
+    msg = needPlayer and gsub(msg, 'PLAYERNAME', (playerName or 'player')) or msg
 
     return msg
 end
@@ -52,6 +52,16 @@ function code:ClickSound(enable)
     if strupper(enable) == 'ENABLE' then
         SetCVar("Sound_EnableSFX", (self.originalClickSound or "1"))
     else SetCVar("Sound_EnableSFX", "0") end
+end
+function code:fNumber(val)
+    -- only positive numbers
+    -- Not receiving a number will return 0 error
+    val = type(val) == 'number' and tostring(val) or '0'
+    return tostring(val):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
+end
+function code:ConvertDateTime(val, showHours)
+    local d = date("*t", val)
+    return (d and showHours) and string.format("%02d/%02d/%04d %02d:%02d", d.month, d.day, d.year, d.hour, d.minute) or (string.format("%02d/%02d/%04d", d.month, d.day, d.year) or nil)
 end
 code:Init()
 
@@ -66,6 +76,11 @@ function invite:Init()
     self.msgWelcome = ''
     self.msgGreeting = ''
 
+    self.eventsActive = false
+    self.updateGuildRoster = false
+
+    self.guildCount = 0
+
     self.tblSent = {}
     self.tblInvited = {}
 end
@@ -75,15 +90,11 @@ function invite:InitializeInvite()
     self.antiSpam = ns.db.settings.antiSpam or true
     self.showWhispers = ns.db.settings.showWhispers or false
 
-    self.showGreeting = ns.db.settings.showWelcome or ns.dbGlobal.guildInfo.greeting or false
-    self.showGreeting = (self.showGreeting and (ns.db.settings.greetingMsg ~= '' or ns.dbGlobal.guildInfo.greetingMsg ~= '')) and true or false
+    self.showGreeting = ns.db.settings.sendGreeting or ns.dbGlobal.guildInfo.greeting or false
+    self.msgGreeting = ns.dbGlobal.guildInfo.greetingMsg ~= '' and ns.dbGlobal.guildInfo.greetingMsg or ns.db.settings.greetingMsg
 
-    self.msgGreeting = (ns.dbGlobal.guildInfo.greeting and ns.dbGlobal.guildInfo.greetingMsg ~= '') and ns.dbGlobal.guildInfo.greetingMsg or ns.db.settings.greetingMsg
-
-    self.showWelcome = ns.db.settings.showWelcome or false
-    self.showWelcome = (self.showWelcome and ns.db.settings.welcomeMessage ~= '') and true or false
-
-    self.msgWelcome = ns.db.settings.welcomeMessage
+    self.showWelcome = ns.db.settings.sendWelcome or false
+    self.msgWelcome = ns.db.settings.welcomeMessage or ''
 end
 function invite:new(class)
     return {
@@ -128,7 +139,7 @@ function invite:SendInviteToPlayer(pName, msg, sendInvite, class)
             SendChatMessage(msg, 'WHISPER', nil, pName)
         end
 
-        self.tblSent[pName] = true
+        self.tblSent[pName] = GetTime()
 
         ns.scanner.analytics:WaitingOn()
         ns.scanner.analytics:TotalInvites()
@@ -142,38 +153,70 @@ function invite:SendInviteToPlayer(pName, msg, sendInvite, class)
     else ns.code:consoleOut('You do not have invite permissions or not in a guild.') end
 end
 function invite:RegisterGuildInviteEvent()
-    if ns.tblEvents['CHAT_MSG_SYSTEM'] then return end
+    local function UpdateSent()
+        for k, r in pairs(invite.tblSent) do
+            if r and r ~= '' then
+                local time = GetTime() - r
+                if time > 120 then
+                    invite.tblSent[k] = nil
+                    ns.scanner.analytics:WaitingOn(-1)
+                end
+            end
+        end
 
+        if ns.scanner.totalUnknown == 0 then
+            self.eventsActive = false
+            self.updateGuildRoster = false
+
+            GRADDON:UnregisterEvent('CHAT_MSG_SYSTEM')
+        end
+    end
     local function GuildRosterHandler(...)
         local _, msg =  ...
         if not msg then return end
 
-        local pName = msg:match('(.-) ')
+        invite:InitializeInvite()
+
+        local newMsg = msg:gsub("'", ''):gsub('No Player Named ', '')
+        local pName = newMsg:match('(.-) ')
         pName = gsub(pName, '-'..GetRealmName(), '')
 
         if not self.tblSent[pName] then return
         elseif msg:match('not found') then ns.scanner.analytics:TotalInvites(-1)
         elseif msg:match('is not online') then ns.scanner.analytics:TotalInvites(-1)
+        elseif msg:match('No Player Named') then ns.scanner.analytics:TotalInvites(-1)
         elseif not msg:match('guild') then return
-        elseif msg:match('is already in a guild') then ns.scanner.analytics:TotalInvites(-1)
         elseif msg:match('has joined the guild') then
-            ns.scanner.analytics:TotalAccepted()
+            if self.tblSent[pName] then
+                ns.code:consoleOut(pName..' joined the guild!')
+                if  invite.showGreeting and  invite.msgGreeting ~= '' and pName then
+                    ns.scanner.analytics:TotalAccepted()
+                    SendChatMessage(ns.code:GuildReplace( invite.msgGreeting, pName):gsub('<', ''):gsub('>', ''), 'WHISPER', nil, pName)
+                end
+                if  invite.showWelcome and  invite.msgWelcome ~= '' then
+                    C_Timer.After(math.random(3,10), function()
+                        SendChatMessage(ns.code:GuildReplace( invite.msgWelcome, pName):gsub('<', ''):gsub('>', ''), 'GUILD')
+                    end)
+                end
 
-            if self.showWelcome then
-                SendChatMessage(self.msgGreeting, 'WHISPER', nil, pName)
+                UpdateSent()
+                invite.tblSent[pName] = nil
+                ns.scanner.analytics:TotalAccepted()
+                ns.scanner.analytics:WaitingOn(-1)
+                return
             end
-            if self.showGreeting then
-                C_Timer.After(math.random(3-10), function()
-                    SendChatMessage(ns.code:GuildReplace(self.msgWelcome, pName), 'GUILD')
-                end)
-            end
+        elseif msg:match('is already in a guild') then ns.scanner.analytics:TotalInvites(-1)
         elseif msg:match('declines your guild invitation') then ns.scanner.analytics:TotalDeclined() end
 
+        UpdateSent()
         invite.tblSent[pName] = nil
         ns.scanner.analytics:WaitingOn(-1)
     end
 
-    GRADDON:RegisterEvent('CHAT_MSG_SYSTEM', GuildRosterHandler)
+    if not self.eventsActive then
+        self.eventsActive = true
+        GRADDON:RegisterEvent('CHAT_MSG_SYSTEM', GuildRosterHandler)
+    end
 end
 invite:Init()
 
@@ -206,7 +249,7 @@ function blackList:AddToBlackList(name)
             value = strlen(value) > 0 and value or 'No reason'
 
             ns.BlackList.tblBlackList[blName] = { reason = value, whoDidIt = UnitGUID('player'), dateBlackList = C_DateAndTime.GetServerTimeLocal(), markedForDelete = false }
-            ns.dbBL.blackList = ns.BlackList.tblBlackList
+            ns.dbBL = ns.BlackList.tblBlackList
             ns.Analytics:add('Black_Listed')
             ns.code:consoleOut(blName..' was added to the black list with \"'..value..'\" as a reason.')
         end,
@@ -336,4 +379,13 @@ function analytics:Declined(amt)
     p, g = ns.dbAnal, ns.dbGAnal
     p.Declined_Invite = code:inc(p.Declined_Invite or 0, amt or 1)
     g.Declined_Invite = code:inc(g.Declined_Invite or 0, amt or 1)
+end
+function analytics:get(key, isGlobal)
+    local tblAnalytics = {}
+    tblAnalytics.profile = ns.dbAnal or {}
+    tblAnalytics.global = ns.dbGAnal or {}
+
+    local val = isGlobal and (tblAnalytics.global[key] or 0) or (tblAnalytics.profile[key] or 0)
+    local out = tostring(val):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
+    if isGlobal then return out else return out end
 end

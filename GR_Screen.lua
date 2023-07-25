@@ -178,6 +178,7 @@ function screen:CreateIconBar()
     self.iconSync = createTopBarIcons(prevFrame, ICON_PATH..'GR_Sync', 'Perform Sync', 'Performs a synchronization of data between officers.', 'RIGHT', 3, 0)
     self.iconSync:SetScript('OnClick', function() ns.Sync:StartSyncMaster() end)
     self.iconStats = createTopBarIcons(self.iconSync, ICON_PATH..'GR_Stats', 'Analytics', 'Show different analytics on invited, joined and more.', 'RIGHT', 3, 0)
+    self.iconStats:SetScript('OnClick', function() ns.stats:StartStatsScreen() end)
     self.iconReset = createTopBarIcons(self.iconStats, ICON_PATH..'GR_Reset', 'Filter Reset', 'Restart the current filter.', 'RIGHT', 3, 0)
     self.iconReset:SetScript('OnClick', function() ns.scanner:SetupFilter() end)
 
@@ -194,6 +195,13 @@ function screen:HideScreen()
     if self.fMain then self.fMain:Hide() end
 end
 function screen:ResetMain()
+    local function HideIcons()
+        self.iconBack:Hide()
+        self.iconReset:Hide()
+        self.iconRestore:Hide()
+        self.iconCompact:Hide()
+    end
+
     if ns.main.fPreview then ns.main.fPreview:Hide() end
     ns.main.inLine = nil
 
@@ -215,6 +223,9 @@ function screen:ResetMain()
     self.aMain = aMain
     self.aMain:SetUserData("hidden", false)
     aMain.frame:Show()
+
+    ns.stats.statsShown = false
+    HideIcons()
 end
 
 -- Sync routines
@@ -222,12 +233,12 @@ function screen:UpdateStatus(state)
     if self.syncState == state then return end
 
     self.syncState = state
-    if state then
-        self.iconSync:SetNormalTexture(ICON_PATH..'GR_Sync_Active')
-        self.iconSync:SetHighlightTexture(ICON_PATH..'GR_Sync_Active')
+    if state and screen.fMain then
+        self.iconSync:SetNormalTexture(ICON_PATH..'GR_SyncOn')
+        self.iconSync:SetHighlightTexture(ICON_PATH..'GR_SyncOn')
         self.statusHold = self.status:GetText() or ''
         self.status:SetText('Performing Sync...')
-    else
+    elseif screen.fMain then
         self.iconSync:SetNormalTexture(ICON_PATH..'GR_Sync')
         self.iconSync:SetHighlightTexture(ICON_PATH..'GR_Sync')
         screen:UpdateLastSync()

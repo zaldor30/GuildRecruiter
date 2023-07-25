@@ -1,9 +1,13 @@
-## v1.1.29
+## v2.0.0
 * Changed the look of the interface.
 * Saves where you move the interface.
 * Seperated out guilds, so one account can have multiple guilds.
 * Fixed the welcome message to be whispered to the new player.
 * Fixed issue with sticky tooltip on minimap icon.
+* Major database overhaul and cleanup.
+* Added an about screen.
+* Rearranged categories in options.
+* Lots of code fixes and some cleanup.
 
 * Note: Had to do a reset on settings, other data should remain intact.
 
