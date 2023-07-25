@@ -19,6 +19,7 @@ function core:Init()
     self.addonSettings = {
         profile = {
             settings = {
+                dbVer = '2.0.0',
                 -- Starting Levels
                 minLevel = MAX_CHARACTER_LEVEL - 4,
                 maxLevel = MAX_CHARACTER_LEVEL,
@@ -49,7 +50,7 @@ function core:Init()
             },
         },
         global = {
-            dbVer = '2.0.0',
+            version = GRADDON.version,
             guildInfo = {
                 antiSpam = true,
                 reinviteAfter = 5,
@@ -120,8 +121,8 @@ function core:OnPlayerLoggedIn()
         if r.selected then r.selected = false end
     end -- Reset selection state for options
 
-    if not ns.db.settings.ver or ns.db.settings.ver ~= '2.0.0' then
-        ns.db.settings.ver = '2.0.0'
+    if not GRADDON.db.global.version or GRADDON.db.global.version ~= self.addonSettings.global.version then
+        GRADDON.db.global.version = self.addonSettings.global.version
         ns.infoScreen()
     end
 
