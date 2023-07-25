@@ -5,6 +5,7 @@ local aceGUI = LibStub("AceGUI-3.0")
 ns.screen = {}
 local screen = ns.screen
 local function OnDragStart(self) -- Start dragging the frame
+    if ns.screen.locked then return end
     self:StartMoving()
 end
 local function OnDragStop(self) -- Stop dragging the frame
@@ -248,12 +249,22 @@ end
 function screen:UpdateStatus(state)
     if self.syncState == state then return end
 
+    local function syncCounter(counter)
+        if self.syncState then
+            self.status:SetText('Performing Sync, please wait. ('..counter..')')
+            C_Timer.After(1, function()
+                counter = counter + 1
+                syncCounter(counter)
+            end)
+        end
+    end
+
     self.syncState = state
     if state and screen.fMain then
         self.iconSync:SetNormalTexture(ICON_PATH..'GR_SyncOn')
         self.iconSync:SetHighlightTexture(ICON_PATH..'GR_SyncOn')
         self.statusHold = self.status:GetText() or ''
-        self.status:SetText('Performing Sync...')
+        syncCounter(1)
     elseif screen.fMain then
         self.iconSync:SetNormalTexture(ICON_PATH..'GR_Sync')
         self.iconSync:SetHighlightTexture(ICON_PATH..'GR_Sync')

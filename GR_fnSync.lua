@@ -25,9 +25,6 @@ function sync:Init()
     self.syncStart, self.startCount = nil, 0
     self.totalInvited, self.totalBlackListed = 0, 0
 end
-function sync:consoleOut(msg)
-    if ns.db.settings.showAppMsgs then ns.code:consoleOut(msg) end
-end
 function sync:StartStatusUpdate(starting, failed)
     local syncTime = date('%H:%M %m/%d/%Y')
     local master = self.syncMaster and 'Master' or 'Client'
@@ -40,7 +37,7 @@ function sync:StartStatusUpdate(starting, failed)
         if not failed then ns.db.settings.lastSync = syncTime end
         ns.code:consoleOut(master..' sync complete at '..syncTime)
         if self.syncMaster then
-            ns.code:consoleOut('Total sync time '..format('%.02f', GetTime() - self.syncStart)) end
+            ns.code:checkOut('Total sync time '..format('%.02f', GetTime() - self.syncStart)) end
             self.syncMaster, self.masterName = nil, nil
         ns.screen:UpdateStatus(false)
     end
@@ -58,12 +55,12 @@ function sync:OnCommReceived(prefix, message, distribution, sender)
 
     local success, tblData = false, nil
     if not message:match('SYNC_') then
-        sync:consoleOut('Decoding message from '..sender)
+        ns.code.checkOut('Decoding message from '..sender)
         local decodedWowMessage = LibDeflate:DecodeForWoWAddonChannel(message)
         local decompressedData = LibDeflate:DecompressDeflate(decodedWowMessage)
         success, tblData = GRADDON:Deserialize(decompressedData)
-        if success then sync:consoleOut(sender..' message was decoded successfully.')
-        else sync:consoleOut(sender..' message FAILED to decode.') end
+        if success then ns.code.checkOut(sender..' message was decoded successfully.')
+        else ns.code.checkOut(sender..' message FAILED to decode.') end
     end
 
     if self.syncMaster then -- Master Communications
@@ -112,7 +109,7 @@ function sync:MasterSync(msg, sender, ...)
         local clientFound = false
         for k,r in pairs(self.tblSyncClient or {}) do
             clientFound = true
-            sync:consoleOut('Sending data request to '..k)
+            ns.code.checkOut('Sending data request to '..k)
             sync:SendCommMessage('SYNC_DATA_REQUEST', 'WHISPER', k)
             r.timerID = AceTimer:ScheduleTimer('CallBackSync', DATA_WAIT_TIMEOUT, k)
         end
@@ -133,8 +130,8 @@ function sync:MasterSync(msg, sender, ...)
             if self.showConsole then
                 local c = 0
                 for _ in pairs(ns.dbInv or {}) do c = c + 1 end
-                sync:consoleOut('You started with '..self.startCount..' invited players.')
-                sync:consoleOut('You now have '..c..' players that have received and invite.')
+                ns.code.checkOut('You started with '..self.startCount..' invited players.')
+                ns.code.checkOut('You now have '..c..' players that have received and invite.')
             end
             ns.code:consoleOut('Sending merged data to all clients.')
             local syncData = sync:PrepareData()
@@ -223,9 +220,9 @@ function sync:ParseSyncData(tblData, sender)
     end
     ns.dbBL = tblBlackList
 
-    sync:consoleOut(sender..' added '..invitedCount..' new invited players.')
-    sync:consoleOut(sender..' added '..blackListCount..' new black listed players.')
-    sync:consoleOut('Finished sync with '..sender)
+    ns.code.checkOut(sender..' added '..invitedCount..' new invited players.')
+    ns.code.checkOut(sender..' added '..blackListCount..' new black listed players.')
+    ns.code.checkOut('Finished sync with '..sender)
 end
 sync:Init()
 

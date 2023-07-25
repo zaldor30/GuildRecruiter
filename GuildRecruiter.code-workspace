@@ -2,9 +2,6 @@
 	"folders": [
 		{
 			"path": "."
-		},
-		{
-			"path": "C:/Users/zalro/Documents/GitHub/GuildRecruiter - v1.0.28"
 		}
 	],
 	"settings": {
@@ -27,7 +24,48 @@
 			"issecurevariable",
 			"securecallfunction",
 			"WorldFrame",
-			"LOCKED"
+			"LOCKED",
+			"print",
+			"GetCVar",
+			"SetCVar",
+			"date",
+			"select",
+			"strupper",
+			"pairs",
+			"tostring",
+			"type",
+			"string",
+			"C_DateAndTime",
+			"strlower",
+			"strlen",
+			"C_Timer",
+			"math",
+			"_G",
+			"tonumber",
+			"C_Map",
+			"C_CreatureInfo",
+			"strfind",
+			"next",
+			"tremove",
+			"FormatPercentage",
+			"table",
+			"C_FriendList",
+			"format",
+			"loadstring",
+			"unpack",
+			"assert",
+			"error",
+			"setmetatable",
+			"getmetatable",
+			"rawset",
+			"rawget",
+			"xpcall",
+			"pcall",
+			"ipairs",
+			"GetCurrentRegionName",
+			"Minimap",
+			"rawequal",
+			"newproxy"
 		]
 	}
 }

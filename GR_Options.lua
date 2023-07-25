@@ -74,7 +74,7 @@ ns.addonSettings = {
             order = 0,
             args = {
                 msgGMHeader1 = {
-                    name = IsGuildLeader() and 'Message Formatting' or 'Message Formatting (View Only)',
+                    name = ns.core.isGuildLeader and 'Message Formatting' or 'Message Formatting (View Only)',
                     type = 'header',
                     order = 0,
                 },
@@ -98,7 +98,7 @@ ns.addonSettings = {
                     width = 2,
                     values = function()
                         local tbl = {}
-                        for k, r in pairs(ns.dbGlobal.guildInfo.messageList or {}) do tbl[k] = r.desc end
+                        for k, r in pairs(ns.dbGlobal.guildInfo.messageList or {}) do print(r.desc) tbl[k] = r.desc end
                         return tbl
                     end,
                     set = function(_, val) selectedGMMessage = val end,
@@ -119,7 +119,7 @@ ns.addonSettings = {
                     width = .5,
                     order = 4,
                     disabled = function() return not selectedGMMessage end,
-                    hidden = function() return not IsGuildLeader() end,
+                    hidden = function() return not ns.core.isGuildLeader end,
                     func = function()
                         tblGMMessage = optTables:newMsg()
                         selectedGMMessage = nil
@@ -190,7 +190,7 @@ ns.addonSettings = {
                     confirm = function() return 'Are you sure you want to delete this message?' end,
                     width = .5,
                     disabled = function() return not selectedGMMessage and true or false end,
-                    hidden = function() return not IsGuildLeader() end,
+                    hidden = function() return not ns.core.isGuildLeader end,
                     func = function()
                         local msg = ns.dbGlobal.guildInfo.messageList or nil
                         local active = selectedGMMessage or nil
@@ -209,7 +209,7 @@ ns.addonSettings = {
                     disabled = function()
                         if not tblGMMessage then return true end
                         return not ((tblGMMessage.desc and strlen(tblGMMessage.desc) > 0) and (tblGMMessage.message and strlen(tblGMMessage.message) > 0)) end,
-                    hidden = function() return not IsGuildLeader() end,
+                    hidden = function() return not ns.core.isGuildLeader end,
                     func = function()
                         local msg = ns.dbGlobal.guildInfo.messageList or {}
                         local active = selectedGMMessage
@@ -230,11 +230,11 @@ ns.addonSettings = {
         mnuGMOptions = {
             type = 'group',
             name = 'GM: Settings',
-            --hidden = function() return not IsGuildLeader() end,
+            --hidden = function() return not ns.core.isGuildLeader end,
             order = 2,
             args = {
                 optGMHeader1 = {
-                    name = IsGuildLeader() and 'Guild Master Settings' or 'Guild Master Settings (View Only)',
+                    name = ns.core.isGuildLeader and 'Guild Master Settings' or 'Guild Master Settings (View Only)',
                     type = 'header',
                     order = 0,
                 },
@@ -242,7 +242,7 @@ ns.addonSettings = {
                     name = 'Anti guild spam protection.',
                     desc = "Remembers invited players so you don't constantly spam them invites",
                     type = 'toggle',
-                    disabled = not IsGuildLeader(),
+                    disabled = function() return not ns.core.isGuildLeader end,
                     width = 1.5,
                     order = 1,
                     set = function(_, val) ns.dbGlobal.guildInfo.antiSpam = val end,
@@ -255,7 +255,7 @@ ns.addonSettings = {
                     style = 'dropdown',
                     order = 2,
                     width = 1,
-                    disabled = not IsGuildLeader(),
+                    disabled = function() return not ns.core.isGuildLeader end,
                     values = function()
                         return {
                             [1] = '1 day',
@@ -271,7 +271,7 @@ ns.addonSettings = {
                     name = 'Use only GM welcome message.',
                     desc = "This will prevent officers from sending their own welcome message.",
                     type = 'toggle',
-                    disabled = not IsGuildLeader(),
+                    disabled = function() return not ns.core.isGuildLeader end,
                     width = 'full',
                     order = 3,
                     set = function(_, val) ns.dbGlobal.guildInfo.greeting = val end,
@@ -283,7 +283,7 @@ ns.addonSettings = {
                     type = 'input',
                     width = 'full',
                     order = 4,
-                    disabled = not IsGuildLeader(),
+                    disabled = function() return not ns.core.isGuildLeader end,
                     set = function(_, val) ns.dbGlobal.guildInfo.greetingMsg = val end,
                     get = function() return ns.dbGlobal.guildInfo.greetingMsg end,
                 }
@@ -404,7 +404,7 @@ ns.addonSettings = {
                     type = 'toggle',
                     width = 'full',
                     order = 14,
-                    disabled = function() return not IsGuildLeader() and ns.dbGlobal.guildInfo.greeting end,
+                    disabled = function() return not ns.core.isGuildLeader and ns.dbGlobal.guildInfo.greeting end,
                     set = function(_, val) ns.db.settings.sendGreeting = val end,
                     get = function() return ns.dbGlobal.guildInfo.greeting or ns.db.settings.sendGreeting end,
                 },
@@ -414,7 +414,7 @@ ns.addonSettings = {
                     type = 'input',
                     width = 'full',
                     order = 15,
-                    disabled = function() return not IsGuildLeader() and ns.dbGlobal.guildInfo.greeting end,
+                    disabled = function() return not ns.core.isGuildLeader and ns.dbGlobal.guildInfo.greeting end,
                     set = function(_, val) ns.db.settings.greetingMsg = val end,
                     get = function() return ns.dbGlobal.guildInfo.greeting and ns.dbGlobal.guildInfo.greetingMsg or ns.db.settings.greetingMsg end,
                 },
@@ -424,7 +424,7 @@ ns.addonSettings = {
                     type = 'toggle',
                     width = 'full',
                     order = 16,
-                    --disabled = function() return not IsGuildLeader() and ns.dbGlobal.greeting end,
+                    --disabled = function() return not ns.core.isGuildLeader and ns.dbGlobal.greeting end,
                     set = function(_, val) ns.db.settings.sendWelcome = val end,
                     get = function() return ns.db.settings.sendWelcome end,
                 },
@@ -434,7 +434,7 @@ ns.addonSettings = {
                     type = 'input',
                     width = 'full',
                     order = 17,
-                    --disabled = function() return not IsGuildLeader() and ns.dbGlobal.greeting end,
+                    --disabled = function() return not ns.core.isGuildLeader and ns.dbGlobal.greeting end,
                     set = function(_, val) ns.db.settings.welcomeMessage = val end,
                     get = function()
                         ns.db.settings.welcomeMessage = ns.db.settings.welcomeMessage or DEFAULT_GUILD_WELCOME
@@ -556,7 +556,7 @@ ns.addonSettings = {
                 },
                 msgNotGM = {
                     name = function()
-                        local errMsg = (tblMessage.message and strfind(tblMessage.message, 'guildData') and not ns.dbGlobal.guildData and not IsGuildLeader()) and 'WARNING: You are not a GM, so guildData is an invalid option.' or nil
+                        local errMsg = (tblMessage.message and strfind(tblMessage.message, 'guildData') and not ns.dbGlobal.guildData and not ns.core.isGuildLeader) and 'WARNING: You are not a GM, so guildData is an invalid option.' or nil
                         return errMsg and ns.code:cText('FFFF0000', errMsg) or ' '
                     end,
                     type = 'description',

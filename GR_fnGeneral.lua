@@ -348,7 +348,7 @@ function blackList:FormAddToBlackList()
 
     local function addRecordClick()
         local name = editBox_Name:GetText() and editBox_Name:GetText() or nil
-        local reason = editBox_Reason:GetText() or 'No reason'
+        local reason = editBox_Reason:GetText() ~= '' and editBox_Reason:GetText() or 'No reason'
 
         name = name and strlower(name):gsub('-'..strlower(GetRealmName()), '') or name
         name = name and strupper(strsub(name,1,1))..strlower(strsub(name,2)) or name

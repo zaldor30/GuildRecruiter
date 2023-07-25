@@ -14,6 +14,8 @@ function core:Init()
     self.shutdown = false
     self.timerStarted = false
 
+    self.isGuildLeader = false
+
     self.slashCommand = 'recruiter'
 
     self.addonSettings = {
@@ -63,7 +65,7 @@ function core:Init()
 
     self.f = AceGUI:Create('InlineGroup')
 end
-function core:OnPlayerLoggedIn()
+function core:OnPlayerLoggedIn() -- Real Initialize
     GRADDON:UnregisterEvent('PLAYER_LOGIN')
 
     GRADDON.db = DB:New('GR_SettingsDB', nil, PLAYER_PROFILE)
@@ -91,8 +93,8 @@ function core:OnPlayerLoggedIn()
     elseif ns.dbGlobal.guildData then GRADDON.clubID = ns.dbGlobal.guildData.clubID end
 
     if not GRADDON.clubID or not IsInGuild() then
-        ns.code:consoleOut('You are not currently in a guild.')
-        ns.code:consoleOut('Guild Recruiter will be disabled.')
+        ns.code:consoleOut('You are not currently in a guild.', nil, true)
+        ns.code:consoleOut('Guild Recruiter will be disabled.', nil, true)
         return
     end
     if not GRADDON.db.global[GRADDON.clubID] then return end
@@ -127,7 +129,7 @@ function core:OnPlayerLoggedIn()
     end
 
     ns.code:consoleOut(GR_VERSION_INFO..' is active.', nil, true)
-    ns.code:consoleOut('Database version: '..ns.db.settings.dbVer, nil, true)
+    ns.code:checkOut('Database version: '..ns.db.settings.dbVer, nil, true)
     ns.code:consoleOut('You can use "/'..(self.slashCommand == 'gr' and 'gr or /recruiter' or '/'..self.slashCommand)..' help" to get a list of commands.', nil, true)
 end
 
@@ -234,9 +236,8 @@ function core:RegisterGuild()
         dbMatch = (ns.db.settings.dbVer == self.addonSettings.profile.settings.dbVer) or false
         gLink = g and g.guildData.guildLink ~= '' and g.guildLink or ((g and g.guildData.guildLink) and g.guildData.guildLink or nil)
     end
-    print(gLink or 'no guild link')
 
-    if not g or not ns.dbGlobal[clubID] or not ns.dbGlobal[clubID].guildInfo or dbMatch then
+    if not g or not g.guildInfo or not dbMatch then
         ns.dbGlobal[clubID] = {}
         ns.dbGlobal[clubID] = self.addonSettings.global -- Contains guildInfo
         g = ns.dbGlobal[clubID]
@@ -247,7 +248,7 @@ function core:RegisterGuild()
         return
     end
 
-
+    self.isGuildLeader = IsGuildLeader()
     local club = clubID and C_ClubFinder.GetRecruitingClubInfoFromClubID(clubID) or nil
     if club then
         local gName = club.name
