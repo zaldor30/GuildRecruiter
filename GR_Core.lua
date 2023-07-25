@@ -19,7 +19,6 @@ function core:Init()
     self.addonSettings = {
         profile = {
             settings = {
-                dbVer = '1.1.29',
                 -- Starting Levels
                 minLevel = MAX_CHARACTER_LEVEL - 4,
                 maxLevel = MAX_CHARACTER_LEVEL,
@@ -50,7 +49,7 @@ function core:Init()
             },
         },
         global = {
-            dbVer = '1.1.29',
+            dbVer = '2.0.0',
             guildInfo = {
                 antiSpam = true,
                 reinviteAfter = 5,
@@ -124,6 +123,11 @@ function core:OnPlayerLoggedIn()
     ns.code:consoleOut(GR_VERSION_INFO..' is active.', nil, true)
     ns.code:consoleOut('Database version: '..ns.db.settings.dbVer, nil, true)
     ns.code:consoleOut('You can use "/'..(self.slashCommand == 'gr' and 'gr or /recruiter' or '/'..self.slashCommand)..' help" to get a list of commands.', nil, true)
+
+    if not ns.db.settings.ver or ns.db.settings.ver ~= '2.0.0' then
+        ns.db.settings.ver = '2.0.0'
+        ns.infoScreen()
+    end
 end
 
 function GRADDON:OnInitialize(...) -- Continue Initialize After Player Enters world
@@ -143,7 +147,6 @@ end
 function core:dbChanges()
     local clubID = C_Club.GetGuildClubId() or GRADDON.clubID or nil
     if ns.db.settings and not ns.db.reloaded then
-        ns.db.reloaded = true
         ns.infoScreen()
         C_Timer.After(.1, function()
             ns.code:consoleOut(ns.code:cText('FFFF0000', 'Guild Recruiter data has been reset!!'))

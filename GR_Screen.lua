@@ -14,6 +14,8 @@ local function OnDragStop(self) -- Stop dragging the frame
 end
 
 function screen:Init()
+    self.locked = true
+
     self.fTop = nil
     self.fBottom = nil
     self.fTopIcon = nil
@@ -74,6 +76,7 @@ function screen:buildScreen()
     f:SetPoint(self.screenPos.point, self.screenPos.x, self.screenPos.y)
     f:SetMovable(not self.isLocked)
     f:EnableMouse(not self.isLocked)
+    f:RegisterForDrag("LeftButton")
     f:EnableKeyboard(true)
     f:SetFrameStrata(DEFAULT_STRATA)
     f:SetClampedToScreen(true)
@@ -169,6 +172,17 @@ function screen:CreateIconBar()
     prevFrame:SetScript('OnMouseUp', function() ns.about:StartAboutScreen() end)
     prevFrame = createTopBarIcons(fTop, ICON_PATH..'GR_Exit', 'Exit '..GRADDON.title, 'Closes the addon.', 'RIGHT', -3, 1, 'RIGHT', 15, 15)
     prevFrame:SetScript('OnMouseUp', function() screen:HideScreen() end)
+    local lock = createTopBarIcons(prevFrame, ICON_PATH..'GR_Locked', 'Click to make form moveable', 'Currently the form is '..(self.locked and ns.code:cText('FFFF0000', 'LOCKED') or ns.code:cText('FF00FF00', 'UNLOCKED'))..'.\nClick to toggle the lock.', 'LEFT', 0, 0, 'RIGHT')
+    lock:SetScript('OnMouseUp', function()
+        self.locked = not self.locked
+        local title, body = 'Click to make form moveable', 'Currently the form is '..(self.locked and ns.code:cText('FFFF0000', 'LOCKED') or ns.code:cText('FF00FF00', 'UNLOCKED'))..'.\nClick to toggle the lock.'
+
+        ns.widgets:createTooltip(title, body)
+        self.fMain:SetMovable(not self.locked)
+        self.fMain:EnableMouse(not self.locked)
+        lock:SetNormalTexture(self.locked and ICON_PATH..'GR_Locked' or ICON_PATH..'GR_Unlocked')
+        lock:SetHighlightTexture(self.locked and ICON_PATH..'GR_Locked' or ICON_PATH..'GR_Unlocked')
+    end)
 
     prevFrame = createTopBarIcons(fTop_Icon, ICON_PATH..'GR_Settings', 'Settings', 'Opens the addon settings.', 'LEFT', 3, 0)
     prevFrame:SetScript('OnMouseUp', function()
@@ -179,7 +193,9 @@ function screen:CreateIconBar()
     self.iconSync:SetScript('OnClick', function() ns.Sync:StartSyncMaster() end)
     self.iconStats = createTopBarIcons(self.iconSync, ICON_PATH..'GR_Stats', 'Analytics', 'Show different analytics on invited, joined and more.', 'RIGHT', 3, 0)
     self.iconStats:SetScript('OnClick', function() ns.stats:StartStatsScreen() end)
-    self.iconReset = createTopBarIcons(self.iconStats, ICON_PATH..'GR_Reset', 'Filter Reset', 'Restart the current filter.', 'RIGHT', 3, 0)
+    prevFrame = createTopBarIcons(self.iconStats, ICON_PATH..'GR_BlackList', 'Add to Black List', 'Add a player to the black list by name.', 'RIGHT', 3, 0)
+    prevFrame:SetScript('OnClick', function() ns.blackList:FormAddToBlackList() end)
+    self.iconReset = createTopBarIcons(prevFrame, ICON_PATH..'GR_Reset', 'Filter Reset', 'Restart the current filter.', 'RIGHT', 3, 0)
     self.iconReset:SetScript('OnClick', function() ns.scanner:SetupFilter() end)
 
     self.iconBack = createTopBarIcons(fTop_Icon, ICON_PATH..'GR_Back', 'Back', 'Returns to the main screen.', 'RIGHT', -3, 0, 'RIGHT')

@@ -33,6 +33,11 @@ function code:consoleOut(msg, color, noPrefix)
     local prefix = not noPrefix and 'GR: ' or ''
     print('|c'..(color or 'FF3EB9D8')..prefix..(msg or 'did not get message')..'|r')
 end
+function code:checkOut(msg, color, noPrefix)
+    if not ns.db.showAppMsgs then return end
+    local prefix = not noPrefix and 'GR: ' or ''
+    print('|c'..(color or 'FF3EB9D8')..prefix..(msg or 'did not get message')..'|r')
+end
 function code:GuildReplace(msg, playerName)
     local gi = ns.dbGlobal.guildData
     if not gi or not msg then return end
@@ -290,6 +295,107 @@ function blackList:BulkAddToBlackList(tbl)
     ns.scanner.analytics:TotalBlackList(bCount)
     ns.code:consoleOut(bCount..' of '..tCount..' players were added to the black list.')
 end
+function blackList:FormAddToBlackList()
+    self.tblBlackList = ns.dbBL or {}
+
+    local attachTo = ns.screen.fMain:IsShown() and ns.screen.fMain or UIParent
+    local frame = CreateFrame("Frame", nil, attachTo, "BackdropTemplate")
+    frame:SetSize(300, 200)
+    frame:SetPoint("CENTER", attachTo, "CENTER")
+    frame:SetBackdrop({
+        bgFile = 'Interface\\Buttons\\WHITE8x8',
+        edgeFile = 'Interface\\Tooltips\\UI-Tooltip-Border',
+        tile = true,
+        tileSize = 16,
+        edgeSize = 16,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
+    })
+    frame:SetBackdropColor(0,0,0,1)
+    frame:SetBackdropBorderColor(0.4,0.4,0.4,1)
+    frame:SetFrameStrata("LOW")
+
+    local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    title:SetPoint("TOP", frame, "TOP", 0, -10)
+    title:SetText("Add player to Black List")
+
+    local desc = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    desc:SetPoint("TOP", frame, "TOP", 0, -40)
+    desc:SetText("Enter the name of the player you\nwant to add to the black list.")
+    desc:SetTextColor(1,1,1,1)
+
+    local editBox_Name = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
+    editBox_Name:SetSize(200, 20)
+    editBox_Name:SetPoint("TOP", desc, "TOP", 40, -40)
+    editBox_Name:SetAutoFocus(false)
+    editBox_Name:SetFocus()
+    editBox_Name:SetFontObject("GameFontHighlight")
+
+    local boxTitle = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    boxTitle:SetPoint("RIGHT", editBox_Name, "LEFT", -5, 0)
+    boxTitle:SetText("Player: ")
+    boxTitle:SetTextColor(1,1,1,1)
+
+    local editBox_Reason = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
+    editBox_Reason:SetSize(200, 20)
+    editBox_Reason:SetPoint("TOP", editBox_Name, "TOP", 0, -30)
+    editBox_Reason:SetAutoFocus(false)
+    editBox_Reason:SetFontObject("GameFontHighlight")
+
+    boxTitle = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    boxTitle:SetPoint("RIGHT", editBox_Reason, "LEFT", -5, 0)
+    boxTitle:SetText("Reason: ")
+    boxTitle:SetTextColor(1,1,1,1)
+
+    local function addRecordClick()
+        local name = editBox_Name:GetText() and editBox_Name:GetText() or nil
+        local reason = editBox_Reason:GetText() or 'No reason'
+
+        name = name and strlower(name):gsub('-'..strlower(GetRealmName()), '') or name
+        name = name and strupper(strsub(name,1,1))..strlower(strsub(name,2)) or name
+        local lookup = (name and name:match('-'..GetRealmName())) and name or name..'-'..GetRealmName()
+
+        print(name, lookup, UnitExists('Dianix'), UnitIsPlayer('Dianix'))
+        if not name or name == '' then
+            ns.widgets:createErorrWindow('You must enter a name to add to the black list.', true, frame)
+        elseif ns.blackList.tblBlackList[lookup] then
+            local dateTable = date("*t", self.tblBlackList[lookup].dateBlackList)
+            local formattedTime = string.format("%02d/%02d/%04d", dateTable.month, dateTable.day, dateTable.year)
+            ns.widgets:createErorrWindow(name..' is already black listed with\n\"'..ns.code:cText('FFFFFF00', self.tblBlackList[lookup].reason)..'\" as a reason\non '..formattedTime..'.', true, frame)
+        elseif name and name ~= '' then
+            local tbl = { [name] = { reason = reason, whoDidIt = UnitGUID('player'), dateBlackList = C_DateAndTime.GetServerTimeLocal(), markedForDelete = false } }
+            tinsert(self.tblBlackList, tbl)
+            ns.dbBL = self.tblBlackList
+            ns.code:consoleOut(name..' was added to the black list with \"'..reason..'\" as a reason.')
+            frame:Hide()
+        end
+    end
+
+    local btnAdd = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    btnAdd:SetSize(100, 20)
+    btnAdd:SetPoint("TOP", editBox_Reason, "TOP", -100, -40)
+    btnAdd:SetText("Add")
+    btnAdd:SetScript("OnClick", function() addRecordClick() end)
+
+    local btnCancel = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    btnCancel:SetSize(100, 20)
+    btnCancel:SetPoint("LEFT", btnAdd, "RIGHT", 5, 0)
+    btnCancel:SetText("Cancel")
+    btnCancel:SetScript("OnClick", function() frame:Hide() end)
+    frame:Show()
+
+    editBox_Name.tabCycle = editBox_Reason
+    editBox_Reason.tabCycle = editBox_Name
+
+    local function tabPressed(dest)
+        if dest.tabCycle and IsShiftKeyDown() then dest.tabCycle:SetFocus()
+        elseif dest.tabCycle then dest.tabCycle:SetFocus() end
+    end
+
+    editBox_Name:SetScript("OnTabPressed", tabPressed)
+    editBox_Name:SetScript("OnEnterPressed", tabPressed)
+    editBox_Reason:SetScript("OnTabPressed", tabPressed)
+    editBox_Reason:SetScript("OnEnterPressed", function() addRecordClick() end)
+end
 blackList:Init()
 
 ns.widgets = {}
@@ -309,8 +415,8 @@ function widgets:createTooltip(text, body, force)
     if body then GameTooltip:AddLine(body,1,1,1) end
     GameTooltip:Show()
 end
-function widgets:createErorrWindow(msg, alert)
-    local errorDialog = {
+function widgets:createErorrWindow(msg, alert, frame)
+    --[[local errorDialog = {
         text = msg,
         button1 = 'Okay',
         timeout = self.defaultTimeout,
@@ -319,11 +425,41 @@ function widgets:createErorrWindow(msg, alert)
         hideOnEscape = true,
         preferredIndex = 3,
         OnShow = function(self)
-            self:SetPoint('CENTER', UIParent, 'CENTER')
+            self:SetPoint('CENTER', frame or UIParent, 'CENTER')
         end,
     }
     StaticPopupDialogs['MY_ERROR_DIALOG'] = errorDialog
-    StaticPopup_Show('MY_ERROR_DIALOG')
+    StaticPopup_Show('MY_ERROR_DIALOG')--]]
+    local errorFrame = CreateFrame("Frame", nil, frame or UIParent, "BackdropTemplate")
+    errorFrame:SetSize(300, 100)
+    errorFrame:SetPoint("CENTER", frame or UIParent, "CENTER")
+    errorFrame:SetBackdrop({
+        bgFile = 'Interface\\Buttons\\WHITE8x8',
+        edgeFile = 'Interface\\Tooltips\\UI-Tooltip-Border',
+        tile = true,
+        tileSize = 16,
+        edgeSize = 16,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
+    })
+    errorFrame:SetBackdropColor(0,0,0,1)
+    errorFrame:SetBackdropBorderColor(0.4,0.4,0.4,1)
+    errorFrame:SetFrameStrata("DIALOG")
+
+    local title = errorFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    title:SetPoint("TOP", errorFrame, "TOP", 0, -10)
+    title:SetText("Entry Error")
+
+    local desc = errorFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    desc:SetPoint("TOP", errorFrame, "TOP", 0, -25)
+    desc:SetText(msg)
+    desc:SetTextColor(1,1,1,1)
+
+    local btnOkay = CreateFrame("Button", nil, errorFrame, "UIPanelButtonTemplate")
+    btnOkay:SetSize(100, 20)
+    btnOkay:SetPoint("TOP", desc, "TOP", 0, -50)
+    btnOkay:SetText("Okay")
+    btnOkay:SetScript("OnClick", function() errorFrame:Hide() end)
+    errorFrame:Show()
 end
 function widgets:createPadding(frame, rWidth)
     local widget = LibStub("AceGUI-3.0"):Create('Label')

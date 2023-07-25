@@ -25,7 +25,9 @@
 			"GetNumClasses",
 			"SendChatMessage",
 			"issecurevariable",
-			"securecallfunction"
+			"securecallfunction",
+			"WorldFrame",
+			"LOCKED"
 		]
 	}
 }
