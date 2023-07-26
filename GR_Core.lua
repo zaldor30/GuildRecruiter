@@ -232,8 +232,8 @@ function core:RegisterGuild()
     local gLink = nil
     GRADDON.clubID = clubID
     local g = ns.dbGlobal[clubID] or nil
-    if g then
-        gLink = g and g.guildData.guildLink ~= '' and g.guildLink or ((g and g.guildData.guildLink) and g.guildData.guildLink or nil)
+    if g and g.guildData then
+        gLink = (g and g.guildData and g.guildData.guildLink ~= '')and g.guildLink or ((g and g.guildData.guildLink) and g.guildData.guildLink or nil)
     end
 
     if not g or not g.guildInfo then
