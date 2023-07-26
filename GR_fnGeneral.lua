@@ -30,11 +30,12 @@ function code:cPlayer(uName, class)
     else return code:cText(cClass, uName) end
 end
 function code:consoleOut(msg, color, noPrefix)
+    if not msg or msg == '' then return end
     local prefix = not noPrefix and 'GR: ' or ''
     print('|c'..(color or 'FF3EB9D8')..prefix..(msg or 'did not get message')..'|r')
 end
 function code:checkOut(msg, color, noPrefix)
-    if not ns.db.showAppMsgs then return end
+    if not ns.db.settings.showAppMsgs or not msg then return end
     local prefix = not noPrefix and 'GR: ' or ''
     print('|c'..(color or 'FF3EB9D8')..prefix..(msg or 'did not get message')..'|r')
 end

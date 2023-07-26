@@ -98,7 +98,7 @@ ns.addonSettings = {
                     width = 2,
                     values = function()
                         local tbl = {}
-                        for k, r in pairs(ns.dbGlobal.guildInfo.messageList or {}) do print(r.desc) tbl[k] = r.desc end
+                        for k, r in pairs(ns.dbGlobal.guildInfo.messageList or {}) do tbl[k] = r.desc end
                         return tbl
                     end,
                     set = function(_, val) selectedGMMessage = val end,

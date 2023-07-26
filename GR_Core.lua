@@ -184,14 +184,14 @@ function core:dbChanges()
 end
 function core:SlashCommand(msg)
     msg = msg:trim()
-    if not msg or msg == '' then ns.MainScreen:ShowMainScreen()
+    if not msg or msg == '' then ns.screen:StartGuildRecruiter()
     elseif strlower(msg) == 'help' then
         ns.code:consoleOut(GR_VERSION_INFO..' - Help')
         ns.code:consoleOut('You can use /gr or /recruiter to access the commands bellow.')
         ns.code:consoleOut('config - Takes you to Guild Recruiter settings screen.')
         ns.code:consoleOut('blacklist <player name> - This will add player to the black list (do not use the <>)')
         ns.code:consoleOut('You can type /rl to reload your UI (same as /reload).')
-    elseif strlower(msg) == 'config' then
+    elseif strlower(msg) == 'config' then InterfaceOptionsFrame_OpenToCategory(ns.addonOptions)
     elseif strlower(msg):match('blacklist') then
         msg = strlower(msg):gsub('blacklist', ''):trim()
         local name = strupper(strsub(msg,1,1))..strlower(strsub(msg,2))
@@ -229,15 +229,14 @@ function core:RegisterGuild()
         return false
     end
 
-    local gLink, dbMatch = nil, false
+    local gLink = nil
     GRADDON.clubID = clubID
     local g = ns.dbGlobal[clubID] or nil
     if g then
-        dbMatch = (ns.db.settings.dbVer == self.addonSettings.profile.settings.dbVer) or false
         gLink = g and g.guildData.guildLink ~= '' and g.guildLink or ((g and g.guildData.guildLink) and g.guildData.guildLink or nil)
     end
 
-    if not g or not g.guildInfo or not dbMatch then
+    if not g or not g.guildInfo then
         ns.dbGlobal[clubID] = {}
         ns.dbGlobal[clubID] = self.addonSettings.global -- Contains guildInfo
         g = ns.dbGlobal[clubID]
