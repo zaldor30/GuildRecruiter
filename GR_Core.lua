@@ -310,50 +310,88 @@ local function DropDownOnShow(self)
                 else dropdownFullName = dropdown.name end
             end
             f.name = dropdownFullName
+            local name = f.name:gsub('-'..GetRealmName(), '')
+
+            local fEntry = CreateFrame('Button', nil, f)
+            fEntry:SetSize(150, 40)
+            fEntry:SetPoint('TOPLEFT', f, 'TOPLEFT', 0 , 10)
+            fEntry.HandlesGlobalMouseEvent = HandlesGlobalMouseEvent
+            fEntry:SetScript('OnMouseDown', function()
+                if f.name then ns.blackList:AddToBlackList(f.name) end
+                CloseDropDownMenus()
+            end)
+
+            local fIcon = CreateFrame('Button', nil, fEntry, 'BackdropTemplate')
+            fIcon:SetSize(20, 20)
+            fIcon:SetPoint('LEFT', fEntry, 'LEFT',0 , -10)
+
+            fIcon:SetNormalTexture(ICON_PATH..'GR_NewRecord')
+            fIcon:SetHighlightTexture(ICON_PATH..'GR_NewRecord')
+
+            local blTextString = fEntry:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            blTextString:SetPoint("LEFT", fIcon, "RIGHT", 5, 0)
+            blTextString:SetText('Add '..(ns.code:cPlayer(name) or 'no name')..'\nto the black list.')
+            blTextString:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+            blTextString:SetTextColor(1,1,1,1)
+
+            fEntry:SetScript('OnEnter', function() blTextString:SetTextColor(1,1,0,1) end)
+            fEntry:SetScript('OnLeave', function() blTextString:SetTextColor(1,1,1,1) end)
+
+            local lineTexture = fEntry:CreateTexture(nil, "ARTWORK")
+            lineTexture:SetColorTexture(.25, .25, .25)
+            lineTexture:SetHeight(1)
+            lineTexture:SetPoint("BOTTOMLEFT", fEntry, "BOTTOMLEFT", 5, -5)
+            lineTexture:SetPoint("BOTTOMRIGHT", fEntry, "BOTTOMRIGHT", 5, -5)
+
+            local fInvite = CreateFrame('Button', nil, f)
+            fInvite:SetSize(150, 40)
+            fInvite:SetPoint('TOPLEFT', fEntry, 'BOTTOMLEFT', 0 , 10)
+            fInvite.HandlesGlobalMouseEvent = HandlesGlobalMouseEvent
+            fInvite:SetScript('OnMouseDown', function()
+                if f.name then ns.invite:SendInviteToPlayer(f.name, nil, true) end
+                CloseDropDownMenus()
+            end)
+
+            fIcon = CreateFrame('Button', nil, fInvite, 'BackdropTemplate')
+            fIcon:SetSize(20, 20)
+            fIcon:SetPoint('LEFT', fInvite, 'LEFT',0 , -10)
+
+            fIcon:SetNormalTexture(ICON_PATH..'GR_NewRecord')
+            fIcon:SetHighlightTexture(ICON_PATH..'GR_NewRecord')
+
+            local invTextString = fInvite:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            invTextString:SetPoint("LEFT", fIcon, "RIGHT", 5, 0)
+            invTextString:SetText('Invite '..(ns.code:cPlayer(name) or 'no name')..'\nto the guild.')
+            invTextString:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+            invTextString:SetTextColor(1,1,1,1)
+
+            fInvite:SetScript('OnEnter', function() invTextString:SetTextColor(1,1,0,1) end)
+            fInvite:SetScript('OnLeave', function() invTextString:SetTextColor(1,1,1,1) end)
         else return end
 
-        if self:GetLeft() >= self:GetWidth() then f.frame:SetPoint('BOTTOMRIGHT', self, 'BOTTOMLEFT',0,0)
-        else f.frame:SetPoint('BOTTOMLEFT', self, 'BOTTOMRIGHT',0,0) end
+        if self:GetLeft() >= self:GetWidth() then f:SetPoint('TOPRIGHT', self, 'TOPLEFT',0,0)
+        else f:SetPoint('TOPLEFT', self, 'TOPRIGHT',0,0) end
     end
 
     if f then f = nil end
-    f = AceGUI:Create('InlineGroup')
-    f:SetWidth(135)
-    f:SetLayout('flow')
-
-
-    local lblInvite = AceGUI:Create('InteractiveLabel')
-    lblInvite:SetText('Guild Invite')
-    lblInvite:SetFont('Fonts\\FRIZQT__.ttf', 12, 'OUTLINE')
-    lblInvite:SetWidth(135)
-    lblInvite:SetHighlight(255, 216.75, 0, 255)
-    lblInvite.frame.HandlesGlobalMouseEvent = HandlesGlobalMouseEvent
-    lblInvite:SetCallback('OnClick', function()
-        if f.name then
-            ns.code:consoleOut('Sending invite to '..f.name)
-            ns.Invite:invitePlayer(f.name, nil, 'SEND_INVITE', 'FORCE', select(2, UnitClass(f.name)))
-        end
-        CloseDropDownMenus()
-    end)
-    f:AddChild(lblInvite)
-
-    local lblBlackList = AceGUI:Create('InteractiveLabel')
-    lblBlackList:SetText('Black List')
-    lblBlackList:SetWidth(135)
-    lblBlackList:SetFont('Fonts\\FRIZQT__.ttf', 12, 'OUTLINE')
-    lblBlackList:SetHighlight(255,255,255)
-    lblBlackList.frame.HandlesGlobalMouseEvent = HandlesGlobalMouseEvent
-    lblBlackList:SetCallback('OnClick', function()
-        if f.name then
-            ns.code:consoleOut('Adding '..f.name..' to blacklist list.')
-            ns:add(f.name)
-        end
-        CloseDropDownMenus()
-    end)
-    f:AddChild(lblBlackList)
+    f = CreateFrame("Frame", "GR_DropDownFrame", UIParent, "BackdropTemplate")
+    f:SetFrameStrata('TOOLTIP')
+    f:SetSize(165, 70)
+    f:SetBackdrop({
+        bgFile = 'Interface\\Buttons\\WHITE8x8',
+        edgeFile = 'Interface\\Tooltips\\UI-Tooltip-Border',
+        tile = true,
+        tileSize = 16,
+        edgeSize = 16,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
+    })
+    f:SetBackdropColor(0,0,0,1)
+    f:SetBackdropBorderColor(1,1,1,1)
+    f:IsClampedToScreen(true)
+    f.HandlesGlobalMouseEvent = HandlesGlobalMouseEvent
 
     FinishFrame()
 end
-local function DropDownOnHide() if f then f.frame:Hide() end end
+local function DropDownOnHide() if f then f:Hide() end end
 DropDownList1:HookScript('OnShow', DropDownOnShow)
 DropDownList1:HookScript('OnHide', DropDownOnHide)

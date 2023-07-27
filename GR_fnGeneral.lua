@@ -143,7 +143,7 @@ function invite:SendInviteToPlayer(pName, msg, sendInvite, class)
                 ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER_INFORM", MyWhisperFilter, msg)
             end
             SendChatMessage(msg, 'WHISPER', nil, pName)
-        end
+        elseif sendInvite then ns.code:consoleOut('A guild invite was sent to '..(ns.code:cPlayer(pName, class) or pName)) end
 
         self.tblSent[pName] = GetTime()
 
@@ -156,7 +156,11 @@ function invite:SendInviteToPlayer(pName, msg, sendInvite, class)
         end
 
         invite:RegisterGuildInviteEvent()
-    else ns.code:consoleOut('You do not have invite permissions or not in a guild.') end
+    else
+        if not CanGuildInvite() then ns.code:consoleOut('You do not have invite permissions or not in a guild.')
+        elseif GetGuildInfo(pName) then ns.code:consoleOut((ns.code:cPlayer(pName, class) or pName)..' is already in the guild '..GetGuildInfo(pName)..'.')
+        else ns.code:consoleOut('No player named '..(ns.code:cPlayer(pName, class) or pName)..' was found.') end
+    end
 end
 function invite:RegisterGuildInviteEvent()
     local function UpdateSent()
@@ -251,12 +255,14 @@ function blackList:AddToBlackList(name)
         button1 = "OK",
         button2 = "Cancel",
         OnAccept = function(data)
+            print(data, data.editBox:GetText())
             local value = data.editBox:GetText()
-            value = strlen(value) > 0 and value or 'No reason'
+            value = value ~= '' and value or 'No reason'
 
-            ns.BlackList.tblBlackList[blName] = { reason = value, whoDidIt = UnitGUID('player'), dateBlackList = C_DateAndTime.GetServerTimeLocal(), markedForDelete = false }
-            ns.dbBL = ns.BlackList.tblBlackList
-            ns.Analytics:add('Black_Listed')
+            print(value, blName, UnitGUID('player'), C_DateAndTime.GetServerTimeLocal())
+            ns.blackList.tblBlackList[blName] = { reason = value, whoDidIt = UnitGUID('player'), dateBlackList = C_DateAndTime.GetServerTimeLocal(), markedForDelete = false }
+            ns.dbBL = ns.blackList.tblBlackList
+            ns.scanner.analytics:TotalBlackList()
             ns.code:consoleOut(blName..' was added to the black list with \"'..value..'\" as a reason.')
         end,
         OnCancel = function() UIErrorsFrame:AddMessage(name..' was not added to Black List.', 1.0, 0.1, 0.1, 1.0) end,
@@ -290,6 +296,7 @@ function blackList:BulkAddToBlackList(tbl)
         if not self.tblBlackList[name] then
             bCount = bCount + 1
             ns.dbBL[name] = { reason = 'Bulk Add', whoDidIt = UnitGUID('player'), dateBlackList = C_DateAndTime.GetServerTimeLocal(), selected = false, markedForDelete = false }
+            ns.scanner.analytics:TotalBlackList()
         end
     end
 
@@ -365,6 +372,7 @@ function blackList:FormAddToBlackList()
             local tbl = { [name] = { reason = reason, whoDidIt = UnitGUID('player'), dateBlackList = C_DateAndTime.GetServerTimeLocal(), markedForDelete = false } }
             tinsert(self.tblBlackList, tbl)
             ns.dbBL = self.tblBlackList
+            ns.scanner.analytics:TotalBlackList()
             ns.code:consoleOut(name..' was added to the black list with \"'..reason..'\" as a reason.')
             frame:Hide()
         end
@@ -404,13 +412,14 @@ local widgets = ns.widgets
 function widgets:Init()
     self.defaultTimeout = 10
 end
-function widgets:createTooltip(text, body, force)
+function widgets:createTooltip(text, body, force, frame)
     if not force and not ns.db.settings.showTooltips then return end
     local uiScale, x, y = UIParent:GetEffectiveScale(), GetCursorPosition()
+    if frame then uiScale, x, y = 0, 0, 0 end
     CreateFrame("GameTooltip", nil, nil, "GameTooltipTemplate")
     GameTooltip_SetDefaultAnchor(GameTooltip, UIParent)
     GameTooltip:SetOwner(UIParent, "ANCHOR_CURSOR") -- Attaches the tooltip to cursor
-    GameTooltip:SetPoint("BOTTOMLEFT", nil, "BOTTOMLEFT", x / uiScale, y / uiScale)
+    GameTooltip:SetPoint("BOTTOMLEFT", (frame or nil), "BOTTOMLEFT", (uiScale ~= 0 and (x / uiScale) or 0),  (uiScale ~= 0  and (y / uiScale) or 0))
     GameTooltip:SetText(text)
     if body then GameTooltip:AddLine(body,1,1,1) end
     GameTooltip:Show()
