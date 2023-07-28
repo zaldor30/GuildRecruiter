@@ -256,11 +256,9 @@ function blackList:AddToBlackList(name)
         button1 = "OK",
         button2 = "Cancel",
         OnAccept = function(data)
-            print(data, data.editBox:GetText())
             local value = data.editBox:GetText()
             value = value ~= '' and value or 'No reason'
 
-            print(value, blName, UnitGUID('player'), C_DateAndTime.GetServerTimeLocal())
             ns.blackList.tblBlackList[blName] = { reason = value, whoDidIt = UnitGUID('player'), dateBlackList = C_DateAndTime.GetServerTimeLocal(), markedForDelete = false }
             ns.dbBL = ns.blackList.tblBlackList
             ns.scanner.analytics:TotalBlackList()

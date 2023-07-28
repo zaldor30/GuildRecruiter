@@ -301,11 +301,8 @@ local function DropDownOnShow(self)
 
     local dropdown = self.dropdown
     local function FinishFrame()
-        print(dropdown.which)
         if dropdown.which == 'PLAYER' or dropdown.which == 'FRIEND' then -- UnitPopup
-            print('Make context menu')
             local dropdownFullName = dropdown.name and dropdown.name:gsub('-'..GetRealmName(), '') or nil
-            print(dropdown.name, dropdownFullName)
             if not dropdownFullName then return end
 
             f.name = dropdownFullName
