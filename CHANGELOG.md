@@ -1,4 +1,4 @@
-## v2.0.0 (7/28/2023)
+## v2.0.1 (7/28/2023)
 * Changed the look of the interface.
 * Saves where you move the interface.
 * Seperated out guilds, so one account can have multiple guilds.
