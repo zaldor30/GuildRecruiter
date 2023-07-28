@@ -63,14 +63,7 @@ end
 function screen:buildScreen()
     self.fMain = CreateFrame('Frame', 'Main_Screen_Frame', UIParent, 'BackdropTemplate')
     local f = self.fMain
-    f:SetBackdrop({
-        bgFile = 'Interface\\DialogFrame\\UI-DialogBox-Background',
-        edgeFile = 'Interface\\Tooltips\\UI-Tooltip-Border',
-        tile = true,
-        tileSize = 16,
-        edgeSize = 16,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 }
-    })
+    f:SetBackdrop(DEFAULT_FRAME_TEMPLATE)
     f:SetBackdropColor(0, 0, 0, .75)
     f:SetBackdropBorderColor(1, 1, 1, 1)
     f:SetSize(500, 400)

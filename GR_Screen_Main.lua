@@ -194,14 +194,7 @@ function main:MessagePreview()
     local f = CreateFrame('Frame', 'Message_Preview_Frame', ns.screen.fMain, 'BackdropTemplate')
     f:SetSize(ns.screen.fMain:GetWidth() - 18, 50)
     f:SetPoint('BOTTOM', ns.screen.fMain, 'BOTTOM', 0, 25)
-    f:SetBackdrop({
-        bgFile = 'Interface\\DialogFrame\\UI-DialogBox-Background',
-        edgeFile = 'Interface\\Tooltips\\UI-Tooltip-Border',
-        tile = true,
-        tileSize = 16,
-        edgeSize = 16,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 }
-    })
+    f:SetBackdrop(DEFAULT_FRAME_TEMPLATE)
     f:SetBackdropColor(0, 0, 0, .75)
     f:SetBackdropBorderColor(1, 1, 1, .5)
     self.fPreview = f

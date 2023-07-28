@@ -20,11 +20,12 @@ function code:cText(color, text)
     if type(color) ~= 'string' or not text then return end
     return '|c'..color..text..'|r'
 end
-function code:cPlayer(uName, class)
-    if strmatch(uName, 'raid') or strmatch(uName, 'party') or uName  == 'player' then
+function code:cPlayer(uName, class, color)
+    if ns.dbGlobal and ns.dbGlobal.guildData and uName == ns.dbGlobal.guildData.guildName then return
+    elseif strmatch(uName, 'raid') or strmatch(uName, 'party') or uName  == 'player' then
         uName = UnitName(uName) end
 
-    local cClass = (class or select(2, UnitClass(uName))) and GRADDON.classInfo[(class or select(2, UnitClass(uName)))].color or nil
+    local cClass = (class or select(2, UnitClass(uName))) and GRADDON.classInfo[(class or select(2, UnitClass(uName)))].color or (color or nil)
 
     if not cClass then return uName
     else return code:cText(cClass, uName) end
@@ -308,16 +309,9 @@ function blackList:FormAddToBlackList()
 
     local attachTo = ns.screen.fMain:IsShown() and ns.screen.fMain or UIParent
     local frame = CreateFrame("Frame", nil, attachTo, "BackdropTemplate")
-    frame:SetSize(300, 200)
+    frame:SetSize(300, 175)
     frame:SetPoint("CENTER", attachTo, "CENTER")
-    frame:SetBackdrop({
-        bgFile = 'Interface\\Buttons\\WHITE8x8',
-        edgeFile = 'Interface\\Tooltips\\UI-Tooltip-Border',
-        tile = true,
-        tileSize = 16,
-        edgeSize = 16,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 }
-    })
+    frame:SetBackdrop(DEFAULT_FRAME_TEMPLATE_SOLD)
     frame:SetBackdropColor(0,0,0,1)
     frame:SetBackdropBorderColor(0.4,0.4,0.4,1)
     frame:SetFrameStrata("LOW")
@@ -380,7 +374,7 @@ function blackList:FormAddToBlackList()
 
     local btnAdd = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
     btnAdd:SetSize(100, 20)
-    btnAdd:SetPoint("TOP", editBox_Reason, "TOP", -100, -40)
+    btnAdd:SetPoint("TOP", editBox_Reason, "TOP", -80, -30)
     btnAdd:SetText("Add")
     btnAdd:SetScript("OnClick", function() addRecordClick() end)
 
@@ -442,14 +436,7 @@ function widgets:createErorrWindow(msg, alert, frame)
     local errorFrame = CreateFrame("Frame", nil, frame or UIParent, "BackdropTemplate")
     errorFrame:SetSize(300, 100)
     errorFrame:SetPoint("CENTER", frame or UIParent, "CENTER")
-    errorFrame:SetBackdrop({
-        bgFile = 'Interface\\Buttons\\WHITE8x8',
-        edgeFile = 'Interface\\Tooltips\\UI-Tooltip-Border',
-        tile = true,
-        tileSize = 16,
-        edgeSize = 16,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 }
-    })
+    errorFrame:SetBackdrop(DEFAULT_FRAME_TEMPLATE)
     errorFrame:SetBackdropColor(0,0,0,1)
     errorFrame:SetBackdropBorderColor(0.4,0.4,0.4,1)
     errorFrame:SetFrameStrata("DIALOG")

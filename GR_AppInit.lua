@@ -47,3 +47,21 @@ SKURRI_FONT = 'Fonts\\SKURRI.ttf'
 MORRIS_FONT = 'Fonts\\MORRIS__.ttf'
 FRIENDS_FONT = 'Fonts\\FRIENDS.ttf'
 DEFAULT_FONT_SIZE = 12
+
+-- Default Settings
+DEFAULT_FRAME_TEMPLATE = {
+	bgFile = 'Interface\\DialogFrame\\UI-DialogBox-Background',
+	edgeFile = 'Interface\\Tooltips\\UI-Tooltip-Border',
+	tile = true,
+	tileSize = 16,
+	edgeSize = 16,
+	insets = { left = 3, right = 3, top = 3, bottom = 3 }
+}
+DEFAULT_FRAME_TEMPLATE_SOLD = {
+	bgFile = 'Interface\\Buttons\\WHITE8x8',
+	edgeFile = 'Interface\\Tooltips\\UI-Tooltip-Border',
+	tile = true,
+	tileSize = 16,
+	edgeSize = 16,
+	insets = { left = 3, right = 3, top = 3, bottom = 3 }
+}

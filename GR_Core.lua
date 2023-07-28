@@ -301,14 +301,13 @@ local function DropDownOnShow(self)
 
     local dropdown = self.dropdown
     local function FinishFrame()
-        if dropdown.Button == LFGListFrameDropDownButton then
-        elseif dropdown.which then -- UnitPopup
-            local dropdownFullName = nil
-            if dropdown.name then
-                if dropdown.server and not dropdown.name:find('-') then
-                    dropdownFullName = dropdown.name .. '-' .. dropdown.server
-                else dropdownFullName = dropdown.name end
-            end
+        print(dropdown.which)
+        if dropdown.which == 'PLAYER' or dropdown.which == 'FRIEND' then -- UnitPopup
+            print('Make context menu')
+            local dropdownFullName = dropdown.name and dropdown.name:gsub('-'..GetRealmName(), '') or nil
+            print(dropdown.name, dropdownFullName)
+            if not dropdownFullName then return end
+
             f.name = dropdownFullName
             local name = f.name:gsub('-'..GetRealmName(), '')
 
@@ -330,15 +329,16 @@ local function DropDownOnShow(self)
 
             local blTextString = fEntry:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             blTextString:SetPoint("LEFT", fIcon, "RIGHT", 5, 0)
-            blTextString:SetText('Add '..(ns.code:cPlayer(name) or 'no name')..'\nto the black list.')
+            blTextString:SetText('Add '..(ns.code:cPlayer(name, nil, 'FF00FF00') or 'no name')..'\nto the black list.')
             blTextString:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+            blTextString:SetJustifyH('CENTER')
             blTextString:SetTextColor(1,1,1,1)
 
             fEntry:SetScript('OnEnter', function() blTextString:SetTextColor(1,1,0,1) end)
             fEntry:SetScript('OnLeave', function() blTextString:SetTextColor(1,1,1,1) end)
 
             local lineTexture = fEntry:CreateTexture(nil, "ARTWORK")
-            lineTexture:SetColorTexture(.25, .25, .25)
+            lineTexture:SetColorTexture(.5, .5, .5)
             lineTexture:SetHeight(1)
             lineTexture:SetPoint("BOTTOMLEFT", fEntry, "BOTTOMLEFT", 5, -5)
             lineTexture:SetPoint("BOTTOMRIGHT", fEntry, "BOTTOMRIGHT", 5, -5)
@@ -361,30 +361,24 @@ local function DropDownOnShow(self)
 
             local invTextString = fInvite:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             invTextString:SetPoint("LEFT", fIcon, "RIGHT", 5, 0)
-            invTextString:SetText('Invite '..(ns.code:cPlayer(name) or 'no name')..'\nto the guild.')
+            invTextString:SetText('Invite '..(ns.code:cPlayer(name, nil, 'FF00FF00') or 'no name')..'\nto the guild.')
             invTextString:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+            invTextString:SetJustifyH('CENTER')
             invTextString:SetTextColor(1,1,1,1)
 
             fInvite:SetScript('OnEnter', function() invTextString:SetTextColor(1,1,0,1) end)
             fInvite:SetScript('OnLeave', function() invTextString:SetTextColor(1,1,1,1) end)
         else return end
 
-        if self:GetLeft() >= self:GetWidth() then f:SetPoint('TOPRIGHT', self, 'TOPLEFT',0,0)
-        else f:SetPoint('TOPLEFT', self, 'TOPRIGHT',0,0) end
+        if self:GetLeft() >= self:GetWidth() then f:SetPoint('RIGHT', self, 'LEFT',0,0)
+        else f:SetPoint('LEFT', self, 'RIGHT',0,0) end
     end
 
     if f then f = nil end
     f = CreateFrame("Frame", "GR_DropDownFrame", UIParent, "BackdropTemplate")
     f:SetFrameStrata('TOOLTIP')
     f:SetSize(165, 70)
-    f:SetBackdrop({
-        bgFile = 'Interface\\Buttons\\WHITE8x8',
-        edgeFile = 'Interface\\Tooltips\\UI-Tooltip-Border',
-        tile = true,
-        tileSize = 16,
-        edgeSize = 16,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 }
-    })
+    f:SetBackdrop(DEFAULT_FRAME_TEMPLATE_SOLD)
     f:SetBackdropColor(0,0,0,1)
     f:SetBackdropBorderColor(1,1,1,1)
     f:IsClampedToScreen(true)
