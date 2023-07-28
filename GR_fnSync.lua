@@ -25,9 +25,6 @@ function sync:Init()
     self.syncStart, self.startCount = nil, 0
     self.totalInvited, self.totalBlackListed = 0, 0
 end
-function sync:consoleOut(msg)
-    if ns.db.settings.showAppMsgs then ns.code:consoleOut(msg) end
-end
 function sync:StartStatusUpdate(starting, failed)
     local syncTime = date('%H:%M %m/%d/%Y')
     local master = self.syncMaster and 'Master' or 'Client'
@@ -35,15 +32,14 @@ function sync:StartStatusUpdate(starting, failed)
     if starting then
         self.syncStart = GetTime()
         ns.code:consoleOut(master..' sync started at '..syncTime)
-        ns.MainScreen:SyncStatus(true, self.syncMaster, ns.code:cText('FF00FF00', 'Performing Sync'))
+        ns.screen:UpdateStatus(true)
     else
         if not failed then ns.db.settings.lastSync = syncTime end
         ns.code:consoleOut(master..' sync complete at '..syncTime)
         if self.syncMaster then
-            ns.code:consoleOut('Total sync time '..(GetTime() - self.syncStart)) end
+            ns.code:checkOut('Total sync time '..format('%.02f', GetTime() - self.syncStart)) end
             self.syncMaster, self.masterName = nil, nil
-            ns.MainScreen:GetMessageList()
-        ns.MainScreen:SyncStatus(false)
+        ns.screen:UpdateStatus(false)
     end
 end
 function sync:SendCommMessage(msg, chatType, target)
@@ -59,12 +55,12 @@ function sync:OnCommReceived(prefix, message, distribution, sender)
 
     local success, tblData = false, nil
     if not message:match('SYNC_') then
-        sync:consoleOut('Decoding message from '..sender)
+        ns.code:checkOut('Decoding message from '..sender)
         local decodedWowMessage = LibDeflate:DecodeForWoWAddonChannel(message)
         local decompressedData = LibDeflate:DecompressDeflate(decodedWowMessage)
         success, tblData = GRADDON:Deserialize(decompressedData)
-        if success then sync:consoleOut(sender..' message was decoded successfully.')
-        else sync:consoleOut(sender..' message FAILED to decode.') end
+        if success then ns.code:checkOut(sender..' message was decoded successfully.')
+        else ns.code:checkOut(sender..' message FAILED to decode.') end
     end
 
     if self.syncMaster then -- Master Communications
@@ -80,6 +76,7 @@ end
 
 -- Master Sync Routines
 function sync:StartSyncMaster()
+    if ns.screen.syncState then return end
     sync:StartStatusUpdate(true)
 
     self.gmFound, self.syncMaster, self.masterName = true, true, UnitName('player')
@@ -88,7 +85,7 @@ function sync:StartSyncMaster()
 
     if ns.db.settings.showAppMsgs then
         local c = 0
-        for _ in pairs(ns.dbInv.invitedPlayers or {}) do c = c + 1 end
+        for _ in pairs(ns.dbInv or {}) do c = c + 1 end
         self.startCount = c
     end
 
@@ -112,7 +109,7 @@ function sync:MasterSync(msg, sender, ...)
         local clientFound = false
         for k,r in pairs(self.tblSyncClient or {}) do
             clientFound = true
-            sync:consoleOut('Sending data request to '..k)
+            ns.code:checkOut('Sending data request to '..k)
             sync:SendCommMessage('SYNC_DATA_REQUEST', 'WHISPER', k)
             r.timerID = AceTimer:ScheduleTimer('CallBackSync', DATA_WAIT_TIMEOUT, k)
         end
@@ -132,9 +129,9 @@ function sync:MasterSync(msg, sender, ...)
         if allDone then
             if self.showConsole then
                 local c = 0
-                for _ in pairs(ns.dbInv.invitedPlayers or {}) do c = c + 1 end
-                sync:consoleOut('You started with '..self.startCount..' invited players.')
-                sync:consoleOut('You now have '..c..' players that have received and invite.')
+                for _ in pairs(ns.dbInv or {}) do c = c + 1 end
+                ns.code:checkOut('You started with '..self.startCount..' invited players.')
+                ns.code:checkOut('You now have '..c..' players that have received and invite.')
             end
             ns.code:consoleOut('Sending merged data to all clients.')
             local syncData = sync:PrepareData()
@@ -162,15 +159,16 @@ end
 -- Data Routines
 function sync:PrepareData()
     if not ns.db then return end
+    local dbGlobal = ns.dbGlobal or {}
 
     self.totalInvited, self.totalBlackListed = 0, 0
     local tblSync = {
         version = GRADDON.version,
-        guildLink = (ns.db.guildInfo and ns.db.guildInfo.guildLink) and ns.db.guildInfo.guildLink or nil,
+        guildLink = ns.dbGlobal.guildData and (dbGlobal.guildData.guildLink or '') or '',
+        guildInfo = dbGlobal.guildInfo or '',
         isGuildLeader = IsGuildLeader() or false,
-        gmData = ns.dbGlobal or {},
-        invitedPlayers = ns.dbInv.invitedPlayers or {},
-        blackList = ns.dbBL.blackList or {},
+        invitedPlayers = ns.dbInv or {},
+        blackList = ns.dbBL or {},
     }
 
     local serializedData = GRADDON:Serialize(tblSync)
@@ -178,6 +176,7 @@ function sync:PrepareData()
     return LibDeflate:EncodeForWoWAddonChannel(compressedData)
 end
 function sync:ParseSyncData(tblData, sender)
+    local dbGlobal = ns.dbGlobal or {}
     local invitedCount, blackListCount, blRemovedCount = 0, 0, 0
     if not tblData.version or GRADDON.version ~= tblData.version then
         ns.code:consoleOut('Version mismatch with '..sender, 'FFFFFF00')
@@ -186,28 +185,32 @@ function sync:ParseSyncData(tblData, sender)
         return
     end
 
-    if tblData.isGuildLeader and not IsGuildLeader() then
-        if (tblData.guildLink and ns.db.guildInfo.guildLink) and not IsGuildLeader() then
-            ns.db.guildInfo.guildLink = tblData.guildLink end
-        ns.dbGlobal.messageList = tblData.gmData.messageList or {}
-        ns.dbGlobal.greeting = tblData.gmData.greeting or false
-        ns.dbGlobal.greetingMsg = tblData.gmData.greetingMsg or nil
-        ns.dbGlobal.antiSpam = tblData.gmData.antiSpam or false
-        ns.dbGlobal.reinviteAfter = tblData.gmData.rememberTime or 5
+    if tblData.isGuildLeader then
+        dbGlobal.guildInfo = tblData.guildInfo
+        dbGlobal.guildData.guildLink = tblData.guildLink ~= '' and tblData.guildLink or (dbGlobal.guildData.guildLink or nil)
+    elseif not IsGuildLeader() then
+        dbGlobal.guildData.guildLink = tblData.guildLink ~= '' and tblData.guildLink or (dbGlobal.guildData.guildLink or nil)
+        if dbGlobal.guildInfo ~= '' then
+            dbGlobal.guildInfo.messageList = tblData.guildInfo.messageList and #tblData.guildInfo.messageList > 0 and tblData.guildInfo.messageList or dbGlobal.guildInfo.messageList
+            dbGlobal.guildInfo.antiSpam = tblData.guildInfo.antiSpam and tblData.guildInfo.antiSpam or dbGlobal.guildInfo.antiSpam
+            dbGlobal.guildInfo.reinviteAfter = tblData.guildInfo.reinviteAfter and tblData.guildInfo.reinviteAfter or dbGlobal.guildInfo.reinviteAfter
+            dbGlobal.guildInfo.greeting = tblData.guildInfo.greeting
+            dbGlobal.guildInfo.greetingMsg = tblData.guildInfo.greetingMsg
+        end
     end
 
-    local tblInvited = ns.dbInv.invitedPlayers or {}
+    local tblInvited = ns.dbInv or {}
     for k,r in pairs(tblData.invitedPlayers or {}) do
         if not tblInvited[k] then
             invitedCount = invitedCount + 1
             tblInvited[k] = r
         end
     end
-    ns.dbInv.invitedPlayers = tblInvited
+    ns.dbInv = tblInvited
 
-    local tblBlackList = ns.dbBL.blackList or {}
+    local tblBlackList = ns.dbBL or {}
     for k,r in pairs(tblData.blackList or {}) do
-        if r.markForDelete then
+        if r.markedForDelete then
             blRemovedCount = blRemovedCount + 1
             tblBlackList[k].markedForDelete = true
         elseif not tblBlackList[k] then
@@ -215,11 +218,13 @@ function sync:ParseSyncData(tblData, sender)
             tblBlackList[k] = r
         end
     end
-    ns.dbBL.blackList = tblBlackList
+    ns.dbBL = tblBlackList
 
-    sync:consoleOut(sender..' added '..invitedCount..' new invited players.')
-    sync:consoleOut(sender..' added '..blackListCount..' new black listed players.')
-    sync:consoleOut('Finished sync with '..sender)
+    local msg = sender..' added '..invitedCount..' new invited players.'
+    ns.code:checkOut(msg)
+    msg = sender..' added '..blackListCount..' new black listed players.'
+    ns.code:checkOut(msg)
+    ns.code:checkOut('Finished sync with '..sender)
 end
 sync:Init()
 
