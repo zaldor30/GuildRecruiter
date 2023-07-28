@@ -21,6 +21,8 @@ Guild Recruiter is a powerful tool for getting new guild members to join.
 * Use /gr or /recruiter to access the addon outside the minimap icon.
 * /gr help or /recruiter help to see a list of options you can use.
 * Make sure you go into the settings to add a message, custom filters etc.
+* To move the screen, click the lock next to the X button.  When it is green,
+    you can move the screen.  Click the lock again to lock it in place.
 
 There is a filter by class and another by race that is included with the addon.
 
