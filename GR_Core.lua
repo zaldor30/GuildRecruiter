@@ -3,6 +3,8 @@ ns.tblEvents = {} -- Registered Events
 
 local WAIT_BEFORE_INIT = 2
 
+local MATCH_VERSION = '2.0'
+
 local AceGUI = LibStub("AceGUI-3.0")
 local AC, ACD = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0')
 local icon, DB = LibStub('LibDBIcon-1.0'), LibStub('AceDB-3.0')
@@ -88,12 +90,12 @@ function core:OnPlayerLoggedIn() -- Real Initialize
         isSettings = false
     end
 
-    if not core:RegisterGuild() then return end
-    if not GRADDON.clubID and not ns.dbGlobal.guildData then return
-    elseif ns.dbGlobal.guildData then GRADDON.clubID = ns.dbGlobal.guildData.clubID end
+    self.shutdown = core:RegisterGuild()
+    if ns.dbGlobal.guildData then GRADDON.clubID = ns.dbGlobal.guildData.clubID end
 
-    if not GRADDON.clubID or not IsInGuild() then
-        ns.code:consoleOut('You are not currently in a guild.', nil, true)
+    if not CanGuildInvite() or not GRADDON.clubID or not IsInGuild() or self.shutdown then
+        if not GRADDON.clubID or not IsInGuild() then return
+        elseif not CanGuildInvite() then ns.code:consoleOut('You do not have permission to invite players to the guild.', nil, true) end
         ns.code:consoleOut('Guild Recruiter will be disabled.', nil, true)
         return
     end
@@ -123,7 +125,7 @@ function core:OnPlayerLoggedIn() -- Real Initialize
         if r.selected then r.selected = false end
     end -- Reset selection state for options
 
-    if not GRADDON.db.global.version or GRADDON.db.global.version ~= self.addonSettings.global.version then
+    if not GRADDON.db.global.version or not GRADDON.db.global.version:match(MATCH_VERSION) then
         GRADDON.db.global.version = self.addonSettings.global.version
         ns.infoScreen()
     end
@@ -150,7 +152,6 @@ end
 function core:dbChanges()
     local clubID = C_Club.GetGuildClubId() or GRADDON.clubID or nil
     if ns.db.settings and not ns.db.reloaded then
-        ns.infoScreen()
         C_Timer.After(.1, function()
             ns.code:consoleOut(ns.code:cText('FFFF0000', 'Guild Recruiter data has been reset!!'))
             ns.code:consoleOut('Your black list, invite log and analytics should be saved.')
@@ -225,8 +226,8 @@ function core:RegisterGuild()
     local clubID = C_Club.GetGuildClubId() or nil
     if not clubID or not IsInGuild() then
         self.isEnabled = false
-        ns.code:consoleOut('Could not find an active guild, Guild Recruiter is not available.')
-        return false
+        ns.code:checkOut('Could not find an active guild, Guild Recruiter is not available.')
+        return true
     end
 
     local gLink = nil
@@ -244,7 +245,7 @@ function core:RegisterGuild()
     end
     if not g then
         ns.code:consoleOut('There was an issue accessing the guild data.')
-        return
+        return true
     end
 
     self.isGuildLeader = IsGuildLeader()
@@ -255,7 +256,7 @@ function core:RegisterGuild()
         g.guildData = {clubID = clubID, guildName = gName, guildLink = gLink }
     elseif C_Club.GetClubInfo(clubID) then g.guildData = {clubID = clubID, guildName = C_Club.GetClubInfo(clubID).name, guildLink = (g.guildData.guildLink or gLink or nil) } end
 
-    return clubID or false
+    return false
 end
 function core:StartMaintenance()
     local db, dbInv, dbBL = ns.db.settings, ns.dbInv, ns.dbBL
@@ -297,7 +298,8 @@ local function HandlesGlobalMouseEvent(self, button, event)
 	return false
 end
 local function DropDownOnShow(self)
-    if not ns.db or not ns.db.settings.showContext then return end
+    if core.shutdown then return
+    elseif not ns.db or not ns.db.settings or not ns.db.settings.showContext then return end
 
     local dropdown = self.dropdown
     local function FinishFrame()

@@ -164,6 +164,7 @@ function sync:PrepareData()
     self.totalInvited, self.totalBlackListed = 0, 0
     local tblSync = {
         version = GRADDON.version,
+        dbVersion = ns.db.settings.dbVer,
         guildLink = ns.dbGlobal.guildData and (dbGlobal.guildData.guildLink or '') or '',
         guildInfo = dbGlobal.guildInfo or '',
         isGuildLeader = IsGuildLeader() or false,
@@ -175,15 +176,28 @@ function sync:PrepareData()
     local compressedData = LibDeflate:CompressDeflate(serializedData)
     return LibDeflate:EncodeForWoWAddonChannel(compressedData)
 end
+function sync:IncorrectVersionOutput(dbVersion, version, sender)
+    if ns.db.settings.dbVer ~= dbVersion then
+        ns.code:consoleOut('Database version mismatch with '..sender, 'FFFFFF00')
+        ns.code:consoleOut('Your version: '..GRADDON.version..' running database version '..ns.db.settings.dbVer, 'FFFF0000')
+        ns.code:consoleOut('Their version: '..(version or 'Unknown')..' running database version '..(dbVersion or 'Unknown'), 'FFFF0000')
+        return
+    end
+    if not version or GRADDON.version ~= version then
+        ns.code:consoleOut('Addon version mismatch with '..sender, 'FFFFFF00')
+        ns.code:consoleOut('Your version: '..GRADDON.version, 'FFFF0000')
+        ns.code:consoleOut('Their version: '..(version or 'Unknown'), 'FFFF0000')
+    end
+end
 function sync:ParseSyncData(tblData, sender)
     local dbGlobal = ns.dbGlobal or {}
     local invitedCount, blackListCount, blRemovedCount = 0, 0, 0
-    if not tblData.version or GRADDON.version ~= tblData.version then
-        ns.code:consoleOut('Version mismatch with '..sender, 'FFFFFF00')
-        ns.code:consoleOut('Your version: '..GRADDON.version, 'FFFF0000')
-        ns.code:consoleOut('Their version: '..(tblData.version or 'Unknown'), 'FFFF0000')
+    if ns.db.settings.dbVer ~= tblData.dbVersion then
+        sync:IncorrectVersionOutput(tblData.dbVersion, tblData.version, sender)
         return
     end
+    if not tblData.version or GRADDON.version ~= tblData.version then
+        sync:IncorrectVersionOutput(tblData.dbVersion, tblData.version, sender) end
 
     if tblData.isGuildLeader then
         dbGlobal.guildInfo = tblData.guildInfo
