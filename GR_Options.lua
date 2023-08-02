@@ -328,6 +328,15 @@ ns.addonSettings = {
                     set = function(_, val) ns.db.settings.showAppMsgs = val end,
                     get = function() return ns.db.settings.showAppMsgs end,
                 },
+                optUpdateMsg = {
+                    name = 'Show addon changes window.',
+                    desc = 'A window pops up with the changes in the current version, once per version.',
+                    type = 'toggle',
+                    width = 'full',
+                    order = 2,
+                    set = function(_, val) ns.db.settings.showUpdates = val end,
+                    get = function() return ns.db.settings.showUpdates end,
+                },
                 optContextMnu = {
                     name = 'Show context menu for guild invite/black list.',
                     desc = 'When you right click on a player in chat, an extra menu will appear to invite to guild or black list.',

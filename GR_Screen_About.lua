@@ -4,7 +4,7 @@ local aceGUI = LibStub("AceGUI-3.0")
 ns.about = {}
 local about = ns.about
 function about:StartAboutScreen()
-    ns.screen.fMain:SetSize(500, 335)
+    ns.screen.fMain:SetSize(500, 355)
     ns.screen:ResetMain()
 
     ns.screen.iconBack:Show()
@@ -99,4 +99,14 @@ function about:StartAboutScreen()
     editBMC:SetText('https://bmc.link/alwaysbeconvoking')
     editBMC:SetRelativeWidth(.7)
     inline:AddChild(editBMC)
+
+    local btnMajor = aceGUI:Create('Button')
+    btnMajor:SetText('v2.0 Changes')
+    btnMajor:SetCallback('OnClick', function() ns.infoScreen(true) end)
+    inline:AddChild(btnMajor)
+
+    local btnMinor = aceGUI:Create('Button')
+    btnMinor:SetText('v'..MATCH_VERSION..' Changes')
+    btnMinor:SetCallback('OnClick', function() ns.infoScreen() end)
+    inline:AddChild(btnMinor)
 end

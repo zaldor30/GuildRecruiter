@@ -18,6 +18,22 @@ function ds:WhatsNew()
 
     return msg
 end
+MATCH_VERSION = '2.0.3'
+function ds:LatestUpdates()
+    local msg = ns.code:cText('FFFFFF00', "What's new in v2.0.3?").."\n \n"
+    msg = msg..'This will actually incorporate the changes from 2.0.2 as well.\n \n'
+    msg = msg..ns.code:cText('FFFFFF00', "Changes in 2.0.3:").."\n"
+    msg = msg..'* Fixed issue where accepted invites were double couting.\n \n'
+    msg = msg..ns.code:cText('FFFFFF00', "Changes in 2.0.2:").."\n"
+    msg = msg..'* Fixed a bug where the addon would not load if you were not in a guild.\n'
+    msg = msg..'* Cleaned up verbose messaging when logging in with a character that is not in a guild.\n'
+    msg = msg..'* Fixed issue for info screen showing everytime an update occurs.\n'
+    msg = msg..'* Changed sync to verify database version an not app version.\n'
+    msg = msg..'* Created a reminder to have other officers update their addon.\n'
+    msg = msg..'* You can turn off seeing new changes in settings.'
+
+    return msg
+end
 function ds:classes()
     return {
         ['WARRIOR'] = { id = 1, name = 'Warrior', classFile = 'WARRIOR', tank = true, healer = false, melee = true, ranged = false },

@@ -201,7 +201,6 @@ function invite:RegisterGuildInviteEvent()
             if self.tblSent[pName] then
                 ns.code:consoleOut(pName..' joined the guild!')
                 if  invite.showGreeting and  invite.msgGreeting ~= '' and pName then
-                    ns.scanner.analytics:TotalAccepted()
                     SendChatMessage(ns.code:GuildReplace( invite.msgGreeting, pName):gsub('<', ''):gsub('>', ''), 'WHISPER', nil, pName)
                 end
                 if  invite.showWelcome and  invite.msgWelcome ~= '' then
