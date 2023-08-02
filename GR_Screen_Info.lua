@@ -68,11 +68,21 @@ function ns.infoScreen()
     label:SetFullWidth(true)
     aceScroll:AddChild(label)
 
-    local btnReload = aceGUI:Create('Button')
-    btnReload:SetText('Reload UI')
-    btnReload:SetWidth(100)
-    btnReload:SetCallback('OnClick', function()
-        ReloadUI()
-    end)
-    aceMain:AddChild(btnReload)
+    if ns.db.settings.dbVer == ns.core.addonSettings.profile.settings.dbVer then
+        local btnOk = aceGUI:Create('Button')
+        btnOk:SetText('Ok')
+        btnOk:SetWidth(100)
+        btnOk:SetCallback('OnClick', function()
+            f:Hide()
+        end)
+        aceMain:AddChild(btnOk)
+    else
+        local btnReload = aceGUI:Create('Button')
+        btnReload:SetText('Reload UI')
+        btnReload:SetWidth(100)
+        btnReload:SetCallback('OnClick', function()
+            ReloadUI()
+        end)
+        aceMain:AddChild(btnReload)
+    end
 end

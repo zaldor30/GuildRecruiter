@@ -1,3 +1,11 @@
+## v2.0.2 (08/02/2023)
+* Fixed issue with context menu giving error when not in a guild.
+* Cleaned up verbose messaging when logging in with a
+    character that is not in a guild.
+* Fixed issue for info screen showing everytime an update occurs.
+* Changed sync to verify database version an not app version.
+* Created a reminder to have other officers update their addon.
+
 ## v2.0.1 (7/28/2023)
 * Changed the look of the interface.
 * Saves where you move the interface.
