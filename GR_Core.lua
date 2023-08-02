@@ -3,8 +3,6 @@ ns.tblEvents = {} -- Registered Events
 
 local WAIT_BEFORE_INIT = 2
 
-local MATCH_VERSION = '2.0'
-
 local AceGUI = LibStub("AceGUI-3.0")
 local AC, ACD = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0')
 local icon, DB = LibStub('LibDBIcon-1.0'), LibStub('AceDB-3.0')
@@ -32,6 +30,7 @@ function core:Init()
                 showContext = true,
                 showAppMsgs = false,
                 showTooltips = true,
+                showUpdates = true,
                 -- Invite Settings
                 compactMode = false,
                 scanWaitTime = 6,
@@ -125,9 +124,12 @@ function core:OnPlayerLoggedIn() -- Real Initialize
         if r.selected then r.selected = false end
     end -- Reset selection state for options
 
+    ns.db.settings.showUpdates = ns.db.settings.showUpdates == nil and true or ns.db.settings.showUpdates
     if not GRADDON.db.global.version or not GRADDON.db.global.version:match(MATCH_VERSION) then
+        if dbMatch then
+            if ns.db.settings.showUpdates or ns.db.settings.showUpdates == nil then ns.infoScreen() end
+        else ns.infoScreen() end
         GRADDON.db.global.version = self.addonSettings.global.version
-        ns.infoScreen()
     end
 
     ns.code:consoleOut(GR_VERSION_INFO..' is active.', nil, true)

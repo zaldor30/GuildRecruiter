@@ -1,8 +1,21 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
 local aceGUI = LibStub("AceGUI-3.0")
 
-function ns.infoScreen()
-    local f = CreateFrame('Frame', 'INFO_Screen_Frame', UIParent, 'BackdropTemplate')
+ns.info = {}
+ns.info.frame = nil
+ns.info.inline = nil
+function ns.infoScreen(forceDBUpdate)
+    if not ns.info.frame then
+        ns.info.frame = CreateFrame('Frame', 'INFO_Screen_Frame', UIParent, 'BackdropTemplate')
+    else
+        if ns.info.inline then
+            ns.info.inline.frame:Hide()
+            ns.info.inline.frame:SetParent(UIParent)
+            ns.info.inline = nil
+        end
+        ns.info.frame:Hide()
+    end
+    local f = ns.info.frame
     f:SetBackdrop(DEFAULT_FRAME_TEMPLATE)
     f:SetBackdropColor(0, 0, 0, .75)
     f:SetBackdropBorderColor(1, 1, 1, 1)
@@ -50,39 +63,46 @@ function ns.infoScreen()
     local aceMain = aceGUI:Create('InlineGroup')
     aceMain:SetLayout('Flow')
     aceMain:SetWidth(f:GetWidth() - 20)
-    aceMain:SetHeight(300)
     aceMain.frame:SetParent(f)
     aceMain.frame:SetPoint("TOP", f, "TOP", 0, -10)
+    ns.info.inline = aceMain
+    ns.info.inline:SetUserData("hidden", false)
     aceMain.frame:Show()
 
     local aceScroll = aceGUI:Create('ScrollFrame')
     aceScroll:SetLayout('Flow')
     aceScroll:SetFullWidth(true)
-    aceScroll:SetHeight(300)
     aceMain:AddChild(aceScroll)
 
     local label = aceGUI:Create('Label')
-    label:SetText(ns.datasets:WhatsNew())
+    label:SetText('')
     label:SetFont(DEFAULT_FONT, 13, 'OUTLINE')
     label:SetColor(1, 1, 1)
     label:SetFullWidth(true)
     aceScroll:AddChild(label)
 
-    if ns.db.settings.dbVer == ns.core.addonSettings.profile.settings.dbVer then
-        local btnOk = aceGUI:Create('Button')
-        btnOk:SetText('Ok')
-        btnOk:SetWidth(100)
-        btnOk:SetCallback('OnClick', function()
+    local button = aceGUI:Create('Button')
+    button:SetWidth(100)
+    aceMain:AddChild(button)
+
+    local height = 275
+    if forceDBUpdate or ns.db.settings.dbVer == ns.core.addonSettings.profile.settings.dbVer then
+        height = forceDBUpdate and height or 225
+        label:SetText(forceDBUpdate and ns.datasets:WhatsNew() or ns.datasets:LatestUpdates())
+        button:SetText('Ok')
+        button:SetCallback('OnClick', function()
             f:Hide()
         end)
-        aceMain:AddChild(btnOk)
     else
-        local btnReload = aceGUI:Create('Button')
-        btnReload:SetText('Reload UI')
-        btnReload:SetWidth(100)
-        btnReload:SetCallback('OnClick', function()
+        label:SetText(ns.datasets:WhatsNew())
+        button:SetText('Reload UI')
+        button:SetCallback('OnClick', function()
             ReloadUI()
         end)
-        aceMain:AddChild(btnReload)
     end
+
+    f:SetHeight(height + 85)
+    f:Show()
+    aceMain:SetHeight(height)
+    aceScroll:SetHeight(height)
 end
