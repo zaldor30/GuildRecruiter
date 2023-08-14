@@ -18,7 +18,7 @@ function ds:WhatsNew()
 
     return msg
 end
-MATCH_VERSION = '2.0.3'
+MATCH_VERSION = '2.0.4'
 function ds:LatestUpdates()
     local msg = ns.code:cText('FFFFFF00', "What's new in v2.0.3?").."\n \n"
     msg = msg..'This will actually incorporate the changes from 2.0.2 as well.\n \n'
