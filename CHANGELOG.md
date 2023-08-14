@@ -1,4 +1,10 @@
-## v2.0.2 (08/02/2023)
+## Warning: Utilization of a guild recruitment addon can lead to a player being flagged for spamming.  Please use this addon responsibly.
+
+## 2.0.4
+* Fix an error that displays if you are not in a guild.
+* Fixes to the sync system.
+
+## v2.0.2 and v2.0.3 (08/02/2023)
 * Fixed issue with context menu giving error when not in a guild.
 * Cleaned up verbose messaging when logging in with a
     character that is not in a guild.
