@@ -8,6 +8,9 @@
 
 Guild Recruiter is a powerful tool for getting new guild members to join.
 
+## Warning: Utilization of a guild recruitment addon can lead to a player being flagged for spamming.  Please use this addon responsibly.
+<div align="center">This goes for any guild recruitment addon, not just Guild Recruiter.</div>
+
 ## Features
 
 * Custom messages with ability to embed your guild link.
