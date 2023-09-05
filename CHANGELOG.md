@@ -1,4 +1,5 @@
-## Warning: Utilization of a guild recruitment addon can lead to a player being flagged for spamming.  Please use this addon responsibly.
+## 2.0.5
+* Bump in World of Warcraft versioning for 10.1.7
 
 ## 2.0.4
 * Fix an error that displays if you are not in a guild.
