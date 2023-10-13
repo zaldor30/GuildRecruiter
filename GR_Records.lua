@@ -16,16 +16,15 @@ local function GuildRosterHandler(...)
     if not msg or not invite.notifyActive then return end
 
     local showWelcome = ns.settings.sendWelcome or false
-    local msgWelcome = ns.settings.welcomeMessage or ''
+    local msgWelcome = ns.dbGlobal.guildInfo.welcomeMsg and ns.dbGlobal.guildInfo.welcomeMsg or (ns.settings.welcomeMessage or '')
 
-    local showGreeting = ns.settings.sendGreeting or ns.dbGlobal.guildInfo.greeting or false
-    local msgGreeting = ns.dbGlobal.guildInfo.greetingMsg ~= '' and ns.dbGlobal.guildInfo.greetingMsg or ns.settings.greetingMsg
+    local showGreeting = ns.dbGlobal.guildInfo.greeting or ns.settings.sendGreeting or false
+    local msgGreeting = ns.dbGlobal.guildInfo.greetingMsg and ns.dbGlobal.guildInfo.greetingMsg or (ns.settings.greetingMsg or '')
 
     local newMsg = msg:gsub("'", ''):gsub('No Player Named ', '')
     local pName = newMsg:match("([^%s]+)")--("^(.-)%s")
     pName = pName and pName:gsub('-'..GetRealmName(), '') or pName
 
-    --print(pName, msg, invite.tblSent[pName])
     if msg:match('is already in a guild') then
         ns.scanner:TotalInvited(-1)
         if invite.tblSent[pName] then invite.tblSent[pName] = nil end
@@ -60,8 +59,8 @@ local function GuildRosterHandler(...)
             SendChatMessage(ns.code:variableReplacement(msgGreeting, pName, 'REMOVE<>'), 'WHISPER', nil, pName)
         end
         if showWelcome and  msgWelcome ~= '' then
-            C_Timer.After(math.random(5,10), function()
-                SendChatMessage(ns.code:variableReplacement( invite.msgWelcome, pName, 'REMOVE<>'):gsub('<', ''):gsub('>', ''), 'GUILD')
+            C_Timer.After(math.random(3,8), function()
+                SendChatMessage(ns.code:variableReplacement(msgWelcome, pName, 'REMOVE<>'):gsub('<', ''):gsub('>', ''), 'GUILD')
             end)
         end
 
@@ -108,12 +107,6 @@ function invite:InitializeInvite()
 
     self.antiSpam = ns.settings.antiSpam or true
     self.showWhispers = ns.settings.showWhispers or false
-
-    self.showGreeting = ns.settings.sendGreeting or ns.dbGlobal.guildInfo.greeting or false
-    self.msgGreeting = ns.dbGlobal.guildInfo.greetingMsg ~= '' and ns.dbGlobal.guildInfo.greetingMsg or ns.settings.greetingMsg
-
-    self.showWelcome = ns.settings.sendWelcome or false
-    self.msgWelcome = ns.settings.welcomeMessage or ''
 
     blackList.tblBlackList = ns.dbBL or {}
 end
@@ -203,12 +196,6 @@ function invite:AddToSentList(name, class)
 
     ns.dbInv[name] = invite:new(class, name)
     return true
-end
-
-function invite:RegisterGuildInviteEvent()
-    
-
-    
 end
 invite:Init()
 
