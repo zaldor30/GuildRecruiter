@@ -1,5 +1,5 @@
 ## Interface: 100107
-## Version: 2.0.5
+## Version: 2.1.33
 ## Title: Guild Recruiter
 ## Notes: Allows guild officers to recruite new members
 ## Author: Moonfury
@@ -24,18 +24,19 @@ Libs\LibDeflate\LibDeflate.lua
 Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
 Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
 
-GR_AppInit.lua
+GR_App.lua
 GR_Datasets.lua
 
-GR_fnSync.lua
-GR_fnGeneral.lua
+GR_Code.lua
+GR_Sync.lua
+GR_Records.lua
+
+Screens\GR_Base.lua
+Screens\GR_Home.lua
+#Screens\GR_About.lua
+Screens\GR_Scanner.lua
+Screens\GR_WhatsNew.lua
+Screens\GR_Analytics.lua
 
 GR_Core.lua
-GR_Options.lua
-
-GR_Screen.lua
-GR_Screen_Main.lua
-GR_Screen_Info.lua
-GR_Screen_About.lua
-GR_Screen_Scanner.lua
-GR_Screen_Analytics.lua
+GR_Settings.lua

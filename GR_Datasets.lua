@@ -1,65 +1,121 @@
 -- Pre-defined Datasets
 local _, ns = ... -- Namespace (myaddon, namespace)
-ns.datasets = {}
-local ds = ns.datasets
 
--- All Classes
+ns.ds = {}
+local ds = ns.ds
+
+ns.ds.GR_VERSION = '2.1.33' -- Show 'What's New' only if versions match
 function ds:Init()
-    self.tblAllRaces = ds:races() -- Only for player faction
-    self.tblAllClasses = ds:classes()
-    self.tblClassesByName = ds:classesByName()
+    self.tblBadZones = ds:invalidZones()
+    self.tblBadZonesByName = nil
+    self.tblRaces = ds:races() -- Only for player faction
+    self.tblClasses = ds:classes()
+    self.tblClassesByName = nil
 
-    self.tblBadByName = {}
-
-    self.tblAllMessages = {}
+    self.tblWhispers = {}
+    self.tblConnected = ds:GetConnectedRealms()
 end
 function ds:WhatsNew()
-    local msg = ns.code:cText('FFFFFF00', "What's new in v2.0.0?").."\n \nI have completely rewrote the whole addon.  Why did I do this?  Because I hated the previous interface and while I reused most of the code, I went through it as I rebuilt the interface.  Still needs more tweaking, but is much better than before.\n \nI have added some about screens which have links to support options, I would appreciate feedback and any issues you may encounter.\n \n"..ns.code:cText('FFFFFF00', "Changes in 2.0:").."\nYou can now move the screen and it will retain its new position.\nMajorly overhauled the database.\nOne account can be in multiple guilds with this addon.\nDid a lot of work in the settings.\nLots of code fixes and clean up.\n \nYou will need to reload your interface, use \\rl or click the button bellow."
+    local update = false -- True and will save seen message
+    local height = 300 -- Adjust size of what's new window
+    local title, msg = '', ''
+    title = ns.code:cText('FFFFFF00', "What's new in v"..GRADDON.version.."?")
+    msg = [[
+        * Fixed invite issue with connected realms (Need feedback).
+        * Fixed anti-spam issue with connected realms.
+        * UI improvements and clean up.
+        * Default message is guild wide on your account.
+            Meaning, if you change it on one character, it will change on all.
+        * Added option to disable the 'What's New' message.
+        * Added skip if you don't want to invite a player right now,
+            it will add them to the skip list.
+        * Scans now remember where you left off if you close
+            the addon and reopen (note: not if you log off or reload UI.)
+        * Compact mode now remembers when you click on the icon.
+        * Opened GM settings from any character on GM's account.
+        * Added guild welcome message to the GM settings window.
+    ]]
 
-    return msg
-end
-MATCH_VERSION = '2.0.4'
-function ds:LatestUpdates()
-    local msg = ns.code:cText('FFFFFF00', "What's new in v2.0.3?").."\n \n"
-    msg = msg..'This will actually incorporate the changes from 2.0.2 as well.\n \n'
-    msg = msg..ns.code:cText('FFFFFF00', "Changes in 2.0.3:").."\n"
-    msg = msg..'* Fixed issue where accepted invites were double couting.\n \n'
-    msg = msg..ns.code:cText('FFFFFF00', "Changes in 2.0.2:").."\n"
-    msg = msg..'* Fixed a bug where the addon would not load if you were not in a guild.\n'
-    msg = msg..'* Cleaned up verbose messaging when logging in with a character that is not in a guild.\n'
-    msg = msg..'* Fixed issue for info screen showing everytime an update occurs.\n'
-    msg = msg..'* Changed sync to verify database version an not app version.\n'
-    msg = msg..'* Created a reminder to have other officers update their addon.\n'
-    msg = msg..'* You can turn off seeing new changes in settings.'
-
-    return msg
+    return title, msg, height, update
 end
 function ds:classes()
     return {
-        ['WARRIOR'] = { id = 1, name = 'Warrior', classFile = 'WARRIOR', tank = true, healer = false, melee = true, ranged = false },
-        ['PALADIN'] = { id = 2, name = 'Paladin', classFile = 'PALADIN', tank = true, healer = true, melee = true, ranged = false },
-        ['HUNTER'] = { id = 3, name = 'Hunter', classFile = 'HUNTER', tank = false, healer = false, melee = false, ranged = true },
-        ['ROGUE'] = { id = 4, name = 'Rogue', classFile = 'ROGUE', tank = false, healer = false, melee = true, ranged = false },
-        ['PRIEST'] = { id = 5, name = 'Priest', classFile = 'PRIEST', tank = false, healer = false, melee = false, ranged = true },
-        ['DEATHKNIGHT'] = { id = 6, name = 'Death Knight', classFile = 'DEATHKNIGHT', tank = true, healer = false, melee = true, ranged = false },
-        ['SHAMAN'] = { id = 7, name = 'Shaman', classFile = 'SHAMAN', tank = false, healer = true, melee = true, ranged = true },
-        ['MAGE'] = { id = 8, name = 'Mage', classFile = 'MAGE', tank = false, healer = false, melee = false, ranged = true },
-        ['WARLOCK'] = { id = 9, name = 'Warlock', classFile = 'WARLOCK', tank = false, healer = false, melee = false, ranged = true },
-        ['MONK'] = { id = 10, name = 'Monk', classFile = 'MONK', tank = true, healer = true, melee = true, ranged = false },
-        ['DRUID'] = { id = 11, name = 'Druid', classFile = 'DRUID', tank = true, healer = true, melee = true, ranged = true },
-        ['DEMONHUNTER'] = { id = 12, name = 'Demon Hunter', classFile = 'DEMONHUNTER', tank = true, healer = false, melee = true, ranged = false },
-        ['EVOKER'] = { id = 13, name = 'Evoker', classFile = 'EVOKER', tank = false, healer = true, melee = false, ranged = true },
+        ['WARRIOR'] = {
+            id = 1, name = 'Warrior', classFile = 'WARRIOR',
+            color = GRADDON.classInfo['WARRIOR'].color, icon = GRADDON.classInfo['WARRIOR'].icon,
+            tank = true, healer = false, melee = true, ranged = false
+        },
+        ['PALADIN'] = {
+            id = 2, name = 'Paladin', classFile = 'PALADIN',
+            color = GRADDON.classInfo['PALADIN'].color, icon = GRADDON.classInfo['PALADIN'].icon,
+            tank = true, healer = true, melee = true, ranged = false
+        },
+        ['HUNTER'] = {
+            id = 3, name = 'Hunter', classFile = 'HUNTER',
+            color = GRADDON.classInfo['HUNTER'].color, icon = GRADDON.classInfo['HUNTER'].icon,
+            tank = false, healer = false, melee = false, ranged = true
+        },
+        ['ROGUE'] = {
+            id = 4, name = 'Rogue', classFile = 'ROGUE',
+            color = GRADDON.classInfo['ROGUE'].color, icon = GRADDON.classInfo['ROGUE'].icon,
+            tank = false, healer = false, melee = true, ranged = false
+        },
+        ['PRIEST'] = {
+            id = 5, name = 'Priest', classFile = 'PRIEST',
+            color = GRADDON.classInfo['PRIEST'].color, icon = GRADDON.classInfo['PRIEST'].icon,
+            tank = false, healer = false, melee = false, ranged = true
+        },
+        ['DEATHKNIGHT'] = {
+            id = 6, name = 'Death Knight', classFile = 'DEATHKNIGHT',
+            color = GRADDON.classInfo['DEATHKNIGHT'].color, icon = GRADDON.classInfo['DEATHKNIGHT'].icon,
+            tank = true, healer = false, melee = true, ranged = false
+        },
+        ['SHAMAN'] = {
+            id = 7, name = 'Shaman', classFile = 'SHAMAN',
+            color = GRADDON.classInfo['SHAMAN'].color, icon = GRADDON.classInfo['SHAMAN'].icon,
+            tank = false, healer = true, melee = true, ranged = true
+        },
+        ['MAGE'] = {
+            id = 8, name = 'Mage', classFile = 'MAGE',
+            color = GRADDON.classInfo['MAGE'].color, icon = GRADDON.classInfo['MAGE'].icon,
+            tank = false, healer = false, melee = false, ranged = true
+        },
+        ['WARLOCK'] = {
+            id = 9, name = 'Warlock', classFile = 'WARLOCK',
+            color = GRADDON.classInfo['WARLOCK'].color, icon = GRADDON.classInfo['WARLOCK'].icon,
+            tank = false, healer = false, melee = false, ranged = true
+        },
+        ['MONK'] = {
+            id = 10, name = 'Monk', classFile = 'MONK',
+            color = GRADDON.classInfo['MONK'].color, icon = GRADDON.classInfo['MONK'].icon,
+            tank = true, healer = true, melee = true, ranged = false
+        },
+        ['DRUID'] = {
+            id = 11, name = 'Druid', classFile = 'DRUID',
+            color = GRADDON.classInfo['DRUID'].color, icon = GRADDON.classInfo['DRUID'].icon,
+            tank = true, healer = true, melee = true, ranged = true
+        },
+        ['DEMONHUNTER'] = {
+            id = 12, name = 'Demon Hunter', classFile = 'DEMONHUNTER',
+            color = GRADDON.classInfo['DEMONHUNTER'].color, icon = GRADDON.classInfo['DEMONHUNTER'].icon,
+            tank = true, healer = false, melee = true, ranged = false },
+        ['EVOKER'] = {
+            id = 13, name = 'Evoker', classFile = 'EVOKER',
+            color = GRADDON.classInfo['EVOKER'].color, icon = GRADDON.classInfo['EVOKER'].icon,
+            tank = false, healer = true, melee = false, ranged = true
+        },
     }
 end
 function ds:classesByName()
-    local tbl = {}
-	for i=1,GetNumClasses() do
-		local class = C_CreatureInfo.GetClassInfo(i)
-		if class then
-			tbl[class.className] = { classID = class.classID, classFile = class.classFile }
-		end
-        tbl['Evoker'] = { classID = 13, className = 'Evoker'}
-	end
+    local tbl, tblClasses = {}, {}
+	tblClasses = ns.code:sortTableByField(self.tblClasses, 'classFile')
+    for k, r in pairs(tblClasses) do
+        tbl[r.key] = {
+            classID = r.id,
+            class = r.key,
+            classFile = r.classFile,
+        }
+    end
 
 	return tbl
 end
@@ -134,7 +190,7 @@ function ds:invalidZones()
         [1505] = "Nagrand Arena",
         [1672] = "Blade's Edge Arena",
         [2167] = "The Robodrome",
-    
+
             --@version-retail@
         --raids
         [2522] = "Vault of the Incarnates",
@@ -147,19 +203,23 @@ function ds:invalidZones()
         [2520] = "Brackenhide Hollow",
         [2521] = "Ruby Life Pools",
         [2526] = "Algeth'ar Academy",
-        [2527] = "Halls of Infusion", 
+        [2527] = "Halls of Infusion",
             --M+ rotating
-        [1754] = "Freehold", 
-        [1841] = "The Underrot", 
+        [1754] = "Freehold",
+        [1841] = "The Underrot",
         [1458] = "Neltharion's Lair",
-        [657] = "The Vortex Pinnacle", 
+        [657] = "The Vortex Pinnacle",
     }
-
-    for k, r in pairs(tbl) do self.tblBadByName[r] = k end
 
     return tbl
 end
-function ds:AllMessages()
+function ds:invalidZonesByName()
+    self.tblBadZonesByName = {}
+    for k, r in pairs(self.tblBadZones) do
+        self.tblBadZonesByName[r] = k
+    end
+end
+function ds:WhisperMessages(performCheck)
     local dbMessages = ns.db.messages.messageList or nil
     local dbGMessages = ns.dbGlobal.guildInfo.messageList or {}
 
@@ -167,9 +227,25 @@ function ds:AllMessages()
     local tbl = {}
     for _,r in pairs(dbGMessages) do
         r.gmMessage = true
-        tinsert(tbl, r)
+        tbl[#tbl+1] = { desc = r.desc, gmMessage = r.gmMessage, message = r.message }
     end
-    for _,r in pairs(dbMessages or {}) do tinsert(tbl, r) end
-    self.tblAllMessages = tbl
+    for _,r in pairs(dbMessages or {}) do
+        tbl[#tbl+1] = { desc = r.desc, gmMessage = r.gmMessage, message = r.message }
+    end
+
+    if performCheck then
+        local hasGuildLink = (ns.dbGlobal.guildData and ns.dbGlobal.guildData.guildLink) or false
+        for k, r in pairs(tbl) do
+            if not hasGuildLink and strupper(r.message):match('GUILDLINK') then tbl[k] = nil end
+        end
+    end
+
+    return tbl
+end
+function ds:GetConnectedRealms()
+    local tbl = {}
+    for _, r in pairs(GetAutoCompleteRealms() or {}) do tbl[r] = true end
+
+    return tbl
 end
 ds:Init()
