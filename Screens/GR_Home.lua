@@ -50,11 +50,13 @@ function home:EnterHomeScreen()
     for k, r in pairs(ns.db.filter.filterList or {}) do tbl[k+10] = r.desc end
     self.tblFilters = tbl
 
-    if not self.tblFrame.frame then self:BuildHomeScreen() end
+    if self.tblFrame.inline then
+        self.tblFrame.inline:ReleaseChildren()
+    end
 
-    tblScreen.frame:SetSize(500, 300) -- Resize Template
+    tblScreen.frame:SetSize(500, 300) -- Resi
 
-    self.tblFrame.inline.frame:Show()
+    self:BuildHomeScreen()
     self.tblFrame.frame:SetShown(true)
     ns.screen.tblFrame.frame:SetShown(true)
 end
@@ -64,7 +66,7 @@ function home:BuildHomeScreen()
     if not tblScreen.frame then return end
 
     -- Base Regular Frame
-    local f = CreateFrame('Frame', 'GR_HOME_FRAME', tblScreen.frame, 'BackdropTemplate')
+    local f = tblFrame.frame or CreateFrame('Frame', 'GR_HOME_FRAME', tblScreen.frame, 'BackdropTemplate')
     f:SetBackdrop(BackdropTemplate())
     f:SetFrameStrata(DEFAULT_STRATA)
     f:SetBackdropColor(0, 0, 0, 0)
@@ -74,10 +76,11 @@ function home:BuildHomeScreen()
     tblFrame.frame = f
 
     -- Ace GUI Frame for Ace Controls
-    local inline = aceGUI:Create('InlineGroup')
+    local inline = tblFrame.inline or aceGUI:Create('InlineGroup')
     inline:SetLayout('Flow')
     inline:SetPoint('TOPLEFT', f, 'TOPLEFT', 5, -5)
     inline:SetPoint('BOTTOMRIGHT', f, 'BOTTOMRIGHT', 0, 5)
+    inline.frame:SetShown(true)
     tblFrame.inline = inline
 
     -- DropDown for Message Format Ace3

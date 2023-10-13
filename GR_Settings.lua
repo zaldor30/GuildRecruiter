@@ -133,6 +133,12 @@ ns.addonSettings = {
                     set = function(_, val) ns.settings.showAppMsgs = val end,
                     get = function() return ns.settings.showAppMsgs end,
                 },
+                msgHeader1 = {
+                    name = 'Debug Settings',
+                    type = 'header',
+                    width = 'full',
+                    order = 90,
+                },
                 optDebugMsg = {
                     name = 'Shows debug messages in chat.',
                     desc = 'This is used for development, turn off.',
@@ -341,7 +347,7 @@ ns.addonSettings = {
                         local count, tMsg = 0, tblGMMessage.message or nil
                         if ns.code:capitalKeyWord(tMsg, 'GUILDLINK') then
                             tMsg = tMsg:gsub('GUILDLINK', '')
-                            count = strlen(gi.guildName) + 2
+                            count = strlen(gi.guildName) + 9
                         end
                         if ns.code:capitalKeyWord(tMsg, 'GUILDNAME') then
                             tMsg = tMsg:gsub('GUILDNAME', '')
@@ -445,8 +451,14 @@ ns.addonSettings = {
                     set = function(_, val) ns.settings.showWhispers = val end,
                     get = function() return ns.settings.showWhispers end,
                 },
-                optShowPersonalGreeting = {
+                optShowInviteMsg = {
                     order = 3,
+                    name = ns.code:cText('FF00FF00', 'NOTE: You must reload your UI to take effect (/rl).'),
+                    type = 'description',
+                    fontSize = 'medium',
+                },
+                optShowPersonalGreeting = {
+                    order = 4,
                     name = 'Send guild greeting message when invite is accepted.',
                     desc = 'Enable/disable greeting message to newly joined players.',
                     type = 'toggle',
@@ -456,7 +468,7 @@ ns.addonSettings = {
                     get = function() return ns.dbGlobal.guildInfo.greeting or ns.settings.sendGreeting end,
                 },
                 optPersonalGreetingMsg = {
-                    order = 4,
+                    order = 5,
                     name = 'Greeting Message',
                     desc = 'This message will be sent to guild chat when a player accepts invite.',
                     type = 'input',
@@ -466,7 +478,7 @@ ns.addonSettings = {
                     get = function() return ns.dbGlobal.guildInfo.greeting and ns.dbGlobal.guildInfo.greetingMsg or ns.settings.greetingMsg end,
                 },
                 optShowPersonalWelcome = {
-                    order = 5,
+                    order = 6,
                     name = 'Send to guild chat personalized welcome message.',
                     desc = 'This will welcome each player that joins and is seperate from the greeting message.',
                     type = 'toggle',
@@ -476,7 +488,7 @@ ns.addonSettings = {
                     get = function() return ns.settings.sendWelcome end,
                 },
                 optPersonalWelcomeMsg = {
-                    order = 6,
+                    order = 7,
                     name = 'Individual Greeting Message',
                     desc = 'This will make the greeting individualized and shown in guild chat.\nUse PLAYERNAME (in caps) to substitute the name of the player that joined.',
                     type = 'input',
@@ -489,14 +501,14 @@ ns.addonSettings = {
                     end,
                 },
                 optMsgNote = {
-                    order = 7,
+                    order = 8,
                     name = ns.code:cText('FFFFFF00', 'NOTE: ')..'Disabled options are controlled by the Guild Master.',
                     type = 'description',
                     width = 'full',
                     fontSize = 'medium'
                 },
                 optScanInterval = {
-                    order = 8,
+                    order = 9,
                     name = 'Time to wait between scans (default recommended).',
                     desc = 'WoW requires a cooldown period between /who scans, this is the time that the system will wait between scans.',
                     type = 'input',
@@ -508,7 +520,7 @@ ns.addonSettings = {
                     get = function() return tostring(ns.settings.scanWaitTime) end,
                 },
                 optWhoNote = {
-                    order = 9,
+                    order = 10,
                     name = ns.code:cText('FFFFFF00', 'NOTE: ')..'6 seconds seems to give best results, shorter time yields less results.',
                     type = 'description',
                     width = 'full',
@@ -516,7 +528,7 @@ ns.addonSettings = {
                 },
             },
         },
-        mnuMsg = {
+        mnuPersonalMsg = {
             order = 21,
             name = 'Invite Messages',
             type = 'group',
@@ -632,7 +644,7 @@ ns.addonSettings = {
 
                         if ns.code:capitalKeyWord(tMsg, 'GUILDLINK') then
                             tMsg = tMsg:gsub('GUILDLINK', '')
-                            count = strlen(gi.guildName) + 2
+                            count = strlen(gi.guildName) + 9
                         end
                         if ns.code:capitalKeyWord(tMsg, 'GUILDNAME') then
                             tMsg = tMsg:gsub('GUILDNAME', '')

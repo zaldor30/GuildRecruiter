@@ -183,7 +183,7 @@ function invite:RegisterGuildInviteEvent()
 
         UpdateSent()
         invite.tblSent[pName] = nil
-        ns.analytics:TotalUnknown(-1)
+        ns.scanner:TotalUnknown(-1)
     end
 
     ns.events:RegisterEvent('CHAT_MSG_SYSTEM', GuildRosterHandler)

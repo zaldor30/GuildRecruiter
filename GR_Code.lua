@@ -79,6 +79,8 @@ function code:variableReplacement(msg, playerName)
     local gi = ns.dbGlobal.guildData
     if not gi or not msg then return end
 
+    playerName = strsplit('-', playerName)
+
     msg = code:capitalKeyWord(msg, 'GUILDLINK')
     msg = code:capitalKeyWord(msg, 'GUILDNAME')
     msg = code:capitalKeyWord(msg, 'PLAYERNAME')
