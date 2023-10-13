@@ -29,7 +29,7 @@ function GRADDON:OnInitialize(...)
                 if core.stopSync then return end
                 ns.sync:StartSyncServer()
             end
-            C_Timer.After(60, startAutoSync)
+            C_Timer.After(30, startAutoSync)
         end
     end
 

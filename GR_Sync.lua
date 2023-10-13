@@ -13,7 +13,7 @@ local sync = ns.sync
 function AceTimer:CallBackSync(...) sync:OnCommReceived(nil, 'DATA_REQUEST_TIMEOUT', ...) end
 function AceTimer:CallBackRequest(...) sync:OnCommReceived(nil, 'SYNC_REQUEST_TIMEOUT', ...) end
 function AceTimer:CallBackClientTimeOut(sender)
-    ns.code:fOut('Sync request timed out with '..sender)
+    ns.code:fOut('Sync request timed out with '..(sender or 'unknown sender'))
     sync:StopSync()
 end
 function AceTimer:CallBackSyncTimeOut()
@@ -139,7 +139,7 @@ function sync:OnCommReceived(prefix, message, distribution, sender)
         if not self.tblData[sender] then return end
 
         self.tblData[sender] = nil
-        ns.code:fOut('Failed to sync with '..sender)
+        ns.code:fOut('Failed to sync with '..(sender or 'unknown sender'))
 
         local completed, remain = true, 0
         for _, r in pairs(self.tblData) do
@@ -162,6 +162,7 @@ function sync:OnCommReceived(prefix, message, distribution, sender)
         if not clientFound then
             sync:console('No clients found to sync with')
             sync:StopSync()
+            return
         else self:console('Sent sync requests, waiting for response...') end
     end
 
@@ -169,7 +170,7 @@ function sync:OnCommReceived(prefix, message, distribution, sender)
         if message == 'SYNC_REQUEST_HEARD' then
             self.tblData[sender] = {}
             self.tblData[sender].hasReceivedData = false
-            ns.code:dOut('Received sync acknowledgement from '..sender)
+            ns.code:dOut('Received sync acknowledgement from '..(sender or 'unknown sender'))
         elseif message and self.tblData[sender] then
             self:console('Received Client Data from '..(sender or 'remote client.'), 'DEBUG')
 
@@ -188,7 +189,7 @@ function sync:OnCommReceived(prefix, message, distribution, sender)
         if message == 'SYNC_REQUEST' then
             sync:StartSyncClient(sender)
 
-            ns.code:dOut('Received sync request from '..sender)
+            ns.code:dOut('Received sync request from '..(sender or 'unknown sender'))
             sync:SendCommMessage('SYNC_REQUEST_HEARD', 'WHISPER', sender)
 
             self.clientTimer = AceTimer:ScheduleTimer('CallBackClientTimeOut', 10, sender)
@@ -199,7 +200,7 @@ function sync:OnCommReceived(prefix, message, distribution, sender)
             sync:SendCommMessage(self:PrepareDataToSend(), 'WHISPER', sender)
             self:console('Data was sent to '..(sender or 'sync master.'), 'DEBUG')
         elseif sender == self.masterName and message then
-            sync:console('Received Master Data from '..sender)
+            sync:console('Received Master Data from '..(sender or 'unknown sender'))
 
             local decodedWowMessage = LibDeflate:DecodeForWoWAddonChannel(message)
             local decompressedData = LibDeflate:DecompressDeflate(decodedWowMessage)
@@ -211,7 +212,7 @@ function sync:OnCommReceived(prefix, message, distribution, sender)
                 ns.code:fOut(blAdded..' players added to black list')
                 if blRemoved > 0 then
                     ns.code:fOut(blRemoved..' players removed from black list') end
-            else self:console('Failed to decode data from '..sender, 'DEBUG') end
+            else self:console('Failed to decode data from '..(sender or 'unknown sender'), 'DEBUG') end
 
             sync:StopSync()
         end
@@ -221,7 +222,7 @@ end
 -- Data Parsing Routines
 function sync:IncorrectVersionOutput(version, sender)
     if not version or GRADDON.version ~= version then
-        ns.code:fOut('Addon version mismatch with '..sender, 'FFFFFF00')
+        ns.code:fOut('Addon version mismatch with '..(sender or 'unknown sender'), 'FFFFFF00')
         ns.code:fOut('Your version: '..GRADDON.version, 'FFFF0000')
         ns.code:fOut('Their version: '..(version or 'Unknown'), 'FFFF0000')
     end

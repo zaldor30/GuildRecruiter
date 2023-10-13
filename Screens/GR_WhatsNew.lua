@@ -98,6 +98,6 @@ function wn:BuildWhatsNew()
     checkbox.text:SetPoint('RIGHT', checkbox, 'LEFT', -5, 0)
     checkbox.text:SetText('Do not show again')
 
-    if not GRADDON.debug then print('Update') ns.dbGlobal.version = ns.ds.GR_VERSION end
+    if not GRADDON.debug then ns.dbGlobal.version = ns.ds.GR_VERSION end
 end
 wn:Init()
