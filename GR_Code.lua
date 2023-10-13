@@ -75,7 +75,7 @@ function code:capitalKeyWord(input, key)
 
     return input
 end
-function code:variableReplacement(msg, playerName)
+function code:variableReplacement(msg, playerName, removeGT)
     local gi = ns.dbGlobal.guildData
     if not gi or not msg then return end
 
@@ -93,6 +93,8 @@ function code:variableReplacement(msg, playerName)
     msg = (gLink and needGlink) and gsub(msg, 'GUILDLINK', gLink or 'No Guild Link') or msg
     msg = (gName and needGname) and gsub(msg, 'GUILDNAME', gName and '<'..gName..'>' or 'No Guild Name') or msg
     msg = needPlayer and gsub(msg, 'PLAYERNAME', (playerName or 'player')) or msg
+
+    if removeGT then msg = msg:gsub('<', ''):gsub('>', '') end
 
     return msg
 end

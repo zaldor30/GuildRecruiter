@@ -7,6 +7,8 @@ local icon, DB = LibStub('LibDBIcon-1.0'), LibStub('AceDB-3.0')
 ns.core = {}
 local core = ns.core
 
+local function CHAT_MSG_SYSTEM(...) ns.observer:Notify('CHAT_MSG_SYSTEM', ...) end
+
 -- Application Initialization Routine
 function GRADDON:OnInitialize(...)
     if core.isEnabled then return end
@@ -24,6 +26,8 @@ function GRADDON:OnInitialize(...)
             C_Timer.After(1, function() CheckIfInGuild(count + 1) end)
         else
             core:startGuildRecruiter()
+
+            ns.events:RegisterEvent('CHAT_MSG_SYSTEM', CHAT_MSG_SYSTEM)
 
             local function startAutoSync()
                 if core.stopSync then return end
@@ -349,7 +353,7 @@ local function DropDownOnShow(self)
             fInvite:SetPoint('TOPLEFT', fEntry, 'BOTTOMLEFT', 0 , 10)
             fInvite.HandlesGlobalMouseEvent = HandlesGlobalMouseEvent
             fInvite:SetScript('OnMouseDown', function()
-                if fullName then ns.invite:SendInviteToPlayer(fullName, nil, true) end
+                if fullName then ns.invite:InvitePlayer(fullName, select(2, UnitClass(fullName)), true, nil, 'SKIP_CLASS_CHECK') end
                 CloseDropDownMenus()
             end)
 

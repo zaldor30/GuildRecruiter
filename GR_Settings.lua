@@ -133,7 +133,7 @@ ns.addonSettings = {
                     set = function(_, val) ns.settings.showAppMsgs = val end,
                     get = function() return ns.settings.showAppMsgs end,
                 },
-                msgHeader1 = {
+                msgHeader99 = {
                     name = 'Debug Settings',
                     type = 'header',
                     width = 'full',
