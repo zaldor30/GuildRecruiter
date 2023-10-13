@@ -17,7 +17,7 @@ function ds:Init()
 end
 function ds:WhatsNew()
     local update = false -- True and will save seen message
-    local height = 300 -- Adjust size of what's new window
+    local height = 410 -- Adjust size of what's new window
     local title, msg = '', ''
     title = ns.code:cText('FFFFFF00', "What's new in v"..GRADDON.version.."?")
     msg = [[
@@ -34,6 +34,13 @@ function ds:WhatsNew()
         * Compact mode now remembers when you click on the icon.
         * Opened GM settings from any character on GM's account.
         * Added guild welcome message to the GM settings window.
+        * Added auto sync on login (will begin 60 seconds after login).
+        * Fixed issues with auto sync not transferring all data.
+
+        -> Sync with older versions will time out.
+        -> Everyone needs to be on the current version.
+
+        ** Please report any bugs or issues on CurseForge or Discord **
     ]]
 
     return title, msg, height, update

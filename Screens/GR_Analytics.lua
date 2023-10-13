@@ -12,9 +12,9 @@ local function obsCLOSE_SCREENS_SCANNER()
     tblScreen.backButton:SetShown(false)
     tblScreen.statsButton:GetNormalTexture():SetVertexColor(1, 1, 1, 1)
 
-    if tblFrame.frame and tblFrame.controls then
+    if tblFrame.frame and tblFrame then
         tblFrame.frame:SetShown(false)
-        tblFrame.controls.inline.frame:SetShown(false)
+        tblFrame.inline.frame:SetShown(false)
     end
 end
 
@@ -34,7 +34,7 @@ function stats:StartStatsScreen()
     tblScreen.statsButton:GetNormalTexture():SetVertexColor(0, 1, 0, 1)
 
     -- Base Frame for ACE3
-    local f = CreateFrame('Frame', 'GR_STATS_FRAME', tblScreen.frame, 'BackdropTemplate')
+    local f = self.tblFrame.frame or CreateFrame('Frame', 'GR_STATS_FRAME', tblScreen.frame, 'BackdropTemplate')
     f:ClearAllPoints()
     f:SetPoint('TOPLEFT', tblScreen.titleFrame, 'BOTTOMLEFT', -5, 20)
     f:SetPoint('BOTTOMRIGHT', tblScreen.statusBar, 'TOPRIGHT', 0, -5)
@@ -46,19 +46,18 @@ function stats:StartStatsScreen()
     f:SetShown(true)
     self.tblFrame.frame = f
 
-    if tblFrame.inline then
-        tblFrame.inline:ReleaseChildren()
-        tblFrame.inline:Release()
-        tblFrame.controls = nil
+    if self.tblFrame.inline then
+        self.tblFrame.inline:ReleaseChildren()
+        self.tblFrame.controls = nil
     end
 
     -- Inline Group for Player Stats
-    local inline = tblFrame.inline or aceGUI:Create('InlineGroup')
+    local inline = self.tblFrame.inline or aceGUI:Create('InlineGroup')
     inline:SetLayout('Flow')
     inline:SetPoint('TOPLEFT', f, 'TOPLEFT', 5, -5)
     inline:SetPoint('BOTTOMRIGHT', f, 'BOTTOMRIGHT', 0, 5)
     inline.frame:SetShown(true)
-    tblFrame.inline = inline
+    self.tblFrame.inline = inline
 
     local function createStatsLabel(text, value, parent)
         local lbl = aceGUI:Create('Label')

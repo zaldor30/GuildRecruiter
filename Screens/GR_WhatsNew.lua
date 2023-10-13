@@ -6,6 +6,7 @@ local whatsnew, wn = ns.whatsnew, {}
 local function obsCLOSE_SCREENS() whatsnew:CloseWhatsNew() end
 
 function whatsnew:ShowWhatsNew()
+    ns.observer:Notify('CLOSE_SCREENS')
     ns.observer:Register('CLOSE_SCREENS', obsCLOSE_SCREENS)
     wn.title, wn.body, wn.height, wn.update = ns.ds:WhatsNew()
 
@@ -37,7 +38,7 @@ function wn:BuildWhatsNew()
 
     tblScreen.frame:SetSize(tblScreen.frame:GetWidth(), self.height)
 
-    local f = CreateFrame('Frame', 'GR_WhatsNew', tblScreen.frame, 'BackdropTemplate')
+    local f = tblFrame.frame or CreateFrame('Frame', 'GR_WhatsNew', tblScreen.frame, 'BackdropTemplate')
     f:SetBackdrop(BackdropTemplate(BLANK_BACKGROUND))
     f:SetBackdropColor(0, 0, 0, 0)
     f:SetBackdropBorderColor(1, 1, 1, 0)
@@ -68,7 +69,7 @@ function wn:BuildWhatsNew()
     closeButton:SetScript('OnClick', function()
         whatsnew:CloseWhatsNew()
     end)
-    closeButton:SetScript('OnEnter', function() ns.code:createTooltip('Close '..GRADDON.title) end)
+    closeButton:SetScript('OnEnter', function() ns.code:createTooltip("Close What's New?") end)
     closeButton:SetScript('OnLeave', function() GameTooltip:Hide() end)
     closeButton:SetShown(true)
 

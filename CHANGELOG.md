@@ -1,3 +1,24 @@
+## 2.1.33
+This version is a major rework to the code.  I have removed a lot of the old code and replaced it with new code.  This should fix a lot of the issues that have been reported.  I have also added new features and cleaned up the UI.  Please report any issues you find on CurseForge or Discord.
+
+* Fixed invite issue with connected realms (Need feedback).
+* Fixed anti-spam issue with connected realms.
+* UI improvements and clean up.
+* Default message is guild wide on your account.  Meaning, if you change it on one character, it will change on all.
+* Added option to disable the 'What's New' message.
+* Added skip if you don't want to invite a player right now, it will add them to the skip list.
+* Scans now remember where you left off if you close the addon and reopen (note: not if you log off or reload UI.)
+* Compact mode now remembers when you click on the icon.
+* Opened GM settings from any character on GM's account.
+* Added guild welcome message to the GM settings window.
+* Added auto sync on login (will begin 60 seconds after login).
+* Fixed issues with auto sync not transferring all data.
+
+* -> Sync with older versions will time out.
+* -> Everyone needs to be on the current version.
+
+* ** Please report any bugs or issues on CurseForge or Discord **
+
 ## 2.0.5
 * Bump in World of Warcraft versioning for 10.1.7
 

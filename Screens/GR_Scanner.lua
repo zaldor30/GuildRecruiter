@@ -706,7 +706,6 @@ end
 function analytics:TotalBlackList(amt)
     ns.analytics:Blacklisted(amt or 1)
     tblCount['Total_BlackList'] = (tblCount['Total_BlackList'] or 0) + (amt or 1)
-    print('Total Black List: '..(tblCount['Total_BlackList'] and tblCount['Total_BlackList'] or 0))
     analytics:ShowAnalytics()
 end
 function analytics:TotalUnknown(amt)

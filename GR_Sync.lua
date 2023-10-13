@@ -5,7 +5,7 @@ local LibDeflate = LibStub:GetLibrary("LibDeflate")
 
 local COMM_PREFIX = GRADDON.prefix
 local REQUEST_TIMEOUT = 5
-local DATA_WAIT_TIMEOUT = 60
+local DATA_WAIT_TIMEOUT, SYNC_FAIL_TIMER = 60, 60
 
 ns.sync = {}
 local sync = ns.sync
@@ -16,11 +16,16 @@ function AceTimer:CallBackClientTimeOut(sender)
     ns.code:fOut('Sync request timed out with '..sender)
     sync:StopSync()
 end
+function AceTimer:CallBackSyncTimeOut()
+    ns.code:fOut('Sync timed out')
+    sync:StopSync()
+end
 
 function sync:Init()
     self.tblData = {}
 
     self.syncStarted = false
+    self.timeOutTimer = nil
     self.syncStartTime = 0
 
     -- Master Variables
@@ -39,6 +44,11 @@ function sync:console(msg, debug)
 end
 -- Start/Stop Sync Routines
 function sync:StopSync()
+    if self.timeOutTimer then
+        AceTimer:CancelTimer(self.timeOutTimer)
+        self.timeOutTimer = nil
+    end
+
     if self.isMaster then sync:StopMasterSync()
     else sync:StopClientSync() end
 end -- Decide the function to stop the sync
@@ -46,10 +56,14 @@ function sync:StartSyncServer()
     if self.syncStarted then return end
 
     local tblScreen = ns.screen.tblFrame
+
+    ns.core.stopSync = true
     self.isMaster, self.masterName = true, UnitName("player")
 
     self.syncStarted = true
     self.syncStartTime = GetTime()
+
+    self.timeOutTimer = AceTimer:ScheduleTimer('CallBackSyncTimeOut', SYNC_FAIL_TIMER)
 
     tblScreen.syncIcon:GetNormalTexture():SetVertexColor(0, 1, 0, 1)
 
@@ -80,7 +94,11 @@ function sync:StartSyncClient(masterName)
     if self.syncStarted then return end
 
     local tblScreen = ns.screen.tblFrame
+
+    ns.core.stopSync = true
     self.isMaster, self.masterName = false, masterName
+
+    self.timeOutTimer = AceTimer:ScheduleTimer('CallBackSyncTimeOut', SYNC_FAIL_TIMER)
 
     self.syncStarted = true
     self.syncStartTime = GetTime()

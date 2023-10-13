@@ -25,10 +25,11 @@ function GRADDON:OnInitialize(...)
         else
             core:startGuildRecruiter()
 
-            C_Timer.After(60, function()
-                if not core.isEnabled then return end
-                ns.code:dOut('REMEMBER TO ADD THE AUTO SYNC')
-            end)
+            local function startAutoSync()
+                if core.stopSync then return end
+                ns.sync:StartSyncServer()
+            end
+            C_Timer.After(60, startAutoSync)
         end
     end
 
@@ -39,6 +40,8 @@ end
 function core:Init()
     self.isEnabled = false
     self.isGuildLeader = false
+
+    self.stopSync = false
 
     self.addonSettings = {
         profile = {
@@ -147,6 +150,7 @@ function core:startGuildRecruiter()
     -- Startup Console Messages
     if not GRADDON.clubID then self.isEnabled = false end
     if not self.isEnabled then -- Guild Recruiter is not enabled shows only in debug mode
+        self.stopSync = true
         ns.code:dOut('You are not in a guild or do not have permission to invite players to the guild.', nil)
         return
     elseif GRADDON.clubID then -- Guild Recruiter is enabled

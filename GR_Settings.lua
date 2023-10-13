@@ -1042,9 +1042,7 @@ ns.addonSettings = {
                     width = 'full',
                     values = function()
                         local tbl = {}
-                        for k, r in pairs(ns.dbBL or {}) do print(k,r) end
                         for k, r in pairs(ns.dbBL or {}) do
-                            print(k)
                             local name = k
                             name = r.markedForDelete and ns.code:cText('FFFF0000', name) or ns.code:cText('FF00FF00', name)
                             tbl[k] = (name..': '..r.reason) or ''
