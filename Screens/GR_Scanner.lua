@@ -672,7 +672,7 @@ end -- Enable/Disable Buttons
 -- Analytics Update Routines
 local tblCount = {}
 function analytics:ShowAnalytics()
-    if not scan.tblFrame or scan.isCompact then return end
+    if not scan.tblFrame or not scan.tblFrame.frame or scan.isCompact then return end
 
     local tblFrame = scan.tblFrame.controls
     tblFrame.lblTotalScanned:SetText('Total Scanned: '..(tblCount['Total_Scanned'] and tblCount['Total_Scanned'] or 0))
@@ -709,7 +709,8 @@ function analytics:TotalBlackList(amt)
     analytics:ShowAnalytics()
 end
 function analytics:TotalUnknown(amt)
-    tblCount['Total_Unknown'] = (tblCount['Total_Unknown'] or 0) + (amt or 1)
+    local remain = (tblCount['Total_Unknown'] or 0) + (amt or 1)
+    tblCount['Total_Unknown'] = remain > 0 and remain or 0
     analytics:ShowAnalytics()
 end
 scan:Init()

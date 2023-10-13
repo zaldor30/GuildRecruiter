@@ -11,8 +11,81 @@ ns.invite, ns.blackList, ns.analytics = {}, {}, {}
 local invite, blackList, analytics = ns.invite, ns.blackList, ns.analytics
 local ap, ag = nil, nil
 
+local function GuildRosterHandler(...)
+    local _, msg =  ...
+    if not msg or not invite.notifyActive then return end
+
+    local showWelcome = ns.settings.sendWelcome or false
+    local msgWelcome = ns.settings.welcomeMessage or ''
+
+    local showGreeting = ns.settings.sendGreeting or ns.dbGlobal.guildInfo.greeting or false
+    local msgGreeting = ns.dbGlobal.guildInfo.greetingMsg ~= '' and ns.dbGlobal.guildInfo.greetingMsg or ns.settings.greetingMsg
+
+    local newMsg = msg:gsub("'", ''):gsub('No Player Named ', '')
+    local pName = newMsg:match("([^%s]+)")--("^(.-)%s")
+    pName = pName and pName:gsub('-'..GetRealmName(), '') or pName
+
+    --print(pName, msg, invite.tblSent[pName])
+    if msg:match('is already in a guild') then
+        ns.scanner:TotalInvited(-1)
+        if invite.tblSent[pName] then invite.tblSent[pName] = nil end
+        return
+    end
+    if not invite.tblSent[pName] then return end
+
+    local function UpdateSent()
+        for k, r in pairs(invite.tblSent) do
+            if r and r.sentTime then
+                local time = GetTime() - r.sentTime
+                if time > 120 then
+                    invite.tblSent[k] = nil
+                    ns.scanner:TotalUnknown(-1)
+                end
+            end
+        end
+
+        local sentCount = 0
+        for _ in pairs(invite.tblSent) do sentCount = sentCount + 1 end
+
+        local tbl = ns.scanner:GetSessionData()
+        if sentCount == 0 or (tbl and tbl['Total_Unknown'] == 0) then
+            invite.notifyActive = false end
+    end
+
+    if msg:match('not found') then ns.scanner:TotalInvited(-1)
+    elseif msg:match('is not online') then ns.scanner:TotalInvited(-1)
+    elseif strlower(msg):match('no player named') then ns.scanner:TotalInvited(-1)
+    elseif msg:match('has joined the guild') then
+        if showGreeting and  msgGreeting ~= '' and pName then
+            SendChatMessage(ns.code:variableReplacement(msgGreeting, pName, 'REMOVE<>'), 'WHISPER', nil, pName)
+        end
+        if showWelcome and  msgWelcome ~= '' then
+            C_Timer.After(math.random(5,10), function()
+                SendChatMessage(ns.code:variableReplacement( invite.msgWelcome, pName, 'REMOVE<>'):gsub('<', ''):gsub('>', ''), 'GUILD')
+            end)
+        end
+
+        invite.tblSent[pName] = nil
+        ns.scanner:TotalAccepted()
+        ns.scanner:TotalUnknown(-1)
+
+        ns.code:cOut(pName..' joined the guild!')
+        return
+    elseif msg:match('is already in a guild') then ns.scanner:TotalInvited(-1)
+    elseif msg:match('declines your guild invitation') then ns.scanner:TotalDeclined() end
+
+    if invite.tblSent[pName] then
+        UpdateSent()
+        invite.tblSent[pName] = nil
+        ns.scanner:TotalUnknown(-1)
+    end
+end
+
 -- Invite Routines
 function invite:Init()
+    self.notifyActive = false
+    self.notifyEnabled = false
+
     -- Misc Variables
     self.antiSpam = false
     self.showWhsipers = false
@@ -89,7 +162,6 @@ function invite:InvitePlayer(name, class, sendInvite, sendMessage, skipClassChec
     end
 
     if sendInvite then GuildInvite(name) end
-    invite:RegisterGuildInviteEvent()
 
     if ns.settings.inviteFormat ~= 2 and sendMessage and msg then
         msg = ns.code:variableReplacement(msg, name)
@@ -111,7 +183,17 @@ function invite:InvitePlayer(name, class, sendInvite, sendMessage, skipClassChec
             invite:AddToSentList(name, class) end
         ns.scanner:TotalInvited()
 
+        self.tblSent = self.tblSent or {}
+        name = name and name:gsub('-'..GetRealmName(), '') or name
+        self.tblSent[name] = self.tblSent[name] or {}
         self.tblSent[name] = {class = class, sentTime = GetTime() }
+
+        self.notifyActive = true
+        if not self.notifyEnabled then
+            self.notifyEnabled = true
+            ns.observer:Register("CHAT_MSG_SYSTEM", GuildRosterHandler)
+        end
+
         ns.scanner:TotalUnknown()
     end
 end
@@ -124,69 +206,9 @@ function invite:AddToSentList(name, class)
 end
 
 function invite:RegisterGuildInviteEvent()
-    local function GuildRosterHandler(...)
-        local _, msg =  ...
-        if not msg then return end
+    
 
-        local showWelcome = ns.settings.sendWelcome or false
-        local msgWelcome = ns.settings.welcomeMessage or ''
-
-        local showGreeting = ns.settings.sendGreeting or ns.dbGlobal.guildInfo.greeting or false
-        local msgGreeting = ns.dbGlobal.guildInfo.greetingMsg ~= '' and ns.dbGlobal.guildInfo.greetingMsg or ns.settings.greetingMsg
-
-        local newMsg = msg:gsub("'", ''):gsub('No Player Named ', '')
-        local pName = newMsg:match("([^%s]+)")--("^(.-)%s")
-
-        local tblSent = invite.tblSent[pName] or nil
-        if not tblSent then return end
-
-        local function UpdateSent()
-            for k, r in pairs(invite.tblSent) do
-                if r and r.sentTime then
-                    local time = GetTime() - r.sentTime
-                    if time > 120 then
-                        invite.tblSent[k] = nil
-                        ns.scanner:TotalUnknown(-1)
-                    end
-                end
-            end
-
-            local sentCount = 0
-            for _ in pairs(invite.tblSent) do sentCount = sentCount + 1 end
-
-            local tbl = ns.scanner:GetSessionData()
-            if sentCount == 0 or (tbl and tbl['Total_Unknown'] == 0) then
-                ns.observer:Unregister('CHAT_MSG_SYSTEM', GuildRosterHandler) end
-        end
-
-        local fName = ns.code:cPlayer(pName, tblSent.class)
-
-        if msg:match('not found') then ns.scanner:TotalInvited(-1)
-        elseif msg:match('is not online') then ns.scanner:TotalInvited(-1)
-        elseif strlower(msg):match('no player named') then ns.scanner:TotalInvited(-1)
-        elseif msg:match('has joined the guild') then
-            if showGreeting and  msgGreeting ~= '' and pName then
-                SendChatMessage(ns.code:variableReplacement(msgGreeting, pName, 'REMOVE<>'), 'WHISPER', nil, pName)
-            end
-            if showWelcome and  msgWelcome ~= '' then
-                C_Timer.After(math.random(5,10), function()
-                    SendChatMessage(ns.code:variableReplacement( invite.msgWelcome, pName, 'REMOVE<>'):gsub('<', ''):gsub('>', ''), 'GUILD')
-                end)
-            end
-
-            invite.tblSent[pName] = nil
-            ns.scanner:TotalAccepted()
-
-            ns.code:cOut(fName..' joined the guild!')
-        elseif msg:match('is already in a guild') then ns.scanner:TotalInvited(-1)
-        elseif msg:match('declines your guild invitation') then ns.scanner:TotalDeclined() end
-
-        UpdateSent()
-        invite.tblSent[pName] = nil
-        ns.scanner:TotalUnknown(-1)
-    end
-
-    ns.observer:Register('CHAT_MSG_SYSTEM', GuildRosterHandler)
+    
 end
 invite:Init()
 
