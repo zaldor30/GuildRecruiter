@@ -27,7 +27,7 @@ local function CallBackWhoListUpdate()
     for i=1, C_FriendList.GetNumWhoResults() do
         local info = C_FriendList.GetWhoInfo(i)
         local pName = #tblConnected > 0 and info.fullName or info.fullName:gsub('-.*', '')
-        local rec = {name = pName, class = info.filename, level = info.level, guild = (info.fullGuildName or ''), zone = info.area}
+        local rec = {fullName = info.fullName, name = pName, class = info.filename, level = info.level, guild = (info.fullGuildName or ''), zone = info.area}
         tinsert(tblWho, rec)
     end
 
@@ -209,7 +209,7 @@ function scan:BuildScannerControls()
         if not name and not self.tblFound[name] then return end
 
         local tblFound = self.tblFound[name]
-        ns.invite:InvitePlayer(name, tblFound.class, 'SEND_INVITE', 'SEND_MESSAGE')
+        ns.invite:InvitePlayer(name, tblFound.class, (ns.settings.inviteFormat or 2), 'SEND_MESSAGE')
         self.tblFound[name] = nil
 
         scan:ShowResults('INVITE')
@@ -383,7 +383,7 @@ function scan:BuildScannerControls()
         tblFrame.lblTotalInvites = lblTotalInvites
 
         local lblUnknown = tblFrame.lblUnknown or aceGUI:Create("Label")
-        lblUnknown:SetText('Waiting On: '..self.totalUnknown)
+        lblUnknown:SetText('Pending: '..self.totalUnknown)
         lblUnknown:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
         lblUnknown:SetFullWidth(true)
         if not tblFrame.lblUnknown then
@@ -585,8 +585,8 @@ function scan:ShowResults(showWhich) -- Populate Invite and Who Tables
         while #tblPotential > 0 do
             local r = tremove(tblPotential, 1)
             if (not r.guild or r.guild == '') and ns.invite:CheckIfCanBeInvited(r) then
-                self.tblFound[r.name] = r
-                self.tblFound[r.name].isChecked = false
+                self.tblFound[r.fullName] = r
+                self.tblFound[r.fullName].isChecked = false
             end
         end
 
@@ -594,7 +594,7 @@ function scan:ShowResults(showWhich) -- Populate Invite and Who Tables
         tblFrame.scrollInvite:ReleaseChildren()
         for _, r in pairs(self.tblFound) do
             foundCount = foundCount + 1
-            createCheckbox(r.name, r.class, r.level)
+            createCheckbox(r.fullName, r.class, r.level)
         end
 
         tblFrame.lblFound:SetText('Ready for invite: '..foundCount)
@@ -680,7 +680,9 @@ function analytics:ShowAnalytics()
     tblFrame.lblTotalDeclined:SetText('Total Declined: '..(tblCount['Total_Declined'] and tblCount['Total_Declined'] or 0))
     tblFrame.lblTotalAccepted:SetText('Total Accepted: '..(tblCount['Total_Accepted'] and tblCount['Total_Accepted'] or 0))
     tblFrame.lblTotalBlackList:SetText('Total Black List: '..(tblCount['Total_BlackList'] and tblCount['Total_BlackList'] or 0))
-    tblFrame.lblUnknown:SetText('Waiting On: '..ns.code:cText(((tblCount['Total_Unknown'] and tblCount['Total_Unknown'] and tblCount['Total_Unknown'] > 0) and 'FFFF0000' or 'FFFFFFFF'), (tblCount['Total_Unknown'] or 0)))
+    if ns.settings.inviteFormat == 1 then
+        tblFrame.lblUnknown:SetText('Pending: <Disabled>')
+    else tblFrame.lblUnknown:SetText('Pending: '..ns.code:cText(((tblCount['Total_Unknown'] and tblCount['Total_Unknown'] and tblCount['Total_Unknown'] > 0) and 'FFFF0000' or 'FFFFFFFF'), (tblCount['Total_Unknown'] or 0))) end
 end
 function analytics:GetSessionData() return tblCount end -- Accessed through scanner
 function analytics:TotalScanned(amt)
@@ -709,6 +711,7 @@ function analytics:TotalBlackList(amt)
     analytics:ShowAnalytics()
 end
 function analytics:TotalUnknown(amt)
+    if ns.settings.inviteFormat == 1 then return end
     local remain = (tblCount['Total_Unknown'] or 0) + (amt or 1)
     tblCount['Total_Unknown'] = remain > 0 and remain or 0
     analytics:ShowAnalytics()

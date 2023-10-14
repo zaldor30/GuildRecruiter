@@ -211,9 +211,9 @@ function sync:OnCommReceived(prefix, message, distribution, sender)
         elseif sender == self.masterName and message then
             sync:console('Received Master Data from '..(sender or 'unknown sender'))
 
-            local decodedWowMessage = LibDeflate:DecodeForWoWAddonChannel(message)
-            local decompressedData = LibDeflate:DecompressDeflate(decodedWowMessage)
-            local success, tbl = GRADDON:Deserialize(decompressedData)
+            local decompressedData = LibDeflate:DecompressDeflate(message)
+            local decodedWowMessage = LibDeflate:DecodeForWoWAddonChannel(decompressedData)
+            local success, tbl = GRADDON:Deserialize(decodedWowMessage)
             if success then
                 local invAdded, blAdded, blRemoved = sync:MergeSyncData(tbl)
 

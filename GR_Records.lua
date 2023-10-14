@@ -119,16 +119,16 @@ function invite:new(class, name)
 end
 function invite:CheckIfCanBeInvited(r, skipChecks)
     if skipChecks then return true
-    elseif not r or not r.name then
+    elseif not r or not r.fullName then
         ns.code:dOut('No invite record or name.')
         return false
-    elseif ns.dbInv[r.name] then
+    elseif ns.dbInv[r.fullName] then
         --ns.code:dOut(r.name..' is already on the invited list')
         return false
     elseif r.zone and ns.ds.tblBadZones[r.zone] then
         ns.code:dOut('Player is nil or in a bad zone')
         return false
-    elseif ns.blackList:CheckBlackList(r.name) then return false end
+    elseif ns.blackList:CheckBlackList(r.fullName) then return false end
 
     return true
 end
@@ -154,7 +154,7 @@ function invite:InvitePlayer(name, class, sendInvite, sendMessage, skipClassChec
         return
     end
 
-    if sendInvite then GuildInvite(name) end
+    if sendInvite and sendInvite ~= 1 then GuildInvite(name) end
 
     if ns.settings.inviteFormat ~= 2 and sendMessage and msg then
         msg = ns.code:variableReplacement(msg, name)
@@ -187,7 +187,8 @@ function invite:InvitePlayer(name, class, sendInvite, sendMessage, skipClassChec
             ns.observer:Register("CHAT_MSG_SYSTEM", GuildRosterHandler)
         end
 
-        ns.scanner:TotalUnknown()
+        if ns.settings.inviteFormat ~= 1 then
+            ns.scanner:TotalUnknown() end
     end
 end
 function invite:AddToSentList(name, class)
