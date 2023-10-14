@@ -196,7 +196,6 @@ function core:startGuildRecruiter()
 
         self.tblWhispers = ns.ds:WhisperMessages()
 
-        print(ns.settings)
         if not ns.settings.firstRunComplete then
             ns.settings.firstRunComplete = true
             -- Need to force for first run
