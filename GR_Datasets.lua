@@ -227,7 +227,13 @@ function ds:invalidZonesByName()
     end
 end
 function ds:WhisperMessages(performCheck)
-    local dbMessages = ns.db.messages.messageList or nil
+    ns.db.messages = ns.db.messages or {}
+    ns.dbGlobal.guildInfo = ns.dbGlobal.guildInfo or {}
+
+    ns.db.messages.messageList = ns.db.messages.messageList or {}
+    ns.dbGlobal.guildInfo.messageList = ns.dbGlobal.guildInfo.messageList or {}
+
+    local dbMessages = ns.db.messages.messageList or {}
     local dbGMessages = ns.dbGlobal.guildInfo.messageList or {}
 
     -- GM messages then personal

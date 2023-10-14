@@ -24,6 +24,7 @@ end
 function sync:Init()
     self.tblData = {}
 
+    self.isAutoSync = false
     self.syncStarted = false
     self.timeOutTimer = nil
     self.syncStartTime = 0
@@ -38,8 +39,11 @@ function sync:Init()
     self.startInvited = 0
     self.startBlackListed = 0
 end
-function sync:console(msg, debug)
-    if debug then ns.code:dOut(msg) else ns.code:cOut(msg) end
+function sync:console(msg, debug, force)
+    if debug then ns.code:dOut(msg)
+    else
+        if force then ns.code:fOut(msg) else ns.code:cOut(msg) end
+    end
     ns.code:statusOut(msg)
 end
 -- Start/Stop Sync Routines
@@ -67,7 +71,9 @@ function sync:StartSyncServer()
 
     tblScreen.syncIcon:GetNormalTexture():SetVertexColor(0, 1, 0, 1)
 
-    self:console('Master sync started at '..date('%H:%M %m/%d/%Y'))
+    if self.isAutoSync then
+        self:console('Auto sync started at '..date('%H:%M %m/%d/%Y'), false, 'FORCE')
+    else self:console('Master sync started at '..date('%H:%M %m/%d/%Y')) end
 
     self.tblData = table.wipe(self.tblData) or {}
     self.totalInvited, self.totalBlackListed = 0, 0
@@ -84,8 +90,13 @@ function sync:StopMasterSync()
 
     if not self.syncStarted then return end
 
-    self:console('Sync took '..ns.code:round(GetTime() - self.syncStartTime, 2)..' seconds to complete', 'DEBUG')
-    self:console('Master sync completed at '..date('%H:%M %m/%d/%Y'))
+    if self.isAutoSync then
+        self.isAutoSync = false
+        self:console('Master sync completed at '..date('%H:%M %m/%d/%Y'), false, 'FORCE')
+    else
+        self:console('Sync took '..ns.code:round(GetTime() - self.syncStartTime, 2)..' seconds to complete', 'DEBUG')
+        self:console('Master sync completed at '..date('%H:%M %m/%d/%Y'))
+    end
 
     self.syncStarted, self.isMaster, self.masterName = false, false, nil
     C_Timer.After(5, function() ns.code:statusOut(' ') end)
@@ -105,9 +116,7 @@ function sync:StartSyncClient(masterName)
 
     tblScreen.syncIcon:GetNormalTexture():SetVertexColor(0, 1, 0, 1)
 
-    local msgStart = 'Client sync started at '..date('%H:%M %m/%d/%Y')
-    ns.code:cOut(msgStart)
-    ns.code:statusOut(msgStart)
+    self:console('Client sync started at '..date('%H:%M %m/%d/%Y'))
 end
 function sync:StopClientSync()
     local tblScreen = ns.screen.tblFrame
@@ -160,7 +169,7 @@ function sync:OnCommReceived(prefix, message, distribution, sender)
         end
 
         if not clientFound then
-            sync:console('No clients found to sync with')
+            sync:console('No clients found to sync with', false, self.isAutoSync)
             sync:StopSync()
             return
         else self:console('Sent sync requests, waiting for response...') end

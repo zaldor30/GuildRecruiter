@@ -735,7 +735,7 @@ ns.addonSettings = {
                     width = 1.5,
                     values = function()
                         local tbl = {}
-                        for k, r in pairs(ns.db.filter.filterList or {}) do tbl[k] = r.desc end
+                        for k, r in pairs(ns.db.filter.filterList and ns.db.filter.filterList or {}) do tbl[k] = r.desc end
                         return tbl
                     end,
                     set = function(_, val) selectedFilter = val end,

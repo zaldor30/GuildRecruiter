@@ -31,6 +31,8 @@ function GRADDON:OnInitialize(...)
 
             local function startAutoSync()
                 if core.stopSync then return end
+
+                ns.sync.isAutoSync = true
                 ns.sync:StartSyncServer()
             end
             C_Timer.After(30, startAutoSync)
@@ -70,6 +72,7 @@ function core:Init()
                 sendWelcome = true,
                 welcomeMessage = DEFAULT_GUILD_WELCOME,
                 inviteFormat = 2,
+                firstRunComplete = false,
             },
             filter = {
                 filterList = {},
@@ -102,10 +105,16 @@ function core:startGuildRecruiter()
     local dbInv = DB:New('GR_InvitedPlayersDB', nil, PLAYER_PROFILE)
     local dbAnal = DB:New('GR_AnalyticsDB', nil, PLAYER_PROFILE)
 
-    ns.settings = db.profile.settings
     ns.db, ns.dbGlobal = db.profile, db.global
     ns.dbBL, ns.dbInv = dbBL.global, dbInv.global
     ns.dbAP, ns.dbAG = dbAnal.profile, dbAnal.global
+
+    ns.db.settings = ns.db.settings or self.addonSettings.profile.settings
+    ns.dbGlobal.settings = ns.dbGlobal.settings or self.addonSettings.global.settings
+
+    ns.settings = ns.db.settings
+    ns.db.filter = ns.db.filter or self.addonSettings.profile.filter
+    ns.db.messages = ns.db.messages or self.addonSettings.profile.messages
 
     GRADDON.debug = ns.dbGlobal.debugMode or false -- Leave this here
 
@@ -161,18 +170,18 @@ function core:startGuildRecruiter()
         ns.dbGlobal[GRADDON.clubID] = ns.dbGlobal[GRADDON.clubID] or {}
         ns.dbGlobal[GRADDON.clubID].guildInfo = ns.dbGlobal[GRADDON.clubID].guildInfo or {}
 
-        ns.dbInv[GRADDON.clubID] = ns.dbInv[GRADDON.clubID] or {}
-
         ns.dbBL[GRADDON.clubID] = ns.dbBL[GRADDON.clubID] or {}
+        ns.dbInv[GRADDON.clubID] = ns.dbInv[GRADDON.clubID] or {}
 
         ns.dbAP.analytics = ns.dbAP.analytics or {}
         ns.dbAG[GRADDON.clubID] = ns.dbAG[GRADDON.clubID] or {}
         ns.dbAG[GRADDON.clubID].analytics = ns.dbAG[GRADDON.clubID].analytics or {}
 
-
-        ns.dbAG.analytics = ns.dbAG.analytics or {}
         ns.dbAP, ns.dbAG = dbAnal.profile.analytics, dbAnal.global[GRADDON.clubID].analytics
         ns.dbGlobal, ns.dbBL, ns.dbInv = ns.dbGlobal[GRADDON.clubID], ns.dbBL[GRADDON.clubID], ns.dbInv[GRADDON.clubID]
+
+        AC:RegisterOptionsTable('GR_Options', ns.addonSettings)
+        ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
 
         -- Initialize Variables and Functions
 
@@ -187,6 +196,7 @@ function core:startGuildRecruiter()
 
         self.tblWhispers = ns.ds:WhisperMessages()
 
+        print(ns.settings)
         if not ns.settings.firstRunComplete then
             ns.settings.firstRunComplete = true
             -- Need to force for first run
@@ -200,9 +210,6 @@ function core:startGuildRecruiter()
         ns.code:dOut('If this is not a beta contact the author in Discord.', 'FFFFFFFF', true)
         ns.code:dOut('Click on the top left icon for a link.', 'FFFFFFFF', true)
     end
-
-    AC:RegisterOptionsTable('GR_Options', ns.addonSettings)
-    ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
 
     -- Setup Slash Commands
     GRADDON:RegisterChatCommand('gr', function(input) core:SlashCommand(input) end)

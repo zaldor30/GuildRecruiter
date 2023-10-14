@@ -47,7 +47,7 @@ function home:EnterHomeScreen()
         [1] = 'Default Class Filter',
         [2] = 'Default Race Filter',
     }
-    for k, r in pairs(ns.db.filter.filterList or {}) do tbl[k+10] = r.desc end
+    for k, r in pairs(ns.db.filter.filterList and ns.db.filter.filterList or {}) do tbl[k+10] = r.desc end
     self.tblFilters = tbl
 
     if self.tblFrame.inline then
@@ -250,7 +250,9 @@ function home:CreatePreview()
     if ns.db.settings.inviteFormat == 2 then msg = 'No message will be sent. Only guild invite will be sent.'
     else
         local activeMsg = ns.dbGlobal.activeMessage or nil
+
         if not activeMsg then msg = ''
+        elseif not self.tblMessages[activeMsg] or not self.tblMessages[activeMsg].message then msg = ''
         else
             local preview = self.tblMessages[activeMsg].message or nil
             msg = ns.code:cText('FFFF80FF', 'To [')..ns.code.fPlayerName
