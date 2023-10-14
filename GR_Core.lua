@@ -29,13 +29,12 @@ function GRADDON:OnInitialize(...)
 
             ns.events:RegisterEvent('CHAT_MSG_SYSTEM', CHAT_MSG_SYSTEM)
 
-            local function startAutoSync()
+            C_Timer.After(5, function()
                 if core.stopSync then return end
 
                 ns.sync.isAutoSync = true
                 ns.sync:StartSyncServer()
-            end
-            C_Timer.After(30, startAutoSync)
+            end)
         end
     end
 
@@ -320,14 +319,14 @@ local function DropDownOnShow(self)
             f.name = dropdownFullName
             if not f or not f.name or not ns.code:verifyRealm(f.name) then return end
             local name = f.name:gsub('-'..GetRealmName(), '')
-            local fullName = f.name
+            local fullName = dropdown.chatTarget
 
             local fEntry = CreateFrame('Button', nil, f)
             fEntry:SetSize(150, 40)
             fEntry:SetPoint('TOPLEFT', f, 'TOPLEFT', 0 , 10)
             fEntry.HandlesGlobalMouseEvent = HandlesGlobalMouseEvent
             fEntry:SetScript('OnMouseDown', function()
-                if f.name then ns.blackList:AddToBlackList(f.name) end
+                if f.name then ns.blackList:AddToBlackList(fullName) end
                 CloseDropDownMenus()
             end)
 

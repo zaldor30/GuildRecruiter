@@ -165,7 +165,7 @@ function invite:InvitePlayer(name, class, sendInvite, sendMessage, skipClassChec
         end
 
         if not self.showWhispers then
-            local msgOut = sendInvite and 'Sent invite and message to ' or 'Sent invite message to '
+            local msgOut = ns.settings.inviteFormat ~= 1 and 'Sent invite and message to ' or 'Sent message to '
             ns.code:fOut(msgOut..name)
             ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER_INFORM", MyWhisperFilter, msg)
         end
