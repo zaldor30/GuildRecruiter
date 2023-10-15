@@ -1,23 +1,67 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
 local aceGUI = LibStub("AceGUI-3.0")
 
-ns.about = {}
-local about = ns.about
-function about:StartAboutScreen()
-    ns.screen.fMain:SetSize(500, 355)
-    ns.screen:ResetMain()
+ns.screen.about = {}
+local about = ns.screen.about
 
-    ns.screen.iconBack:Show()
-    ns.screen.iconBack:SetScript('OnMouseUp', function() ns.main:ScannerSettingsLayout() end)
+-- Observer Call Backs
+local function obsCLOSE_SCREENS()
+    ns.observer:Unregister('CLOSE_SCREENS', obsCLOSE_SCREENS)
 
-    ns.screen.iconReset:Hide()
+    ns.screen.tblFrame.backButton:SetShown(false)
 
-    local inline = aceGUI:Create('InlineGroup')
+    if not about.tblFrame.frame or not about.tblFrame.inline then return end
+    about.tblFrame.frame:SetShown(false)
+    about.tblFrame.inline.frame:Hide()
+
+    local tblFrame = about.tblFrame or {}
+    if tblFrame.frame then
+        tblFrame.frame:SetShown(false)
+        tblFrame.inline.frame:SetShown(false)
+    end
+end
+
+function about:Init()
+    self.tblFrame = {}
+end
+function about:EnterAboutScreen()
+    self.tblFrame = self.tblFrame or {}
+    self.tblFrame.controls = self.tblFrame.controls or {}
+
+    local tblFrame = self.tblFrame
+    local tblScreen = ns.screen.tblFrame
+    if not tblScreen.frame then return end
+
+    ns.observer:Notify('CLOSE_SCREENS')
+    ns.observer:Register('CLOSE_SCREENS', obsCLOSE_SCREENS)
+
+    tblScreen.frame:SetSize(500, 400)
+    tblScreen.backButton:SetShown(true)
+
+    if not self.tblFrame.frame then
+        -- Base Regular Frame
+        local f = CreateFrame('Frame', 'GR_ABOUT_FRAME', tblScreen.frame, 'BackdropTemplate')
+        f:SetPoint('TOPLEFT', tblScreen.titleFrame, 'BOTTOMLEFT', -5, 20)
+        f:SetPoint('BOTTOMRIGHT', tblScreen.statusBar, 'TOPRIGHT', 0, -5)
+        f:SetBackdrop(BackdropTemplate())
+        f:SetFrameStrata(DEFAULT_STRATA)
+        f:SetBackdropColor(0, 0, 0, 0)
+        f:SetBackdropBorderColor(1, 1, 1, 0)
+        f:EnableMouse(false)
+        self.tblFrame.frame = f
+    elseif self.tblFrame.inline then
+        self.tblFrame.inline:ReleaseChildren()
+    end
+    self.tblFrame.frame:SetShown(true)
+
+    -- Ace GUI Frame for Ace Controls
+    local inline = self.tblFrame.inline or aceGUI:Create('InlineGroup')
     inline:SetLayout('Flow')
-    inline:SetWidth(ns.screen.fMain:GetWidth() - 20)
-    inline:SetHeight(ns.screen.fMain:GetHeight() - 20)
-    ns.screen.aMain:AddChild(inline)
-
+    inline:SetPoint('TOPLEFT', self.tblFrame.frame, 'TOPLEFT', 5, -5)
+    inline:SetPoint('BOTTOMRIGHT', self.tblFrame.frame, 'BOTTOMRIGHT', 0, 5)
+    inline.frame:SetShown(true)
+    self.tblFrame.inline = inline
+    
     local icon = aceGUI:Create('Icon')
     icon:SetImage(ICON_PATH..'GR_Logo')
     icon:SetImageSize(32, 32)
@@ -100,13 +144,9 @@ function about:StartAboutScreen()
     editBMC:SetRelativeWidth(.7)
     inline:AddChild(editBMC)
 
-    local btnMajor = aceGUI:Create('Button')
-    btnMajor:SetText('v2.0 Changes')
-    btnMajor:SetCallback('OnClick', function() ns.infoScreen(true) end)
-    inline:AddChild(btnMajor)
-
     local btnMinor = aceGUI:Create('Button')
-    btnMinor:SetText('v'..MATCH_VERSION..' Changes')
-    btnMinor:SetCallback('OnClick', function() ns.infoScreen() end)
+    btnMinor:SetText("What's New? in v"..ns.ds.GR_VERSION)
+    btnMinor:SetCallback('OnClick', function() ns.whatsnew:ShowWhatsNew() end)
     inline:AddChild(btnMinor)
 end
+about:Init()
