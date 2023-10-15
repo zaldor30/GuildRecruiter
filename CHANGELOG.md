@@ -13,6 +13,7 @@ This version is a major rework to the code.  I have removed a lot of the old cod
 * Added guild welcome message to the GM settings window.
 * Added auto sync on login (will begin 60 seconds after login).
 * Fixed issues with auto sync not transferring all data.
+* and much more!
 
 * -> Sync with older versions will time out.
 * -> Everyone needs to be on the current version.
