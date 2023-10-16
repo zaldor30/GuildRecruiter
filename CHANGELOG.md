@@ -1,3 +1,6 @@
+## 2.1.35
+* Fixed an issue with GM messages not syncing properly.
+
 ## 2.1.33
 This version is a major rework to the code.  I have removed a lot of the old code and replaced it with new code.  This should fix a lot of the issues that have been reported.  I have also added new features and cleaned up the UI.  Please report any issues you find on CurseForge or Discord.
 

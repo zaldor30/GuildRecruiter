@@ -253,6 +253,11 @@ function sync:MergeSyncData(sender, message)
 
             if tblGuildInfo then ns.dbGlobal.guildInfo = tblGuildInfo end
             if tblGuildData then ns.dbGlobal.guildData = tblGuildData end
+
+            if not ns.settings.welcomeMessage and ns.dbGlobal.guildInfo.welcomeMessage then
+                ns.settings.welcomeMessage = ns.dbGlobal.guildInfo.welcomeMessage end
+            if not ns.settings.greetingMsg and ns.dbGlobal.guildInfo.greetingMsg then
+                ns.settings.greetingMsg = ns.dbGlobal.guildInfo.greetingMsg end
         end
 
         ns.dbInv = ns.dbInv or {}
