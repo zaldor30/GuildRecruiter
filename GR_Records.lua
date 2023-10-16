@@ -256,13 +256,13 @@ function blackList:CheckBlackList(player)
     if found then ns.code:dOut(player..' is on the blacklist.') end
     return found
 end
-function blackList:AddToBlackList(name, skipReason)
+function blackList:AddToBlackList(name, reason)
     if not name then return end
 
     local POPUP_REASON, blName = "inputReason", nil
     local fName = select(2, UnitClass(name)) and ns.code:cPlayer(name, select(2, UnitClass(name))) or name
     StaticPopupDialogs[POPUP_REASON] = {
-        text = "Why do you want to black list:\n"..fName,
+        text = "Why do you want to black list:\n"..(fName or blName),
         button1 = "OK",
         button2 = "Cancel",
         OnAccept = function(data)
@@ -298,9 +298,9 @@ function blackList:AddToBlackList(name, skipReason)
         return
     end
 
-    if not skipReason then StaticPopup_Show(POPUP_REASON)
+    if not reason then StaticPopup_Show(POPUP_REASON)
     else
-        local reason = 'Bulk Add'
+        reason = reason or 'Bulk Add'
         ns.blackList.tblBlackList[blName] = { reason = reason, whoDidIt = UnitGUID('player'), dateBlackList = C_DateAndTime.GetServerTimeLocal(), markedForDelete = false }
         ns.dbBL = ns.blackList.tblBlackList
 
