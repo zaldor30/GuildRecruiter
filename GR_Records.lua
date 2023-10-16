@@ -15,12 +15,6 @@ local function GuildRosterHandler(...)
     local _, msg =  ...
     if not msg or not invite.notifyActive then return end
 
-    local showWelcome = ns.settings.sendWelcome or false
-    local msgWelcome = ns.dbGlobal.guildInfo.welcomeMsg and ns.dbGlobal.guildInfo.welcomeMsg or (ns.settings.welcomeMessage or '')
-
-    local showGreeting = ns.dbGlobal.guildInfo.greeting or ns.settings.sendGreeting or false
-    local msgGreeting = ns.dbGlobal.guildInfo.greetingMsg and ns.dbGlobal.guildInfo.greetingMsg or (ns.settings.greetingMsg or '')
-
     local newMsg = msg:gsub("'", ''):gsub('No Player Named ', '')
     local pName = newMsg:match("([^%s]+)")--("^(.-)%s")
     pName = pName and pName:gsub('-'..GetRealmName(), '') or pName
@@ -31,6 +25,16 @@ local function GuildRosterHandler(...)
         return
     end
     if not invite.tblSent[pName] then return end
+
+    local showWelcome = ns.settings.sendWelcome or false
+    local msgWelcome = ns.dbGlobal.guildInfo.welcomeMsg and ns.dbGlobal.guildInfo.welcomeMsg or (ns.settings.welcomeMessage or '')
+
+    local showGreeting = ns.dbGlobal.guildInfo.greeting or ns.settings.sendGreeting or false
+    local msgGreeting = ns.dbGlobal.guildInfo.greetingMsg and ns.dbGlobal.guildInfo.greetingMsg or (ns.settings.greetingMsg or '')
+
+    if invite.tblSent[pName].skipWeclcome then
+        showGreeting, showWelcome = false, false
+    end
 
     local function UpdateSent()
         for k, r in pairs(invite.tblSent) do
@@ -132,9 +136,10 @@ function invite:CheckIfCanBeInvited(r, skipChecks)
 
     return true
 end
-function invite:InvitePlayer(name, class, sendInvite, sendMessage, skipClassCheck)
+function invite:InvitePlayer(name, class, sendInvite, sendMessage, skipClassCheck, skipSent)
     class = class or select(2, UnitClass(name)) or nil
     local fName = (name and class) and ns.code:cPlayer(name, class) or name
+
     if not CanGuildInvite() then ns.code:fOut('You do not have permission to invite players to the guild.') return
     elseif not name or (not skipClassCheck and not class) then ns.code:fOut('Invite failed: Did not get a name or class.') return
     elseif sendInvite and GetGuildInfo(name) then ns.code:fOut(name..' is already in a guild.  Ask them to leave before inviting.') return end
@@ -154,7 +159,7 @@ function invite:InvitePlayer(name, class, sendInvite, sendMessage, skipClassChec
         return
     end
 
-    if sendInvite and sendInvite ~= 1 then GuildInvite(name) end
+    if sendInvite == 'MANUAL' or (sendInvite and sendInvite ~= 1) then GuildInvite(name) end
 
     if ns.settings.inviteFormat ~= 2 and sendMessage and msg then
         msg = ns.code:variableReplacement(msg, name)
@@ -171,25 +176,26 @@ function invite:InvitePlayer(name, class, sendInvite, sendMessage, skipClassChec
         end
 
         SendChatMessage(msg, 'WHISPER', nil, name)
-
-        if self.antiSpam then
-            invite:AddToSentList(name, class) end
-        ns.scanner:TotalInvited()
-
-        self.tblSent = self.tblSent or {}
-        name = name and name:gsub('-'..GetRealmName(), '') or name
-        self.tblSent[name] = self.tblSent[name] or {}
-        self.tblSent[name] = {class = class, sentTime = GetTime() }
-
-        self.notifyActive = true
-        if not self.notifyEnabled then
-            self.notifyEnabled = true
-            ns.observer:Register("CHAT_MSG_SYSTEM", GuildRosterHandler)
-        end
-
-        if ns.settings.inviteFormat ~= 1 then
-            ns.scanner:TotalUnknown() end
     end
+
+    if self.antiSpam then
+        invite:AddToSentList(name, class) end
+    ns.scanner:TotalInvited()
+
+    self.tblSent = self.tblSent or {}
+    name = name and name:gsub('-'..GetRealmName(), '') or name
+    self.tblSent[name] = self.tblSent[name] or {}
+    self.tblSent[name] = {class = class, sentTime = GetTime() }
+    self.tblSent[name].skipWeclcome = skipSent or false
+
+    self.notifyActive = true
+    if not self.notifyEnabled then
+        self.notifyEnabled = true
+        ns.observer:Register("CHAT_MSG_SYSTEM", GuildRosterHandler)
+    end
+
+    if ns.settings.inviteFormat ~= 1 then
+        ns.scanner:TotalUnknown() end
 end
 function invite:AddToSentList(name, class)
     if not name or not class then ns.code:fOut((name or 'NO NAME')..' was not added to sent list.') return false

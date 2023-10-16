@@ -29,7 +29,7 @@ function GRADDON:OnInitialize(...)
 
             ns.events:RegisterEvent('CHAT_MSG_SYSTEM', CHAT_MSG_SYSTEM)
 
-            C_Timer.After(10, function()
+            C_Timer.After(3434340, function()
                 if core.stopSync then return end
 
                 ns.sync.isAutoSync = true
@@ -301,7 +301,6 @@ function core:CreateMiniMapIcon()
 end
 core:Init()
 
-local f = nil
 local function HandlesGlobalMouseEvent(self, button, event)
 	if event == 'GLOBAL_MOUSE_DOWN' and (button == 'LeftButton' or button == 'RightButton')then
         if not ns.db.settings.showContext then return false end
@@ -309,96 +308,132 @@ local function HandlesGlobalMouseEvent(self, button, event)
 	end
 	return false
 end
+
+local tblFrame, rows, rowHeight = {}, 3, 40
 local function DropDownOnShow(self)
-    if core.shutdown then return
+    if not core.isEnabled then return
+    elseif not ns.db.settings.showContext then return
     elseif not ns.db or not ns.db.settings or not ns.db.settings.showContext then return end
 
     local dropdown = self.dropdown
-    local function FinishFrame()
-        if dropdown.which == 'PLAYER' or dropdown.which == 'FRIEND' then -- UnitPopup
-            local dropdownFullName = dropdown.name and dropdown.name:gsub('-'..GetRealmName(), '') or nil
-            if not dropdownFullName then return end
+    if not dropdown or not dropdown.which then return end
 
-            f.name = dropdownFullName
-            if not f or not f.name or not ns.code:verifyRealm(f.name) then return end
-            local name = f.name:gsub('-'..GetRealmName(), '')
-            local fullName = dropdown.chatTarget
+    if dropdown.which == 'PLAYER' or dropdown.which == 'FRIEND' then -- UnitPopup
+        local dropdownFullName = dropdown.name and dropdown.name:gsub('-'..GetRealmName(), '') or nil
+        if not dropdownFullName then return end
 
-            local fEntry = CreateFrame('Button', nil, f)
-            fEntry:SetSize(150, 40)
-            fEntry:SetPoint('TOPLEFT', f, 'TOPLEFT', 0 , 10)
-            fEntry.HandlesGlobalMouseEvent = HandlesGlobalMouseEvent
-            fEntry:SetScript('OnMouseDown', function()
-                if f.name then ns.blackList:AddToBlackList(fullName) end
-                CloseDropDownMenus()
-            end)
+        local f = tblFrame.frame or CreateFrame("Frame", "GR_DropDownFrame", UIParent, "BackdropTemplate")
+        f:SetFrameStrata('TOOLTIP')
+        f:SetSize(165, rowHeight * rows - 15)
+        f:SetBackdrop(BackdropTemplate(BLANK_BACKGROUND))
+        f:SetBackdropColor(0,0,0,1)
+        f:SetBackdropBorderColor(1,1,1,1)
+        f:IsClampedToScreen(true)
+        f:EnableMouse(true)
+        f:SetShown(true)
+        tblFrame.frame = f
 
-            local fIcon = CreateFrame('Button', nil, fEntry, 'BackdropTemplate')
-            fIcon:SetSize(20, 20)
-            fIcon:SetPoint('LEFT', fEntry, 'LEFT',0 , -10)
-
-            fIcon:SetNormalTexture(ICON_PATH..'GR_NewRecord')
-            fIcon:SetHighlightTexture(ICON_PATH..'GR_NewRecord')
-
-            local blTextString = fEntry:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            blTextString:SetPoint("LEFT", fIcon, "RIGHT", 5, 0)
-            blTextString:SetText('Add '..(ns.code:cPlayer(name, nil, 'FF00FF00') or 'no name')..'\nto the black list.')
-            blTextString:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
-            blTextString:SetJustifyH('CENTER')
-            blTextString:SetTextColor(1,1,1,1)
-
-            fEntry:SetScript('OnEnter', function() blTextString:SetTextColor(1,1,0,1) end)
-            fEntry:SetScript('OnLeave', function() blTextString:SetTextColor(1,1,1,1) end)
-
-            local lineTexture = fEntry:CreateTexture(nil, "ARTWORK")
-            lineTexture:SetColorTexture(.5, .5, .5)
-            lineTexture:SetHeight(1)
-            lineTexture:SetPoint("BOTTOMLEFT", fEntry, "BOTTOMLEFT", 5, -5)
-            lineTexture:SetPoint("BOTTOMRIGHT", fEntry, "BOTTOMRIGHT", 5, -5)
-
-            local fInvite = CreateFrame('Button', nil, f)
-            fInvite:SetSize(150, 40)
-            fInvite:SetPoint('TOPLEFT', fEntry, 'BOTTOMLEFT', 0 , 10)
-            fInvite.HandlesGlobalMouseEvent = HandlesGlobalMouseEvent
-            fInvite:SetScript('OnMouseDown', function()
-                if fullName then ns.invite:InvitePlayer(fullName, select(2, UnitClass(fullName)), true, nil, 'SKIP_CLASS_CHECK') end
-                CloseDropDownMenus()
-            end)
-
-            fIcon = CreateFrame('Button', nil, fInvite, 'BackdropTemplate')
-            fIcon:SetSize(20, 20)
-            fIcon:SetPoint('LEFT', fInvite, 'LEFT',0 , -10)
-
-            fIcon:SetNormalTexture(ICON_PATH..'GR_NewRecord')
-            fIcon:SetHighlightTexture(ICON_PATH..'GR_NewRecord')
-
-            local invTextString = fInvite:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            invTextString:SetPoint("LEFT", fIcon, "RIGHT", 5, 0)
-            invTextString:SetText('Invite '..(ns.code:cPlayer(name, nil, 'FF00FF00') or 'no name')..'\nto the guild.')
-            invTextString:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
-            invTextString:SetJustifyH('CENTER')
-            invTextString:SetTextColor(1,1,1,1)
-
-            fInvite:SetScript('OnEnter', function() invTextString:SetTextColor(1,1,0,1) end)
-            fInvite:SetScript('OnLeave', function() invTextString:SetTextColor(1,1,1,1) end)
-        else return end
-
+        f:ClearAllPoints()
         if self:GetLeft() >= self:GetWidth() then f:SetPoint('RIGHT', self, 'LEFT',0,0)
         else f:SetPoint('LEFT', self, 'RIGHT',0,0) end
-    end
 
-    if f then f = nil end
-    f = CreateFrame("Frame", "GR_DropDownFrame", UIParent, "BackdropTemplate")
-    f:SetFrameStrata('TOOLTIP')
-    f:SetSize(165, 70)
-    f:SetBackdrop(BackdropTemplate(BLANK_BACKGROUND))
-    f:SetBackdropColor(0,0,0,1)
-    f:SetBackdropBorderColor(1,1,1,1)
-    f:IsClampedToScreen(true)
-    f.HandlesGlobalMouseEvent = HandlesGlobalMouseEvent
+        -- Gather Information
+        f.name = dropdownFullName
+        if not f or not f.name or not ns.code:verifyRealm(f.name) then
+            if f and not ns.code:verifyRealm(f.name) then
+                ns.code:fOut('Player is not connected to your realm.', 'FFFF0000')
+            end
+            return
+        end
 
-    FinishFrame()
+        local name = f.name:gsub('-'..GetRealmName(), '')
+        local fullName = dropdown.chatTarget
+        local class = select(2, UnitClass(fullName)) or nil
+
+        -- Invite with Messages
+        local fInviteMsg = tblFrame.inviteMsg or CreateFrame('Button', nil, tblFrame.frame)
+        fInviteMsg:SetSize(tblFrame.frame:GetWidth(), rowHeight)
+        fInviteMsg:SetPoint('TOP', f, 'TOP', 0, 0)
+        fInviteMsg.HandlesGlobalMouseEvent = HandlesGlobalMouseEvent
+        fInviteMsg:SetShown(true)
+        tblFrame.inviteMsg = fInviteMsg
+
+        local fInviteMsgHighlight = tblFrame.InviteMSGhighlight or fInviteMsg:CreateTexture(nil, 'OVERLAY')
+        fInviteMsgHighlight:SetSize(tblFrame.frame:GetWidth() -8, rowHeight -5)
+        fInviteMsgHighlight:SetPoint('CENTER', fInviteMsg, 'CENTER', 0, -1)
+        fInviteMsgHighlight:SetAtlas(BLUE_LONG_HIGHLIGHT)
+        fInviteMsgHighlight:SetShown(false)
+        tblFrame.InviteMSGhighlight = fInviteMsgHighlight
+
+        local fInviteMsgText = tblFrame.inviteMSGText or fInviteMsg:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
+        fInviteMsgText:SetFont(DEFAULT_FONT, DEFAULT_FONT_SIZE, 'OUTLINE')
+        fInviteMsgText:SetPoint('CENTER', fInviteMsg, 'CENTER', 0, 0)
+        fInviteMsgText:SetText('Invite '..(ns.code:cPlayer(name, nil, 'FF00FF00'))..'\nWith Greeting/Welcome')
+        tblFrame.inviteMSGText = fInviteMsgText
+
+        fInviteMsg:SetScript('OnEnter', function() tblFrame.InviteMSGhighlight:SetShown(true) end)
+        fInviteMsg:SetScript('OnLeave', function() tblFrame.InviteMSGhighlight:SetShown(false) end)
+        fInviteMsg:SetScript('OnClick', function()
+            if fullName then ns.invite:InvitePlayer(fullName, class, 'MANUAL', false, (class and false or true)) end
+            CloseDropDownMenus()
+        end)
+
+        -- Add to Black List
+        local fBlackList = tblFrame.blackList or CreateFrame('Button', nil, tblFrame.frame)
+        fBlackList:SetSize(tblFrame.frame:GetWidth(), rowHeight)
+        fBlackList:SetPoint('TOP', fInviteMsg, 'BOTTOM', 0, 8)
+        fBlackList.HandlesGlobalMouseEvent = HandlesGlobalMouseEvent
+        tblFrame.blackList = fBlackList
+
+        local fBlackListHighlight = tblFrame.blackListHighlight or fBlackList:CreateTexture(nil, 'OVERLAY')
+        fBlackListHighlight:SetSize(fBlackList:GetWidth() -8, fBlackList:GetHeight() -5)
+        fBlackListHighlight:SetPoint('CENTER', fBlackList, 'CENTER', 0, -1)
+        fBlackListHighlight:SetAtlas(BLUE_LONG_HIGHLIGHT)
+        fBlackListHighlight:SetShown(false)
+        tblFrame.blackListHighlight = fBlackListHighlight
+
+        local fBlackListText = tblFrame.fBlackListText or fBlackList:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
+        fBlackListText:SetFont(DEFAULT_FONT, DEFAULT_FONT_SIZE, 'OUTLINE')
+        fBlackListText:SetPoint('CENTER', fBlackList, 'CENTER', 0, 0)
+        fBlackListText:SetText('Add '..(ns.code:cPlayer(name, nil, 'FF00FF00'))..'\nTo Black List')
+        tblFrame.fBlackListText = fBlackListText
+
+        fBlackList:SetScript('OnEnter', function() tblFrame.blackListHighlight:SetShown(true) end)
+        fBlackList:SetScript('OnLeave', function() tblFrame.blackListHighlight:SetShown(false) end)
+        fBlackList:SetScript('OnClick', function()
+            if fullName then ns.blackList:AddToBlackList(fullName) end
+            CloseDropDownMenus()
+        end)
+
+        -- Invite without Greeting
+        local fInvite = tblFrame.invite or CreateFrame('Button', nil, tblFrame.frame)
+        fInvite:SetSize(tblFrame.frame:GetWidth(), rowHeight)
+        fInvite:SetPoint('TOP', fBlackList, 'BOTTOM', 0, 8)
+        fInvite.HandlesGlobalMouseEvent = HandlesGlobalMouseEvent
+        tblFrame.invite = fInvite
+
+        local fInviteHighlight = tblFrame.inviteHighlight or fInvite:CreateTexture(nil, 'OVERLAY')
+        fInviteHighlight:SetSize(fInvite:GetWidth() -8, fInvite:GetHeight() -5)
+        fInviteHighlight:SetPoint('CENTER', fInvite, 'CENTER', 0, -1)
+        fInviteHighlight:SetAtlas(BLUE_LONG_HIGHLIGHT)
+        fInviteHighlight:SetShown(false)
+        tblFrame.inviteHighlight = fInviteHighlight
+
+        local fInviteText = tblFrame.fInviteText or fInvite:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
+        fInviteText:SetFont(DEFAULT_FONT, DEFAULT_FONT_SIZE, 'OUTLINE')
+        fInviteText:SetPoint('CENTER', fInvite, 'CENTER', 0, 0)
+        fInviteText:SetText('Invite '..(ns.code:cPlayer(name, nil, 'FF00FF00'))..'\nNo Greeting/Welcome')
+        tblFrame.fInviteText = fInviteText
+
+        fInvite:SetScript('OnEnter', function() tblFrame.inviteHighlight:SetShown(true) end)
+        fInvite:SetScript('OnLeave', function() tblFrame.inviteHighlight:SetShown(false) end)
+        fInvite:SetScript('OnClick', function()
+            if fullName then ns.invite:InvitePlayer(fullName, class, 'MANUAL', false, (class and false or true), true) end
+            CloseDropDownMenus()
+        end)
+
+    else return end
 end
-local function DropDownOnHide() if f then f:Hide() end end
+local function DropDownOnHide() if tblFrame.frame then tblFrame.frame:SetShown(false) end end
 DropDownList1:HookScript('OnShow', DropDownOnShow)
 DropDownList1:HookScript('OnHide', DropDownOnHide)
