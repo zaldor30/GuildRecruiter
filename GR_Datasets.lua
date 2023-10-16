@@ -28,10 +28,13 @@ function ds:WhatsNew()
     |CFFFFFF00v2.1.33 Notes|r
         * Brought back adding black list players to the icon bar.
         * Added the ability to send greeting/welcome message
-            when inviting via the menu (right click on player
-            name in chat).
+            when inviting via the menu (right click on
+            player name in chat).
+        * Added message length to greeting message and
+            restricted to 255 characters (1 message).
+        * Restricting welcome message to 255 characters.
 
-        |CFFFFFF00v2.1.33 Notes|r
+    |CFFFFFF00v2.1.33 Notes|r
         * Fixed invite issue with connected realms.
         * Fixed anti-spam issue with connected realms.
         * UI improvements and clean up.
