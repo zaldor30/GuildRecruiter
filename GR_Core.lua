@@ -29,7 +29,7 @@ function GRADDON:OnInitialize(...)
 
             ns.events:RegisterEvent('CHAT_MSG_SYSTEM', CHAT_MSG_SYSTEM)
 
-            C_Timer.After(3434340, function()
+            C_Timer.After(10, function()
                 if core.stopSync then return end
 
                 ns.sync.isAutoSync = true
