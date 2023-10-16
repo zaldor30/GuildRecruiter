@@ -45,6 +45,7 @@ end
 function core:Init()
     self.isEnabled = false
     self.isGuildLeader = false
+    self.hasGuildLeader = false
 
     self.stopSync = false
 
@@ -187,9 +188,11 @@ function core:startGuildRecruiter()
         self.isGuildLeader = ns.dbGlobal.guildInfo.hasGuildLeader or IsGuildLeader()
         ns.isGuildLeader = self.isGuildLeader
         if self.isGuildLeader then
+            ns.hasGuildLeader = true
             ns.dbGlobal.guildInfo.hasGuildLeader = true
             ns.dbGlobal.guildInfo.guildLeader = UnitName('player')
         elseif not self.isGuildLeader and UnitName('player') == ns.dbGlobal.guildInfo.guildLeader then
+            ns.hasGuildLeader = false
             ns.dbGlobal.guildInfo.hasGuildLeader = false
         end
 

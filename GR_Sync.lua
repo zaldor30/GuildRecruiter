@@ -244,7 +244,7 @@ function sync:MergeSyncData(sender, message)
             return invAdded, blAdded, blRemoved
         end
 
-        if tbl.isGuildLeader and not ns.isGuildLeader then
+        if not ns.isGuildLeader and not ns.hasGuildLeader then
             local tblGuildInfo = tbl.guildInfo or nil
             local tblGuildData = tbl.guildData or nil
 
