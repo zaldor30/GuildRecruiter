@@ -1,3 +1,9 @@
+##2.1.36
+* Brought back adding black list players to the icon bar.
+* Added the ability to send greeting/welcome message when inviting via the menu (right click on player name in chat).
+* Added message length to greeting message and restricted to 255 characters (1 message).
+* Restricting welcome message to 255 characters (1 message).
+
 ## 2.1.35
 * Fixed an issue with GM messages not syncing properly.
 

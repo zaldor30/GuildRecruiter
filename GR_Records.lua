@@ -26,11 +26,13 @@ local function GuildRosterHandler(...)
     end
     if not invite.tblSent[pName] then return end
 
-    local showWelcome = ns.settings.sendWelcome or false
-    local msgWelcome = ns.dbGlobal.guildInfo.welcomeMsg and ns.dbGlobal.guildInfo.welcomeMsg or (ns.settings.welcomeMessage or '')
+    local forceWelcome = ns.dbGlobal.guildInfo.sendWelcome or false
+    local showWelcome = forceWelcome or ns.settings.sendWelcome
+    local msgWelcome = (forceWelcome and ns.dbGlobal.guildInfo.welcomeMsg ~= '') and ns.dbGlobal.guildInfo.welcomeMsg or (ns.settings.welcomeMessage or '')
 
-    local showGreeting = ns.dbGlobal.guildInfo.greeting or ns.settings.sendGreeting or false
-    local msgGreeting = ns.dbGlobal.guildInfo.greetingMsg and ns.dbGlobal.guildInfo.greetingMsg or (ns.settings.greetingMsg or '')
+    local forceGreeting = ns.dbGlobal.guildInfo.greeting or false
+    local showGreeting = forceGreeting or ns.settings.sendGreeting or false
+    local msgGreeting = (forceGreeting and ns.dbGlobal.guildInfo.greetingMsg ~= '') and ns.dbGlobal.guildInfo.greetingMsg or (ns.settings.greetingMsg or '')
 
     if invite.tblSent[pName].skipWeclcome then
         showGreeting, showWelcome = false, false

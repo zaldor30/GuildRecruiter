@@ -180,11 +180,6 @@ function core:startGuildRecruiter()
         ns.dbAP, ns.dbAG = dbAnal.profile.analytics, dbAnal.global[GRADDON.clubID].analytics
         ns.dbGlobal, ns.dbBL, ns.dbInv = ns.dbGlobal[GRADDON.clubID], ns.dbBL[GRADDON.clubID], ns.dbInv[GRADDON.clubID]
 
-        AC:RegisterOptionsTable('GR_Options', ns.addonSettings)
-        ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
-
-        -- Initialize Variables and Functions
-
         self.isGuildLeader = ns.dbGlobal.guildInfo.hasGuildLeader or IsGuildLeader()
         ns.isGuildLeader = self.isGuildLeader
         if self.isGuildLeader then
@@ -195,6 +190,11 @@ function core:startGuildRecruiter()
             ns.hasGuildLeader = false
             ns.dbGlobal.guildInfo.hasGuildLeader = false
         end
+
+        AC:RegisterOptionsTable('GR_Options', ns.addonSettings)
+        ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
+
+        -- Initialize Variables and Functions
 
         self.tblWhispers = ns.ds:WhisperMessages()
 

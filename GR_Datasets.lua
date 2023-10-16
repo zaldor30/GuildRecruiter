@@ -21,26 +21,38 @@ function ds:WhatsNew()
     local title, msg = '', ''
     title = ns.code:cText('FFFFFF00', "What's new in v"..GRADDON.version.."?")
     msg = [[
-        * Fixed invite issue with connected realms (Need feedback).
+         |CFF55d0ff** Please report any bugs or issues in Discord **
+                Discord: https://discord.gg/ZtS6Q2sKRH
+             (or click on the icon in the top left corner)|r
+
+    |CFFFFFF00v2.1.33 Notes|r
+        * Brought back adding black list players to the icon bar.
+        * Added the ability to send greeting/welcome message
+            when inviting via the menu (right click on player
+            name in chat).
+
+        |CFFFFFF00v2.1.33 Notes|r
+        * Fixed invite issue with connected realms.
         * Fixed anti-spam issue with connected realms.
         * UI improvements and clean up.
         * Default message is guild wide on your account.
-            Meaning, if you change it on one character, it will change on all.
+            Meaning, if you change it on one character, it will
+            change on all.
         * Added option to disable the 'What's New' message.
-        * Added skip if you don't want to invite a player right now,
-            it will add them to the skip list.
+        * Added skip if you don't want to invite a player right
+            now, it will add them to the skip list.
         * Scans now remember where you left off if you close
-            the addon and reopen (note: not if you log off or reload UI.)
+            the addon and reopen (note: not if you log off
+            or reload UI.)
         * Compact mode now remembers when you click on the icon.
         * Opened GM settings from any character on GM's account.
         * Added guild welcome message to the GM settings window.
-        * Added auto sync on login (will begin 60 seconds after login).
+        * Added auto sync on login (will begin 60 seconds
+            after login).
         * Fixed issues with auto sync not transferring all data.
 
         -> Sync with older versions will time out.
         -> Everyone needs to be on the current version.
-
-        ** Please report any bugs or issues on CurseForge or Discord **
     ]]
 
     return title, msg, height, update
