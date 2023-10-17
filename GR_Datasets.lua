@@ -4,7 +4,6 @@ local _, ns = ... -- Namespace (myaddon, namespace)
 ns.ds = {}
 local ds = ns.ds
 
-ns.ds.GR_VERSION = '2.1.33' -- Show 'What's New' only if versions match
 function ds:Init()
     self.tblBadZones = ds:invalidZones()
     self.tblBadZonesByName = nil
@@ -15,6 +14,7 @@ function ds:Init()
     self.tblWhispers = {}
     self.tblConnected = ds:GetConnectedRealms()
 end
+ns.ds.GR_VERSION = '2.1.36' -- Show 'What's New' only if versions match
 function ds:WhatsNew()
     local update = false -- True and will save seen message
     local height = 410 -- Adjust size of what's new window
