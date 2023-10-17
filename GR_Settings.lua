@@ -62,6 +62,30 @@ local function createFilterPreview()
 
     tblFilter.filter = out
 end
+local function MessageLength(msg)
+    local gd = ns.dbGlobal.guildData
+    local playerNameFound = false
+    local count, tMsg = 0, (msg or '')
+
+    msg = ns.code:capitalKeyWord(msg, 'GUILDLINK')
+    msg = ns.code:capitalKeyWord(msg, 'GUILDNAME')
+    msg = ns.code:capitalKeyWord(msg, 'PLAYERNAME')
+
+    if ns.code:capitalKeyWord(tMsg, 'GUILDLINK') then
+        tMsg = tMsg:gsub('GUILDLINK', '')
+        count = strlen(gd.guildName) + 9
+    end
+    if ns.code:capitalKeyWord(tMsg, 'GUILDNAME') then
+        tMsg = tMsg:gsub('GUILDNAME', '')
+        count = count + strlen(gd.guildName) + 2
+    end
+    if ns.code:capitalKeyWord(tMsg, 'PLAYERNAME') then
+        playerNameFound = tMsg:match('PLAYERNAME') and true or false
+        tMsg = tMsg:gsub('PLAYERNAME', '')
+    end
+
+    return playerNameFound, count + (strlen(tMsg) or 0), count, msg
+end
 
 ns.addonSettings = {
     name = GR_VERSION_INFO,
@@ -161,13 +185,18 @@ ns.addonSettings = {
             name = 'GM: Settings',
             order = 6,
             args = {
-                optGMHeader1 = {
-                    name = ns.isGuildLeader and 'Guild Master Settings' or 'Guild Master Settings (View Only)',
-                    type = 'header',
+                optGMLabel = {
                     order = 0,
+                    type = 'description',
+                    name = 'Guild Masters have access to the following settings on any guild character.',
+                },
+                optGMHeader1 = {
+                    order = 1,
+                    name = 'Guild Master Settings',
+                    type = 'header',
                 },
                 optRememberInvite = {
-                    order = 1,
+                    order = 2,
                     name = 'Anti guild spam protection.',
                     desc = "Remembers invited players so you don't constantly spam them invites",
                     type = 'toggle',
@@ -177,7 +206,7 @@ ns.addonSettings = {
                     get = function() return ns.dbGlobal.guildInfo.antiSpam end,
                 },
                 optReInvite = {
-                    order = 2,
+                    order = 3,
                     name = 'Reinvite players after:',
                     desc = 'Number of days before resetting invite status.',
                     type = 'select',
@@ -210,23 +239,56 @@ ns.addonSettings = {
                     name = 'Greeting Message',
                     desc = 'This is the message that will be '..ns.code:cText('FFFFFF00', 'whispered')..' to the player after joining.',
                     type = 'input',
+                    multiline = 3,
                     width = 'full',
                     disabled = function() return not ns.isGuildLeader end,
-                    set = function(_, val) ns.dbGlobal.guildInfo.greetingMsg = val end,
+                    set = function(_, val)
+                        local playerNameFound, _, remove, msg = MessageLength(val:trim())
+                        msg = msg or ''
+
+                        ns.dbGlobal.guildInfo.greetingMsg = playerNameFound and msg:sub(1, (243 - (remove or 0))) or msg:sub(1, (255 - (remove or 0)))
+                    end,
                     get = function() return ns.dbGlobal.guildInfo.greetingMsg end,
                 },
+                GMHeader2 = {
+                    name = '',
+                    type = 'header',
+                    order = 6
+                },
+                GMPreviewCount = {
+                    order = 7,
+                    name = function()
+                        local gi = ns.dbGlobal.guildInfo
+                        local playerNameFound, count = MessageLength((gi.greetingMsg or ''))
+
+                        local color = count < 255 and 'FF00FF00' or 'FFFF0000'
+                        return 'Message Length: '..ns.code:cText(color, count)..' (255 characters per message)'..(playerNameFound and '\nNote: Does not count the player name.' or '')..ns.code:cText('FFFFFF00', '\nMessages will be truncated to 255 characters\n(assumes 12 characters for PLAYERNAME).')
+                    end,
+                    type = 'description',
+                    width = 'full',
+                    fontSize = 'medium'
+                },
+                GMHeader3 = {
+                    order = 8,
+                    name = '',
+                    type = 'header',
+                },
                 optOnlyGMWelcome = {
-                    order = 6,
+                    order = 9,
                     name = 'Force/Unenforce welcome message.',
                     desc = 'Enable/Disable sending of a personalized welcome message to '..ns.code:cText('FFFFFF00', 'guild chat')..' after a player joins.\n \nEnabled, everyone using the addon will send this message.',
                     type = 'toggle',
                     disabled = function() return not ns.isGuildLeader end,
                     width = 'full',
-                    set = function(_, val) ns.dbGlobal.guildInfo.welcome = val end,
+                    set = function(_, val)
+                        local playerNameFound, _, remove, msg = MessageLength(val:trim())
+                        msg = msg or ''
+                        ns.dbGlobal.guildInfo.welcome = playerNameFound and msg:sub(1, (243 - (remove or 0))) or msg:sub(1, (255 - (remove or 0)))
+                    end,
                     get = function() return ns.dbGlobal.guildInfo.welcome end,
                 },
                 optGMWelcomeMsg = {
-                    order = 7,
+                    order = 10,
                     name = 'Actual greeting Message',
                     desc = 'This is the actual message shown in '..ns.code:cText('FFFFFF00', 'guild chat')..'.',
                     type = 'input',
@@ -245,24 +307,29 @@ ns.addonSettings = {
             name = 'GM: Messages',
             order = 7,
             args = {
-                msgGMHeader1 = {
+                optGMLabel = {
                     order = 0,
-                    name = ns.isGuildLeader and 'Message Formatting' or 'Message Formatting (View Only)',
+                    type = 'description',
+                    name = 'Guild Masters have access to the following settings on any guild character.',
+                },
+                optGMHeader1 = {
+                    order = 1,
+                    name = 'Guild Master Messages',
                     type = 'header',
                 },
                 msgGMDesc = {
-                    order = 1,
+                    order = 2,
                     name = ns.code:cText('FF00FF00', 'These messages will be pushed out to other officers that can invite players.\n\n')..ns.code:cText('FFFFFF00', 'GUILDLINK')..': Clickable link to allow player to join the guild.\n'..ns.code:cText('FFFFFF00', 'GUILDNAME')..': Guild name in format <Shadowbound>.\n'..ns.code:cText('FFFFFF00', 'PLAYERNAME')..': Player name that is being invited to the guild.',
                     type = 'description',
                     fontSize = 'medium',
                 },
                 msgGMHeader2 = {
-                    order = 2,
+                    order = 3,
                     name = '',
                     type = 'header',
                 },
                 msgGMActive = {
-                    order = 3,
+                    order = 4,
                     name = 'Invite Messages',
                     desc = 'The messges that will be sent to potential recruits.',
                     type = 'select',
@@ -285,7 +352,7 @@ ns.addonSettings = {
                     end,
                 },
                 msgGMNewBtn = {
-                    order = 4,
+                    order = 5,
                     name = 'New',
                     desc = 'Create a new message.',
                     type = 'execute',
@@ -298,7 +365,7 @@ ns.addonSettings = {
                     end,
                 },
                 msgGMInviteDesc = {
-                    order = 5,
+                    order = 6,
                     name = 'Invite Description',
                     desc = 'Short description of the message.',
                     type = 'input',
@@ -309,7 +376,7 @@ ns.addonSettings = {
                     get = function() return tblGMMessage.desc or '' end,
                 },
                 msgGMInvite = {
-                    order = 6,
+                    order = 7,
                     name = 'Invite Message',
                     type = 'input',
                     multiline = 7,
@@ -319,45 +386,31 @@ ns.addonSettings = {
                     get = function() return tblGMMessage.message or '' end,
                 },
                 msgGMHeader3 = {
-                    order = 7,
+                    order = 8,
                     name = 'Message Preview',
                     type = 'header',
                 },
                 msgGMPreview = {
-                    order = 8,
+                    order = 9,
                     name = function()
-                        gmPreview = ns.code:variableReplacement(tblGMMessage.message, UnitName('player'))
-                        if gmPreview == '' then return '' end
-                        return (ns.code:cText('FFFF80FF', 'To [')..ns.code.fPlayerName..ns.code:cText('FFFF80FF', ']: '..(gmPreview or ''))) or ''
+                        local preview = ns.code:variableReplacement(tblGMMessage.message, UnitName('player'))
+                        if preview == '' then return '' end
+                        return (ns.code:cText('FFFF80FF', 'To [')..ns.code.fPlayerName..ns.code:cText('FFFF80FF', ']: '..(preview or ''))) or ''
                     end,
                     type = 'description',
                     width = 'full',
                     fontSize = 'medium'
                 },
                 msgGMHeader4 = {
+                    order = 10,
                     name = '',
                     type = 'header',
-                    order = 10
                 },
                 msgGMPreviewCount = {
                     order = 11,
                     name = function()
-                        local gi = ns.dbGlobal.guildData
-                        local playerNameFound = false
-                        local count, tMsg = 0, tblGMMessage.message or nil
-                        if ns.code:capitalKeyWord(tMsg, 'GUILDLINK') then
-                            tMsg = tMsg:gsub('GUILDLINK', '')
-                            count = strlen(gi.guildName) + 9
-                        end
-                        if ns.code:capitalKeyWord(tMsg, 'GUILDNAME') then
-                            tMsg = tMsg:gsub('GUILDNAME', '')
-                            count = count + strlen(gi.guildName) + 2
-                        end
-                        if ns.code:capitalKeyWord(tMsg, 'PLAYERNAME') then
-                            playerNameFound = tMsg:match('PLAYERNAME') and true or false
-                            tMsg = tMsg:gsub('PLAYERNAME', '')
-                        end
-                        count = count + strlen(tMsg)
+                        local gi = ns.dbGlobal.guildInfo
+                        local playerNameFound, count = MessageLength((gi.greetingMsg or ''))
 
                         local color = count < 255 and 'FF00FF00' or 'FFFF0000'
                         return 'Message Length: '..ns.code:cText(color, count)..' (255 characters per message)'..(playerNameFound and '\n Note: Does not count the player name.' or '')
@@ -463,22 +516,58 @@ ns.addonSettings = {
                     desc = 'This message will be in a '..ns.code:cText('FFFFFF00', 'whisper')..' form to the player upon joining.',
                     type = 'toggle',
                     width = 'full',
-                    disabled = function() return not ns.isGuildLeader and ns.dbGlobal.guildInfo.greeting end,
+                    disabled = function() return ns.dbGlobal.guildInfo.greeting end,
                     set = function(_, val) ns.settings.sendGreeting = val end,
                     get = function() return ns.dbGlobal.guildInfo.greeting or ns.settings.sendGreeting end,
                 },
-                optPersonalGreetingMsg = {
+                optShowPersonalGM = {
                     order = 5,
+                    name = ns.code:cText('FF00FF00', 'NOTE: The GM has forced this option on.'),
+                    hidden = function() return not ns.dbGlobal.guildInfo.greeting end,
+                    type = 'description',
+                    fontSize = 'medium',
+                },
+                optPersonalGreetingMsg = {
+                    order = 6,
                     name = 'Actual greeting message',
                     desc = 'This is the message that will be '..ns.code:cText('FFFFFF00', 'whispered')..' to the player after joining.',
                     type = 'input',
+                    multiline = 3,
                     width = 'full',
-                    disabled = function() return not ns.core.isGuildLeader and ns.dbGlobal.guildInfo.greeting end,
-                    set = function(_, val) ns.settings.greetingMsg = val end,
-                    get = function() return ns.dbGlobal.guildInfo.greeting and ns.dbGlobal.guildInfo.greetingMsg or ns.settings.greetingMsg end,
+                    disabled = function() return ns.dbGlobal.guildInfo.greeting end,
+                    set = function(_, val)
+                        local playerNameFound, _, remove, msg = MessageLength(val:trim())
+                        msg = msg or ''
+
+                        ns.settings.greetingMsg  = playerNameFound and msg:sub(1, (243 - (remove or 0))) or msg:sub(1, (255 - (remove or 0)))
+                    end,
+                    get = function() return ns.dbGlobal.guildInfo.greeting and ns.settings.greetingMsg or ns.dbGlobal.guildInfo.greetingMsg end,
+                },
+                Header2 = {
+                    name = '',
+                    type = 'header',
+                    order = 7
+                },
+                PreviewCount = {
+                    order = 8,
+                    name = function()
+                        local gi = ns.dbGlobal.guildInfo
+                        local playerNameFound, count = MessageLength((ns.settings.greetingMsg or gi.greetingMsg or ''))
+
+                        local color = count < 255 and 'FF00FF00' or 'FFFF0000'
+                        return 'Message Length: '..ns.code:cText(color, count)..' (255 characters per message)'..(playerNameFound and '\nNote: Does not count the player name.' or '')..ns.code:cText('FFFFFF00', '\nMessages will be truncated to 255 characters\n(assumes 12 characters for PLAYERNAME).')
+                    end,
+                    type = 'description',
+                    width = 'full',
+                    fontSize = 'medium'
+                },
+                Header3 = {
+                    order = 9,
+                    name = '',
+                    type = 'header',
                 },
                 optShowPersonalWelcome = {
-                    order = 6,
+                    order = 10,
                     name = 'Enable/Disable personal welcome message.',
                     desc = 'Enable/Disable sending of a personalized welcome message to '..ns.code:cText('FFFFFF00', 'guild chat')..' after a player joins.',
                     type = 'toggle',
@@ -488,27 +577,31 @@ ns.addonSettings = {
                     get = function() return ns.settings.sendWelcome end,
                 },
                 optPersonalWelcomeMsg = {
-                    order = 7,
+                    order = 11,
                     name = 'Actual message sent to player after joining.',
                     desc = 'This message will be sent to '..ns.code:cText('FFFFFF00', 'guild chat')..' to the player after joining.',
                     type = 'input',
                     width = 'full',
                     disabled = function() return not ns.core.isGuildLeader and ns.dbGlobal.greeting end,
-                    set = function(_, val) ns.settings.welcomeMessage = val end,
+                    set = function(_, val)
+                        local playerNameFound, _, remove, msg = MessageLength(val:trim())
+                        msg = msg or ''
+                        ns.settings.welcomeMessage = playerNameFound and msg:sub(1, (243 - (remove or 0))) or msg:sub(1, (255 - (remove or 0)))
+                    end,
                     get = function()
                         ns.settings.welcomeMessage = ns.settings.welcomeMessage or DEFAULT_GUILD_WELCOME
                         return ns.settings.welcomeMessage
                     end,
                 },
                 optMsgNote = {
-                    order = 8,
+                    order = 12,
                     name = ns.code:cText('FFFFFF00', 'NOTE: ')..'Disabled options are controlled by the Guild Master.',
                     type = 'description',
                     width = 'full',
                     fontSize = 'medium'
                 },
                 optScanInterval = {
-                    order = 9,
+                    order = 13,
                     name = 'Time to wait between scans (default recommended).',
                     desc = 'WoW requires a cooldown period between /who scans, this is the time that the system will wait between scans.',
                     type = 'input',
@@ -520,7 +613,7 @@ ns.addonSettings = {
                     get = function() return tostring(ns.settings.scanWaitTime) end,
                 },
                 optWhoNote = {
-                    order = 10,
+                    order = 14,
                     name = ns.code:cText('FFFFFF00', 'NOTE: ')..'6 seconds seems to give best results, shorter time yields less results.',
                     type = 'description',
                     width = 'full',

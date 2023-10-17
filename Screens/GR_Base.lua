@@ -201,7 +201,7 @@ function template:BuildIconBar()
     blacklistIconButton:SetNormalTexture(ICON_PATH..'GR_Blacklist')
     blacklistIconButton:SetHighlightTexture(BLUE_HIGHLIGHT)
     blacklistIconButton:SetScript('OnClick', function()
-        local POPUP_NAME = "inputReason"
+        local POPUP_NAME, POPUP_REASON, blName = "inputName", "inputReason", nil
         StaticPopupDialogs[POPUP_NAME] = {
             text = "Who would you like to Black List?\nSpelling counts, include realm name if needed.\n \nBetter to right click on player\nto add to black list.",
             button1 = "OK",
@@ -210,8 +210,32 @@ function template:BuildIconBar()
                 local value = data.editBox:GetText()
                 if not value or value == '' then return end
 
-                if ns.blackList then
-                    ns.blackList:AddToBlackList(value) end
+                blName = value
+
+                StaticPopupDialogs[POPUP_REASON] = {
+                    text = "Why do you want to black list:\n"..blName,
+                    button1 = "OK",
+                    button2 = "Cancel",
+                    OnAccept = function(rData)
+                        if not blName then return end
+
+                        value = rData.editBox:GetText()
+                        value = value ~= '' and value or 'No reason'
+
+                        if not blName or not value then return end
+                        ns.blackList:AddToBlackList(blName, value)
+                    end,
+                    OnCancel = function() UIErrorsFrame:AddMessage(blName..' was not added to Black List.', 1.0, 0.1, 0.1, 1.0) end,
+                    timeout = 0,
+                    whileDead = true,
+                    hideOnEscape = true,
+                    preferredIndex = 3,
+                    hasEditBox = true,
+                    maxLetters = 255,
+                    -- You can add more properties as needed
+                }
+
+                StaticPopup_Show(POPUP_REASON)
             end,
             OnCancel = function() UIErrorsFrame:AddMessage('No one will be added to the black list.', 1.0, 0.1, 0.1, 1.0) end,
             timeout = 0,
@@ -222,16 +246,17 @@ function template:BuildIconBar()
             maxLetters = 255,
             -- You can add more properties as needed
         }
+
         StaticPopup_Show(POPUP_NAME)
     end)
     blacklistIconButton:SetScript('OnEnter', function() ns.code:createTooltip('Add to Blacklist') end)
     blacklistIconButton:SetScript('OnLeave', function() GameTooltip:Hide() end)
-    blacklistIconButton:SetShown(false)
+    blacklistIconButton:SetShown(true)
 
     -- Reset Filter Icon
     local resetIconButton = CreateFrame('Button', 'GR_BASE_RESETICON', tblFrame.titleFrame)
     resetIconButton:SetSize(20, 20)
-    resetIconButton:SetPoint('LEFT', statsIconButton, 'RIGHT', 5, 0)
+    resetIconButton:SetPoint('LEFT', blacklistIconButton, 'RIGHT', 5, 0)
     resetIconButton:SetNormalTexture(ICON_PATH..'GR_Reset')
     resetIconButton:SetHighlightTexture(BLUE_HIGHLIGHT)
     resetIconButton:SetScript('OnClick', function() ns.scanner:ResetFilter() end)

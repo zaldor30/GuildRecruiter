@@ -1,4 +1,5 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
+local aceGUI = LibStub("AceGUI-3.0")
 
 ns.whatsnew = {}
 local whatsnew, wn = ns.whatsnew, {}
@@ -20,6 +21,9 @@ function whatsnew:CloseWhatsNew()
     ns.observer:Unregister('CLOSE_SCREENS', obsCLOSE_SCREENS)
 
     wn.tblFrame.frame:SetShown(false)
+    wn.tblFrame.inline:ReleaseChildren()
+    wn.tblFrame.inline:Release()
+
     ns.screen.tblFrame.titleFrame:SetShown(true)
     ns.screen.tblFrame.statusBar:SetShown(true)
     ns.screen.tblFrame.frame:SetShown(false)
@@ -42,7 +46,7 @@ function wn:BuildWhatsNew()
     f:SetBackdrop(BackdropTemplate(BLANK_BACKGROUND))
     f:SetBackdropColor(0, 0, 0, 0)
     f:SetBackdropBorderColor(1, 1, 1, 0)
-    f:SetPoint('TOPLEFT', tblScreen.frame, 'TOPLEFT', 5, -5)
+    f:SetPoint('TOPLEFT', tblScreen.frame, 'TOPLEFT', 10, -15)
     f:SetPoint('BOTTOMRIGHT', tblScreen.frame, 'TOPRIGHT', -5, -30)
     f:SetShown(true)
     tblFrame.frame = f
@@ -75,15 +79,11 @@ function wn:BuildWhatsNew()
 
     local title = f:CreateFontString(nil, 'OVERLAY')
     title:SetFont(SKURRI_FONT, 30, 'OUTLINE')
-    title:SetPoint('TOP', f, 'TOP', 5, -30)
+    title:SetPoint('TOPLEFT', f, 'TOPLEFT', 0, -30)
+    title:SetPoint('TOPRIGHT', f, 'TOPRIGHT', 0, -30)
+    title:SetJustifyH('CENTER')
     title:SetText(wn.title)
     title:SetShown(true)
-
-    local body = f:CreateFontString(nil, 'OVERLAY', 'GameTooltipText')
-    body:SetFont(DEFAULT_FONT, 14, 'OUTLINE')
-    body:SetPoint('TOPLEFT', title, 'BOTTOMLEFT', -140, -20)
-    body:SetText(ns.code:cText('FFFFFFFF', wn.body))
-    body:SetShown(true)
 
     local checkbox = CreateFrame('CheckButton', 'GR_BASE_checkbox', f, 'UICheckButtonTemplate')
     checkbox:SetPoint('BOTTOMRIGHT', tblScreen.frame, 'BOTTOMRIGHT', -5, 5)
@@ -97,6 +97,28 @@ function wn:BuildWhatsNew()
     checkbox.text = checkbox:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     checkbox.text:SetPoint('RIGHT', checkbox, 'LEFT', -5, 0)
     checkbox.text:SetText('Do not show again')
+
+    local inline = tblFrame.inline or aceGUI:Create('InlineGroup')
+    inline:SetLayout('Fill')
+    inline:SetPoint('TOPLEFT', title, 'BOTTOMLEFT', 0, -5)
+    inline:SetPoint('BOTTOMRIGHT', checkbox, 'BOTTOMRIGHT', -5, 20)
+    tblFrame.inline = inline
+
+    local scroll = aceGUI:Create('ScrollFrame')
+    scroll:SetLayout('fill')
+    scroll:SetFullWidth(true)
+    scroll:SetFullHeight(true)
+    inline:AddChild(scroll)
+
+    local body = aceGUI:Create('Label')
+    body:SetFont(DEFAULT_FONT, 14, 'OUTLINE')
+    body:SetColor(1, 1, 1)
+    body:SetText(wn.body)
+    body:SetJustifyH('LEFT')
+    body:SetJustifyV('TOP')
+    body:SetFullWidth(true)
+    body:SetFullHeight(true)
+    scroll:AddChild(body)
 
     if not GRADDON.debug then ns.dbGlobal.version = ns.ds.GR_VERSION end
 end

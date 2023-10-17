@@ -72,3 +72,4 @@ BUTTON_UNLOCKED = ICON_PATH..'GR_Unlocked'
 
 -- Highlgiht Icons
 BLUE_HIGHLIGHT = 'bags-glow-heirloom'
+BLUE_LONG_HIGHLIGHT = 'communitiesfinder_card_highlight'

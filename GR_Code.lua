@@ -64,6 +64,7 @@ function code:wordWrap(inputString, maxLineLength)
 end
 -- Whisper Message Routines
 function code:capitalKeyWord(input, key)
+    if not input or input == '' or not key then return end
     local startPos, endPos = (strupper(input)):find(key)
 
     if startPos then
@@ -77,13 +78,14 @@ function code:capitalKeyWord(input, key)
 end
 function code:variableReplacement(msg, playerName, removeGT)
     local gi = ns.dbGlobal.guildData
-    if not gi or not msg then return end
+    if not gi or not msg or msg == '' then return end
 
     playerName = strsplit('-', playerName)
 
     msg = code:capitalKeyWord(msg, 'GUILDLINK')
     msg = code:capitalKeyWord(msg, 'GUILDNAME')
     msg = code:capitalKeyWord(msg, 'PLAYERNAME')
+    if not msg then return end
 
     local gLink, gName = gi.guildLink or nil, gi.guildName or nil
     local needGlink = msg:match('GUILDLINK') and true or false

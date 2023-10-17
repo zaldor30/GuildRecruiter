@@ -1,3 +1,12 @@
+##2.1.36
+* Brought back adding black list players to the icon bar.
+* Added the ability to send greeting/welcome message when inviting via the menu (right click on player name in chat).
+* Added message length to greeting message and restricted to 255 characters (1 message).
+* Restricting welcome message to 255 characters (1 message).
+
+## 2.1.35
+* Fixed an issue with GM messages not syncing properly.
+
 ## 2.1.33
 This version is a major rework to the code.  I have removed a lot of the old code and replaced it with new code.  This should fix a lot of the issues that have been reported.  I have also added new features and cleaned up the UI.  Please report any issues you find on CurseForge or Discord.
 
