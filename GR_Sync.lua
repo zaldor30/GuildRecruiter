@@ -123,11 +123,13 @@ function sync:OnCommReceived(prefix, message, distribution, sender)
     end
 
     local function sendMasterData()
-        local invAdded, blAdded, blRemoved = nil, nil, nil
+        local invAdded, blAdded, blRemoved = 0, 0, 0
         for k, r in pairs(self.tblData) do
             if r.hasReceivedData then
-                invAdded, blAdded, blRemoved = self:MergeSyncData(k, r.rawData)
-                if invAdded == -1 then sync:StopSync() return end
+                local inv, bl, blRem = self:MergeSyncData(k, r.rawData)
+                invAdded = invAdded + inv
+                blAdded = blAdded + bl
+                blRemoved = blRemoved + blRem
             end
         end
         sync:ConsoleStatsDisplay(invAdded, blAdded, blRemoved)
@@ -217,7 +219,7 @@ end
 -- Data Parsing Routines
 function sync:IncorrectVersionOutput(version, sender)
     if not version or not sender then
-        ns.code:dOut('IncorrectVersionOutput: Missing version or sender ('..version..'/'..sender..')')
+        ns.code:fOut('IncorrectVersionOutput: Missing version or sender ('..version..'/'..sender..')')
         return
     end
     if not version or GRADDON.version ~= version then
@@ -240,8 +242,8 @@ function sync:MergeSyncData(sender, message)
     local function mergeTheData(tbl)
         local invAdded, blAdded, blRemoved = 0, 0, 0
         if GRADDON.version ~= tbl.dbVersion then
-            self:IncorrectVersionOutput(tbl.dbVersion, tbl.sender)
-            return invAdded, blAdded, blRemoved
+            self:IncorrectVersionOutput(tbl.dbVersion, sender)
+            return 0, 0, 0
         end
 
         if not ns.isGuildLeader and not ns.hasGuildLeader then
