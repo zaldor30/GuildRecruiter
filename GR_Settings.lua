@@ -1150,7 +1150,7 @@ ns.addonSettings = {
                         for k, r in pairs(ns.dbBL or {}) do
                             local name = k
                             name = r.markedForDelete and ns.code:cText('FFFF0000', name) or ns.code:cText('FF00FF00', name)
-                            tbl[k] = (name..': '..r.reason) or ''
+                            tbl[k] = (name..': '..(r.reason or 'Unknown'))
                         end
 
                         return tbl

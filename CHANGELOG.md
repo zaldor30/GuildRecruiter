@@ -4,6 +4,13 @@
 * Added message length to greeting message and restricted to 255 characters (1 message).
 * Restricting welcome message to 255 characters (1 message).
 
+## 2.1.38
+* Fixed issue with Black List not working properly.
+* Fixed /gr or /recruiter not opening the addon.
+
+## 2.1.37
+* Fixed issues with syncing.
+
 ## 2.1.35
 * Fixed an issue with GM messages not syncing properly.
 

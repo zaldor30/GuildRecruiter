@@ -225,6 +225,7 @@ function core:startGuildRecruiter()
     core:CreateMiniMapIcon()
 
     -- Maintenance Routine
+    ns.blackList:FixBlackList() -- Fix Black List Table
     local function startMaintenance()
         local removeCount = 0
         local cutOffTime = C_DateAndTime.GetServerTimeLocal() - ((db.rememberTime or 7) * SECONDS_IN_A_DAY)
@@ -262,7 +263,7 @@ function core:startGuildRecruiter()
 end
 function core:SlashCommand(msg)
     msg = msg:trim()
-    if not msg or msg == '' then ns.screen:StartGuildRecruiter()
+    if not msg or msg == '' then ns.screen.home:EnterHomeScreen()
     elseif strlower(msg) == 'help' then
         ns.code:fOut(GR_VERSION_INFO..' - Help')
         ns.code:fOut('You can use /gr or /recruiter to access the commands bellow.')

@@ -218,6 +218,7 @@ end
 
 -- Data Parsing Routines
 function sync:IncorrectVersionOutput(version, sender)
+    sender = (sender and sender ~= '') and sender or 'unknown sender'
     if not version or not sender then
         ns.code:fOut('IncorrectVersionOutput: Missing version or sender ('..version..'/'..sender..')')
         return
@@ -272,7 +273,7 @@ function sync:MergeSyncData(sender, message)
 
         ns.dbBL = ns.dbBL or {}
         for k, r in pairs(tbl.blackListedPlayers and tbl.blackListedPlayers or {}) do
-            if not ns.dbBL[k] then
+            if not ns.dbBL[k] and type(k) == 'string' and k ~= 'blacklist' then
                 ns.dbBL[k] = r
                 blAdded = blAdded + 1
             elseif r.markedForDeletion then

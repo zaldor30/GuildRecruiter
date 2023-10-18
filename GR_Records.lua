@@ -258,6 +258,14 @@ function blackList:CheckBlackList(player)
     if found then ns.code:dOut(player..' is on the blacklist.') end
     return found
 end
+function blackList:FixBlackList()
+    self.tblBlackList = ns.dbBL or {}
+
+    self.tblBlackList.blackList = nil
+    for k in pairs(self.tblBlackList) do
+        if type(k) == 'number' then self.tblBlackList[k] = nil end
+    end
+end
 function blackList:AddToBlackList(name, reason)
     if not name then return end
 
@@ -273,8 +281,8 @@ function blackList:AddToBlackList(name, reason)
             local value = data.editBox:GetText()
             value = value ~= '' and value or 'No reason'
 
-            ns.blackList.tblBlackList[blName] = { reason = value, whoDidIt = UnitGUID('player'), dateBlackList = C_DateAndTime.GetServerTimeLocal(), markedForDelete = false }
-            ns.dbBL = ns.blackList.tblBlackList
+            self.tblBlackList[blName] = { reason = value, whoDidIt = UnitGUID('player'), dateBlackList = C_DateAndTime.GetServerTimeLocal(), markedForDelete = false }
+            ns.dbBL = ns.blackList
 
             ns.scanner:TotalBlackList()
             ns.code:fOut(fName..' was added to the black list with \"'..value..'\" as a reason.')
@@ -302,9 +310,9 @@ function blackList:AddToBlackList(name, reason)
 
     if not reason then StaticPopup_Show(POPUP_REASON)
     else
-        reason = reason or 'Bulk Add'
-        ns.blackList.tblBlackList[blName] = { reason = reason, whoDidIt = UnitGUID('player'), dateBlackList = C_DateAndTime.GetServerTimeLocal(), markedForDelete = false }
-        ns.dbBL = ns.blackList.tblBlackList
+        reason = reason == 'BULK_ADD_BLACKLIST' and 'Bulk Add' or reason
+        self.tblBlackList[blName] = { reason = reason, whoDidIt = UnitGUID('player'), dateBlackList = C_DateAndTime.GetServerTimeLocal(), markedForDelete = false }
+        ns.dbBL = self.tblBlackList
 
         ns.scanner:TotalBlackList()
         ns.code:cOut(fName..' was added to the black list with \"'..reason..'\" as a reason.')
