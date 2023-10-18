@@ -234,7 +234,7 @@ function scan:BuildScannerControls()
         local func = function()
             for k, r in pairs(scan.tblFound) do
                 if r.isChecked then
-                    ns.blackList:AddToBlackList(k, 'BULK_SKIP')
+                    ns.blackList:AddToBlackList(k, 'BULK_ADD_BLACKLIST')
                     scan.tblFound[k] = nil
                 end
             end
