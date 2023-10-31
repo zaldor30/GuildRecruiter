@@ -1,4 +1,5 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
+local L = LibStub("AceLocale-3.0"):GetLocale('GuildRecruiter')
 
 --[[ This is for reusable code found throughout the addon
     This code contains the following namespaces:
@@ -15,11 +16,11 @@ local function GuildRosterHandler(...)
     local _, msg =  ...
     if not msg or not invite.notifyActive then return end
 
-    local newMsg = msg:gsub("'", ''):gsub('No Player Named ', '')
+    local newMsg = msg:gsub("'", ''):gsub(L['no player named'], ''):gsub(L["No Player Named"]..' ', '')
     local pName = newMsg:match("([^%s]+)")--("^(.-)%s")
     pName = pName and pName:gsub('-'..GetRealmName(), '') or pName
 
-    if msg:match('is already in a guild') then
+    if msg:match(L["is already in a guild"]) then
         ns.scanner:TotalInvited(-1)
         if invite.tblSent[pName] then invite.tblSent[pName] = nil end
         return
@@ -57,10 +58,10 @@ local function GuildRosterHandler(...)
             invite.notifyActive = false end
     end
 
-    if msg:match('not found') then ns.scanner:TotalInvited(-1)
-    elseif msg:match('is not online') then ns.scanner:TotalInvited(-1)
-    elseif strlower(msg):match('no player named') then ns.scanner:TotalInvited(-1)
-    elseif msg:match('has joined the guild') then
+    if msg:match(L["Player not found"]) then ns.scanner:TotalInvited(-1)
+    elseif msg:match(L['is not online']) then ns.scanner:TotalInvited(-1)
+    elseif strlower(msg):match(L['no player named']) then ns.scanner:TotalInvited(-1)
+    elseif msg:match(L["joined the guild"]) then
         if showGreeting and  msgGreeting ~= '' and pName then
             SendChatMessage(ns.code:variableReplacement(msgGreeting, pName, 'REMOVE<>'), 'WHISPER', nil, pName)
         end
@@ -74,10 +75,10 @@ local function GuildRosterHandler(...)
         ns.scanner:TotalAccepted()
         ns.scanner:TotalUnknown(-1)
 
-        ns.code:cOut(pName..' joined the guild!')
+        ns.code:cOut(pName..' '..L['JOINED_GUILD_MESSAGE'])
         return
-    elseif msg:match('is already in a guild') then ns.scanner:TotalInvited(-1)
-    elseif msg:match('declines your guild invitation') then ns.scanner:TotalDeclined() end
+    elseif msg:match(L["is already in a guild"]) then ns.scanner:TotalInvited(-1)
+    elseif msg:match(L['declines your guild invitation']) then ns.scanner:TotalDeclined() end
 
     if invite.tblSent[pName] then
         UpdateSent()

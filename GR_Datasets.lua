@@ -1,7 +1,7 @@
 -- Pre-defined Datasets
 local _, ns = ... -- Namespace (myaddon, namespace)
 
-ns.ds = {}
+ns.ds, ns.tblBlackList, ns.tblInvited = {}, {}, {}
 local ds = ns.ds
 
 function ds:Init()
@@ -61,68 +61,81 @@ function ds:WhatsNew()
     return title, msg, height, update
 end
 function ds:classes()
+    local function GetLocalizedClassNames()
+        local localizedClassNames = {}
+
+        for classIndex = 1, GetNumClasses() do
+            local className, classFileName, classID = GetClassInfo(classIndex)
+            localizedClassNames[classID] = className
+        end
+
+        return localizedClassNames
+    end
+
+    local localizedClasses = GetLocalizedClassNames()
+
     return {
         ['WARRIOR'] = {
-            id = 1, name = 'Warrior', classFile = 'WARRIOR',
+            id = 1, name = localizedClasses[1], classFile = 'WARRIOR',
             color = GRADDON.classInfo['WARRIOR'].color, icon = GRADDON.classInfo['WARRIOR'].icon,
             tank = true, healer = false, melee = true, ranged = false
         },
         ['PALADIN'] = {
-            id = 2, name = 'Paladin', classFile = 'PALADIN',
+            id = 2, name = localizedClasses[2], classFile = 'PALADIN',
             color = GRADDON.classInfo['PALADIN'].color, icon = GRADDON.classInfo['PALADIN'].icon,
             tank = true, healer = true, melee = true, ranged = false
         },
         ['HUNTER'] = {
-            id = 3, name = 'Hunter', classFile = 'HUNTER',
+            id = 3, name = localizedClasses[3], classFile = 'HUNTER',
             color = GRADDON.classInfo['HUNTER'].color, icon = GRADDON.classInfo['HUNTER'].icon,
             tank = false, healer = false, melee = false, ranged = true
         },
         ['ROGUE'] = {
-            id = 4, name = 'Rogue', classFile = 'ROGUE',
+            id = 4, name = localizedClasses[4], classFile = 'ROGUE',
             color = GRADDON.classInfo['ROGUE'].color, icon = GRADDON.classInfo['ROGUE'].icon,
             tank = false, healer = false, melee = true, ranged = false
         },
         ['PRIEST'] = {
-            id = 5, name = 'Priest', classFile = 'PRIEST',
+            id = 5, name = localizedClasses[5], classFile = 'PRIEST',
             color = GRADDON.classInfo['PRIEST'].color, icon = GRADDON.classInfo['PRIEST'].icon,
             tank = false, healer = false, melee = false, ranged = true
         },
         ['DEATHKNIGHT'] = {
-            id = 6, name = 'Death Knight', classFile = 'DEATHKNIGHT',
+            id = 6, name = localizedClasses[6], classFile = 'DEATHKNIGHT',
             color = GRADDON.classInfo['DEATHKNIGHT'].color, icon = GRADDON.classInfo['DEATHKNIGHT'].icon,
             tank = true, healer = false, melee = true, ranged = false
         },
         ['SHAMAN'] = {
-            id = 7, name = 'Shaman', classFile = 'SHAMAN',
+            id = 7, name = localizedClasses[7], classFile = 'SHAMAN',
             color = GRADDON.classInfo['SHAMAN'].color, icon = GRADDON.classInfo['SHAMAN'].icon,
             tank = false, healer = true, melee = true, ranged = true
         },
         ['MAGE'] = {
-            id = 8, name = 'Mage', classFile = 'MAGE',
+            id = 8, name = localizedClasses[8], classFile = 'MAGE',
             color = GRADDON.classInfo['MAGE'].color, icon = GRADDON.classInfo['MAGE'].icon,
             tank = false, healer = false, melee = false, ranged = true
         },
         ['WARLOCK'] = {
-            id = 9, name = 'Warlock', classFile = 'WARLOCK',
+            id = 9, name = localizedClasses[9], classFile = 'WARLOCK',
             color = GRADDON.classInfo['WARLOCK'].color, icon = GRADDON.classInfo['WARLOCK'].icon,
             tank = false, healer = false, melee = false, ranged = true
         },
         ['MONK'] = {
-            id = 10, name = 'Monk', classFile = 'MONK',
+            id = 10, name = localizedClasses[10], classFile = 'MONK',
             color = GRADDON.classInfo['MONK'].color, icon = GRADDON.classInfo['MONK'].icon,
             tank = true, healer = true, melee = true, ranged = false
         },
         ['DRUID'] = {
-            id = 11, name = 'Druid', classFile = 'DRUID',
+            id = 11, name = localizedClasses[11], classFile = 'DRUID',
             color = GRADDON.classInfo['DRUID'].color, icon = GRADDON.classInfo['DRUID'].icon,
             tank = true, healer = true, melee = true, ranged = true
         },
         ['DEMONHUNTER'] = {
-            id = 12, name = 'Demon Hunter', classFile = 'DEMONHUNTER',
+            id = 12, name = localizedClasses[12], classFile = 'DEMONHUNTER',
             color = GRADDON.classInfo['DEMONHUNTER'].color, icon = GRADDON.classInfo['DEMONHUNTER'].icon,
             tank = true, healer = false, melee = true, ranged = false },
         ['EVOKER'] = {
-            id = 13, name = 'Evoker', classFile = 'EVOKER',
+            id = 13, name = localizedClasses[13], classFile = 'EVOKER',
             color = GRADDON.classInfo['EVOKER'].color, icon = GRADDON.classInfo['EVOKER'].icon,
             tank = false, healer = true, melee = false, ranged = true
         },
@@ -135,6 +148,7 @@ function ds:classesByName()
         tbl[r.key] = {
             classID = r.id,
             class = r.key,
+            className = r.name,
             classFile = r.classFile,
         }
     end

@@ -1,4 +1,6 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
+local LibDeflate = LibStub:GetLibrary("LibDeflate")
+local aceSerializer = LibStub:GetLibrary("AceSerializer-3.0")
 
 ns.code, ns.events = {}, {}
 local code, events = ns.code, ns.events
@@ -16,7 +18,7 @@ function code:cPlayer(uName, class, color)
     elseif strmatch(uName, 'raid') or strmatch(uName, 'party') or uName  == 'player' then
         uName = UnitName(uName) end
 
-    local cClass = (class or select(2, UnitClass(uName))) and GRADDON.classInfo[(class or select(2, UnitClass(uName)))].color or (color or nil)
+    local cClass = (class or select(2, UnitClass(uName))) and ns.ds.tblClasses[(class or select(2, UnitClass(uName)))].color or (color or nil)
 
     if not cClass then return uName
     else return code:cText(cClass, uName) end
@@ -26,14 +28,16 @@ function code:cOut(msg, color, noPrefix, showConsole)
     local prefix = not noPrefix and 'GR: ' or ''
 
     if showConsole or (ns.settings and ns.settings.showAppMsgs) then
-        print('|c'..(color or 'FF3EB9D8')..prefix..(msg or 'Error: No message')..'|r') end
+        print('|c'..(color and color or 'FF3EB9D8')..prefix..(msg or 'Error: No message')..'|r') end
 end
 function code:fOut(msg, color, noPrefix) code:cOut(msg, color, noPrefix, true) end
 function code:dOut(msg, color, noPrefix)
     if GRADDON.debug then code:cOut(msg, color, noPrefix, true) end
 end
 function code:statusOut(msg, color)
-    if not msg or msg == '' then return end
+    if not msg or msg == '' then return
+    elseif not ns.screen.tblFrame or not ns.screen.tblFrame.statusText then return end
+
     ns.screen.tblFrame.statusText:SetText('|c'..(color or 'FFFFFFFF')..msg..'|r')
 end
 function code:maxLength(originalText, maxWidth)
@@ -164,6 +168,21 @@ function code:createPadding(frame, rWidth)
     if rWidth <=2 then widget:SetRelativeWidth(rWidth)
     else widget:SetWidth(rWidth) end
     frame:AddChild(widget)
+end
+-- Compression
+function code:compressData(data, encode)
+    if not data then return end
+
+    local serializedData = aceSerializer:Serialize(data)
+    local compressedData = LibDeflate:CompressDeflate(serializedData)
+    return (encode and LibDeflate:EncodeForWoWAddonChannel(compressedData) or compressedData)
+end
+function code:decompressData(data, decode)
+    if not data or type(data) ~= 'string' then return end
+
+    data = (decode and LibDeflate:DecodeForWoWAddonChannel(data) or data)
+    local decompressedData = LibDeflate:DecompressDeflate(data)
+    return aceSerializer:Deserialize(decompressedData)
 end
 
 -- Other Controls

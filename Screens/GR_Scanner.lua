@@ -448,7 +448,7 @@ function scan:BuildFilter(skipNext)
     end
     local function createClassFilter()
         for _,r in pairs(ns.ds.tblClassesByName or {}) do
-            local class = r.classFile:gsub('DEATHKNIGHT', 'DEATH KNIGHT'):gsub('DEMONHUNTER', 'DEMON HUNTER')
+            local class = r.className
             local query = 'c-"'..class..'"'
             for i=min, max, 5 do
                 local rangeStart, rangeEnd = i, i + 5

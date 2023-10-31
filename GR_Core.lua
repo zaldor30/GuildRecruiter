@@ -1,4 +1,6 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
+local L = LibStub("AceLocale-3.0"):GetLocale('GuildRecruiter')
+
 ns.tblEvents = {} -- Registered Events
 
 local AC, ACD = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0')
@@ -20,7 +22,7 @@ function GRADDON:OnInitialize(...)
 
         count = count or 0
         if count > 30 then
-            ns.code:cOut('Could not find an active guild, Guild Recruiter is not available.')
+            ns.code:cOut(L['NO_GUILD'])
             return
         elseif not IsInGuild() or not clubID then
             C_Timer.After(1, function() CheckIfInGuild(count + 1) end)
@@ -30,7 +32,7 @@ function GRADDON:OnInitialize(...)
             ns.events:RegisterEvent('CHAT_MSG_SYSTEM', CHAT_MSG_SYSTEM)
 
             C_Timer.After(10, function()
-                if core.stopSync then return end
+                if core.stopSync or ns.dbGlobal.debugAutoSync then return end
 
                 ns.sync.isAutoSync = true
                 ns.sync:StartSyncServer()
@@ -123,7 +125,7 @@ function core:startGuildRecruiter()
         local clubID = C_Club.GetGuildClubId() or nil
         if not clubID or not IsInGuild() then
             self.isEnabled = false
-            ns.code:cOut('Could not find an active guild, Guild Recruiter is not available.')
+            ns.code:cOut(L['NO_GUILD'])
             return true
         end
 
@@ -141,7 +143,7 @@ function core:startGuildRecruiter()
             g.guildData = {}
         end
         if not g then
-            ns.code:consoleOut('There was an issue accessing the guild data.')
+            ns.code:consoleOut(L['BAD_GUILD_DATA'])
             return true
         end
 
@@ -198,12 +200,12 @@ function core:startGuildRecruiter()
 
         self.tblWhispers = ns.ds:WhisperMessages()
 
+        ns.code:fOut(GR_VERSION_INFO..' '..L['ENABLED']..'.', 'FFFFFFFF', true)
         if not ns.settings.firstRunComplete then
-            ns.settings.firstRunComplete = true
             -- Need to force for first run
-            ns.code:fOut(GR_VERSION_INFO..' is enabled.', 'FFFFFFFF', true)
-            ns.code:fOut('You can use "/gr help or /recruiter help" to get a list of commands.', 'FFFFFFFF', true)
-        else ns.code:cOut(GR_VERSION_INFO..' is enabled.', 'FFFFFFFF', true) end
+            ns.settings.firstRunComplete = true
+            ns.code:fOut(L['FIRST_RUN'], 'FFFFFFFF', true)
+        end
     end
 
     if GRADDON.debug then
@@ -214,7 +216,7 @@ function core:startGuildRecruiter()
 
     -- Setup Slash Commands
     GRADDON:RegisterChatCommand('gr', function(input) core:SlashCommand(input) end)
-    GRADDON:RegisterChatCommand('recruiter', function(input) core:SlashCommand(input) end)
+    GRADDON:RegisterChatCommand(L['recruiter'], function(input) core:SlashCommand(input) end)
 
     -- Initialize Modules
     ns.screen:AddonLoaded()
@@ -225,6 +227,7 @@ function core:startGuildRecruiter()
     core:CreateMiniMapIcon()
 
     -- Maintenance Routine
+    ns.tblBlackList = ns.code:decompressData(ns.dbBL) or ns.dbBL
     ns.blackList:FixBlackList() -- Fix Black List Table
     local function startMaintenance()
         local removeCount = 0
@@ -239,7 +242,7 @@ function core:startGuildRecruiter()
         end
 
         if removeCount > 0 then
-            ns.code:cOut(removeCount..' were removed from the invitied players list.', 'FFFFFFFF', true) end
+            ns.code:fOut(string.format(L['ANTI_SPAM_REMOVAL'], removeCount), 'FFFFFFFF', true) end
 
         removeCount = 0
         cutOffTime = C_DateAndTime.GetServerTimeLocal()
@@ -251,7 +254,7 @@ function core:startGuildRecruiter()
         end
 
         if removeCount > 0 then
-            ns.code:cOut(removeCount..' were removed from the black list after the 30 day wait period.', 'FFFFFFFF', true) end
+            ns.code:cOut(removeCount..L['BL_REMOVAL'], 'FFFFFFFF', true) end
     end
     startMaintenance()
 
@@ -264,15 +267,15 @@ end
 function core:SlashCommand(msg)
     msg = msg:trim()
     if not msg or msg == '' then ns.screen.home:EnterHomeScreen()
-    elseif strlower(msg) == 'help' then
-        ns.code:fOut(GR_VERSION_INFO..' - Help')
-        ns.code:fOut('You can use /gr or /recruiter to access the commands bellow.')
-        ns.code:fOut('config - Takes you to Guild Recruiter settings screen.')
-        ns.code:fOut('blacklist <player name> - This will add player to the black list (do not use the <>)')
-        ns.code:fOut('You can type /rl to reload your UI (same as /reload).')
-    elseif strlower(msg) == 'config' then InterfaceOptionsFrame_OpenToCategory(ns.addonOptions)
-    elseif strlower(msg):match('blacklist') then
-        msg = strlower(msg):gsub('blacklist', ''):trim()
+    elseif strlower(msg) == L['help'] then
+        ns.code:fOut(string.format(L['SLASH_HELP1'], GR_VERSION_INFO))
+        ns.code:fOut(L['SLASH_HELP2'])
+        ns.code:fOut(L['SLASH_HELP3'])
+        ns.code:fOut(L['SLASH_HELP4'])
+        ns.code:fOut(L['SLASH_HELP5'])
+    elseif strlower(msg) == L['config'] then InterfaceOptionsFrame_OpenToCategory(ns.addonOptions)
+    elseif strlower(msg):match(L['blacklist']) then
+        msg = strlower(msg):gsub(L['blacklist'], ''):trim()
         local name = strupper(strsub(msg,1,1))..strlower(strsub(msg,2))
         ns:add(name)
     end
@@ -287,9 +290,9 @@ function core:CreateMiniMapIcon()
             elseif button == 'RightButton' then InterfaceOptionsFrame_OpenToCategory(ns.addonOptions) end
         end,
         OnTooltipShow = function(GameTooltip)
-            local title = code:cText('FFFFFF00','Guild Recruiter')
-            local body = code:cText('FFFFFFFF', 'LMB - Start Recruit Search\n')
-            body = body..code:cText('FFFFFFFF', 'RMB - Open Configuration')
+            local title = code:cText('FFFFFF00', L['TITLE'])
+            local body = code:cText('FFFFFFFF', L['LEFT_MOUSE_BUTTON']..'\n')
+            body = body..code:cText('FFFFFFFF', L['RIGHT_MOUSE_BUTTON'])
 
             ns.code:createTooltip(title, body, 'FORCE_TOOLTIP')
         end,

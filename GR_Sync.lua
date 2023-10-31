@@ -5,7 +5,7 @@ local LibDeflate = LibStub:GetLibrary("LibDeflate")
 
 local COMM_PREFIX = GRADDON.prefix
 local REQUEST_TIMEOUT = 5
-local DATA_WAIT_TIMEOUT, SYNC_FAIL_TIMER = 60, 60
+local DATA_WAIT_TIMEOUT, SYNC_FAIL_TIMER = 120, 240
 
 ns.sync = {}
 local sync = ns.sync
@@ -172,6 +172,9 @@ function sync:OnCommReceived(prefix, message, distribution, sender)
             sync:StopSync()
             return
         else self:console('Sent sync requests, waiting for response...') end
+    elseif message:match('INCOMMING_DATA') then
+        self:console('Getting data from '..(sender or 'unknown sender'))
+        return
     end
 
     if self.isMaster and sender ~= self.masterName then
@@ -202,12 +205,15 @@ function sync:OnCommReceived(prefix, message, distribution, sender)
 
             self.clientTimer = AceTimer:ScheduleTimer('CallBackClientTimeOut', 10, sender)
         elseif message == 'DATA_REQUEST' and sender == self.masterName then
-            self:console('Received data request from '..(sender or 'sync master.'), 'DEBUG')
+            self:console('Sending data to '..(sender or 'sync master.'))
 
             AceTimer:CancelTimer(self.clientTimer)
+
+            self:console('Sending data to '..(sender or 'sync master.'), 'DEBUG')
+            sync:SendCommMessage('INCOMMING_DATA', 'WHISPER', sender)
             sync:SendCommMessage(self:PrepareDataToSend(), 'WHISPER', sender)
-            self:console('Data was sent to '..(sender or 'sync master.'), 'DEBUG')
         elseif sender == self.masterName and message then
+            self:console('Received Master Data from '..(sender or 'remote master.'))
             local invAdded, blAdded, blRemoved = sync:MergeSyncData(sender, message)
             if invAdded == -1 then sync:StopSync() return end
             sync:ConsoleStatsDisplay(invAdded, blAdded, blRemoved)
@@ -292,15 +298,12 @@ function sync:MergeSyncData(sender, message)
     end
 
     local invAdded, blAdded, blRemoved = 0, 0, 0
-    local decodedWowMessage = LibDeflate:DecodeForWoWAddonChannel(message)
-    if not decodedWowMessage then return decodeFailed() end
-    local decompressedData = LibDeflate:DecompressDeflate(decodedWowMessage)
-    if not decompressedData then return decodeFailed() end
-    local success, tbl = GRADDON:Deserialize(decompressedData)
-    if success then
+    local success, tbl = ns.code:decompressData(message, 'DECODE_FOR_WOW')
+    if success and tbl and type(tbl) == 'table' then
+        -- _, tbl.blackListedPlayers = ns.code:decompressData(tbl.blackListedPlayers)
         invAdded, blAdded, blRemoved = mergeTheData(tbl)
         return invAdded, blAdded, blRemoved
-    else self:console('Failed to decode data from '..(sender or 'unknown sender'), 'DEBUG') end
+    else decodeFailed() end
 end
 function sync:PrepareDataToSend() -- Used when sending client data (Client)
     local tbl = {}
@@ -310,12 +313,9 @@ function sync:PrepareDataToSend() -- Used when sending client data (Client)
     tbl.guildData = ns.dbGlobal.guildData
 
     tbl.invitedPlayers = ns.dbInv
-    tbl.blackListedPlayers = ns.dbBL
+    tbl.blackListedPlayers = ns.dbBL --ns.code:compressData(ns.dbBL)
 
-    local serializedData = GRADDON:Serialize(tbl)
-    local compressedData = LibDeflate:CompressDeflate(serializedData)
-
-    return LibDeflate:EncodeForWoWAddonChannel(compressedData)
+    return ns.code:compressData(tbl, 'ENCODE_FOR_WOW')
 end
 sync:Init()
 

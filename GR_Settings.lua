@@ -168,9 +168,18 @@ ns.addonSettings = {
                     desc = 'This is used for development, turn off.',
                     type = 'toggle',
                     width = 'full',
-                    order = 99,
+                    order = 98,
                     set = function(_, val) ns.dbGlobal.debugMode = val end,
                     get = function() return ns.dbGlobal.debugMode end,
+                },
+                optDebugSync = {
+                    name = 'Disable Auto Sync.',
+                    desc = 'This is used for development, leave off.',
+                    type = 'toggle',
+                    width = 'full',
+                    order = 99,
+                    set = function(_, val) ns.dbGlobal.debugAutoSync = val end,
+                    get = function() return ns.dbGlobal.debugAutoSync or false end,
                 },
             },
         },
@@ -1155,17 +1164,7 @@ ns.addonSettings = {
 
                         return tbl
                     end,
-                    set = function(_, key, val)
-                        local r = ns.dbBL[key]
-                        ns.dbBL[key] = {
-                            dateBlackList = r.dateBlackList,
-                            markedForDelete = r.markedForDelete,
-                            whoDidIt = r.whoDidIt,
-                            reason = r.reason,
-                            selected = val,
-                            expirationDate = r.expirationDate,
-                        }
-                    end,
+                    set = function(_, key, val) ns.dbBL[key].selected = val end,
                     get = function(_, key) return ns.dbBL[key].selected or false end,
                 }
             }

@@ -4,9 +4,13 @@ ns = {}
 
 -- Application Initialization
 -- Uses: AceConsole-3.0, AceEvent-3.0, AceComm-3.0, AceHook-3.0, AceSerializer-3.0
+
 GRADDON = LibStub('AceAddon-3.0'):NewAddon('GuildRecruiter', 'AceConsole-3.0', 'AceEvent-3.0', 'AceHook-3.0', 'AceComm-3.0', 'AceSerializer-3.0')
+local L = LibStub("AceLocale-3.0"):GetLocale('GuildRecruiter')
+
 GRADDON.debug = false
-GRADDON.title = GetAddOnMetadata('GuildRecruiter', 'Title')
+GRADDON.system = nil
+GRADDON.title = L['TITLE']
 GRADDON.version = GetAddOnMetadata('GuildRecruiter', 'Version')
 GRADDON.author = GetAddOnMetadata('GuildRecruiter', 'Author')
 GRADDON.icon = ICON_PATH..'GR_Icon.tga'
@@ -28,6 +32,7 @@ GRADDON.classInfo = {
 	['DEMONHUNTER'] = {fClass = 'Demon Hunter', color = 'ffa330c9', icon = 'UI-HUD-UnitFrame-Player-Portrait-ClassIcon-DemonHunter'},
 	['EVOKER'] = {fClass = 'Evoker', color = 'ff308a77', icon = 'UI-HUD-UnitFrame-Player-Portrait-ClassIcon-Evoker'},
 }
+
 
 GM_DESC_COLOR = 'FFAF640C'
 
@@ -54,7 +59,7 @@ DEFAULT_STRATA = 'BACKGROUND'
 
 -- Constant Variables
 DEFAULT_GUILD_WELCOME = 'Welcome PLAYERNAME to GUILDNAME!'
-GR_VERSION_INFO = 'Guild Recruiter v'..GRADDON.version
+GR_VERSION_INFO = GRADDON.title..' v'..GRADDON.version
 SCAN_WAIT_TIME = 3
 PLAYER_PROFILE = UnitName('player')..' - '..GetRealmName()
 MAX_CHARACTER_LEVEL = GetMaxPlayerLevel()
