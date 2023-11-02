@@ -12,7 +12,7 @@ L["is already in a guild"] = true
 L['is not online'] = true
 L['has joined the guild'] = true
 L['declines your guild invitation'] = true
-L['JOINED_GUILD_MESSAGE'] = true
+L['JOINED_GUILD_MESSAGE'] = ' has joined the guild.'
 
 -- Generic Terms
 L['ENABLED'] = 'is enabled'
