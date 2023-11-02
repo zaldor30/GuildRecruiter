@@ -67,6 +67,8 @@ function sync:StopSync()
         self:console(syncType..' sync completed.', false, 'FORCE')
     end
 
+    ns.code:saveTables()
+
     self.isAutoSync = false
 
     C_Timer.After(5, function() ns.code:statusOut(' ') end)
@@ -89,8 +91,8 @@ function sync:StartSyncServer()
     self.tblData = table.wipe(self.tblData) or {}
     self.totalInvited, self.totalBlackListed = 0, 0
 
-    for _ in pairs(ns.dbInv and ns.dbInv or {}) do self.startInvited = self.startInvited + 1 end
-    for _ in pairs(ns.dbBL and ns.dbBL or {}) do self.startBlackListed = self.startBlackListed + 1 end
+    for _ in pairs(ns.tblInvited and ns.tblInvited or {}) do self.startInvited = self.startInvited + 1 end
+    for _ in pairs(ns.tblBlackList and ns.tblBlackList or {}) do self.startBlackListed = self.startBlackListed + 1 end
 
     self:SendCommMessage('SYNC_REQUEST')
     AceTimer:ScheduleTimer('CallBackRequest', REQUEST_TIMEOUT)
@@ -269,22 +271,22 @@ function sync:MergeSyncData(sender, message)
                 ns.settings.greetingMsg = ns.dbGlobal.guildInfo.greetingMsg end
         end
 
-        ns.dbInv = ns.dbInv or {}
+        ns.tblInvited = ns.tblInvited or {}
         for k, r in pairs(tbl.invitedPlayers and tbl.invitedPlayers or {}) do
-            if not ns.dbInv[k] then
-                ns.dbInv[k] = r
+            if not ns.tblInvited[k] then
+                ns.tblInvited[k] = r
                 invAdded = invAdded + 1
             end
         end
 
-        ns.dbBL = ns.dbBL or {}
+        ns.tblBlackList = ns.tblBlackList or {}
         for k, r in pairs(tbl.blackListedPlayers and tbl.blackListedPlayers or {}) do
-            if not ns.dbBL[k] and type(k) == 'string' and k ~= 'blacklist' then
-                ns.dbBL[k] = r
+            if not ns.tblBlackList[k] and type(k) == 'string' and k ~= 'blacklist' then
+                ns.tblBlackList[k] = r
                 blAdded = blAdded + 1
             elseif r.markedForDeletion then
-                ns.dbBL[k].markedForDeletion = true
-                ns.dbBL[k].expirationTime = r.expirationTime
+                ns.tblBlackList[k].markedForDeletion = true
+                ns.tblBlackList[k].expirationTime = r.expirationTime
                 blRemoved = blRemoved + 1
             end
         end
@@ -312,8 +314,8 @@ function sync:PrepareDataToSend() -- Used when sending client data (Client)
     tbl.guildInfo = ns.dbGlobal.guildInfo
     tbl.guildData = ns.dbGlobal.guildData
 
-    tbl.invitedPlayers = ns.dbInv
-    tbl.blackListedPlayers = ns.dbBL --ns.code:compressData(ns.dbBL)
+    tbl.invitedPlayers = ns.tblInvited
+    tbl.blackListedPlayers = ns.tblBlackList --ns.code:compressData(ns.tblBlackList)
 
     return ns.code:compressData(tbl, 'ENCODE_FOR_WOW')
 end

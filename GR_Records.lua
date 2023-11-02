@@ -105,17 +105,14 @@ function invite:Init()
     self.showGreeting = false
 
     self.tblSent = {}
-    self.tblInvited = {}
 end
 function invite:InitializeInvite()
     ap, ag = ns.dbAP, ns.dbAG
 
-    self.tblInvited = ns.dbInv or {}
-
     self.antiSpam = ns.settings.antiSpam or true
     self.showWhispers = ns.settings.showWhispers or false
 
-    blackList.tblBlackList = ns.dbBL or {}
+    blackList.tblBlackList = ns.tblBlackList or {}
 end
 function invite:new(class, name)
     return {
@@ -129,7 +126,7 @@ function invite:CheckIfCanBeInvited(r, skipChecks)
     elseif not r or not r.fullName then
         ns.code:dOut('No invite record or name.')
         return false
-    elseif ns.dbInv[r.fullName] then
+    elseif ns.tblInvited[r.fullName] then
         --ns.code:dOut(r.name..' is already on the invited list')
         return false
     elseif r.zone and ns.ds.tblBadZones[r.zone] then
@@ -148,7 +145,7 @@ function invite:InvitePlayer(name, class, sendInvite, sendMessage, skipClassChec
     elseif sendInvite and GetGuildInfo(name) then ns.code:fOut(name..' is already in a guild.  Ask them to leave before inviting.') return end
 
     if blackList:CheckBlackList(name) then
-        local tblBlackList = ns.dbBlackList[name] or ns.dbBlackList[name..'-'..GetRealmName()] or {}
+        local tblBlackList = ns.tblBlackList[name] or ns.tblBlackList[name..'-'..GetRealmName()] or {}
         ns.code:fOut(fName..' is on the blacklist.')
         ns.code:fOut('Reason: '..(tblBlackList.reason or 'No reason given.'))
         ns.code:fOut('Blacklisted by: '..(select(6, GetPlayerInfoByGUID(tblBlackList.blacklistedBy)) or 'Unknown'))
@@ -202,9 +199,9 @@ function invite:InvitePlayer(name, class, sendInvite, sendMessage, skipClassChec
 end
 function invite:AddToSentList(name, class)
     if not name or not class then ns.code:fOut((name or 'NO NAME')..' was not added to sent list.') return false
-    elseif ns.dbInv[name] then ns.code:dOut(name..' was already on the invited list.') return true end
+    elseif ns.tblInvited[name] then ns.code:dOut(name..' was already on the invited list.') return true end
 
-    ns.dbInv[name] = invite:new(class, name)
+    ns.tblInvited[name] = invite:new(class, name)
     return true
 end
 invite:Init()
@@ -251,7 +248,7 @@ function blackList:Init()
     self.tblBlackList = {}
 end
 function blackList:CheckBlackList(player)
-    self.tblBlackList = ns.dbBL or {}
+    self.tblBlackList = ns.tblBlackList or {}
     if not player or not self.tblBlackList then return false end
 
     local found = (self.tblBlackList and self.tblBlackList[player]) and true or false
@@ -260,7 +257,7 @@ function blackList:CheckBlackList(player)
     return found
 end
 function blackList:FixBlackList()
-    self.tblBlackList = ns.dbBL or {}
+    self.tblBlackList = ns.tblBlackList or {}
 
     self.tblBlackList.blackList = nil
     for k in pairs(self.tblBlackList) do
@@ -283,7 +280,7 @@ function blackList:AddToBlackList(name, reason)
             value = value ~= '' and value or 'No reason'
 
             self.tblBlackList[blName] = { reason = value, whoDidIt = UnitGUID('player'), dateBlackList = C_DateAndTime.GetServerTimeLocal(), markedForDelete = false }
-            ns.dbBL = ns.blackList
+            ns.code:saveTables('BLACK_LIST')
 
             ns.scanner:TotalBlackList()
             ns.code:fOut(fName..' was added to the black list with \"'..value..'\" as a reason.')
@@ -313,7 +310,7 @@ function blackList:AddToBlackList(name, reason)
     else
         reason = reason == 'BULK_ADD_BLACKLIST' and 'Bulk Add' or reason
         self.tblBlackList[blName] = { reason = reason, whoDidIt = UnitGUID('player'), dateBlackList = C_DateAndTime.GetServerTimeLocal(), markedForDelete = false }
-        ns.dbBL = self.tblBlackList
+        ns.code:saveTables('BLACK_LIST')
 
         ns.scanner:TotalBlackList()
         ns.code:cOut(fName..' was added to the black list with \"'..reason..'\" as a reason.')

@@ -1,4 +1,12 @@
-##2.1.36
+## 2.1.38
+* Added compression to database for invited players and black list.
+Note: This is to facilitate larger lists with less penealty to performance when logging in.
+* Changed anti-spam to base 7 days and up to 6 months.
+Note: Go into settings to make sure it is correct.
+* Added anti-spam for when not forced by Guild Master.
+
+
+## 2.1.36
 * Brought back adding black list players to the icon bar.
 * Added the ability to send greeting/welcome message when inviting via the menu (right click on player name in chat).
 * Added message length to greeting message and restricted to 255 characters (1 message).

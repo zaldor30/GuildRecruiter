@@ -5,15 +5,17 @@ ns.ds, ns.tblBlackList, ns.tblInvited = {}, {}, {}
 local ds = ns.ds
 
 function ds:Init()
-    self.tblBadZones = ds:invalidZones()
-    self.tblBadZonesByName = nil
     self.tblRaces = ds:races() -- Only for player faction
     self.tblClasses = ds:classes()
     self.tblClassesByName = nil
 
+    self.tblBadZones = ds:invalidZones()
+    self.tblBadZonesByName = nil
+
     self.tblWhispers = {}
     self.tblConnected = ds:GetConnectedRealms()
 end
+ns.ds.dbVersion = '2.1.38'
 ns.ds.GR_VERSION = '2.1.36' -- Show 'What's New' only if versions match
 function ds:WhatsNew()
     local update = false -- True and will save seen message

@@ -169,7 +169,7 @@ function code:createPadding(frame, rWidth)
     else widget:SetWidth(rWidth) end
     frame:AddChild(widget)
 end
--- Compression
+-- Compression Routines
 function code:compressData(data, encode)
     if not data then return end
 
@@ -183,6 +183,14 @@ function code:decompressData(data, decode)
     data = (decode and LibDeflate:DecodeForWoWAddonChannel(data) or data)
     local decompressedData = LibDeflate:DecompressDeflate(data)
     return aceSerializer:Deserialize(decompressedData)
+end
+function code:saveTables(whichOne)
+    if whichOne == 'BLACK_LIST' then ns.dbBL.BlackList= ns.code:compressData(ns.tblBlackList)
+    elseif whichOne == 'INVITED' then ns.dbInv.InvitedPlayers = ns.code:compressData(ns.tblInvited)
+    else
+        ns.dbBL.BlackList= ns.code:compressData(ns.tblBlackList)
+        ns.dbInv.InvitedPlayers = ns.code:compressData(ns.tblInvited)
+    end
 end
 
 -- Other Controls

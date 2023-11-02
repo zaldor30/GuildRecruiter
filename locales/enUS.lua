@@ -31,8 +31,8 @@ L['ANTI_SPAM_REMOVAL'] = 'Removed %s players from anti-spam list.'
 L['BL_REMOVAL'] = ' were removed from the black list after the 30 day wait period.'
 
 -- Minimap Tooltip
-L['LMB'] = 'LMB - Start Recruit Search'
-L['RMB'] = 'RMB - Open Configuration'
+L['LEFT_MOUSE_BUTTON'] = 'LMB - Start Recruit Search'
+L['RIGHT_MOUSE_BUTTON'] = 'RMB - Open Configuration'
 
 -- Slash Help Commands
 L['SLASH_HELP1'] = '%s - Help'

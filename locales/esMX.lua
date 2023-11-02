@@ -1,5 +1,6 @@
 --localization file for english/United States
 local L = LibStub("AceLocale-3.0"):NewLocale("GuildRecruiter", "esMX")
+if not L then return end
 
 L['TITLE'] = "Reclutador de la gremia"
 

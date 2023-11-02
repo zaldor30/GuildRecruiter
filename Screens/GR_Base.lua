@@ -56,6 +56,7 @@ function template:BuildTemplate()
     f:SetScript('OnHide', function()
         tblFrame.frame:SetShown(false)
         ns.observer:Notify('CLOSE_SCREENS')
+        ns.code:saveTables()
     end)
     tblFrame.frame = f
 

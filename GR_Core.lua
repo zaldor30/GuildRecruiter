@@ -54,8 +54,8 @@ function core:Init()
     self.addonSettings = {
         profile = {
             settings = {
-                dbVer = '2.0.0',
                 debugMode = false,
+                dbVersion = nil,
                 -- Starting Levels
                 minLevel = MAX_CHARACTER_LEVEL - 4,
                 maxLevel = MAX_CHARACTER_LEVEL,
@@ -75,6 +75,10 @@ function core:Init()
                 welcomeMessage = DEFAULT_GUILD_WELCOME,
                 inviteFormat = 2,
                 firstRunComplete = false,
+
+                -- Anti Spam Settings
+                antiSpam = true,
+                reinviteAfter = 7,
             },
             filter = {
                 filterList = {},
@@ -102,6 +106,8 @@ function core:Init()
 end
 -- Guild Recruiter Addon Initialization
 function core:startGuildRecruiter()
+    --self.addonSettings.profile.settings.dbVersion = ns.ds.dbVersion
+
     local db = DB:New('GR_SettingsDB', nil, PLAYER_PROFILE)
     local dbBL = DB:New('GR_BlackListDB', nil, PLAYER_PROFILE)
     local dbInv = DB:New('GR_InvitedPlayersDB', nil, PLAYER_PROFILE)
@@ -193,6 +199,8 @@ function core:startGuildRecruiter()
             ns.dbGlobal.guildInfo.hasGuildLeader = false
         end
 
+
+
         AC:RegisterOptionsTable('GR_Options', ns.addonSettings)
         ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
 
@@ -219,39 +227,73 @@ function core:startGuildRecruiter()
     GRADDON:RegisterChatCommand(L['recruiter'], function(input) core:SlashCommand(input) end)
 
     -- Initialize Modules
-    ns.screen:AddonLoaded()
     ns.invite:InitializeInvite()
     ns.ds.tblClassesByName = ns.ds:classesByName()
     ns.ds.tblBadZonesByName = ns.ds:invalidZonesByName()
 
     core:CreateMiniMapIcon()
 
-    -- Maintenance Routine
-    ns.tblBlackList = ns.code:decompressData(ns.dbBL) or ns.dbBL
+    -- Compress Database
+    local newDB, noDataInv, noDataBL = false, true, true
+    if not ns.settings.dbVersion or ns.settings.dbVersion ~= ns.ds.dbVersion then
+        newDB = true
+        ns.settings.dbVer = nil
+        ns.settings.dbVersion = ns.ds.dbVersion
+        ns.code:fOut('Updating database to version '..ns.ds.dbVersion)
+
+        ns.dbInv = ns.dbInv or {}
+        local stringOut = ns.dbInv and ns.code:compressData(ns.dbInv) or ''
+        for k in pairs(ns.dbInv and ns.dbInv or {}) do noDataInv = false ns.dbInv[k] = nil end
+        ns.dbInv['InvitedPlayers'] = stringOut or ''
+
+        ns.dbBL = ns.dbBL or {}
+        stringOut = ns.dbBL and ns.code:compressData(ns.dbBL) or ''
+        for k in pairs(ns.dbBL and ns.dbBL or {}) do noDataBL = false ns.dbBL[k] = nil end
+        ns.dbBL['BlackList'] = stringOut or ''
+    end
+
+    -- Get Data for Invited Players and Black List
+    local state, tbl = ns.code:decompressData(ns.dbInv.InvitedPlayers)
+    if state and tbl then ns.tblInvited = tbl
+    elseif newDB and noDataInv then ns.tblInvited = {}
+    else ns.code:fOut('Error decompressing Invited Players.', 'FFFF0000') end
+
+    state, tbl = ns.code:decompressData(ns.dbBL.BlackList)
+    if state and tbl then ns.tblBlackList = tbl
+    elseif newDB and noDataBL then ns.tblBlackList = {}
+    else ns.code:fOut('Error decompressing Black List.', 'FFFF0000') end
+
     ns.blackList:FixBlackList() -- Fix Black List Table
+
+    -- Start Main Screen
+    ns.screen:AddonLoaded()
+
+    -- Maintenance Routine
     local function startMaintenance()
         local removeCount = 0
         local cutOffTime = C_DateAndTime.GetServerTimeLocal() - ((db.rememberTime or 7) * SECONDS_IN_A_DAY)
 
-        for k,r in pairs((ns.dbInv and ns.dbInv) or {}) do
+        for k,r in pairs((ns.tblInvited and ns.tblInvited) or {}) do
             local invitedOn = (type(r) == 'table' and r.invitedOn) and (type(r.invitedOn) == 'string' and tonumber(r.invitedOn) or r.invitedOn) or nil
             if invitedOn and invitedOn <= cutOffTime then
-                ns.dbInv[k] = nil
+                ns.tblInvited[k] = nil
                 removeCount = removeCount + 1
-            elseif not invitedOn then ns.dbInv[k] = nil end
+            elseif not invitedOn then ns.tblInvited[k] = nil end
         end
+        ns.dbInv.InvitedPlayers = ns.code:compressData(ns.tblInvited)
 
         if removeCount > 0 then
             ns.code:fOut(string.format(L['ANTI_SPAM_REMOVAL'], removeCount), 'FFFFFFFF', true) end
 
         removeCount = 0
         cutOffTime = C_DateAndTime.GetServerTimeLocal()
-        for k,r in pairs(ns.dbBL and ns.dbBL or {}) do
+        for k,r in pairs(ns.tblBlackList and ns.tblBlackList or {}) do
             if r.expirationDate and cutOffTime >= r.expirationDate then
                 removeCount = removeCount + 1
-                ns.dbBL[k] = nil
+                ns.tblBlackList[k] = nil
             end
         end
+        ns.dbBL.BlackList= ns.code:compressData(ns.tblBlackList)
 
         if removeCount > 0 then
             ns.code:cOut(removeCount..L['BL_REMOVAL'], 'FFFFFFFF', true) end
