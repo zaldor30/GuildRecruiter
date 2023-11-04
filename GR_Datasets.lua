@@ -16,16 +16,29 @@ function ds:Init()
     self.tblConnected = ds:GetConnectedRealms()
 end
 ns.ds.dbVersion = '2.1.38'
-ns.ds.GR_VERSION = '2.1.36' -- Show 'What's New' only if versions match
+ns.ds.GR_VERSION = '2.1.38' -- Show 'What's New' only if versions match
 function ds:WhatsNew()
     local update = false -- True and will save seen message
     local height = 410 -- Adjust size of what's new window
     local title, msg = '', ''
     title = ns.code:cText('FFFFFF00', "What's new in v"..GRADDON.version.."?")
     msg = [[
-         |CFF55d0ff** Please report any bugs or issues in Discord **
+         |CFF55D0FF** Please report any bugs or issues in Discord **
                 Discord: https://discord.gg/ZtS6Q2sKRH
              (or click on the icon in the top left corner)|r
+
+    |CFFFFFF00v2.1.39 Notes|r
+        * Added compression to database for invited players and
+            black list.
+            |CFF55D0FFNote: This is to facilitate larger lists with less penealty
+            to performance while logging in.|r
+        * Changed anti-spam to base 7 days and up to 6 months.
+            |CFF55D0FFNote: Go into settings to make sure it is correct.|r
+        * Added anti-spam for when not forced by Guild Master.
+        * Added keybindings for inviting and scanning
+            (Found in settings, Invite Settings).
+            |CFF55D0FFNote: This does not overwrite any existing
+            keybindings in WoW.|r
 
     |CFFFFFF00v2.1.33 Notes|r
         * Brought back adding black list players to the icon bar.

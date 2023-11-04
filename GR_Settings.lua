@@ -592,7 +592,10 @@ ns.addonSettings = {
 
                         ns.settings.greetingMsg  = playerNameFound and msg:sub(1, (243 - (remove or 0))) or msg:sub(1, (255 - (remove or 0)))
                     end,
-                    get = function() return ns.dbGlobal.guildInfo.greeting and ns.settings.greetingMsg or ns.dbGlobal.guildInfo.greetingMsg end,
+                    get = function()
+                        if ns.dbGlobal.guildInfo.greetingMsg then return ns.dbGlobal.guildInfo.greetingMsg
+                        else return ns.settings.greetingMsg end
+                    end,
                 },
                 Header2 = {
                     name = '',
@@ -669,6 +672,53 @@ ns.addonSettings = {
                     type = 'description',
                     width = 'full',
                     fontSize = 'medium'
+                },
+                Header4 = {
+                    name = 'Keybindings',
+                    type = 'header',
+                    order = 18
+                },
+                optKeybindingInvite = {
+                    order = 19,
+                    name = 'Keybinding: Invite',
+                    desc = 'Change the keybinding to invite a player to the guild.',
+                    type = 'keybinding',
+                    width = 1,
+                    set = function(_, val)
+                        if strlen(val) == 0 or val == '' then ns.global.keybindInvite = nil
+                        elseif val and val == ns.global.keybindScan then
+                            ns.code:fOut('That key is bound to scan, please choose another key.')
+                            return
+                        else ns.global.keybindInvite = val end
+                    end,
+                    get = function() return ns.global.keybindInvite end,
+                },
+                optSpacer = {
+                    order = 20,
+                    name = '',
+                    type = 'description',
+                    width = .5,
+                },
+                optKeybindingScan = {
+                    order = 21,
+                    name = 'Keybinding: Scan',
+                    desc = 'Change the keybinding to scan for players to invite.',
+                    type = 'keybinding',
+                    width = 1,
+                    set = function(_, val)
+                        if strlen(val) == 0 or val == '' then ns.global.keybindScan = nil
+                        elseif val and val == ns.global.keybindInvite then
+                            ns.code:fOut('That key is bound to invite, please choose another key.')
+                            return
+                        else ns.global.keybindScan = val end
+                    end,
+                    get = function() return ns.global.keybindScan end,
+                },
+                optNoteKeybind = {
+                    order = 22,
+                    name = ns.code:cText('FF00FF00', 'NOTE: Keybinds do not overwrite your WoW binds and are only used in the scanner.'),
+                    type = 'description',
+                    fontSize = 'medium',
                 },
             },
         },

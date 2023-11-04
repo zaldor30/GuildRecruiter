@@ -46,6 +46,7 @@ end
 -- Core Routines
 function core:Init()
     self.isEnabled = false
+    self.fullyStarted = false
     self.isGuildLeader = false
     self.hasGuildLeader = false
 
@@ -118,6 +119,7 @@ function core:startGuildRecruiter()
     ns.dbAP, ns.dbAG = dbAnal.profile, dbAnal.global
 
     ns.db.settings = ns.db.settings or self.addonSettings.profile.settings
+    ns.global = db.global
     ns.dbGlobal.settings = ns.dbGlobal.settings or self.addonSettings.global.settings
 
     ns.settings = ns.db.settings
@@ -305,6 +307,8 @@ function core:startGuildRecruiter()
     if ns.dbGlobal.showUpdates and (GRADDON.debug or not ns.dbGlobal.version:match(ns.ds.GR_VERSION)) then
         ns.whatsnew:ShowWhatsNew()
     end
+
+    self.fullyStarted = true
 end
 function core:SlashCommand(msg)
     msg = msg:trim()

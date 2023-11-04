@@ -161,6 +161,16 @@ function scan:BuildScannerScreen()
     f:SetBackdropColor(0, 0, 0, 0)
     f:SetBackdropBorderColor(1, 1, 1, 0)
     f:EnableMouse(false)
+    f:SetPropagateKeyboardInput(true)
+    f:SetScript('OnKeyDown', function(_, key)
+        if ns.global.keybindScan and key == ns.global.keybindScan then
+            if self.tblFrame.controls.btnSearch.disabled then
+                ns.code:fOut('Scanning is disabled.  Please check the addon for information.')
+                return
+            end
+            self:GetNextFilterRecord()
+        elseif ns.global.keybindInvite and key == ns.global.keybindInvite then self:InvitePlayers() end
+    end)
     tblFrame.frame = f
 
     -- Ace GUI Frame for Ace Controls
@@ -202,19 +212,7 @@ function scan:BuildScannerControls()
         ns.code:createTooltip(title, body)
     end)
     btnInvite:SetCallback('OnLeave', function() GameTooltip:Hide() end)
-    btnInvite:SetCallback('OnClick', function()
-        if not self.tblFound then return end
-
-        local name = next(self.tblFound)
-        if not name and not self.tblFound[name] then return end
-
-        local tblFound = self.tblFound[name]
-        ns.invite:InvitePlayer(name, tblFound.class, (ns.settings.inviteFormat or 2), 'SEND_MESSAGE')
-        self.tblFound[name] = nil
-
-        scan:ShowResults('INVITE')
-        scan:SetButtonStates()
-    end)
+    btnInvite:SetCallback('OnClick', function(_, button, key) self:InvitePlayers() end)
     if not self.tblFrame.btnInvite then
         inlineInvite:AddChild(btnInvite) end
     tblFrame.btnInvite = btnInvite
@@ -427,6 +425,25 @@ function scan:BuildScannerControls()
     else tblFrame.lblNextFilter:SetText(ns.code:cText('FF00FF00', self.tblFilter[1])) end
 
     analytics:ShowAnalytics()
+end
+
+-- Invite/Scan Button Routines
+function scan:InvitePlayers()
+    if not self.tblFound then return
+    elseif self.tblFrame.controls.btnInvite.disabled then
+        ns.code:fOut('Inviting players is disabled.  Please check the addon for information.')
+        return
+    end
+
+    local name = next(self.tblFound)
+    if not name and not self.tblFound[name] then return end
+
+    local tblFound = self.tblFound[name]
+    ns.invite:InvitePlayer(name, tblFound.class, (ns.settings.inviteFormat or 2), 'SEND_MESSAGE')
+    self.tblFound[name] = nil
+
+    scan:ShowResults('INVITE')
+    scan:SetButtonStates()
 end
 
 -- Filter Routines

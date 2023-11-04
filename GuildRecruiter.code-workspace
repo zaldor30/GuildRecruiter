@@ -193,7 +193,10 @@
 			"GetMacroInfo",
 			"IsControlKeyDown",
 			"IsAltKeyDown",
-			"CreateFont"
+			"CreateFont",
+			"MacroFrame",
+			"ShowMacroFrame",
+			"MacroFrameCloseButton"
 		]
 	}
 }
