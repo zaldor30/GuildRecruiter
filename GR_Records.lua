@@ -130,7 +130,10 @@ function invite:CheckIfCanBeInvited(r, skipChecks)
         --ns.code:dOut(r.name..' is already on the invited list')
         return false
     elseif r.zone and ns.ds.tblBadZones[r.zone] then
-        ns.code:dOut('Player is nil or in a bad zone')
+        ns.code:dOut('Player '..r.fullName..' is in '..r.zone)
+        return false
+    elseif r.zone and ns.ds.tblBadZonesByName[strlower(r.zone)] then
+        ns.code:dOut('Player '..r.fullName..' is in '..ns.ds.tblBadZonesByName[strlower(r.zone)].name)
         return false
     elseif ns.blackList:CheckBlackList(r.fullName) then return false end
 

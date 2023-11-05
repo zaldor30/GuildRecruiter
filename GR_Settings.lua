@@ -169,8 +169,11 @@ ns.addonSettings = {
                     type = 'toggle',
                     width = 'full',
                     order = 98,
-                    set = function(_, val) ns.dbGlobal.debugMode = val end,
-                    get = function() return ns.dbGlobal.debugMode end,
+                    set = function(_, val)
+                        GRADDON.debug = val
+                        ns.settings.debugMode = val
+                    end,
+                    get = function() return ns.settings.debugMode end,
                 },
                 optDebugSync = {
                     name = 'Disable Auto Sync.',
@@ -1259,6 +1262,36 @@ ns.addonSettings = {
                     set = function(_, key, val) ns.tblBlackList[key].selected = val end,
                     get = function(_, key) return ns.tblBlackList[key].selected or false end,
                 }
+            }
+        },
+        mnuInvalidZones = {
+            name = 'Invalid Zone List',
+            type = 'group',
+            order = 33,
+            args = {
+                hdrZones = {
+                    order = 0,
+                    name = 'Invalid Zone List',
+                    type = 'header',
+                },
+                descList = {
+                    order = 1,
+                    name = 'The following zones are will be ignored by the scanner:',
+                    type = 'multiselect',
+                    width = 'full',
+                    values = function()
+                        local tbl = {}
+                        local tblZones = ns.code:sortTableByField(ns.ds.tblBadZonesByName, 'name', true)
+                        for _, r in pairs(tblZones or {}) do tbl[r.key] = ns.code:cText('FFFFFF00', r.name)..' ('..r.reason..')' end
+                        return tbl
+                    end,
+                },
+                descZones2 = {
+                    order = 2,
+                    name = 'If you find a zone that is not listed, please let me know.',
+                    type = 'description',
+                    fontSize = 'medium',
+                },
             }
         },
         mnuBlank4 = {

@@ -126,7 +126,7 @@ function core:startGuildRecruiter()
     ns.db.filter = ns.db.filter or self.addonSettings.profile.filter
     ns.db.messages = ns.db.messages or self.addonSettings.profile.messages
 
-    GRADDON.debug = ns.dbGlobal.debugMode or false -- Leave this here
+    GRADDON.debug = ns.settings.debugMode or false -- Leave this here
 
     -- Guild Related Routines and Checks
     local function registerGuild()

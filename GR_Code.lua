@@ -117,12 +117,12 @@ function code:ClickSound(enable)
     else SetCVar("Sound_EnableSFX", "0") end
 end
 function code:sortTableByField(tbl, sortField, reverse)
-    if not sortField then return end
+    if not tbl or not sortField then return end
 
     local keyArray = {}
-    for key, item in pairs(tbl) do
-        item.key = key
-        table.insert(keyArray, item)
+    for key, rec in pairs(tbl) do
+        rec.key = key
+        table.insert(keyArray, rec)
     end
 
     reverse = reverse or false

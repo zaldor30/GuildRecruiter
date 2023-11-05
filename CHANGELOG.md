@@ -6,6 +6,7 @@ Note: Go into settings to make sure it is correct.
 * Added anti-spam for when not forced by Guild Master.
 * Added keybindings for inviting and scanning (Found in settings, Invite Settings).
 Note: This does not overwrite any existing keybindings in WoW.
+* Players in an instance will not be messaged or invited.
 
 
 ## 2.1.36
