@@ -246,8 +246,8 @@ function ds:invalidZones()
             --@version-retail@
         --raids
         [11111] = { name = "Amirdrassil, the Dream's Hope", reason = 'Season 3 Raid' },
-        [2522] = { name = "Vault of the Incarnates", reason = 'Season 2 Raid' },
-        --[2569] = { name = "Aberrus, the Shadowed Crucible", reason = 'Season 1 Raid' },
+        [2569] = { name = "Aberrus, the Shadowed Crucible", reason = 'Season 2 Raid' },
+        --[2522] = { name = "Vault of the Incarnates", reason = 'Season 1 Raid' },
         --dungeons
         --[2451] = { name = "Uldaman: Legacy of Tyr", reason = 'DF Dungeon' },
         --[2515] = { name = "The Azure Vault", reason = 'DF Dungeon' },
