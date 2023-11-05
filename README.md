@@ -13,11 +13,15 @@ Guild Recruiter is a powerful tool for getting new guild members to join.
 
 ## Features
 
+* Guild Master can force certain options to be use by other officers/recruiters.
+* Sync your lists, messages, and settings with other guild recruiters.
 * Custom messages with ability to embed your guild link.
-* Welcome message option for when players join the guild.
-* Guild Master controlled antispam, keeps track of invites so you don't spam players.
-* Full sync with other Guid Recruiter users.
-* Antispam zones, if a player is in a current raid, dungeon, battleground etc, they will not get an invite.
+* Guild greeting message when a player joins, that you invited.
+* Whispered message to player when they join.
+* Anti Spam Features:
+    - Ignore players in zones that are PVP or current seasonal raid/dungeon.
+    - Once invite is sent will not invite that player again for 7 to 180 days.
+    - Able to add players to a black list, so they do not get future invites.
 * Much more!
 
 ## Documentation
