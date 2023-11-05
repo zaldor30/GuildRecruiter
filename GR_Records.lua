@@ -209,42 +209,6 @@ function invite:AddToSentList(name, class)
 end
 invite:Init()
 
-function analytics:Scanned(amt)
-    if not ap or not ag then return end
-    ap.Players_Scanned = ns.code:inc(ap.Players_Scanned or 0, amt or 1)
-    ag.Players_Scanned = ns.code:inc(ag.Players_Scanned or 0, amt or 1)
-end
-function analytics:Invited(amt)
-    if not ap or not ag then return end
-    ap.Invited_Players = ns.code:inc(ap.Invited_Players or 0, amt or 1)
-    ag.Invited_Players = ns.code:inc(ag.Invited_Players or 0, amt or 1)
-end
-function analytics:Accepted(amt)
-    if not ap or not ag then return end
-    ap.Accepted_Invite = ns.code:inc(ap.Accepted_Invite or 0, amt or 1)
-    ag.Accepted_Invite = ns.code:inc(ag.Accepted_Invite or 0, amt or 1)
-end
-function analytics:Declined(amt)
-    if not ap or not ag then return end
-    ap.Declined_Invite = ns.code:inc(ap.Declined_Invites or 0, amt or 1)
-    ag.Declined_Invite = ns.code:inc(ag.Declined_Invites or 0, amt or 1)
-end
-function analytics:Blacklisted(amt)
-    if not ap or not ag then return end
-    ap.Black_Listed = ns.code:inc(ap.Black_Listed or 0, amt or 1)
-    ag.Black_Listed = ns.code:inc(ag.Black_Listed or 0, amt or 1)
-end
-function analytics:get(key, isGlobal)
-    if not ap or not ag then return end
-
-    local tblAnalytics = {}
-    tblAnalytics.profile = ap or {}
-    tblAnalytics.global = ag or {}
-
-    local val = isGlobal and (tblAnalytics.global[key] or 0) or (tblAnalytics.profile[key] or 0)
-    local out = tostring(val):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
-    if isGlobal then return out else return out end
-end
 
 -- Blacklist Routines
 function blackList:Init()
@@ -318,4 +282,41 @@ function blackList:AddToBlackList(name, reason)
         ns.scanner:TotalBlackList()
         ns.code:cOut(fName..' was added to the black list with \"'..reason..'\" as a reason.')
     end
+end
+
+function analytics:Scanned(amt)
+    if not ap or not ag then return end
+    ap.Players_Scanned = ns.code:inc(ap.Players_Scanned or 0, amt or 1)
+    ag.Players_Scanned = ns.code:inc(ag.Players_Scanned or 0, amt or 1)
+end
+function analytics:Invited(amt)
+    if not ap or not ag then return end
+    ap.Invited_Players = ns.code:inc(ap.Invited_Players or 0, amt or 1)
+    ag.Invited_Players = ns.code:inc(ag.Invited_Players or 0, amt or 1)
+end
+function analytics:Accepted(amt)
+    if not ap or not ag then return end
+    ap.Accepted_Invite = ns.code:inc(ap.Accepted_Invite or 0, amt or 1)
+    ag.Accepted_Invite = ns.code:inc(ag.Accepted_Invite or 0, amt or 1)
+end
+function analytics:Declined(amt)
+    if not ap or not ag then return end
+    ap.Declined_Invite = ns.code:inc(ap.Declined_Invite or 0, amt or 1)
+    ag.Declined_Invite = ns.code:inc(ag.Declined_Invite or 0, amt or 1)
+end
+function analytics:Blacklisted(amt)
+    if not ap or not ag then return end
+    ap.Black_Listed = ns.code:inc(ap.Black_Listed or 0, amt or 1)
+    ag.Black_Listed = ns.code:inc(ag.Black_Listed or 0, amt or 1)
+end
+function analytics:get(key, isGlobal)
+    if not ap or not ag then return end
+
+    local tblAnalytics = {}
+    tblAnalytics.profile = ap or {}
+    tblAnalytics.global = ag or {}
+
+    local val = isGlobal and (tblAnalytics.global[key] or 0) or (tblAnalytics.profile[key] or 0)
+    local out = tostring(val):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
+    if isGlobal then return out else return out end
 end
