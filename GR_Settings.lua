@@ -1238,7 +1238,7 @@ ns.addonSettings = {
                     width = 'full',
                     order = 2,
                     func = function()
-                        for k, r in pairs(ns.tblBlackList) do
+                        for k, r in pairs(ns.tblBlackList and ns.tblBlackList or {}) do
                             if r.selected and not r.sent then ns.tblBlackList[k] = nil
                             elseif r.selected and not r.markedForDelete then
                                 r.markedForDelete = true

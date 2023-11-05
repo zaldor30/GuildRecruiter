@@ -39,8 +39,12 @@ function ds:WhatsNew()
             (Found in settings, Invite Settings).
             |CFF55D0FFNote: This does not overwrite any existing
             keybindings in WoW.|r
-        * Players in instances will not be invited or messaged.
+        * Players in instances will not be invited or messaged (fixed).
         * Fixed issue with welcome message not using GM settings.
+        * Fixed issues with analytics not tracking black list and invited players.
+        * Black listed players can be removed right away as long as a sync has not occurred.
+
+I have posted the updated beta for it.
 
     |CFFFFFF00v2.1.33 Notes|r
         * Brought back adding black list players to the icon bar.
