@@ -629,25 +629,31 @@ ns.addonSettings = {
                     desc = 'Enable/Disable sending of a personalized welcome message to '..ns.code:cText('FFFFFF00', 'guild chat')..' after a player joins.',
                     type = 'toggle',
                     width = 'full',
-                    disabled = function() return not ns.isGuildLeader and ns.dbGlobal.greeting end,
+                    disabled = function() return ns.dbGlobal.guildInfo.welcome end,
                     set = function(_, val) ns.settings.sendWelcome = val end,
-                    get = function() return ns.settings.sendWelcome end,
+                    get = function()
+                        if ns.dbGlobal.guildInfo.welcome then return ns.dbGlobal.guildInfo.welcome
+                        else return ns.settings.sendWelcome end
+                    end,
                 },
                 optPersonalWelcomeMsg = {
                     order = 14,
-                    name = 'Actual message sent to player after joining.',
+                    name = 'Guild message sent after player joins.',
                     desc = 'This message will be sent to '..ns.code:cText('FFFFFF00', 'guild chat')..' to the player after joining.',
                     type = 'input',
                     width = 'full',
-                    disabled = function() return not ns.core.isGuildLeader and ns.dbGlobal.greeting end,
+                    disabled = function() return ns.dbGlobal.guildInfo.welcome  end,
                     set = function(_, val)
                         local playerNameFound, _, remove, msg = MessageLength(val:trim())
                         msg = msg or ''
                         ns.settings.welcomeMessage = playerNameFound and msg:sub(1, (243 - (remove or 0))) or msg:sub(1, (255 - (remove or 0)))
                     end,
                     get = function()
-                        ns.settings.welcomeMessage = ns.settings.welcomeMessage or DEFAULT_GUILD_WELCOME
-                        return ns.settings.welcomeMessage
+                        if ns.dbGlobal.guildInfo.welcome then return ns.dbGlobal.guildInfo.welcomeMsg
+                        else
+                            ns.settings.welcomeMessage = ns.settings.welcomeMessage or DEFAULT_GUILD_WELCOME
+                            return ns.settings.welcomeMessage
+                        end
                     end,
                 },
                 optMsgNote = {

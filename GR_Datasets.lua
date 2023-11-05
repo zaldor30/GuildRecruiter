@@ -40,6 +40,7 @@ function ds:WhatsNew()
             |CFF55D0FFNote: This does not overwrite any existing
             keybindings in WoW.|r
         * Players in instances will not be invited or messaged.
+        * Fixed issue with welcome message not using GM settings.
 
     |CFFFFFF00v2.1.33 Notes|r
         * Brought back adding black list players to the icon bar.

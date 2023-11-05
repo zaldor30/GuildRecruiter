@@ -201,8 +201,6 @@ function core:startGuildRecruiter()
             ns.dbGlobal.guildInfo.hasGuildLeader = false
         end
 
-
-
         AC:RegisterOptionsTable('GR_Options', ns.addonSettings)
         ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
 

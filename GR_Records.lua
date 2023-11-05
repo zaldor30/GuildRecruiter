@@ -27,7 +27,7 @@ local function GuildRosterHandler(...)
     end
     if not invite.tblSent[pName] then return end
 
-    local forceWelcome = ns.dbGlobal.guildInfo.sendWelcome or false
+    local forceWelcome = ns.dbGlobal.guildInfo.welcome or false
     local showWelcome = forceWelcome or ns.settings.sendWelcome
     local msgWelcome = (forceWelcome and ns.dbGlobal.guildInfo.welcomeMsg ~= '') and ns.dbGlobal.guildInfo.welcomeMsg or (ns.settings.welcomeMessage or '')
 
@@ -65,7 +65,7 @@ local function GuildRosterHandler(...)
         if showGreeting and  msgGreeting ~= '' and pName then
             SendChatMessage(ns.code:variableReplacement(msgGreeting, pName, 'REMOVE<>'), 'WHISPER', nil, pName)
         end
-        if showWelcome and  msgWelcome ~= '' then
+        if showWelcome and msgWelcome ~= '' then
             C_Timer.After(math.random(3,8), function()
                 SendChatMessage(ns.code:variableReplacement(msgWelcome, pName, 'REMOVE<>'):gsub('<', ''):gsub('>', ''), 'GUILD')
             end)
@@ -117,7 +117,7 @@ end
 function invite:new(class, name)
     return {
         ['playerClass'] = class or '',
-        ['invitedBy'] = UnitGUID('player'),
+        ['invitedBy'] = name and UnitGUID(name) or UnitGUID('player'),
         ['invitedOn'] = C_DateAndTime.GetServerTimeLocal(),
     }
 end
