@@ -317,6 +317,16 @@ function sync:PrepareDataToSend() -- Used when sending client data (Client)
     tbl.invitedPlayers = ns.tblInvited
     tbl.blackListedPlayers = ns.tblBlackList --ns.code:compressData(ns.tblBlackList)
 
+    for k, r in pairs(ns.tblBlackList) do
+        ns.tblBlackList[k] = {
+            reason = r.reason,
+            expirationTime = r.expirationTime,
+            markedForDeletion = r.markedForDeletion,
+            whoDidIt = r.whoDidIt,
+            sent = true,
+        }
+    end
+
     return ns.code:compressData(tbl, 'ENCODE_FOR_WOW')
 end
 sync:Init()

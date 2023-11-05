@@ -1,4 +1,4 @@
-## 2.1.38
+## 2.1.39
 * Added compression to database for invited players and black list.
 Note: This is to facilitate larger lists with less penealty to performance when logging in.
 * Changed anti-spam to base 7 days and up to 6 months.
@@ -8,6 +8,8 @@ Note: Go into settings to make sure it is correct.
 Note: This does not overwrite any existing keybindings in WoW.
 * Players in an instance will not be messaged or invited.
 * Fixed issue with welcome message not using GM settings.
+* Fixed issues with analytics not tracking black list and invited players.
+* Black listed players can be removed right away as long as a sync has not occurred.
 
 
 ## 2.1.36

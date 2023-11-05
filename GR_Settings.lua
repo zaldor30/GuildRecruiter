@@ -1227,19 +1227,20 @@ ns.addonSettings = {
                 },
                 blDesc = {
                     order = 1,
-                    name = 'Players marked in '..ns.code:cText('FFFF0000', 'RED')..' are marked for deletion.\nPlayers marked in '..ns.code:cText('FF00FF00', 'GREEN')..' are active black listed players.',
+                    name = 'Players marked in '..ns.code:cText('FFFF0000', 'RED')..' are marked for deletion.\nPlayers marked in '..ns.code:cText('FFFFFF00', 'YELLOW')..' are active black listed players.\n'..'Players marked in '..ns.code:cText('FF00FF00', 'GREEN')..' are able to be removed from the list now.',
                     type = 'description',
                     fontSize = 'medium',
                 },
                 blRemoveButton = {
-                    name = 'Toggle Selected Black List Entries',
-                    desc = 'Black List entries marked for deletion will be permanently removed 30 days after marked.  During this time, the addon will ignore the selected Black List entries.',
+                    name = 'Remove Selected Black List Entries',
+                    desc = 'Unsynced black list entries will be removed now.\nBlack List entries marked for deletion will be permanently removed 30 days after marked.  During this time, the addon will ignore the selected Black List entries.',
                     type = 'execute',
                     width = 'full',
                     order = 2,
                     func = function()
-                        for _,r in pairs(ns.tblBlackList) do
-                            if r.selected and not r.markedForDelete then
+                        for k, r in pairs(ns.tblBlackList) do
+                            if r.selected and not r.sent then ns.tblBlackList[k] = nil
+                            elseif r.selected and not r.markedForDelete then
                                 r.markedForDelete = true
                                 r.expirationDate = C_DateAndTime.GetServerTimeLocal() + (30 * SECONDS_IN_A_DAY)
                             elseif r.selected and r.markedForDelete then
@@ -1247,8 +1248,10 @@ ns.addonSettings = {
                                 r.expirationDate = nil
                             end
 
-                            r.selected = false
+                            if r.selected then r.selected = false end
                         end
+
+                        ns.code:saveTables()
                     end,
                 },
                 blMultiSelect = {
@@ -1259,7 +1262,7 @@ ns.addonSettings = {
                         local tbl = {}
                         for k, r in pairs(ns.tblBlackList or {}) do
                             local name = k
-                            name = r.markedForDelete and ns.code:cText('FFFF0000', name) or ns.code:cText('FF00FF00', name)
+                            name = r.markedForDelete and ns.code:cText('FFFF0000', name) or (not r.sent and ns.code:cText('FF00FF00', name) or ns.code:cText('FFFFFF00', name))
                             tbl[k] = (name..': '..(r.reason or 'Unknown'))
                         end
 

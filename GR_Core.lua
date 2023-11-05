@@ -201,6 +201,8 @@ function core:startGuildRecruiter()
             ns.dbGlobal.guildInfo.hasGuildLeader = false
         end
 
+
+
         AC:RegisterOptionsTable('GR_Options', ns.addonSettings)
         ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
 
@@ -250,6 +252,8 @@ function core:startGuildRecruiter()
         stringOut = ns.dbBL and ns.code:compressData(ns.dbBL) or ''
         for k in pairs(ns.dbBL and ns.dbBL or {}) do noDataBL = false ns.dbBL[k] = nil end
         ns.dbBL['BlackList'] = stringOut or ''
+
+        ns.code:fOut('Database updated to version '..ns.ds.dbVersion..'.  Type /rl to reload the UI.')
     end
 
     -- Get Data for Invited Players and Black List

@@ -221,8 +221,8 @@ function analytics:Invited(amt)
 end
 function analytics:Accepted(amt)
     if not ap or not ag then return end
-    ap.Accepted_Invite = ns.code:inc(ap.Accepted_Invites or 0, amt or 1)
-    ag.Accepted_Invite = ns.code:inc(ag.Accepted_Invites or 0, amt or 1)
+    ap.Accepted_Invite = ns.code:inc(ap.Accepted_Invite or 0, amt or 1)
+    ag.Accepted_Invite = ns.code:inc(ag.Accepted_Invite or 0, amt or 1)
 end
 function analytics:Declined(amt)
     if not ap or not ag then return end
@@ -231,8 +231,8 @@ function analytics:Declined(amt)
 end
 function analytics:Blacklisted(amt)
     if not ap or not ag then return end
-    ap.Blacklisted_Players = ns.code:inc(ap.Black_Listed or 0, amt or 1)
-    ag.Blacklisted_Players = ns.code:inc(ag.Black_Listed or 0, amt or 1)
+    ap.Black_Listed = ns.code:inc(ap.Black_Listed or 0, amt or 1)
+    ag.Black_Listed = ns.code:inc(ag.Black_Listed or 0, amt or 1)
 end
 function analytics:get(key, isGlobal)
     if not ap or not ag then return end
