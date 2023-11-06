@@ -16,7 +16,7 @@ function ds:Init()
     self.tblConnected = ds:GetConnectedRealms()
 end
 ns.ds.dbVersion = '2.1.38'
-ns.ds.GR_VERSION = '2.1.38' -- Show 'What's New' only if versions match
+ns.ds.GR_VERSION = '2.1.39' -- Show 'What's New' only if versions match
 function ds:WhatsNew()
     local update = false -- True and will save seen message
     local height = 410 -- Adjust size of what's new window
