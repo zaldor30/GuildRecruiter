@@ -116,8 +116,9 @@ function invite:InitializeInvite()
 end
 function invite:new(class, name)
     return {
+        ['PlayerName'] = name,
         ['playerClass'] = class or '',
-        ['invitedBy'] = name and UnitGUID(name) or UnitGUID('player'),
+        ['invitedBy'] = UnitGUID('player'),
         ['invitedOn'] = C_DateAndTime.GetServerTimeLocal(),
     }
 end
@@ -127,13 +128,13 @@ function invite:CheckIfCanBeInvited(r, skipChecks)
         ns.code:dOut('No invite record or name.')
         return false
     elseif ns.tblInvited[r.fullName] then
-        --ns.code:dOut(r.name..' is already on the invited list')
-        return false
-    elseif r.zone and ns.ds.tblBadZones[r.zone] then
-        ns.code:dOut('Player '..r.fullName..' is in '..r.zone)
+        ns.code:dOut(r.fullName..' is already on the invited list')
         return false
     elseif r.zone and ns.ds.tblBadZonesByName[strlower(r.zone)] then
         ns.code:dOut('Player '..r.fullName..' is in '..ns.ds.tblBadZonesByName[strlower(r.zone)].name)
+        return false
+    elseif r.zone and ns.ds.tblBadZones[r.zone] then
+        ns.code:dOut('Player '..r.fullName..' is in '..r.zone)
         return false
     elseif ns.blackList:CheckBlackList(r.fullName) then return false end
 
@@ -218,8 +219,10 @@ function blackList:CheckBlackList(player)
     self.tblBlackList = ns.tblBlackList or {}
     if not player or not self.tblBlackList then return false end
 
-    local found = (self.tblBlackList and self.tblBlackList[player]) and true or false
-    found = not found and self.tblBlackList[player..'-'..GetRealmName()] and true or false
+    local withLocal = not player:match('-') and player..'-'..GetRealmName() or player
+    local found = (ns.tblBlackList and (ns.tblBlackList[player] or ns.tblBlackList[withLocal])) and true or false
+    found = (not found and (ns.tblBlackList and ((ns.tblBlackList[strlower(player)] or ns.tblBlackList[strlower(withLocal)]))) and true or false) or found
+
     if found then ns.code:dOut(player..' is on the blacklist.') end
     return found
 end
@@ -250,7 +253,7 @@ function blackList:AddToBlackList(name, reason)
             ns.code:saveTables('BLACK_LIST')
 
             ns.scanner:TotalBlackList()
-            ns.code:fOut(fName..' was added to the black list with \"'..value..'\" as a reason.')
+            ns.code:fOut(blName..' was added to the black list with \"'..value..'\" as a reason.')
         end,
         OnCancel = function() UIErrorsFrame:AddMessage(name..' was not added to Black List.', 1.0, 0.1, 0.1, 1.0) end,
         timeout = 0,
@@ -266,6 +269,7 @@ function blackList:AddToBlackList(name, reason)
     blName = not name:match(realm) and name..realm or name
     if not blName then return end
 
+    blName = blName:gsub("^%l", strupper)
     if self.tblBlackList[blName] then
         local dateTable = date("*t", self.tblBlackList[blName].dateBlackList)
         local formattedTime = string.format("%02d/%02d/%04d", dateTable.month, dateTable.day, dateTable.year)
