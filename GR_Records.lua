@@ -1,4 +1,5 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
+local L = LibStub("AceLocale-3.0"):GetLocale('GuildRecruiter')
 
 --[[ This is for reusable code found throughout the addon
     This code contains the following namespaces:
@@ -15,18 +16,18 @@ local function GuildRosterHandler(...)
     local _, msg =  ...
     if not msg or not invite.notifyActive then return end
 
-    local newMsg = msg:gsub("'", ''):gsub('No Player Named ', '')
+    local newMsg = msg:gsub("'", ''):gsub(L['no player named'], ''):gsub(L["No Player Named"]..' ', '')
     local pName = newMsg:match("([^%s]+)")--("^(.-)%s")
     pName = pName and pName:gsub('-'..GetRealmName(), '') or pName
 
-    if msg:match('is already in a guild') then
+    if msg:match(L["is already in a guild"]) then
         ns.scanner:TotalInvited(-1)
         if invite.tblSent[pName] then invite.tblSent[pName] = nil end
         return
     end
     if not invite.tblSent[pName] then return end
 
-    local forceWelcome = ns.dbGlobal.guildInfo.sendWelcome or false
+    local forceWelcome = ns.dbGlobal.guildInfo.welcome or false
     local showWelcome = forceWelcome or ns.settings.sendWelcome
     local msgWelcome = (forceWelcome and ns.dbGlobal.guildInfo.welcomeMsg ~= '') and ns.dbGlobal.guildInfo.welcomeMsg or (ns.settings.welcomeMessage or '')
 
@@ -57,14 +58,14 @@ local function GuildRosterHandler(...)
             invite.notifyActive = false end
     end
 
-    if msg:match('not found') then ns.scanner:TotalInvited(-1)
-    elseif msg:match('is not online') then ns.scanner:TotalInvited(-1)
-    elseif strlower(msg):match('no player named') then ns.scanner:TotalInvited(-1)
-    elseif msg:match('has joined the guild') then
+    if msg:match(L["Player not found"]) then ns.scanner:TotalInvited(-1)
+    elseif msg:match(L['is not online']) then ns.scanner:TotalInvited(-1)
+    elseif strlower(msg):match(L['no player named']) then ns.scanner:TotalInvited(-1)
+    elseif msg:match(L["joined the guild"]) then
         if showGreeting and  msgGreeting ~= '' and pName then
             SendChatMessage(ns.code:variableReplacement(msgGreeting, pName, 'REMOVE<>'), 'WHISPER', nil, pName)
         end
-        if showWelcome and  msgWelcome ~= '' then
+        if showWelcome and msgWelcome ~= '' then
             C_Timer.After(math.random(3,8), function()
                 SendChatMessage(ns.code:variableReplacement(msgWelcome, pName, 'REMOVE<>'):gsub('<', ''):gsub('>', ''), 'GUILD')
             end)
@@ -74,10 +75,10 @@ local function GuildRosterHandler(...)
         ns.scanner:TotalAccepted()
         ns.scanner:TotalUnknown(-1)
 
-        ns.code:cOut(pName..' joined the guild!')
+        ns.code:cOut(pName..' '..L['JOINED_GUILD_MESSAGE'])
         return
-    elseif msg:match('is already in a guild') then ns.scanner:TotalInvited(-1)
-    elseif msg:match('declines your guild invitation') then ns.scanner:TotalDeclined() end
+    elseif msg:match(L["is already in a guild"]) then ns.scanner:TotalInvited(-1)
+    elseif msg:match(L['declines your guild invitation']) then ns.scanner:TotalDeclined() end
 
     if invite.tblSent[pName] then
         UpdateSent()
@@ -104,22 +105,19 @@ function invite:Init()
     self.showGreeting = false
 
     self.tblSent = {}
-    self.tblInvited = {}
 end
 function invite:InitializeInvite()
     ap, ag = ns.dbAP, ns.dbAG
 
-    self.tblInvited = ns.dbInv or {}
-
     self.antiSpam = ns.settings.antiSpam or true
     self.showWhispers = ns.settings.showWhispers or false
 
-    blackList.tblBlackList = ns.dbBL or {}
+    blackList.tblBlackList = ns.tblBlackList or {}
 end
 function invite:new(class, name)
     return {
         ['playerClass'] = class or '',
-        ['invitedBy'] = UnitGUID('player'),
+        ['invitedBy'] = name and UnitGUID(name) or UnitGUID('player'),
         ['invitedOn'] = C_DateAndTime.GetServerTimeLocal(),
     }
 end
@@ -128,11 +126,14 @@ function invite:CheckIfCanBeInvited(r, skipChecks)
     elseif not r or not r.fullName then
         ns.code:dOut('No invite record or name.')
         return false
-    elseif ns.dbInv[r.fullName] then
+    elseif ns.tblInvited[r.fullName] then
         --ns.code:dOut(r.name..' is already on the invited list')
         return false
     elseif r.zone and ns.ds.tblBadZones[r.zone] then
-        ns.code:dOut('Player is nil or in a bad zone')
+        ns.code:dOut('Player '..r.fullName..' is in '..r.zone)
+        return false
+    elseif r.zone and ns.ds.tblBadZonesByName[strlower(r.zone)] then
+        ns.code:dOut('Player '..r.fullName..' is in '..ns.ds.tblBadZonesByName[strlower(r.zone)].name)
         return false
     elseif ns.blackList:CheckBlackList(r.fullName) then return false end
 
@@ -147,7 +148,7 @@ function invite:InvitePlayer(name, class, sendInvite, sendMessage, skipClassChec
     elseif sendInvite and GetGuildInfo(name) then ns.code:fOut(name..' is already in a guild.  Ask them to leave before inviting.') return end
 
     if blackList:CheckBlackList(name) then
-        local tblBlackList = ns.dbBlackList[name] or ns.dbBlackList[name..'-'..GetRealmName()] or {}
+        local tblBlackList = ns.tblBlackList[name] or ns.tblBlackList[name..'-'..GetRealmName()] or {}
         ns.code:fOut(fName..' is on the blacklist.')
         ns.code:fOut('Reason: '..(tblBlackList.reason or 'No reason given.'))
         ns.code:fOut('Blacklisted by: '..(select(6, GetPlayerInfoByGUID(tblBlackList.blacklistedBy)) or 'Unknown'))
@@ -201,56 +202,20 @@ function invite:InvitePlayer(name, class, sendInvite, sendMessage, skipClassChec
 end
 function invite:AddToSentList(name, class)
     if not name or not class then ns.code:fOut((name or 'NO NAME')..' was not added to sent list.') return false
-    elseif ns.dbInv[name] then ns.code:dOut(name..' was already on the invited list.') return true end
+    elseif ns.tblInvited[name] then ns.code:dOut(name..' was already on the invited list.') return true end
 
-    ns.dbInv[name] = invite:new(class, name)
+    ns.tblInvited[name] = invite:new(class, name)
     return true
 end
 invite:Init()
 
-function analytics:Scanned(amt)
-    if not ap or not ag then return end
-    ap.Players_Scanned = ns.code:inc(ap.Players_Scanned or 0, amt or 1)
-    ag.Players_Scanned = ns.code:inc(ag.Players_Scanned or 0, amt or 1)
-end
-function analytics:Invited(amt)
-    if not ap or not ag then return end
-    ap.Invited_Players = ns.code:inc(ap.Invited_Players or 0, amt or 1)
-    ag.Invited_Players = ns.code:inc(ag.Invited_Players or 0, amt or 1)
-end
-function analytics:Accepted(amt)
-    if not ap or not ag then return end
-    ap.Accepted_Invite = ns.code:inc(ap.Accepted_Invites or 0, amt or 1)
-    ag.Accepted_Invite = ns.code:inc(ag.Accepted_Invites or 0, amt or 1)
-end
-function analytics:Declined(amt)
-    if not ap or not ag then return end
-    ap.Declined_Invite = ns.code:inc(ap.Declined_Invites or 0, amt or 1)
-    ag.Declined_Invite = ns.code:inc(ag.Declined_Invites or 0, amt or 1)
-end
-function analytics:Blacklisted(amt)
-    if not ap or not ag then return end
-    ap.Blacklisted_Players = ns.code:inc(ap.Black_Listed or 0, amt or 1)
-    ag.Blacklisted_Players = ns.code:inc(ag.Black_Listed or 0, amt or 1)
-end
-function analytics:get(key, isGlobal)
-    if not ap or not ag then return end
-
-    local tblAnalytics = {}
-    tblAnalytics.profile = ap or {}
-    tblAnalytics.global = ag or {}
-
-    local val = isGlobal and (tblAnalytics.global[key] or 0) or (tblAnalytics.profile[key] or 0)
-    local out = tostring(val):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
-    if isGlobal then return out else return out end
-end
 
 -- Blacklist Routines
 function blackList:Init()
     self.tblBlackList = {}
 end
 function blackList:CheckBlackList(player)
-    self.tblBlackList = ns.dbBL or {}
+    self.tblBlackList = ns.tblBlackList or {}
     if not player or not self.tblBlackList then return false end
 
     local found = (self.tblBlackList and self.tblBlackList[player]) and true or false
@@ -259,7 +224,7 @@ function blackList:CheckBlackList(player)
     return found
 end
 function blackList:FixBlackList()
-    self.tblBlackList = ns.dbBL or {}
+    self.tblBlackList = ns.tblBlackList or {}
 
     self.tblBlackList.blackList = nil
     for k in pairs(self.tblBlackList) do
@@ -282,7 +247,7 @@ function blackList:AddToBlackList(name, reason)
             value = value ~= '' and value or 'No reason'
 
             self.tblBlackList[blName] = { reason = value, whoDidIt = UnitGUID('player'), dateBlackList = C_DateAndTime.GetServerTimeLocal(), markedForDelete = false }
-            ns.dbBL = ns.blackList
+            ns.code:saveTables('BLACK_LIST')
 
             ns.scanner:TotalBlackList()
             ns.code:fOut(fName..' was added to the black list with \"'..value..'\" as a reason.')
@@ -312,9 +277,46 @@ function blackList:AddToBlackList(name, reason)
     else
         reason = reason == 'BULK_ADD_BLACKLIST' and 'Bulk Add' or reason
         self.tblBlackList[blName] = { reason = reason, whoDidIt = UnitGUID('player'), dateBlackList = C_DateAndTime.GetServerTimeLocal(), markedForDelete = false }
-        ns.dbBL = self.tblBlackList
+        ns.code:saveTables('BLACK_LIST')
 
         ns.scanner:TotalBlackList()
         ns.code:cOut(fName..' was added to the black list with \"'..reason..'\" as a reason.')
     end
+end
+
+function analytics:Scanned(amt)
+    if not ap or not ag then return end
+    ap.Players_Scanned = ns.code:inc(ap.Players_Scanned or 0, amt or 1)
+    ag.Players_Scanned = ns.code:inc(ag.Players_Scanned or 0, amt or 1)
+end
+function analytics:Invited(amt)
+    if not ap or not ag then return end
+    ap.Invited_Players = ns.code:inc(ap.Invited_Players or 0, amt or 1)
+    ag.Invited_Players = ns.code:inc(ag.Invited_Players or 0, amt or 1)
+end
+function analytics:Accepted(amt)
+    if not ap or not ag then return end
+    ap.Accepted_Invite = ns.code:inc(ap.Accepted_Invite or 0, amt or 1)
+    ag.Accepted_Invite = ns.code:inc(ag.Accepted_Invite or 0, amt or 1)
+end
+function analytics:Declined(amt)
+    if not ap or not ag then return end
+    ap.Declined_Invite = ns.code:inc(ap.Declined_Invite or 0, amt or 1)
+    ag.Declined_Invite = ns.code:inc(ag.Declined_Invite or 0, amt or 1)
+end
+function analytics:Blacklisted(amt)
+    if not ap or not ag then return end
+    ap.Black_Listed = ns.code:inc(ap.Black_Listed or 0, amt or 1)
+    ag.Black_Listed = ns.code:inc(ag.Black_Listed or 0, amt or 1)
+end
+function analytics:get(key, isGlobal)
+    if not ap or not ag then return end
+
+    local tblAnalytics = {}
+    tblAnalytics.profile = ap or {}
+    tblAnalytics.global = ag or {}
+
+    local val = isGlobal and (tblAnalytics.global[key] or 0) or (tblAnalytics.profile[key] or 0)
+    local out = tostring(val):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
+    if isGlobal then return out else return out end
 end

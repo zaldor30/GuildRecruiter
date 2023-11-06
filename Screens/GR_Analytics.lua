@@ -147,17 +147,8 @@ function stats:StartStatsScreen()
 
     local tblCount = ns.scanner:GetSessionData()
 
-    local lblTotalScanned = aceGUI:Create("Label")
-    lblTotalScanned:SetText('Total Scanned: '..(tblCount['Total_Scanned'] or 0))
-    lblTotalScanned:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
-    lblTotalScanned:SetFullWidth(true)
-    statsScroll1:AddChild(lblTotalScanned)
-
-    local lblTotalInvites = aceGUI:Create("Label")
-    lblTotalInvites:SetText('Total Invites: '..(tblCount['Total_Invited'] or 0))
-    lblTotalInvites:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
-    lblTotalInvites:SetFullWidth(true)
-    statsScroll1:AddChild(lblTotalInvites)
+    createStatsLabel('Total Scanned:', (tblCount['Total_Scanned'] or 0), statsScroll1)
+    createStatsLabel('Total Invites:', (tblCount['Total_Invited'] or 0), statsScroll1)
 
     local lblUnknown = aceGUI:Create("Label")
     lblUnknown:SetText('Waiting On: '..ns.code:cText(((tblCount['Total_Unknown'] and tblCount['Total_Unknown'] and tblCount['Total_Unknown'] > 0) and 'FFFF0000' or 'FFFFFFFF'), (tblCount['Total_Unknown'] or 0)))
@@ -171,23 +162,9 @@ function stats:StartStatsScreen()
     statsScroll2:SetHeight(55)
     inlineBottomRight:AddChild(statsScroll2)
 
-    local lblTotalDeclined = aceGUI:Create("Label")
-    lblTotalDeclined:SetText('Total Declined: '..(tblCount['Total_Declined'] or 0) )
-    lblTotalDeclined:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
-    lblTotalDeclined:SetFullWidth(true)
-    statsScroll2:AddChild(lblTotalDeclined)
-
-    local lblTotalAccepted = aceGUI:Create("Label")
-    lblTotalAccepted:SetText('Total Accepted: '..(tblCount['Total_Accepted'] or 0))
-    lblTotalAccepted:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
-    lblTotalAccepted:SetFullWidth(true)
-    statsScroll2:AddChild(lblTotalAccepted)
-
-    local lblTotalBlackList = aceGUI:Create("Label")
-    lblTotalBlackList:SetText('Total Black List: '..(tblCount['Total_BlackList'] or 0))
-    lblTotalBlackList:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
-    lblTotalBlackList:SetFullWidth(true)
-    statsScroll2:AddChild(lblTotalBlackList)
+    createStatsLabel('Total Declined:', (tblCount['Total_Declined'] or 0), statsScroll2)
+    createStatsLabel('Total Accepted:', (tblCount['Total_Accepted'] or 0), statsScroll2)
+    createStatsLabel('Total Black List:', (tblCount['Total_BlackList'] or 0), statsScroll2)
 
     local function refreshTimer()
         if not self.statsShown then return end

@@ -168,9 +168,21 @@ ns.addonSettings = {
                     desc = 'This is used for development, turn off.',
                     type = 'toggle',
                     width = 'full',
+                    order = 98,
+                    set = function(_, val)
+                        GRADDON.debug = val
+                        ns.settings.debugMode = val
+                    end,
+                    get = function() return ns.settings.debugMode end,
+                },
+                optDebugSync = {
+                    name = 'Disable Auto Sync.',
+                    desc = 'This is used for development, leave off.',
+                    type = 'toggle',
+                    width = 'full',
                     order = 99,
-                    set = function(_, val) ns.dbGlobal.debugMode = val end,
-                    get = function() return ns.dbGlobal.debugMode end,
+                    set = function(_, val) ns.dbGlobal.debugAutoSync = val end,
+                    get = function() return ns.dbGlobal.debugAutoSync or false end,
                 },
             },
         },
@@ -195,7 +207,7 @@ ns.addonSettings = {
                     name = 'Guild Master Settings',
                     type = 'header',
                 },
-                optRememberInvite = {
+                optGMAntiSpamEnable = {
                     order = 2,
                     name = 'Anti guild spam protection.',
                     desc = "Remembers invited players so you don't constantly spam them invites",
@@ -205,7 +217,7 @@ ns.addonSettings = {
                     set = function(_, val) ns.dbGlobal.guildInfo.antiSpam = val end,
                     get = function() return ns.dbGlobal.guildInfo.antiSpam end,
                 },
-                optReInvite = {
+                optGMAntiSpamInterval = {
                     order = 3,
                     name = 'Reinvite players after:',
                     desc = 'Number of days before resetting invite status.',
@@ -215,14 +227,19 @@ ns.addonSettings = {
                     disabled = function() return not ns.isGuildLeader end,
                     values = function()
                         return {
-                            [1] = '1 day',
-                            [3] = '3 days',
-                            [5] = '5 days',
                             [7] = '7 days',
+                            [14] = '14 days',
+                            [30] = '30 days (1 month)',
+                            [190] = '190 days (3 months)',
+                            [380] = '380 days (6 months)',
                         }
                     end,
                     set = function(_, val) ns.dbGlobal.guildInfo.reinviteAfter = tonumber(val) end,
-                    get = function() return ns.dbGlobal.guildInfo.reinviteAfter end,
+                    get = function()
+                        if ns.dbGlobal.guildInfo.reinviteAfter and ns.dbGlobal.guildInfo.reinviteAfter < 7 then
+                            ns.dbGlobal.guildInfo.reinviteAfter = 7
+                        end
+                        return ns.dbGlobal.guildInfo.reinviteAfter end,
                 },
                 optOnlyGMGreeting = {
                     order = 4,
@@ -496,7 +513,7 @@ ns.addonSettings = {
                     get = function() return ns.settings.showContext end,
                 },
                 optShowInvite = {
-                    order = 2,
+                    order = 3,
                     name = 'Show your whisper when sending invite messages.',
                     desc = 'This will show or hide whisper messages to recruits, suggest going to social and turn on in-line whispers for best results.',
                     type = 'toggle',
@@ -505,13 +522,50 @@ ns.addonSettings = {
                     get = function() return ns.settings.showWhispers end,
                 },
                 optShowInviteMsg = {
-                    order = 3,
+                    order = 4,
                     name = ns.code:cText('FF00FF00', 'NOTE: You must reload your UI to take effect (/rl).'),
                     type = 'description',
                     fontSize = 'medium',
                 },
+                optGMAntiSpamEnable = {
+                    order = 5,
+                    name = 'Anti guild spam protection.',
+                    desc = "Remembers invited players so you don't constantly spam them invites",
+                    type = 'toggle',
+                    disabled = function() return ns.dbGlobal.guildInfo.antiSpam end,
+                    width = 1.5,
+                    set = function(_, val) ns.settings.antiSpam = val end,
+                    get = function()
+                        if ns.dbGlobal.guildInfo.antiSpam then
+                            return ns.dbGlobal.guildInfo.antiSpam
+                        else return ns.settings.antiSpam end
+                    end,
+                },
+                optGMAntiSpamInterval = {
+                    order = 6,
+                    name = 'Reinvite players after:',
+                    desc = 'Number of days before resetting invite status.',
+                    type = 'select',
+                    style = 'dropdown',
+                    width = 1,
+                    disabled = function() return ns.dbGlobal.guildInfo.antiSpam end,
+                    values = function()
+                        return {
+                            [7] = '7 days',
+                            [14] = '14 days',
+                            [30] = '30 days (1 month)',
+                            [190] = '190 days (3 months)',
+                            [380] = '380 days (6 months)',
+                        }
+                    end,
+                    set = function(_, val) ns.settings.reinviteAfter = tonumber(val) end,
+                    get = function()
+                        if ns.dbGlobal.guildInfo.antiSpam then return ns.dbGlobal.guildInfo.reinviteAfter
+                        else return ns.settings.reinviteAfter end
+                    end,
+                },
                 optShowPersonalGreeting = {
-                    order = 4,
+                    order = 7,
                     name = 'Enable/Disable whispered greeting message to new guild member.',
                     desc = 'This message will be in a '..ns.code:cText('FFFFFF00', 'whisper')..' form to the player upon joining.',
                     type = 'toggle',
@@ -521,14 +575,14 @@ ns.addonSettings = {
                     get = function() return ns.dbGlobal.guildInfo.greeting or ns.settings.sendGreeting end,
                 },
                 optShowPersonalGM = {
-                    order = 5,
+                    order = 8,
                     name = ns.code:cText('FF00FF00', 'NOTE: The GM has forced this option on.'),
                     hidden = function() return not ns.dbGlobal.guildInfo.greeting end,
                     type = 'description',
                     fontSize = 'medium',
                 },
                 optPersonalGreetingMsg = {
-                    order = 6,
+                    order = 9,
                     name = 'Actual greeting message',
                     desc = 'This is the message that will be '..ns.code:cText('FFFFFF00', 'whispered')..' to the player after joining.',
                     type = 'input',
@@ -541,15 +595,18 @@ ns.addonSettings = {
 
                         ns.settings.greetingMsg  = playerNameFound and msg:sub(1, (243 - (remove or 0))) or msg:sub(1, (255 - (remove or 0)))
                     end,
-                    get = function() return ns.dbGlobal.guildInfo.greeting and ns.settings.greetingMsg or ns.dbGlobal.guildInfo.greetingMsg end,
+                    get = function()
+                        if ns.dbGlobal.guildInfo.greetingMsg then return ns.dbGlobal.guildInfo.greetingMsg
+                        else return ns.settings.greetingMsg end
+                    end,
                 },
                 Header2 = {
                     name = '',
                     type = 'header',
-                    order = 7
+                    order = 10
                 },
                 PreviewCount = {
-                    order = 8,
+                    order = 11,
                     name = function()
                         local gi = ns.dbGlobal.guildInfo
                         local playerNameFound, count = MessageLength((ns.settings.greetingMsg or gi.greetingMsg or ''))
@@ -562,46 +619,52 @@ ns.addonSettings = {
                     fontSize = 'medium'
                 },
                 Header3 = {
-                    order = 9,
+                    order = 12,
                     name = '',
                     type = 'header',
                 },
                 optShowPersonalWelcome = {
-                    order = 10,
+                    order = 13,
                     name = 'Enable/Disable personal welcome message.',
                     desc = 'Enable/Disable sending of a personalized welcome message to '..ns.code:cText('FFFFFF00', 'guild chat')..' after a player joins.',
                     type = 'toggle',
                     width = 'full',
-                    disabled = function() return not ns.isGuildLeader and ns.dbGlobal.greeting end,
+                    disabled = function() return ns.dbGlobal.guildInfo.welcome end,
                     set = function(_, val) ns.settings.sendWelcome = val end,
-                    get = function() return ns.settings.sendWelcome end,
+                    get = function()
+                        if ns.dbGlobal.guildInfo.welcome then return ns.dbGlobal.guildInfo.welcome
+                        else return ns.settings.sendWelcome end
+                    end,
                 },
                 optPersonalWelcomeMsg = {
-                    order = 11,
-                    name = 'Actual message sent to player after joining.',
+                    order = 14,
+                    name = 'Guild message sent after player joins.',
                     desc = 'This message will be sent to '..ns.code:cText('FFFFFF00', 'guild chat')..' to the player after joining.',
                     type = 'input',
                     width = 'full',
-                    disabled = function() return not ns.core.isGuildLeader and ns.dbGlobal.greeting end,
+                    disabled = function() return ns.dbGlobal.guildInfo.welcome  end,
                     set = function(_, val)
                         local playerNameFound, _, remove, msg = MessageLength(val:trim())
                         msg = msg or ''
                         ns.settings.welcomeMessage = playerNameFound and msg:sub(1, (243 - (remove or 0))) or msg:sub(1, (255 - (remove or 0)))
                     end,
                     get = function()
-                        ns.settings.welcomeMessage = ns.settings.welcomeMessage or DEFAULT_GUILD_WELCOME
-                        return ns.settings.welcomeMessage
+                        if ns.dbGlobal.guildInfo.welcome then return ns.dbGlobal.guildInfo.welcomeMsg
+                        else
+                            ns.settings.welcomeMessage = ns.settings.welcomeMessage or DEFAULT_GUILD_WELCOME
+                            return ns.settings.welcomeMessage
+                        end
                     end,
                 },
                 optMsgNote = {
-                    order = 12,
+                    order = 15,
                     name = ns.code:cText('FFFFFF00', 'NOTE: ')..'Disabled options are controlled by the Guild Master.',
                     type = 'description',
                     width = 'full',
                     fontSize = 'medium'
                 },
                 optScanInterval = {
-                    order = 13,
+                    order = 16,
                     name = 'Time to wait between scans (default recommended).',
                     desc = 'WoW requires a cooldown period between /who scans, this is the time that the system will wait between scans.',
                     type = 'input',
@@ -613,11 +676,58 @@ ns.addonSettings = {
                     get = function() return tostring(ns.settings.scanWaitTime) end,
                 },
                 optWhoNote = {
-                    order = 14,
+                    order = 17,
                     name = ns.code:cText('FFFFFF00', 'NOTE: ')..'6 seconds seems to give best results, shorter time yields less results.',
                     type = 'description',
                     width = 'full',
                     fontSize = 'medium'
+                },
+                Header4 = {
+                    name = 'Keybindings',
+                    type = 'header',
+                    order = 18
+                },
+                optKeybindingInvite = {
+                    order = 19,
+                    name = 'Keybinding: Invite',
+                    desc = 'Change the keybinding to invite a player to the guild.',
+                    type = 'keybinding',
+                    width = 1,
+                    set = function(_, val)
+                        if strlen(val) == 0 or val == '' then ns.global.keybindInvite = nil
+                        elseif val and val == ns.global.keybindScan then
+                            ns.code:fOut('That key is bound to scan, please choose another key.')
+                            return
+                        else ns.global.keybindInvite = val end
+                    end,
+                    get = function() return ns.global.keybindInvite end,
+                },
+                optSpacer = {
+                    order = 20,
+                    name = '',
+                    type = 'description',
+                    width = .5,
+                },
+                optKeybindingScan = {
+                    order = 21,
+                    name = 'Keybinding: Scan',
+                    desc = 'Change the keybinding to scan for players to invite.',
+                    type = 'keybinding',
+                    width = 1,
+                    set = function(_, val)
+                        if strlen(val) == 0 or val == '' then ns.global.keybindScan = nil
+                        elseif val and val == ns.global.keybindInvite then
+                            ns.code:fOut('That key is bound to invite, please choose another key.')
+                            return
+                        else ns.global.keybindScan = val end
+                    end,
+                    get = function() return ns.global.keybindScan end,
+                },
+                optNoteKeybind = {
+                    order = 22,
+                    name = ns.code:cText('FF00FF00', 'NOTE: Keybinds do not overwrite your WoW binds and are only used in the scanner.'),
+                    type = 'description',
+                    fontSize = 'medium',
                 },
             },
         },
@@ -1117,19 +1227,20 @@ ns.addonSettings = {
                 },
                 blDesc = {
                     order = 1,
-                    name = 'Players marked in '..ns.code:cText('FFFF0000', 'RED')..' are marked for deletion.\nPlayers marked in '..ns.code:cText('FF00FF00', 'GREEN')..' are active black listed players.',
+                    name = 'Players marked in '..ns.code:cText('FFFF0000', 'RED')..' are marked for deletion.\nPlayers marked in '..ns.code:cText('FFFFFF00', 'YELLOW')..' are active black listed players.\n'..'Players marked in '..ns.code:cText('FF00FF00', 'GREEN')..' are able to be removed from the list now.',
                     type = 'description',
                     fontSize = 'medium',
                 },
                 blRemoveButton = {
-                    name = 'Toggle Selected Black List Entries',
-                    desc = 'Black List entries marked for deletion will be perinately removed 30 days after marked.  During this time, the addon will ignore the selected Black List entries.',
+                    name = 'Remove Selected Black List Entries',
+                    desc = 'Unsynced black list entries will be removed now.\nBlack List entries marked for deletion will be permanently removed 30 days after marked.  During this time, the addon will ignore the selected Black List entries.',
                     type = 'execute',
                     width = 'full',
                     order = 2,
                     func = function()
-                        for _,r in pairs(ns.dbBL) do
-                            if r.selected and not r.markedForDelete then
+                        for k, r in pairs(ns.tblBlackList and ns.tblBlackList or {}) do
+                            if r.selected and not r.sent then ns.tblBlackList[k] = nil
+                            elseif r.selected and not r.markedForDelete then
                                 r.markedForDelete = true
                                 r.expirationDate = C_DateAndTime.GetServerTimeLocal() + (30 * SECONDS_IN_A_DAY)
                             elseif r.selected and r.markedForDelete then
@@ -1137,8 +1248,10 @@ ns.addonSettings = {
                                 r.expirationDate = nil
                             end
 
-                            r.selected = false
+                            if r.selected then r.selected = false end
                         end
+
+                        ns.code:saveTables()
                     end,
                 },
                 blMultiSelect = {
@@ -1147,27 +1260,47 @@ ns.addonSettings = {
                     width = 'full',
                     values = function()
                         local tbl = {}
-                        for k, r in pairs(ns.dbBL or {}) do
+                        for k, r in pairs(ns.tblBlackList or {}) do
                             local name = k
-                            name = r.markedForDelete and ns.code:cText('FFFF0000', name) or ns.code:cText('FF00FF00', name)
+                            name = r.markedForDelete and ns.code:cText('FFFF0000', name) or (not r.sent and ns.code:cText('FF00FF00', name) or ns.code:cText('FFFFFF00', name))
                             tbl[k] = (name..': '..(r.reason or 'Unknown'))
                         end
 
                         return tbl
                     end,
-                    set = function(_, key, val)
-                        local r = ns.dbBL[key]
-                        ns.dbBL[key] = {
-                            dateBlackList = r.dateBlackList,
-                            markedForDelete = r.markedForDelete,
-                            whoDidIt = r.whoDidIt,
-                            reason = r.reason,
-                            selected = val,
-                            expirationDate = r.expirationDate,
-                        }
-                    end,
-                    get = function(_, key) return ns.dbBL[key].selected or false end,
+                    set = function(_, key, val) ns.tblBlackList[key].selected = val end,
+                    get = function(_, key) return ns.tblBlackList[key].selected or false end,
                 }
+            }
+        },
+        mnuInvalidZones = {
+            name = 'Invalid Zone List',
+            type = 'group',
+            order = 33,
+            args = {
+                hdrZones = {
+                    order = 0,
+                    name = 'Invalid Zone List',
+                    type = 'header',
+                },
+                descList = {
+                    order = 1,
+                    name = 'The following zones are will be ignored by the scanner:',
+                    type = 'multiselect',
+                    width = 'full',
+                    values = function()
+                        local tbl = {}
+                        local tblZones = ns.code:sortTableByField(ns.ds.tblBadZonesByName, 'name', true)
+                        for _, r in pairs(tblZones or {}) do tbl[r.key] = ns.code:cText('FFFFFF00', r.name)..' ('..r.reason..')' end
+                        return tbl
+                    end,
+                },
+                descZones2 = {
+                    order = 2,
+                    name = 'If you find a zone that is not listed, please let me know.',
+                    type = 'description',
+                    fontSize = 'medium',
+                },
             }
         },
         mnuBlank4 = {

@@ -5,7 +5,7 @@ local LibDeflate = LibStub:GetLibrary("LibDeflate")
 
 local COMM_PREFIX = GRADDON.prefix
 local REQUEST_TIMEOUT = 5
-local DATA_WAIT_TIMEOUT, SYNC_FAIL_TIMER = 60, 60
+local DATA_WAIT_TIMEOUT, SYNC_FAIL_TIMER = 120, 240
 
 ns.sync = {}
 local sync = ns.sync
@@ -67,6 +67,8 @@ function sync:StopSync()
         self:console(syncType..' sync completed.', false, 'FORCE')
     end
 
+    ns.code:saveTables()
+
     self.isAutoSync = false
 
     C_Timer.After(5, function() ns.code:statusOut(' ') end)
@@ -89,8 +91,8 @@ function sync:StartSyncServer()
     self.tblData = table.wipe(self.tblData) or {}
     self.totalInvited, self.totalBlackListed = 0, 0
 
-    for _ in pairs(ns.dbInv and ns.dbInv or {}) do self.startInvited = self.startInvited + 1 end
-    for _ in pairs(ns.dbBL and ns.dbBL or {}) do self.startBlackListed = self.startBlackListed + 1 end
+    for _ in pairs(ns.tblInvited and ns.tblInvited or {}) do self.startInvited = self.startInvited + 1 end
+    for _ in pairs(ns.tblBlackList and ns.tblBlackList or {}) do self.startBlackListed = self.startBlackListed + 1 end
 
     self:SendCommMessage('SYNC_REQUEST')
     AceTimer:ScheduleTimer('CallBackRequest', REQUEST_TIMEOUT)
@@ -172,6 +174,9 @@ function sync:OnCommReceived(prefix, message, distribution, sender)
             sync:StopSync()
             return
         else self:console('Sent sync requests, waiting for response...') end
+    elseif message:match('INCOMMING_DATA') then
+        self:console('Getting data from '..(sender or 'unknown sender'))
+        return
     end
 
     if self.isMaster and sender ~= self.masterName then
@@ -202,12 +207,15 @@ function sync:OnCommReceived(prefix, message, distribution, sender)
 
             self.clientTimer = AceTimer:ScheduleTimer('CallBackClientTimeOut', 10, sender)
         elseif message == 'DATA_REQUEST' and sender == self.masterName then
-            self:console('Received data request from '..(sender or 'sync master.'), 'DEBUG')
+            self:console('Sending data to '..(sender or 'sync master.'))
 
             AceTimer:CancelTimer(self.clientTimer)
+
+            self:console('Sending data to '..(sender or 'sync master.'), 'DEBUG')
+            sync:SendCommMessage('INCOMMING_DATA', 'WHISPER', sender)
             sync:SendCommMessage(self:PrepareDataToSend(), 'WHISPER', sender)
-            self:console('Data was sent to '..(sender or 'sync master.'), 'DEBUG')
         elseif sender == self.masterName and message then
+            self:console('Received Master Data from '..(sender or 'remote master.'))
             local invAdded, blAdded, blRemoved = sync:MergeSyncData(sender, message)
             if invAdded == -1 then sync:StopSync() return end
             sync:ConsoleStatsDisplay(invAdded, blAdded, blRemoved)
@@ -263,22 +271,22 @@ function sync:MergeSyncData(sender, message)
                 ns.settings.greetingMsg = ns.dbGlobal.guildInfo.greetingMsg end
         end
 
-        ns.dbInv = ns.dbInv or {}
+        ns.tblInvited = ns.tblInvited or {}
         for k, r in pairs(tbl.invitedPlayers and tbl.invitedPlayers or {}) do
-            if not ns.dbInv[k] then
-                ns.dbInv[k] = r
+            if not ns.tblInvited[k] then
+                ns.tblInvited[k] = r
                 invAdded = invAdded + 1
             end
         end
 
-        ns.dbBL = ns.dbBL or {}
+        ns.tblBlackList = ns.tblBlackList or {}
         for k, r in pairs(tbl.blackListedPlayers and tbl.blackListedPlayers or {}) do
-            if not ns.dbBL[k] and type(k) == 'string' and k ~= 'blacklist' then
-                ns.dbBL[k] = r
+            if not ns.tblBlackList[k] and type(k) == 'string' and k ~= 'blacklist' then
+                ns.tblBlackList[k] = r
                 blAdded = blAdded + 1
             elseif r.markedForDeletion then
-                ns.dbBL[k].markedForDeletion = true
-                ns.dbBL[k].expirationTime = r.expirationTime
+                ns.tblBlackList[k].markedForDeletion = true
+                ns.tblBlackList[k].expirationTime = r.expirationTime
                 blRemoved = blRemoved + 1
             end
         end
@@ -292,15 +300,12 @@ function sync:MergeSyncData(sender, message)
     end
 
     local invAdded, blAdded, blRemoved = 0, 0, 0
-    local decodedWowMessage = LibDeflate:DecodeForWoWAddonChannel(message)
-    if not decodedWowMessage then return decodeFailed() end
-    local decompressedData = LibDeflate:DecompressDeflate(decodedWowMessage)
-    if not decompressedData then return decodeFailed() end
-    local success, tbl = GRADDON:Deserialize(decompressedData)
-    if success then
+    local success, tbl = ns.code:decompressData(message, 'DECODE_FOR_WOW')
+    if success and tbl and type(tbl) == 'table' then
+        -- _, tbl.blackListedPlayers = ns.code:decompressData(tbl.blackListedPlayers)
         invAdded, blAdded, blRemoved = mergeTheData(tbl)
         return invAdded, blAdded, blRemoved
-    else self:console('Failed to decode data from '..(sender or 'unknown sender'), 'DEBUG') end
+    else decodeFailed() end
 end
 function sync:PrepareDataToSend() -- Used when sending client data (Client)
     local tbl = {}
@@ -309,13 +314,20 @@ function sync:PrepareDataToSend() -- Used when sending client data (Client)
     tbl.guildInfo = ns.dbGlobal.guildInfo
     tbl.guildData = ns.dbGlobal.guildData
 
-    tbl.invitedPlayers = ns.dbInv
-    tbl.blackListedPlayers = ns.dbBL
+    tbl.invitedPlayers = ns.tblInvited
+    tbl.blackListedPlayers = ns.tblBlackList --ns.code:compressData(ns.tblBlackList)
 
-    local serializedData = GRADDON:Serialize(tbl)
-    local compressedData = LibDeflate:CompressDeflate(serializedData)
+    for k, r in pairs(ns.tblBlackList) do
+        ns.tblBlackList[k] = {
+            reason = r.reason,
+            expirationTime = r.expirationTime,
+            markedForDeletion = r.markedForDeletion,
+            whoDidIt = r.whoDidIt,
+            sent = true,
+        }
+    end
 
-    return LibDeflate:EncodeForWoWAddonChannel(compressedData)
+    return ns.code:compressData(tbl, 'ENCODE_FOR_WOW')
 end
 sync:Init()
 

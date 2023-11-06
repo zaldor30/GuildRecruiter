@@ -1,4 +1,18 @@
-##2.1.36
+## 2.1.39
+* Added compression to database for invited players and black list.
+Note: This is to facilitate larger lists with less penealty to performance when logging in.
+* Changed anti-spam to base 7 days and up to 6 months.
+Note: Go into settings to make sure it is correct.
+* Added anti-spam for when not forced by Guild Master.
+* Added keybindings for inviting and scanning (Found in settings, Invite Settings).
+Note: This does not overwrite any existing keybindings in WoW.
+* Players in an instance will not be messaged or invited (fixed).
+* Fixed issue with welcome message not using GM settings.
+* Fixed issues with analytics not tracking black list and invited players.
+* Black listed players can be removed right away as long as a sync has not occurred.
+
+
+## 2.1.36
 * Brought back adding black list players to the icon bar.
 * Added the ability to send greeting/welcome message when inviting via the menu (right click on player name in chat).
 * Added message length to greeting message and restricted to 255 characters (1 message).
