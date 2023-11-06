@@ -275,32 +275,36 @@ function core:startGuildRecruiter()
     -- Maintenance Routine
     local function startMaintenance()
         local removeCount = 0
-        local cutOffTime = C_DateAndTime.GetServerTimeLocal() - ((db.rememberTime or 7) * SECONDS_IN_A_DAY)
+        local rememberTime = ns.dbGlobal.guildInfo.antiSpam and (ns.dbGlobal.guildInfo.reinviteAfter or 7) or (ns.settings.antiSpam and (ns.settings.reinviteAfter or 7) or 0)
+        local cutOffTime = C_DateAndTime.GetServerTimeLocal() - (rememberTime * SECONDS_IN_A_DAY)
 
-        for k,r in pairs((ns.tblInvited and ns.tblInvited) or {}) do
+        for k,r in pairs(ns.tblInvited and ns.tblInvited or {}) do
             local invitedOn = (type(r) == 'table' and r.invitedOn) and (type(r.invitedOn) == 'string' and tonumber(r.invitedOn) or r.invitedOn) or nil
+
             if invitedOn and invitedOn <= cutOffTime then
                 ns.tblInvited[k] = nil
                 removeCount = removeCount + 1
             elseif not invitedOn then ns.tblInvited[k] = nil end
         end
-        ns.dbInv.InvitedPlayers = ns.code:compressData(ns.tblInvited)
 
         if removeCount > 0 then
-            ns.code:fOut(string.format(L['ANTI_SPAM_REMOVAL'], removeCount), 'FFFFFFFF', true) end
+            ns.dbInv.InvitedPlayers = ns.code:compressData(ns.tblInvited)
+            ns.code:fOut(string.format(L['ANTI_SPAM_REMOVAL'], removeCount), 'FFFFFFFF', true)
+        end
 
         removeCount = 0
-        cutOffTime = C_DateAndTime.GetServerTimeLocal()
+        cutOffTime = C_DateAndTime.GetServerTimeLocal() -- Adds the 30 days when marked for delete
         for k,r in pairs(ns.tblBlackList and ns.tblBlackList or {}) do
             if r.expirationDate and cutOffTime >= r.expirationDate then
                 removeCount = removeCount + 1
                 ns.tblBlackList[k] = nil
             end
         end
-        ns.dbBL.BlackList= ns.code:compressData(ns.tblBlackList)
 
         if removeCount > 0 then
-            ns.code:cOut(removeCount..L['BL_REMOVAL'], 'FFFFFFFF', true) end
+            ns.dbBL.BlackList= ns.code:compressData(ns.tblBlackList)
+            ns.code:cOut(removeCount..L['BL_REMOVAL'], 'FFFFFFFF', true)
+        end
     end
     startMaintenance()
 

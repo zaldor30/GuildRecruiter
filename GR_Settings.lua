@@ -1285,7 +1285,7 @@ ns.addonSettings = {
                 },
                 descList = {
                     order = 1,
-                    name = 'The following zones are will be ignored by the scanner:',
+                    name = 'The following zones will be ignored by the scanner:',
                     type = 'multiselect',
                     width = 'full',
                     values = function()

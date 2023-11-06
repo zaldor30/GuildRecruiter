@@ -1,3 +1,6 @@
+## 2.1.40
+* Fixed issues with black list and invited players.
+
 ## 2.1.39
 * Added compression to database for invited players and black list.
 Note: This is to facilitate larger lists with less penealty to performance when logging in.
@@ -10,7 +13,6 @@ Note: This does not overwrite any existing keybindings in WoW.
 * Fixed issue with welcome message not using GM settings.
 * Fixed issues with analytics not tracking black list and invited players.
 * Black listed players can be removed right away as long as a sync has not occurred.
-
 
 ## 2.1.36
 * Brought back adding black list players to the icon bar.
