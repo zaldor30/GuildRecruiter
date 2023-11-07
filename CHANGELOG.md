@@ -1,3 +1,8 @@
+## 2.1.41
+* Increment for patch 10.2
+* Added total invited players and black listed players in analytics.
+* Fixed error with default race filter.
+
 ## 2.1.40
 * Fixed issues with black list and invited players.
 
