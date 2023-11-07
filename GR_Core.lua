@@ -32,6 +32,42 @@ function GRADDON:OnInitialize(...)
             ns.events:RegisterEvent('CHAT_MSG_SYSTEM', CHAT_MSG_SYSTEM)
 
             C_Timer.After(10, function()
+                -- Maintenance Routine
+                local function startMaintenance()
+                    local removeCount = 0
+                    local rememberTime = (ns.dbGlobal.guildInfo and ns.dbGlobal.guildInfo.antiSpam) and (ns.dbGlobal.guildInfo.reinviteAfter or 7) or (ns.settings.antiSpam and (ns.settings.reinviteAfter or 7) or 7)
+                    local cutOffTime = C_DateAndTime.GetServerTimeLocal() - (rememberTime * SECONDS_IN_A_DAY)
+
+                    for k,r in pairs(ns.tblInvited and ns.tblInvited or {}) do
+                        local invitedOn = (type(r) == 'table' and r.invitedOn) and (type(r.invitedOn) == 'string' and tonumber(r.invitedOn) or r.invitedOn) or nil
+
+                        if invitedOn and invitedOn <= cutOffTime then
+                            ns.tblInvited[k] = nil
+                            removeCount = removeCount + 1
+                        elseif not invitedOn then ns.tblInvited[k] = nil end
+                    end
+
+                    if removeCount > 0 then
+                        ns.dbInv.InvitedPlayers = ns.code:compressData(ns.tblInvited)
+                        ns.code:fOut(string.format(L['ANTI_SPAM_REMOVAL'], removeCount), 'FFFFFFFF', true)
+                    end
+
+                    removeCount = 0
+                    cutOffTime = C_DateAndTime.GetServerTimeLocal() -- Adds the 30 days when marked for delete
+                    for k,r in pairs(ns.tblBlackList and ns.tblBlackList or {}) do
+                        if r.expirationDate and cutOffTime >= r.expirationDate then
+                            removeCount = removeCount + 1
+                            ns.tblBlackList[k] = nil
+                        end
+                    end
+
+                    if removeCount > 0 then
+                        ns.dbBL.BlackList= ns.code:compressData(ns.tblBlackList)
+                        ns.code:cOut(removeCount..L['BL_REMOVAL'], 'FFFFFFFF', true)
+                    end
+                end
+                startMaintenance()
+
                 if core.stopSync or ns.dbGlobal.debugAutoSync then return end
 
                 ns.sync.isAutoSync = true
@@ -272,45 +308,11 @@ function core:startGuildRecruiter()
     -- Start Main Screen
     ns.screen:AddonLoaded()
 
-    -- Maintenance Routine
-    local function startMaintenance()
-        local removeCount = 0
-        local rememberTime = ns.dbGlobal.guildInfo.antiSpam and (ns.dbGlobal.guildInfo.reinviteAfter or 7) or (ns.settings.antiSpam and (ns.settings.reinviteAfter or 7) or 0)
-        local cutOffTime = C_DateAndTime.GetServerTimeLocal() - (rememberTime * SECONDS_IN_A_DAY)
-
-        for k,r in pairs(ns.tblInvited and ns.tblInvited or {}) do
-            local invitedOn = (type(r) == 'table' and r.invitedOn) and (type(r.invitedOn) == 'string' and tonumber(r.invitedOn) or r.invitedOn) or nil
-
-            if invitedOn and invitedOn <= cutOffTime then
-                ns.tblInvited[k] = nil
-                removeCount = removeCount + 1
-            elseif not invitedOn then ns.tblInvited[k] = nil end
-        end
-
-        if removeCount > 0 then
-            ns.dbInv.InvitedPlayers = ns.code:compressData(ns.tblInvited)
-            ns.code:fOut(string.format(L['ANTI_SPAM_REMOVAL'], removeCount), 'FFFFFFFF', true)
-        end
-
-        removeCount = 0
-        cutOffTime = C_DateAndTime.GetServerTimeLocal() -- Adds the 30 days when marked for delete
-        for k,r in pairs(ns.tblBlackList and ns.tblBlackList or {}) do
-            if r.expirationDate and cutOffTime >= r.expirationDate then
-                removeCount = removeCount + 1
-                ns.tblBlackList[k] = nil
-            end
-        end
-
-        if removeCount > 0 then
-            ns.dbBL.BlackList= ns.code:compressData(ns.tblBlackList)
-            ns.code:cOut(removeCount..L['BL_REMOVAL'], 'FFFFFFFF', true)
-        end
-    end
-    startMaintenance()
-
     -- Show What's New
     ns.dbGlobal.showUpdates = ns.dbGlobal.showUpdates == nil and true or ns.dbGlobal.showUpdates
     if ns.dbGlobal.showUpdates and (GRADDON.debug or not ns.dbGlobal.version:match(ns.ds.GR_VERSION)) then
+        ns.dbGlobal.showUpdates = false
+        ns.dbGlobal.version = ns.ds.GR_VERSION
         ns.whatsnew:ShowWhatsNew()
     end
 

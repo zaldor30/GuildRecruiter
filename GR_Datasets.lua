@@ -27,6 +27,15 @@ function ds:WhatsNew()
                 Discord: https://discord.gg/ZtS6Q2sKRH
              (or click on the icon in the top left corner)|r
 
+    |CFFFFFF00v2.1.41 Notes|r
+        * Increment for patch 10.2
+        * Added total invited players and black listed players in
+            analytics.
+        * Fixed error with default race filter.
+
+    |CFFFFFF00v2.1.40 Notes|r
+        * Fixes for invited players and black list anti-spam.
+
     |CFFFFFF00v2.1.39 Notes|r
         * Added compression to database for invited players and
             black list.
@@ -41,8 +50,10 @@ function ds:WhatsNew()
             keybindings in WoW.|r
         * Players in instances will not be invited or messaged (fixed).
         * Fixed issue with welcome message not using GM settings.
-        * Fixed issues with analytics not tracking black list and invited players.
-        * Black listed players can be removed right away as long as a sync has not occurred.
+        * Fixed issues with analytics not tracking black list and
+            invited players.
+        * Black listed players can be removed right away as long as
+            a sync has not occurred.
 
 I have posted the updated beta for it.
 

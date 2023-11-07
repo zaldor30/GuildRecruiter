@@ -455,7 +455,7 @@ function scan:BuildFilter(skipNext)
 
     local function createRaceFilter()
         for _,r in pairs(ns.ds.tblRaces) do
-            local query = 'r-"'..r..'"'
+            local query = 'r-"'..r.fileName..'"'
             for i=min, max, 5 do
                 local rangeStart, rangeEnd = i, i + 5
                 if rangeEnd > max then rangeEnd = max and max or (MAX_CHARACTER_LEVEL or 70) end

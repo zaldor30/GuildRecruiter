@@ -29,7 +29,7 @@ function stats:StartStatsScreen()
     local tblFrame = self.tblFrame.controls
     local tblScreen = ns.screen.tblFrame
 
-    tblScreen.frame:SetSize(500, 355)
+    tblScreen.frame:SetSize(500, 415)
     tblScreen.backButton:SetShown(true)
     tblScreen.statsButton:GetNormalTexture():SetVertexColor(0, 1, 0, 1)
 
@@ -130,6 +130,34 @@ function stats:StartStatsScreen()
     createStatsLabel('Invites Accepted:', ns.analytics:get('Accepted_Invite', true), scrollAccount)
     createStatsLabel('Invites Declined:', ns.analytics:get('Declined_Invite', true), scrollAccount)
     createStatsLabel('Black Listed Players:', ns.analytics:get('Black_Listed', true), scrollAccount)
+
+    self.statsOverall = aceGUI:Create('InlineGroup')
+    local inlineMiddle = self.statsOverall
+    inlineMiddle:SetTitle('Stored Stats:')
+    inlineMiddle:SetLayout('Flow')
+    inlineMiddle:SetFullWidth(true)
+    inlineMiddle:SetHeight(100)
+    inline:AddChild(inlineMiddle)
+
+    local statsScrollOverall = aceGUI:Create("ScrollFrame")
+    statsScrollOverall:SetLayout("Flow")
+    statsScrollOverall:SetRelativeWidth(.5)
+    statsScrollOverall:SetHeight(20)
+    inlineMiddle:AddChild(statsScrollOverall)
+
+    local iCount = 0
+    for _ in pairs(ns.tblInvited) do iCount = iCount + 1 end
+    createStatsLabel('Total Invited Players:', tostring(iCount):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", ""), statsScrollOverall)
+
+    local statsScrollBLOverall = aceGUI:Create("ScrollFrame")
+    statsScrollBLOverall:SetLayout("Flow")
+    statsScrollBLOverall:SetRelativeWidth(.5)
+    statsScrollBLOverall:SetHeight(20)
+    inlineMiddle:AddChild(statsScrollBLOverall)
+
+    local blCount = 0
+    for _ in pairs(ns.tblBlackList) do blCount = blCount + 1 end
+    createStatsLabel('All Black List:', tostring(blCount):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", ""), statsScrollBLOverall)
 
     self.statsInline = aceGUI:Create('InlineGroup')
     local inlineBottomRight = self.statsInline

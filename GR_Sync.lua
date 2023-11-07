@@ -211,7 +211,6 @@ function sync:OnCommReceived(prefix, message, distribution, sender)
 
             AceTimer:CancelTimer(self.clientTimer)
 
-            self:console('Sending data to '..(sender or 'sync master.'), 'DEBUG')
             sync:SendCommMessage('INCOMMING_DATA', 'WHISPER', sender)
             sync:SendCommMessage(self:PrepareDataToSend(), 'WHISPER', sender)
         elseif sender == self.masterName and message then

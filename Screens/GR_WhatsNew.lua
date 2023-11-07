@@ -14,6 +14,7 @@ function whatsnew:ShowWhatsNew()
     ns.screen.tblFrame.titleFrame:SetShown(false)
     ns.screen.tblFrame.statusBar:SetShown(false)
     ns.screen.tblFrame.frame:SetShown(true)
+    if wn.tblFrame.inline then wn.tblFrame.inline.frame:SetShown(true) end
 
     wn:BuildWhatsNew()
 end
@@ -21,8 +22,10 @@ function whatsnew:CloseWhatsNew()
     ns.observer:Unregister('CLOSE_SCREENS', obsCLOSE_SCREENS)
 
     wn.tblFrame.frame:SetShown(false)
-    wn.tblFrame.inline:ReleaseChildren()
-    wn.tblFrame.inline:Release()
+    if wn.tblFrame.inline then
+        wn.tblFrame.inline:ReleaseChildren()
+        wn.tblFrame.inline.frame:Hide()
+    end
 
     ns.screen.tblFrame.titleFrame:SetShown(true)
     ns.screen.tblFrame.statusBar:SetShown(true)
@@ -36,11 +39,11 @@ function wn:Init()
     self.body = nil
     self.height = 300
 end
-function wn:BuildWhatsNew() 
+function wn:BuildWhatsNew()
     local tblFrame = self.tblFrame
     local tblScreen = ns.screen.tblFrame
 
-    tblScreen.frame:SetSize(tblScreen.frame:GetWidth(), self.height)
+    tblScreen.frame:SetSize(tblScreen.frame:GetWidth() + 50, self.height)
 
     local f = tblFrame.frame or CreateFrame('Frame', 'GR_WhatsNew', tblScreen.frame, 'BackdropTemplate')
     f:SetBackdrop(BackdropTemplate(BLANK_BACKGROUND))
