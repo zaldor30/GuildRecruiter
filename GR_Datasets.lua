@@ -27,7 +27,7 @@ function ds:WhatsNew()
                 Discord: https://discord.gg/ZtS6Q2sKRH
              (or click on the icon in the top left corner)|r
 
-    |CFFFFFF00v2.1.41 Notes|r
+    |CFFFFFF00v2.1.42 Notes|r
         * Increment for patch 10.2
         * Added total invited players and black listed players in
             analytics.
