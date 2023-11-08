@@ -1,3 +1,5 @@
+## X-Curse-Project-ID: 882061
+
 ## Interface: 100200
 ## Version: 2.1.41
 ## Title: Guild Recruiter
