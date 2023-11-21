@@ -31,7 +31,8 @@ function observer:Notify(event, ...)
     if not event or not self.tblObservers[event] then return end
 
     for i=1,#self.tblObservers[event] do
-        self.tblObservers[event][i](...)
+        if self.tblObservers[event] then
+            self.tblObservers[event][i](...) end
     end
 end
 observer:Init()

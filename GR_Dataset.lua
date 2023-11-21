@@ -5,7 +5,7 @@ local ds = ns.ds
 
 function ds:Init()
     self.dbVersion = '3.0.0'
-    self.grVersion = '2.1.39'
+    self.grVersion = '2.2.43'
 
     self.tblRaces = self:races()
     self.tblClasses = self:classes()
@@ -258,7 +258,10 @@ function ds:races()
 end
 function ds:GetConnectedRealms()
     local tbl, isConnected = {}, false
-    for _, r in pairs(GetAutoCompleteRealms() or {}) do isConnected = true tbl[r] = true end
+    for _, r in pairs(GetAutoCompleteRealms() or {}) do
+        isConnected = true
+        tbl[r] = true
+    end
 
     return isConnected and tbl or nil
 end

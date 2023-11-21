@@ -49,7 +49,7 @@ L['DONATION_MESSAGE'] = 'Thank you for using Guild Recruiter, if you find this a
 -- Core Startup
 L['FIRST_RUN'] = 'You can use "/gr help" or "/recruiter help" to get a list of commands.'
 L['ANTI_SPAM_REMOVAL'] = 'Removed %s players from anti-spam list.'
-L['BL_REMOVAL'] = ' were removed from the black list after the 30 day wait period.'
+L['BL_REMOVAL'] = ' players were removed from the black list after the 14 day wait period.'
 
 -- Minimap Tooltip
 L['LEFT_MOUSE_BUTTON'] = 'LMB - Start Recruit Search'

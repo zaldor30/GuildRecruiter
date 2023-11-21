@@ -297,7 +297,7 @@ ns.addonSettings = {
                         local playerNameFound, count = MessageLength(ns.gmSettings.greetingMessage)
 
                         local color = count < 255 and 'FF00FF00' or 'FFFF0000'
-                        return L['Message Length']..ns.code:cText(color, count)..': '..L['(255 characters per message)']..(playerNameFound and '\n'..L['assumes 12 characters when using PLAYERNAME).'] or '')
+                        return L['Message Length']..': '..ns.code:cText(color, count)..' '..L['(255 characters per message)']..(playerNameFound and '\n'..L['assumes 12 characters when using PLAYERNAME).'] or '')
                     end,
                     type = 'description',
                     width = 'full',

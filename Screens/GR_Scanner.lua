@@ -34,7 +34,7 @@ local function CallBackWhoListUpdate()
 
     for i=1, C_FriendList.GetNumWhoResults() do
         local info = C_FriendList.GetWhoInfo(i)
-        local pName = #tblConnected > 0 and info.fullName or info.fullName:gsub('-.*', '')
+        local pName = tblConnected and info.fullName or info.fullName:gsub('-.*', '')
         local rec = {fullName = info.fullName, name = pName, class = info.filename, level = info.level, guild = (info.fullGuildName or ''), zone = info.area}
         tinsert(tblWho, rec)
     end

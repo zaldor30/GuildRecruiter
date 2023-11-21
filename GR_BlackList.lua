@@ -17,10 +17,10 @@ function blackList:CheckBlackList(name)
     if not name then return end
 
     local realm = '-'..GetRealmName()
-    local found = (ns.tblBlackList[name] or ns.tblBlackList[name..realm]) and true or false
-    found = found and (ns.tblBlackList[strlower(name)].markedForDelete or ns.tblBlackList[strlower(name..realm)].markedForDelete) and false or true
-
-    return found
+    local found = false
+    local record = ns.tblBlackList[name] or ns.tblBlackList[name..realm] or nil
+    if record and record.markedForDelete then return false
+    else return record or false end
 end
 function blackList:AddToBlackList(name, reason)
     if not name then return end

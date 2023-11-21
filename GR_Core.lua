@@ -292,7 +292,7 @@ function core:PerformRecordMaintenance()
     -- Remove Black List
     local blExpire = C_DateAndTime.GetServerTimeLocal()
     for k, r in pairs(ns.tblBlackList) do
-        if r.markedForDelete and r.dateBlackList < blExpire then
+        if r.markedForDelete and r.dateBlackList <= blExpire then
             ns.tblBlackList[k] = nil
             blackListRemoved = blackListRemoved + 1
         end

@@ -46,9 +46,9 @@ local function UpdateInvitePlayerStatus(doUpdate, ...)
         ns.code:dOut(pName.."'s invite has declined.")
     end
 
-    if doUpdate then updateSent() return end
+    if doUpdate then updateSent() return
+    elseif not msg then return end
 
-    pName = 'You' and 'RougeLite-Mannoroth' or pName
     if not invite.tblSent[pName] then
         ns.code:dOut('Player '..pName..' is not on the sent list.')
         return
@@ -121,14 +121,14 @@ function invite:CheckIfCanBeInvited(r, skipChecks)
     elseif not r or not r.fullName then
         ns.code:dOut('No invite record or name.')
         return false
+    elseif ns.blackList:CheckBlackList(r.fullName) then
+        ns.code:dOut('Player '..r.fullName..' is on the black list')
+        return false
     elseif ns.tblInvited[r.fullName] or ns.tblInvited[withRealm] then
         ns.code:dOut(r.fullName..' is already on the invited list')
         return false
     elseif r.zone and ns.ds.tblBadZonesByName[r.zone] then
         ns.code:dOut('Player '..r.fullName..' is in '..ns.ds.tblBadZonesByName[r.zone].name)
-        return false
-    elseif ns.blackList:CheckBlackList(r.fullName) then
-        ns.code:dOut('Player '..r.fullName..' is on the black list')
         return false
     end
 
@@ -169,9 +169,12 @@ function invite:InvitePlayer(name, sendGuildInvite, whisperMessage, skipGreeting
         return
     end
 
+    ns.observer:Register("CHAT_MSG_SYSTEM", UpdateInvitePlayerStatus)
+
     if manualInvite or sendGuildInvite then
         GuildInvite(name)
-        ns.code:fOut(L['GUILD_INVITE_SENT']..' '..name)
+        if not whisperMessage then
+            ns.code:fOut(L['GUILD_INVITE_SENT']..' '..name) end
     end
 
     if not manualInvite and ns.settings.inviteFormat ~= 2 then
@@ -200,8 +203,6 @@ function invite:InvitePlayer(name, sendGuildInvite, whisperMessage, skipGreeting
     end
     if not manualInvite then invite:AddToInvitedList(nameWithRealm, UnitClass(nameWithRealm)) end
     ns.screens.scanner:UpdateAnalyticsSection()
-
-    ns.observer:Register("CHAT_MSG_SYSTEM", UpdateInvitePlayerStatus)
 
     local function refreshSent()
         UpdateInvitePlayerStatus(true)
