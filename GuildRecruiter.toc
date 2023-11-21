@@ -1,11 +1,11 @@
 ## X-Curse-Project-ID: 882061
 
 ## Interface: 100200
-## Version: 2.1.42
+## Version: 2.2.43
 ## Title: Guild Recruiter
-## Notes: Allows guild officers to recruite new members
+## Notes: Facilitates guild officers to recruite new members
 ## Author: Moonfury
-## SavedVariables: GR_SettingsDB, GR_InvitedPlayersDB, GR_BlackListDB, GR_AnalyticsDB
+## SavedVariables: GuildRecruiterDB
 ## IconTexture: Interface\AddOns\GuildRecruiter\Images\GR_Icon
 ## OptionalDeps: Ace3
 
@@ -22,25 +22,30 @@ Libs\AceConsole-3.0\AceConsole-3.0.xml
 Libs\AceGUI-3.0\AceGUI-3.0.xml
 Libs\AceConfig-3.0\AceConfig-3.0.xml
 Libs\AceSerializer-3.0\AceSerializer-3.0.xml
-Libs\LibDeflate\LibDeflate.lua
+
 Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
 Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
+Libs\LibDeflate\LibDeflate.lua
 
 locales\Locales.xml
 
-GR_App.lua
-GR_Datasets.lua
+GR_Init.lua
 
 GR_Code.lua
 GR_Sync.lua
-GR_Records.lua
+GR_Events.lua
+GR_Dataset.lua
+GR_Invites.lua
+GR_BlackList.lua
+GR_Analytics.lua
+
+GR_Core.lua
+GR_Settings.lua
 
 Screens\GR_Base.lua
 Screens\GR_Home.lua
 Screens\GR_About.lua
+Screens\GR_Filter.lua
 Screens\GR_Scanner.lua
 Screens\GR_WhatsNew.lua
 Screens\GR_Analytics.lua
-
-GR_Core.lua
-GR_Settings.lua
