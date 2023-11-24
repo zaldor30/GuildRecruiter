@@ -42,8 +42,8 @@ function code:decompressData(data, decode)
 
     data = (decode and LibDeflate:DecodeForWoWAddonChannel(data) or data)
     local decompressedData = LibDeflate:DecompressDeflate(data)
-    if decompressedData then print('decomp', aceSerializer:Deserialize(decompressedData)) return aceSerializer:Deserialize(decompressedData)
-    else print('no decomp') return false, nil end -- Decompression failed
+    if decompressedData then return aceSerializer:Deserialize(decompressedData)
+    else return false, nil end -- Decompression failed
 end
 function code:saveTables(whichOne)
     if whichOne == 'BLACK_LIST' then ns.dbBL = ns.code:compressData(ns.tblBlackList)

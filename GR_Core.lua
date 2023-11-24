@@ -195,17 +195,14 @@ function core:PerformRecordMaintenance()
 
     -- Setup Tables for Black List and Invited Players
     ns.tblBlackList, ns.tblInvited = {}, {}
-    print('BL')
     local blSuccess, tblBL = ns.code:decompressData(ns.dbGlobal.blackList)
     if blSuccess and tblBL then ns.tblBlackList = tblBL
     elseif ns.dbBL then ns.code:fOut('There was an issue loading the Black List.', 'FFAF640C') end
 
-    print('inv')
     local invSuccess, tblInv = ns.code:decompressData(ns.dbGlobal.antiSpamList and ns.dbGlobal.antiSpamList or '')
     if invSuccess and tblInv then ns.tblInvited = tblInv
     elseif ns.dbInv then ns.code:fOut('There was an issue loading the Invited Players.', 'FFAF640C') end
 
-    print('session')
     local sessionSuccess, tblSession = ns.code:decompressData(ns.dbGlobal.sessionData)
     if sessionSuccess and tblSession then ns.ds.tblSavedSessions = tblSession
     else ns.ds.tblSavedSessions = date('%m%d%Y') end
