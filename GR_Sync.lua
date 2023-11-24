@@ -174,11 +174,11 @@ function sync:CommReceived(message, sender)
             if self.isSyncing then return end
 
             self:cOut('Client sync started...', true)
-            self:cOut('Sync requested by '..sender, 'FF00FF00', true)
+            self:cOut('Sync requested for '..sender, 'FF00FF00', true)
             self:StartSync(false, sender)
             sync:SendCommMessage('SYNC_REQUEST_HEARD', 'WHISPER', sender)
         elseif sender == self.masterSync and message:match('DATA_REQUEST') then
-            self:cOut('Data requested by '..sender, 'FF00FF00')
+            self:cOut('Data requested from '..sender, 'FF00FF00')
             self:PrepareAndSendData()
         else prepIncommingData() end
     end

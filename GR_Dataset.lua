@@ -13,9 +13,6 @@ function ds:Init()
     self.tblBadZonesByName = self:invalidZones()
 end
 function ds:WhatsNew()
-    self.dbVersion = '3.0.0'
-    self.grVersion = '2.1.39'
-
     local update = false -- True and will save seen message
     local height = 410 -- Adjust size of what's new window
     local title, msg = '', ''

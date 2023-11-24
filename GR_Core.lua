@@ -11,71 +11,28 @@ local SYNC_WAIT_TIME = 15
 
 -- Merge old data into one record
 local function mergeData(clubID)
-    local newDB = DB:New('GuildRecruiterDB')
-    local invitedDB = DB:New('GR_InvitedPlayersDB')
-    local blDB = DB:New('GR_BlackListDB')
-    local global = newDB.global
-    local gGuild = newDB.global[clubID]
-    local profile = newDB.profile
+    local db = DB:New('GuildRecruiterDB')
+    local oldDB = DB:New('GR_SettingsDB')
+    local dbBL = DB:New('GR_BlackListDB')
+    local dbInv = DB:New('GR_InvitedPlayersDB')
+    local dbAnal = DB:New('GR_AnalyticsDB')
 
-    if gGuild and gGuild.dbVersion ~= ns.ds.dbVersion then
-        newDB:ResetProfile(true)
-        newDB.global[clubID] = nil
-        newDB.global[clubID] = ns.core.addonSettings.global
+    if db.global.dbVersion ~= ns.ds.dbVersion then
+        local tblBL = dbBL.global or {}
+        local tblInv = dbInv.global or {}
 
-        local db = newDB.global[clubID]
-
-        db.guildInfo = db.guildInfo or {}
-        db.dbVersion = ns.ds.dbVersion
-        db.guildInfo = global.guildData or db.guildInfo or {}
-        newDB.global.keybindings = {
-            invite = global.keybindInvite or ns.core.addonSettings.global.keybindings.invite or 'CTRL-SHIFT-S',
-            scan = global.keybindScan or ns.core.addonSettings.global.keybindings.scan or 'CTRL-SHIFT-I',
-        }
-
-        --GM Settings
-        if gGuild.guildInfo then
-            db.gmSettings.antiSpam = gGuild.guildInfo.antiSpam or false
-            db.gmSettings.antiSpamDays = gGuild.guildInfo.reinviteAfter or db.gmSettings.antiSpamDays
-            db.gmSettings.sendWelcome = gGuild.guildInfo.sendWelcome or false
-            db.gmSettings.welcomeMessage = gGuild.guildInfo.welcomeMessage or db.gmSettings.welcomeMessage
-            db.gmSettings.sendGreeting = gGuild.guildInfo.greeting or false
-            db.gmSettings.greetingMessage = gGuild.guildInfo.greetingMsg or db.gmSettings.greetingMessage
-            db.gmSettings.messageList = gGuild.guildInfo.messageList or db.gmSettings.messageList
-            db.guildInfo.isGuildLeader = gGuild.guildInfo.isGuildLeader or db.guildInfo.isGuildLeader
+        for k in pairs(oldDB.global) do
+            db.global[k] = ns.core.addonSettings.global
         end
 
-        -- Global Values
-        local empty = ns.code:compressData({})
-        db.filterList = profile.filter or db.filterList
-        db.blackList = blDB.global[clubID] and (blDB.global[clubID].BlackList or empty) or empty
-        db.antiSpamList = invitedDB.global[clubID] and (invitedDB.global[clubID].InvitedPlayers or empty) or empty
+        db.global.dbVersion = ns.ds.dbVersion
 
-        -- Settings
-        if profile.settings then
-            db.settings.antiSpam = profile.settings.antiSpam or false
-            db.settings.antiSpamDays = profile.settings.reinviteAfter or db.settings.antiSpamDays
-            db.settings.sendWelcome = profile.settings.sendWelcome or false
-            db.settings.welcomeMessage = profile.settings.welcomeMessage or db.settings.welcomeMessage
-            db.settings.sendGreeting = profile.settings.greeting or false
-            db.settings.greetingMessage = profile.settings.greetingMsg or db.settings.greetingMessage
-            db.settings.messageList = profile.settings.messageList or db.settings.messageList
-            db.settings.showToolTips = profile.settings.showToolTips or true
-            db.settings.showConsoleMessages = profile.settings.showConsoleMessages or false
-            db.settings.showContextMenu = profile.settings.showContextMenu or true
-            db.settings.showWhispers = profile.settings.showWhispers or false
+        for k in pairs(dbBL.global) do
+            db.global[k].blackList = tblBL[k].BlackList or ''
         end
-    end
-
-    newDB.profile.settings = newDB.profile.settings or {}
-    if newDB.profile.settings.dbVersion ~= ns.ds.dbVersion then
-        newDB.profile = nil
-        newDB.profile.settings = ns.core.addonSettings.profile.settings
-        newDB.profile.analytics = ns.core.addonSettings.profile.analytics
-        newDB.profile.settings.dbVersion = ns.ds.dbVersion
-        newDB.profile.settings.minimap = profile.settings.minimap or ns.core.addonSettings.profile.settings.minimap
-        newDB.profile.settings.compactMode = profile.settings.compactMode or ns.core.addonSettings.profile.settings.compactMode
-        newDB.profile.settings.showContextMenu = profile.settings.showContextMenu or ns.core.addonSettings.profile.settings.showContextMenu
+        for k in pairs(dbInv.global) do
+            db.global[k].antiSpamList = tblInv[k].InvitedPlayers or ''
+        end
     end
 end
 
