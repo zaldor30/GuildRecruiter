@@ -9,33 +9,6 @@ local core = ns.core
 
 local SYNC_WAIT_TIME = 15
 
--- Merge old data into one record
-local function mergeData(clubID)
-    local db = DB:New('GuildRecruiterDB')
-    local oldDB = DB:New('GR_SettingsDB')
-    local dbBL = DB:New('GR_BlackListDB')
-    local dbInv = DB:New('GR_InvitedPlayersDB')
-    local dbAnal = DB:New('GR_AnalyticsDB')
-
-    if db.global.dbVersion ~= ns.ds.dbVersion then
-        local tblBL = dbBL.global or {}
-        local tblInv = dbInv.global or {}
-
-        for k in pairs(oldDB.global) do
-            db.global[k] = ns.core.addonSettings.global
-        end
-
-        db.global.dbVersion = ns.ds.dbVersion
-
-        for k in pairs(dbBL.global) do
-            db.global[k].blackList = tblBL[k].BlackList or ''
-        end
-        for k in pairs(dbInv.global) do
-            db.global[k].antiSpamList = tblInv[k].InvitedPlayers or ''
-        end
-    end
-end
-
 -- Application Startup Default Function
 function GR:OnInitialize()
     if core.isEnabled then return end
@@ -47,10 +20,7 @@ function GR:OnInitialize()
         if count > 30 then ns.code:cOut(L['GUILD_NOT_FOUND']) return
         elseif not IsInGuild() or not clubID then C_Timer.After(1, function() checkGuildInfo(count + 1) end)
         else
-            mergeData(clubID)
             core:StartGuildRecruiter(clubID)
-            if not self.IsEnabled then return end
-
             core:PerformRecordMaintenance()
 
             ns.tblClassesByName = ns.ds:classesByName()
@@ -225,14 +195,17 @@ function core:PerformRecordMaintenance()
 
     -- Setup Tables for Black List and Invited Players
     ns.tblBlackList, ns.tblInvited = {}, {}
+    print('BL')
     local blSuccess, tblBL = ns.code:decompressData(ns.dbGlobal.blackList)
     if blSuccess and tblBL then ns.tblBlackList = tblBL
     elseif ns.dbBL then ns.code:fOut('There was an issue loading the Black List.', 'FFAF640C') end
 
+    print('inv')
     local invSuccess, tblInv = ns.code:decompressData(ns.dbGlobal.antiSpamList and ns.dbGlobal.antiSpamList or '')
     if invSuccess and tblInv then ns.tblInvited = tblInv
     elseif ns.dbInv then ns.code:fOut('There was an issue loading the Invited Players.', 'FFAF640C') end
 
+    print('session')
     local sessionSuccess, tblSession = ns.code:decompressData(ns.dbGlobal.sessionData)
     if sessionSuccess and tblSession then ns.ds.tblSavedSessions = tblSession
     else ns.ds.tblSavedSessions = date('%m%d%Y') end
@@ -315,7 +288,7 @@ function core:FinishStartup()
     local function CHAT_MSG_SYSTEM(...) ns.observer:Notify('CHAT_MSG_SYSTEM', ...) end
     ns.events:RegisterEvent('CHAT_MSG_SYSTEM', CHAT_MSG_SYSTEM)
 
-    local showWhatsNew = type(ns.dbGlobal.showWhatsNew) == 'boolean' and ns.dbGlobal.showWhatsNew or true
+    local showWhatsNew = type(ns.db.global.showWhatsNew) == 'boolean' and ns.db.global.showWhatsNew or true
     if showWhatsNew and ns.db.global.version ~= ns.ds.grVersion then
         ns.screens.whatsnew:StartUp() end
 

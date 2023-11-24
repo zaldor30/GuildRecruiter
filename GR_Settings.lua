@@ -95,7 +95,7 @@ ns.addonSettings = {
                     type = 'toggle',
                     width = 'full',
                     set = function(_, val) ns.db.global.showWhatsNew = val end,
-                    get = function() return ns.db.global.showWhatsNew end,
+                    get = function() return type(ns.db.global.showWhatsNew) == 'boolean' and ns.db.global.showWhatsNew or true end,
                 },
                 genAddonMessages = {
                     order = 6,

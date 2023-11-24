@@ -4,7 +4,7 @@
 			"path": "."
 		},
 		{
-			"path": "C:/Users/jhart/Documents/GitHub/GuildRecruiter - v2.1.36"
+			"path": "C:/Users/jhart/Downloads/GuildRecruiter-2.1.42"
 		}
 	],
 	"settings": {
@@ -42,7 +42,40 @@
 			"GameFontHighlight",
 			"message",
 			"show",
-			"DAYS"
+			"DAYS",
+			"table",
+			"GetCVar",
+			"C_CreatureInfo",
+			"GetClassInfo",
+			"GetAutoCompleteRealms",
+			"tonumber",
+			"_G",
+			"C_FriendList",
+			"FormatPercentage",
+			"next",
+			"unpack",
+			"loadstring",
+			"assert",
+			"error",
+			"setmetatable",
+			"getmetatable",
+			"rawset",
+			"rawget",
+			"xpcall",
+			"math",
+			"pcall",
+			"ipairs",
+			"GetCurrentRegionName",
+			"issecurevariable",
+			"securecallfunction",
+			"Minimap",
+			"rawequal",
+			"newproxy",
+			"DropDownList1",
+			"ReloadUI",
+			"InterfaceOptionsFrame_OpenToCategory",
+			"GetClubFinderLink",
+			"CloseDropDownMenus"
 		]
 	}
 }

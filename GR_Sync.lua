@@ -225,8 +225,9 @@ function sync:ProcessIncommingData(sender, tblData)
         return
     end
 
-    local gmName = tblData.guildInfo.guildLeaderName
-    if not ns.isGuildLeader and tblData.guildInfo.guildLeaderName:match(gmName) then
+    local gmName = ns.dbGlobal.guildInfo and (ns.dbGlobal.guildInfo.guildLeaderName or nil) or nil
+    local gmNameData = tblData.guildInfo.guildLeaderName or nil
+    if not ns.isGuildLeader and gmNameData and (not gmName or gmName == gmNameData) then
         ns.dbGlobal.guildInfo = tblData.guildInfo
         ns.dbGlobal.guildInfo.isGuildLeader = false
         ns.gmSettings = tblData.gmSettings
