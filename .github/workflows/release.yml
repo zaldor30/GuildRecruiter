@@ -7,8 +7,9 @@ on:
       - master
     tags:
       - '**'
-      - "!**-alpha**"
-      - "!**-beta**"
+    tags-ignore:
+      - "**-alpha**"
+      - "**-beta**"
 
 env:
   CF_API_KEY: ${{ secrets.CF_API_KEY }}
