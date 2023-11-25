@@ -7,7 +7,7 @@ local AC, ACD = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0')
 local icon, DB = LibStub('LibDBIcon-1.0'), LibStub('AceDB-3.0')
 local core = ns.core
 
-local SYNC_WAIT_TIME = 15
+local SYNC_WAIT_TIME = 60
 
 -- Application Startup Default Function
 function GR:OnInitialize()
