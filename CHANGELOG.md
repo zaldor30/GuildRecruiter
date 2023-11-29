@@ -1,3 +1,22 @@
+## 2.2.43
+* WARNING!! Data will be reset with this update.  This is due to the new database structure.
+* Database maintenance.
+* Removed old unused variables.
+* Cleaned up where data is stored.
+* Moved more settings to guild wide versus character.
+* Fixed when GM has changed the current GM will be come invalidated in the addon.
+* Added instructions on how to get a guild link.
+* Lots of clean up and fixes to settings.
+* Made many settings guild wide so you do not have to change them on each character.
+* Some UI tweaks and improvements.
+* Rework to sync to make it more reliable.
+* Added saving of session data for later updates.
+* Added total counts for invited players and black list to analytics.
+* Scans will now resume from where you left off if you leave the scan screen and return.
+* Added reasons to unguilded players in /who results.
+* Only works when not in compact mode.
+* Moved custom filters and reworked to main icon bar.
+
 ## 2.1.42
 * Increment for patch 10.2
 * Added total invited players and black listed players in analytics.

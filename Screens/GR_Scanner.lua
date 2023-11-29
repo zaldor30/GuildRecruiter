@@ -94,7 +94,7 @@ function scanner:BuildScannerScreen()
         if ns.db.global.keybindScan and key == ns.db.global.keybindScan then
             if self.scanWaitTime > 0 then
                 ns.code:fOut(L['Please wait']..' '..self.scanWaitTime..' '..L['ERROR_SCAN_WAIT'])
-            elseif self.tblFrame.controls.btnSearch.disabled then ns.code:fOut(L['ERROR_CANNOT_SCAN'])
+            elseif self.tblFrame.inline.controls.btnSearch.disabled then ns.code:fOut(L['ERROR_CANNOT_SCAN'])
             else self:GetNextFilterRecord() end
         elseif ns.db.global.keybindInvite and key == ns.db.global.keybindInvite then self:InvitePlayers() end
     end)
