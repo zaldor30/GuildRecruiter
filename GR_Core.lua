@@ -21,7 +21,7 @@ function GR:OnInitialize()
         elseif not IsInGuild() or not clubID then C_Timer.After(1, function() checkGuildInfo(count + 1) end)
         else
             core:StartGuildRecruiter(clubID)
-            if not core.IsEnabled then return end
+            if not core.isEnabled then return end
             core:PerformRecordMaintenance()
 
             ns.tblClassesByName = ns.ds:classesByName()
@@ -41,7 +41,7 @@ function GR:OnInitialize()
             ns.events:RegisterEvent('PLAYER_LOGOUT', function() ns.code:saveTables() end)
 
             SYNC_WAIT_TIME = ns.settings.debugMode and 1 or SYNC_WAIT_TIME
-            if not self.IsEnabled or (ns.settings and ns.settings.debugAutoSync) then return end -- CHECK IF SYNCING
+            if not core.IsEnabled or (ns.settings and ns.settings.debugAutoSync) then return end -- CHECK IF SYNCING
             C_Timer.After(SYNC_WAIT_TIME or 15, function() ns.sync:StartSync(true, UnitName('player'), true) end)
         end
     end
