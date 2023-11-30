@@ -9,6 +9,8 @@ on:
       - '**'
       - "!**-alpha**"
       - "!**-beta**"
+      - "!**-Alpha**"
+      - "!**-Beta**"
 
 env:
   CF_API_KEY: ${{ secrets.CF_API_KEY }}
