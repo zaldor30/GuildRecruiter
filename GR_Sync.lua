@@ -54,6 +54,8 @@ function sync:StartSync(isMaster, sender, autoSync)
     self.isMasterSync = isMaster or false
     if not self.isMasterSync then return end
 
+    ns.core.ignoreAutoSync = true
+
     self.isSyncing = true
     self.tblTimer = self.tblTimer and table.wipe(self.tblTimer) or {}
     self.syncStartTime = GetTime()
@@ -203,6 +205,7 @@ function sync:PrepareAndSendData()
         antiSpamList = ns.tblInvited,
         blackList = ns.tblBlackList,
     }
+    tblData.guildInfo.isGuildLeader = ns.isGuildLeader
 
     local dataOutput = ns.code:compressData(tblData, 'ENCODE_FOR_WOW')
 
@@ -227,10 +230,10 @@ function sync:ProcessIncommingData(sender, tblData)
 
     local gmName = ns.dbGlobal.guildInfo and (ns.dbGlobal.guildInfo.guildLeaderName or nil) or nil
     local gmNameData = tblData.guildInfo.guildLeaderName or nil
-    if not ns.isGuildLeader and gmNameData and (not gmName or gmName == gmNameData) then
-        ns.dbGlobal.guildInfo = tblData.guildInfo
+    if not ns.isGuildLeader and tblData.guildInfo.isGuildLeader then
+        ns.db.global[C_Club.GetGuildClubId()].guildInfo = tblData.guildInfo
         ns.dbGlobal.guildInfo.isGuildLeader = false
-        ns.gmSettings = tblData.gmSettings
+        ns.db.global[C_Club.GetGuildClubId()].gmSettings = tblData.gmSettings
     end
 
     local antiSpamCount = 0

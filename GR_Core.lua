@@ -7,7 +7,7 @@ local AC, ACD = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0')
 local icon, DB = LibStub('LibDBIcon-1.0'), LibStub('AceDB-3.0')
 local core = ns.core
 
-local SYNC_WAIT_TIME = 60
+local SYNC_WAIT_TIME = 60 -- Seconds to wait before syncing
 
 -- Application Startup Default Function
 function GR:OnInitialize()
@@ -27,9 +27,6 @@ function GR:OnInitialize()
             ns.tblClassesByName = ns.ds:classesByName()
             ns.code.fPlayerName = ns.code:cPlayer('player')
 
-            AC:RegisterOptionsTable('GR_Options', ns.addonSettings)
-            ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
-
             ns.screens.base:StartUp()
             ns.screens.base.tblFrame.frame:SetShown(false)
 
@@ -41,8 +38,8 @@ function GR:OnInitialize()
             ns.events:RegisterEvent('PLAYER_LOGOUT', function() ns.code:saveTables() end)
 
             SYNC_WAIT_TIME = ns.settings.debugMode and 1 or SYNC_WAIT_TIME
-            if not core.IsEnabled or (ns.settings and ns.settings.debugAutoSync) then return end -- CHECK IF SYNCING
-            C_Timer.After(SYNC_WAIT_TIME or 15, function() ns.sync:StartSync(true, UnitName('player'), true) end)
+            if core.ignoreAutoSync or not core.isEnabled or ns.settings.debugAutoSync then return end -- CHECK IF SYNCING
+            C_Timer.After(SYNC_WAIT_TIME, function() ns.sync:StartSync(true, UnitName('player'), true) end)
         end
     end
 
@@ -53,6 +50,7 @@ end
 function core:Init()
     self.isEnabled = false
     self.fullyStarted = false
+    self.ignoreAutoSync = false
 
     self.isGuildLeader = false
 
@@ -150,9 +148,11 @@ function core:StartGuildRecruiter(clubID)
         ns.settings.firstRunComplete = true
     end
 
-    ns.dbGlobal.guildInfo.clubID = clubID
+    ns.dbGlobal.guildInfo.clubID = ns.dbGlobal.guildInfo.clubID or clubID
     ns.dbGlobal.guildInfo.guildName = GetGuildInfo('player')
-    ns.dbGlobal.guildInfo.guildLink = club and (ns.dbGlobal.guildInfo.guildLink or GetClubFinderLink(club.clubFinderGUID, club.name) or nil)
+    if not (ns.dbGlobal.guildInfo.guildLink or ns.dbGlobal.guildInfo.guildLink == '') then
+        ns.dbGlobal.guildInfo.guildLink = club and GetClubFinderLink(club.clubFinderGUID, club.name) or nil
+    end
     ns.dbGlobal.guildInfo.isGuildLeader = IsGuildLeader() and true or (ns.dbGlobal.guildInfo.isGuildLeader or false)
 
     if IsGuildLeader() and not ns.dbGlobal.guildInfo.guildLink then
@@ -170,15 +170,7 @@ function core:StartGuildRecruiter(clubID)
         end
     end
 
-    if ns.dbGlobal.isGuildLeader and select(GetGuildInfo(UnitName('player')), 3) ~= 0 then
-        ns.isGuildLeader = false
-        ns.gmSettings.antiSpam = false
-        ns.gmSettings.sendWelcome = false
-
-        ns.code:fOut(ns.dbGlobal.guildLeaderName..L['GUILD_LEADER_INSTRUCTIONS'], 'FFAF640C')
-        ns.dbGlobal.guildInfo.isGuildLeader = false
-        ns.dbGlobal.guildInfo.guildLeaderName = nil
-    elseif IsGuildLeader() then
+    if IsGuildLeader() then
         ns.dbGlobal.guildInfo.isGuildLeader = true
         ns.dbGlobal.guildInfo.gmMemberID = C_Club.GetMemberInfoForSelf(clubID).memberId
         ns.dbGlobal.guildInfo.guildLeaderName = UnitName('player')
@@ -285,6 +277,9 @@ function core:FinishStartup()
     -- Chat Message Response Routine
     local function CHAT_MSG_SYSTEM(...) ns.observer:Notify('CHAT_MSG_SYSTEM', ...) end
     ns.events:RegisterEvent('CHAT_MSG_SYSTEM', CHAT_MSG_SYSTEM)
+
+    AC:RegisterOptionsTable('GR_Options', ns.addonSettings)
+    ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
 
     local showWhatsNew = type(ns.db.global.showWhatsNew) == 'boolean' and ns.db.global.showWhatsNew or true
     if showWhatsNew and ns.db.global.version ~= ns.ds.grVersion then
