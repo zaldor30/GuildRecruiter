@@ -21,6 +21,7 @@ function GR:OnInitialize()
         elseif not IsInGuild() or not clubID then C_Timer.After(1, function() checkGuildInfo(count + 1) end)
         else
             core:StartGuildRecruiter(clubID)
+            if not core.IsEnabled then return end
             core:PerformRecordMaintenance()
 
             ns.tblClassesByName = ns.ds:classesByName()
