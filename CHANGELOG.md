@@ -1,5 +1,6 @@
 ## 2.2.43
 * WARNING!! Data will be reset with this update.  This is due to the new database structure.
+* NOTE: Custom filters are under construction!!  They will be back soon.
 * Database maintenance.
 * Removed old unused variables.
 * Cleaned up where data is stored.
@@ -16,6 +17,7 @@
 * Added reasons to unguilded players in /who results.
 * Only works when not in compact mode.
 * Moved custom filters and reworked to main icon bar.
+* Updated ACE3 libraries.
 
 ## 2.1.42
 * Increment for patch 10.2

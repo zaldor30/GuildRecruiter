@@ -31,10 +31,9 @@ function base:Init()
 end
 function base:StartUp()
     self:BuildBase()
-    self.tblFrame.frame:SetShown(false)
-
-    _G['GuildRecruiter'] = self.tblFrame.frame
-    tinsert(UISpecialFrames, 'GuildRecruiter')
+    self:BuildTopFrame()
+    self:BuildIconFrame()
+    self:BuildStatusBarFrame()
 end
 function base:BuildBase()
     if base.tblFrame.frame then return end
@@ -56,16 +55,25 @@ function base:BuildBase()
     f:SetScript('OnMouseUp', OnDragStop)
     f:SetScript('OnHide', function()
         if ns.core.fullyStarted then
-            ns.code:saveTables() end
+            ns.code:saveTables()
+        else return end
+
+        local notSpecial = false
+        for _, r in pairs(UISpecialFrames) do
+            if r == 'GuildRecruiter' then
+                notSpecial = true
+                break
+            end
+        end
+        if not notSpecial then
+            _G['GuildRecruiter'] = self.tblFrame.frame
+            tinsert(UISpecialFrames, 'GuildRecruiter')
+        end
 
         tblFrame.frame:SetShown(false)
         ns.observer:Notify('CLOSE_SCREENS')
     end)
     tblFrame.frame = f
-
-    self:BuildTopFrame()
-    self:BuildIconFrame()
-    self:BuildStatusBarFrame()
 end
 function base:BuildTopFrame()
     local tblFrame = base.tblFrame
@@ -241,7 +249,7 @@ function base:BuildIconFrame()
     filterIconButton:SetPoint('LEFT', blacklistIconButton, 'RIGHT', 5, 0)
     filterIconButton:SetNormalTexture(ICON_PATH..'GR_Filter')
     filterIconButton:SetHighlightTexture(BLUE_HIGHLIGHT)
-    filterIconButton:SetScript('OnClick', function() ns.stats:StartStatsScreen() end)
+    filterIconButton:SetScript('OnClick', function() ns.screens.filter:StartUp() end)
     filterIconButton:SetScript('OnEnter', function() ns.code:createTooltip(L['Create Filter']) end)
     filterIconButton:SetScript('OnLeave', function() GameTooltip:Hide() end)
 

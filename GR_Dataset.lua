@@ -23,6 +23,8 @@ function ds:WhatsNew()
              (or click on the icon in the top left corner)|r
 
     |CFFFFFF00v2.2.43 Notes|r
+        * |CFF00FF00NOTE: Cusom filters are not working at this time.
+            I am working on a fix.|r
         * Database maintenance.
             * Removed old unused variables.
             * Cleaned up where data is stored.
@@ -43,6 +45,7 @@ function ds:WhatsNew()
         * Added reasons to unguilded players in /who results.
             * Only works when not in compact mode.
         * Moved custom filters and reworked to main icon bar.
+        * Updated ACE3 libraries.
 
     |CFFFFFF00v2.1.42 Notes|r
         * Increment for patch 10.2

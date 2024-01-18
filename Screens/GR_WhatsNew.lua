@@ -7,6 +7,11 @@ ns.screens.whatsnew = {}
 local whatsnew = ns.screens.whatsnew
 
 local function obsCLOSE_SCREENS()
+    if not ns.core.fullyStarted then
+        ns.core.fullyStarted = true
+        return
+    end
+
     local tblScreen = ns.screens.base.tblFrame
 
     ns.observer:Unregister('CLOSE_SCREENS', obsCLOSE_SCREENS)
@@ -32,18 +37,23 @@ end
 function whatsnew:StartUp()
     local tblScreen = ns.screens.base.tblFrame
 
-    ns.observer:Notify('CLOSE_SCREENS')
-    ns.observer:Register('CLOSE_SCREENS', obsCLOSE_SCREENS)
     self.title, self.body, self.height, self.update = ns.ds:WhatsNew()
+    if strlower(ns.ds.grVersion):match('beta') then
+        self.title = self.title:gsub(GR.version, ns.ds.grVersion)
+        self.title = self.title:gsub('-Beta', ' (Beta)'):gsub('-beta', ' (Beta)')
+    end
 
+    tblScreen.frame:SetSize(tblScreen.frame:GetWidth() + 50, self.height)
     tblScreen.frame:SetShown(true)
     tblScreen.topFrame:SetShown(false)
     tblScreen.statusBar:SetShown(false)
-    tblScreen.frame:SetSize(tblScreen.frame:GetWidth() + 50, self.height)
 
     self:BuildBaseFrame()
     self:BuildTopBar()
     self:BuildBody()
+
+    ns.observer:Notify('CLOSE_SCREENS')
+    ns.observer:Register('CLOSE_SCREENS', obsCLOSE_SCREENS)
 end
 function whatsnew:BuildBaseFrame()
     local tblFrame = self.tblFrame
@@ -80,7 +90,9 @@ function whatsnew:BuildTopBar()
     closeButton:SetPoint('TOPRIGHT', -5, -5)
     closeButton:SetNormalTexture(ICON_PATH..'GR_Exit')
     closeButton:SetHighlightTexture(BLUE_HIGHLIGHT)
-    closeButton:SetScript('OnClick', function() ns.observer:Notify('CLOSE_SCREENS') end)
+    closeButton:SetScript('OnClick', function()
+        ns.core.fullyStarted = true
+        ns.observer:Notify('CLOSE_SCREENS') end)
     closeButton:SetScript('OnEnter', function() ns.code:createTooltip("Close What's New?") end)
     closeButton:SetScript('OnLeave', function() GameTooltip:Hide() end)
     closeButton:SetShown(true)

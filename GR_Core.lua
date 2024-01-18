@@ -27,9 +27,6 @@ function GR:OnInitialize()
             ns.tblClassesByName = ns.ds:classesByName()
             ns.code.fPlayerName = ns.code:cPlayer('player')
 
-            ns.screens.base:StartUp()
-            ns.screens.base.tblFrame.frame:SetShown(false)
-
             ns.invite:StartUp()
             core:SlashCommands()
             core:CreateMiniMapIcon()
@@ -272,8 +269,6 @@ function core:SlashCommands()
     GR:RegisterChatCommand(L['recruiter'], slashCommand)
 end
 function core:FinishStartup()
-    ns.screens.base:StartUp()
-
     -- Chat Message Response Routine
     local function CHAT_MSG_SYSTEM(...) ns.observer:Notify('CHAT_MSG_SYSTEM', ...) end
     ns.events:RegisterEvent('CHAT_MSG_SYSTEM', CHAT_MSG_SYSTEM)
@@ -281,11 +276,14 @@ function core:FinishStartup()
     AC:RegisterOptionsTable('GR_Options', ns.addonSettings)
     ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
 
+    ns.screens.base:StartUp()
     local showWhatsNew = type(ns.db.global.showWhatsNew) == 'boolean' and ns.db.global.showWhatsNew or true
     if showWhatsNew and ns.db.global.version ~= ns.ds.grVersion then
-        ns.screens.whatsnew:StartUp() end
-
-    self.fullyStarted = true
+        ns.screens.whatsnew:StartUp()
+    else
+        self.fullyStarted = true
+        ns.screens.base.tblFrame.frame:SetShown(false)
+    end
 end
 core:Init()
 
