@@ -1,18 +1,19 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
+local L = LibStub("AceLocale-3.0"):GetLocale('GuildRecruiter')
+
 local aceGUI = LibStub("AceGUI-3.0")
 
-ns.screen.home = {}
-local home = ns.screen.home
+ns.screens.home = {}
 
 -- Observer Call Backs
 local function obsCLOSE_SCREENS()
     ns.observer:Unregister('CLOSE_SCREENS', obsCLOSE_SCREENS)
+    if not ns.screens.home.tblFrame.frame or not ns.screens.home.tblFrame.inline then return end
 
-    if not home.tblFrame.frame or not home.tblFrame.inline then return end
-    home.tblFrame.frame:SetShown(false)
-    home.tblFrame.inline.frame:Hide()
+    ns.screens.home.tblFrame.frame:SetShown(false)
+    ns.screens.home.tblFrame.inline.frame:Hide()
 end
-
+local home = ns.screens.home
 function home:Init()
     self.tblFrame = {}
     self.tblFilters = {}
@@ -21,58 +22,53 @@ function home:Init()
     self.max = MAX_CHARACTER_LEVEL
 
     self.tblFormat = {
-        [1] = 'Message ONLY',
-        [2] = 'Guild Invite ONLY',
-        [3] = 'Guild Invite and Message',
+        [1] = L['Message ONLY'],
+        [2] = L['Guild Invite ONLY'],
+        [3] = L['Guild Invite and Message'],
         --[4] = 'Message Only if Invitation is declined',
     }
 end
-function home:EnterHomeScreen()
-    local tblScreen = ns.screen.tblFrame
-    if not tblScreen.frame then return end
+function home:StartUp()
+    local tblHome = ns.screens.base.tblFrame
+    if not tblHome.frame then return end
 
+    -- Setup for Close Routines
     ns.observer:Notify('CLOSE_SCREENS')
     ns.observer:Register('CLOSE_SCREENS', obsCLOSE_SCREENS)
 
-    -- Get Whisper Messages
-    self.tblMessages = table.wipe(self.tblMessages or {})
-    self.tblMessages = ns.ds:WhisperMessages('PERFORM_CHECK')
-
-    for _,r in pairs(self.tblMessages) do
-        r.desc = r.gmMessage and ns.code:cText(GM_DESC_COLOR, r.desc) or r.desc
-    end
+    -- Get Invite Messages
+    self.tblWhipsers = self:WhisperMessages('PERFORM_CHECK')
 
     -- Get Filters
-    local tbl = {
-        [1] = 'Default Class Filter',
-        [2] = 'Default Race Filter',
+    self.tblFilters = {
+        [1] = L['Default Class Filter'],
+        [2] = L['Default Race Filter'],
     }
-    for k, r in pairs(ns.db.filter.filterList and ns.db.filter.filterList or {}) do tbl[k+10] = r.desc end
-    self.tblFilters = tbl
+    for k, r in pairs(ns.gSettings.filterList and ns.gSettings.filterList or {}) do self.tblFilters[k+100] = r.desc end
 
+    -- Clear home Ace3 children
     if self.tblFrame.inline then
         self.tblFrame.inline:ReleaseChildren()
     end
 
-    tblScreen.frame:SetSize(500, 300) -- Resi
-
     self:BuildHomeScreen()
-    self.tblFrame.frame:SetShown(true)
-    ns.screen.tblFrame.frame:SetShown(true)
+
+    ns.screens.base.tblFrame.frame:SetSize(500, 300)
+    ns.screens.base.tblFrame.frame:SetShown(true)
 end
+-- Build the Home screens
 function home:BuildHomeScreen()
-    local tblFrame = self.tblFrame
-    local tblScreen = ns.screen.tblFrame
-    if not tblScreen.frame then return end
+    local tblFrame, tblBase = self.tblFrame, ns.screens.base.tblFrame
+    if not tblBase then return end
 
     -- Base Regular Frame
-    local f = tblFrame.frame or CreateFrame('Frame', 'GR_HOME_FRAME', tblScreen.frame, 'BackdropTemplate')
+    local f = tblFrame.frame or CreateFrame('Frame', 'GR_HOME_FRAME', tblBase.frame, 'BackdropTemplate')
     f:SetBackdrop(BackdropTemplate())
     f:SetFrameStrata(DEFAULT_STRATA)
     f:SetBackdropColor(0, 0, 0, 0)
     f:SetBackdropBorderColor(1, 1, 1, 0)
-    f:SetPoint('TOPLEFT', tblScreen.titleFrame, 'BOTTOMLEFT', -5, 20)
-    f:SetPoint('BOTTOMRIGHT', tblScreen.statusBar, 'TOPRIGHT', 0, -5)
+    f:SetPoint('TOPLEFT', tblBase.topFrame, 'BOTTOMLEFT', -5, 20)
+    f:SetPoint('BOTTOMRIGHT', tblBase.statusBar, 'TOPRIGHT', 0, -5)
     tblFrame.frame = f
 
     -- Ace GUI Frame for Ace Controls
@@ -83,9 +79,24 @@ function home:BuildHomeScreen()
     inline.frame:SetShown(true)
     tblFrame.inline = inline
 
+    self:BuildInviteArea()
+    self:DropDownArea()
+    self:BuildPreviewArea()
+
+    self:SetButtonStates()
+    self:CreatePreview()
+end
+-- Invite Area Routines
+function home:BuildInviteArea()
+    local inline = self.tblFrame.inline
+    local tblFrame, tblBase = self.tblFrame, ns.screens.base.tblFrame
+
+    -- Set Default Invite Format
+    ns.settings.inviteFormat = ns.settings.inviteFormat or 2
+
     -- DropDown for Message Format Ace3
     local formatDrop = aceGUI:Create('Dropdown')
-    formatDrop:SetLabel('Recruit Invite Format:')
+    formatDrop:SetLabel(L['Recruit Invite Format:'])
     formatDrop:SetRelativeWidth(.5)
     formatDrop:SetList(self.tblFormat)
     formatDrop:SetValue(ns.settings.inviteFormat or 2)
@@ -97,31 +108,34 @@ function home:BuildHomeScreen()
     end)
     inline:AddChild(formatDrop)
 
-    tblFrame.format = formatDrop
-
     -- Padding for level boxes
     ns.code:createPadding(inline, .03)
 
     -- Minimum level for filter Ace3
     local minLevelBox = aceGUI:Create('EditBox')
-    minLevelBox:SetLabel('Min Level')
+    minLevelBox:SetLabel(L['Min Level'])
     minLevelBox:SetText(ns.settings.minLevel)
     minLevelBox:SetMaxLetters(2)
     minLevelBox:SetRelativeWidth(.13)
     minLevelBox:SetCallback('OnEnterPressed', function(widget,_, val)
-        local maxLevel = ns.settings.maxLevel and tonumber(ns.settings.maxLevel) or MAX_CHARACTER_LEVEL
-        local error, msg = false, 'You must enter a number between 1 and '..tostring(MAX_CHARACTER_LEVEL)
+        local errMsg = nil
+        local ilvlHold = ns.settings.minLevel or MAX_CHARACTER_LEVEL - 4
+        if type(tonumber(val:trim())) ~= 'number' or (tonumber(val:trim()) < 0 or tonumber(val:trim()) > MAX_CHARACTER_LEVEL) then
+            errMsg = L['You must enter a number between 1 and']..' '..tostring(MAX_CHARACTER_LEVEL)
+        else
+            local min = tonumber(val:trim()) or nil
+            local maxLevel = ns.settings.maxLevel and tonumber(ns.settings.maxLevel) or MAX_CHARACTER_LEVEL
 
-        local min = tonumber(val:trim()) or nil
-        if not min then error = true
-        elseif min > maxLevel then error = true msg = 'You must enter a minimum level that is less than max level.'
-        elseif not min or (min < 1 or min > MAX_CHARACTER_LEVEL) then error = true end
+            if min > maxLevel then errMsg = L['Min level must be less than max level set.'] end
+        end
 
-        if error then
-            widget:SetText(ns.settings.minLevel or '1')
-            UIErrorsFrame:AddMessage(msg, 1.0, 0.1, 0.1, 1.0)
+        if errMsg then
+            widget:SetText(ilvlHold or '1')
+            UIErrorsFrame:AddMessage(errMsg, 1.0, 0.1, 0.1, 1.0)
+            self.min = ilvlHold
+            return
         else ns.settings.minLevel = val:trim() or nil end
-        self.min = ns.settings.minLevel or 1
+        self.min = tonumber(ns.settings.minLevel or ilvlHold)
     end)
     inline:AddChild(minLevelBox)
     tblFrame.minLevel = minLevelBox
@@ -132,24 +146,30 @@ function home:BuildHomeScreen()
     -- Maximum level for filter Ace3
     self.max = ns.settings.maxLevel or MAX_CHARACTER_LEVEL
     local maxLevelBox = aceGUI:Create('EditBox')
-    maxLevelBox:SetLabel('Max Level')
+    maxLevelBox:SetLabel(L['Max Level'])
     maxLevelBox:SetText(ns.settings.maxLevel)
     maxLevelBox:SetMaxLetters(2)
     maxLevelBox:SetRelativeWidth(.13)
     maxLevelBox:SetCallback('OnEnterPressed', function(widget,_, val)
-        local minLevel = ns.settings.minLevel and tonumber(ns.settings.minLevel) or 1
-        local error, msg = false, 'You must enter a number between 1 and '..tostring(MAX_CHARACTER_LEVEL)
+        local errMsg = nil
+        local ilvlHold = ns.settings.minLevel or MAX_CHARACTER_LEVEL - 4
 
-        local max = tonumber(val:trim()) or nil
-        if not max then error = true
-        elseif max <= minLevel then error = true msg = 'Your max level must be equal or larger then minimum.'
-        elseif not max or (max < 1 or max > MAX_CHARACTER_LEVEL) then error = true end
+        if type(tonumber(val:trim())) ~= 'number' or (tonumber(val:trim()) < 0 or tonumber(val:trim()) > MAX_CHARACTER_LEVEL) then
+            errMsg = L['You must enter a number between 1 and']..' '..tostring(MAX_CHARACTER_LEVEL)
+        else
+            local max = tonumber(val:trim()) or nil
+            local minLevel = ns.settings.minLevel and tonumber(ns.settings.minLevel) or 1
+            if max <= minLevel then
+                errMsg = L['Your max level must be equal or larger then minimum.'] end
+        end
 
-        if error then
-            widget:SetText(ns.settings.maxLevel or tostring(MAX_CHARACTER_LEVEL))
-            UIErrorsFrame:AddMessage(msg, 1.0, 0.1, 0.1, 1.0)
+        if errMsg then
+            widget:SetText(ilvlHold or tostring(MAX_CHARACTER_LEVEL))
+            UIErrorsFrame:AddMessage(errMsg, 1.0, 0.1, 0.1, 1.0)
+            self.max = ilvlHold
+            return
         else ns.settings.maxLevel = val:trim() or nil end
-        self.max = ns.settings.maxLevel or MAX_CHARACTER_LEVEL
+        self.max = tonumber(ns.settings.maxLevel) or MAX_CHARACTER_LEVEL
     end)
     inline:AddChild(maxLevelBox)
     tblFrame.maxLevel = maxLevelBox
@@ -159,32 +179,41 @@ function home:BuildHomeScreen()
 
     -- Scan Button Ace3
     local scanButton = aceGUI:Create('Button')
-    scanButton:SetText('Scan')
+    scanButton:SetText(L['Scan'])
     scanButton:SetRelativeWidth(.15)
     scanButton:SetCallback('OnClick', function()
-        tblScreen.statusText:SetText('')
-        local msgID = ns.dbGlobal.activeMessage
-        local msg = self.tblMessages[msgID] and self.tblMessages[msgID].message or nil
+        tblBase.statusText:SetText('')
+        local msgID = ns.settings.activeMessage
+        local msg = (msgID and self.tblWhipsers[msgID]) and self.tblWhipsers[msgID].message or nil
+        if ns.settings.inviteFormat ~= 2 and (not msgID or not msg) then
+            tblFrame.statusText:SetText(ns.code:cText('FFFF0000', L['Select a message from the list or create one in settings.']))
+            return
+        end
 
-        ns.scanner:ShowScanner(msg, self.min, self.max)
+        ns.screens.scanner:StartUp(msg, ns.settings.minLevel, ns.settings.maxLevel)
     end)
     inline:AddChild(scanButton)
     tblFrame.scanButton = scanButton
+end
+-- DropDowns Area Routines
+function home:DropDownArea()
+    local inline = self.tblFrame.inline
+    local tblFrame = self.tblFrame
 
-    -- Convert self.tblMessages to a table for Ace3
+    -- Convert self.tblWhipsers to a table for Ace3
     local tbl = {}
-    for k, r in pairs(self.tblMessages) do
+    for k, r in pairs(self.tblWhipsers) do
         tbl[k] = r.desc
     end
 
     -- Message List DropDown Ace3
     local msgListDropDown = aceGUI:Create('Dropdown')
-    msgListDropDown:SetLabel('Message List:')
+    msgListDropDown:SetLabel(L['Message List']..':')
     msgListDropDown:SetRelativeWidth(.5)
     msgListDropDown:SetList(tbl)
-    msgListDropDown:SetValue(ns.dbGlobal.activeMessage or 1)
+    msgListDropDown:SetValue(ns.settings.activeMessage or 1)
     msgListDropDown:SetCallback('OnValueChanged', function(_, _, val)
-        ns.dbGlobal.activeMessage = tonumber(val)
+        ns.settings.activeMessage = tonumber(val)
 
         self:CreatePreview()
         self:SetButtonStates()
@@ -194,15 +223,20 @@ function home:BuildHomeScreen()
 
     -- Filter List DropDown Ace3
     local filterListDropDown = aceGUI:Create('Dropdown')
-    filterListDropDown:SetLabel('Filter List:')
+    filterListDropDown:SetLabel(L['Filter List']..':')
     filterListDropDown:SetRelativeWidth(.5)
     filterListDropDown:SetList(self.tblFilters)
     filterListDropDown:SetValue(ns.settings.activeFilter or 1)
-    filterListDropDown:SetCallback('OnValueChanged', function(_, _, val) ns.db.filter.activeFilter = (val == 0 and 99 or val) end)
+    filterListDropDown:SetCallback('OnValueChanged', function(_, _, val) ns.gSettings.activeFilter = (val == 0 and 99 or val) end)
     inline:AddChild(filterListDropDown)
     tblFrame.filterList = filterListDropDown
+end
+-- Preview Area Routines
+function home:BuildPreviewArea()
+    local inline = self.tblFrame.inline
+    local tblFrame = self.tblFrame
+    local msgListDropDown = tblFrame.msgList
 
-    -- Preview Inline Group
     local previewInline = aceGUI:Create('InlineGroup')
     previewInline:SetLayout('Fill')
     previewInline:SetRelativeWidth(1)
@@ -229,32 +263,59 @@ function home:BuildHomeScreen()
     tblFrame.preview = previewLabel
 
     local val = msgListDropDown:GetValue()
-    if val and val > 0 then ns.dbGlobal.activeMessage = val end
-
-    self:CreatePreview()
-    self:SetButtonStates()
+    if val and val > 0 then ns.settings.activeMessage = val end
 end
 
+-- Other Routines
+function home:WhisperMessages()
+    local dbGuildInfo = ns.dbGlobal.guildInfo
+    local tblWhispers = {}
+    local tblGMMessages = ns.gmSettings.messageList and ns.gmSettings.messageList or {}
+    local tblPlayerMessages = ns.gSettings.messageList and ns.gSettings.messageList or {}
+
+    tblWhispers = table.wipe(ns.screens.home.tblMessages or {})
+    local hasGuildLink = dbGuildInfo.guildLink and true or false
+    for _, r in pairs(tblGMMessages) do
+        local includesGuildLink = strmatch(r.message, 'GUILDLINK')
+        if not includesGuildLink or (hasGuildLink and includesGuildLink) then
+            tblWhispers[#tblWhispers + 1] = { desc = ns.code:cText(GM_DESC_COLOR, r.desc), gmMessage = r.gmMessage, message = r.message }
+        end
+    end
+
+    local id = 100
+    for _, r in pairs(tblPlayerMessages) do
+        local includesGuildLink = strmatch(r.message, 'GUILDLINK')
+        if not includesGuildLink or (hasGuildLink and includesGuildLink) then
+            id = id + 1
+            tblWhispers[id] = { desc = r.desc, gmMessage = r.gmMessage, message = r.message }
+        end
+    end
+
+    return tblWhispers
+end
 function home:SetButtonStates()
-    local msgID = ns.dbGlobal.activeMessage
-    local msg = self.tblMessages[msgID] and self.tblMessages[msgID] or nil
+    local msgID, invFormat = ns.settings.activeMessage, ns.settings.inviteFormat
+    local msg = self.tblWhipsers[msgID] and self.tblWhipsers[msgID] or nil
 
     self.tblFrame.scanButton:SetDisabled(false)
-    if (not msgID or not msg) and (ns.settings.inviteFormat and ns.settings.inviteFormat ~= 2) then
+    if (not msgID or not msg) and (invFormat and invFormat ~= 2) then
         self.tblFrame.scanButton:SetDisabled(true)
-        ns.screen.tblFrame.statusText:SetText(ns.code:cText('FFFF0000', 'Select message or create one in settings.'))
-    else ns.screen.tblFrame.statusText:SetText('') end
+        ns.screens.base.tblFrame.statusText:SetText(ns.code:cText('FFFF0000', 'Select message or create one in settings.'))
+    else ns.screens.base.tblFrame.statusText:SetText('') end
 end
 function home:CreatePreview()
-    local msg = ''
-    if ns.db.settings.inviteFormat == 2 then msg = 'No message will be sent. Only guild invite will be sent.'
-    else
-        local activeMsg = ns.dbGlobal.activeMessage or nil
+    local msg = nil
+    local msgID, invFormat = ns.settings.activeMessage, ns.settings.inviteFormat
 
-        if not activeMsg then msg = ''
-        elseif not self.tblMessages[activeMsg] or not self.tblMessages[activeMsg].message then msg = ''
+    if invFormat == 2 then msg = L['No message will be sent. Only guild invite will be sent.']
+    elseif not msgID then msg = L['Select a message from the list or create one in settings.']
+    else
+        ns.code:realMessageID(msgID)
+
+        if not self.tblWhipsers[msgID] or not self.tblWhipsers[msgID].message then
+            msg = L['Select a message from the list or create one in settings.']
         else
-            local preview = self.tblMessages[activeMsg].message or nil
+            local preview = self.tblWhipsers[msgID].message or nil
             msg = ns.code:cText('FFFF80FF', 'To [')..ns.code.fPlayerName
             msg = msg..ns.code:cText('FFFF80FF', ']: '..(ns.code:variableReplacement(preview, UnitName('player')) or ''))
         end

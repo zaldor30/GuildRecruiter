@@ -1,335 +1,327 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
+local L = LibStub('AceLocale-3.0'):GetLocale('GuildRecruiter')
 
 local AceTimer = LibStub("AceTimer-3.0")
-local LibDeflate = LibStub:GetLibrary("LibDeflate")
-
-local COMM_PREFIX = GRADDON.prefix
-local REQUEST_TIMEOUT = 5
-local DATA_WAIT_TIMEOUT, SYNC_FAIL_TIMER = 120, 240
 
 ns.sync = {}
 local sync = ns.sync
 
-function AceTimer:CallBackSync(...) sync:OnCommReceived(nil, 'DATA_REQUEST_TIMEOUT', ...) end
-function AceTimer:CallBackRequest(...) sync:OnCommReceived(nil, 'SYNC_REQUEST_TIMEOUT', ...) end
-function AceTimer:CallBackClientTimeOut(sender)
-    ns.code:fOut('Sync request timed out with '..(sender or 'unknown sender'))
-    sync:StopSync()
+local COMM_PREFIX = 'GuildRecruiter'
+local REQUEST_TIMEOUT = 5
+local DATA_WAIT_TIMEOUT, SYNC_FAIL_TIMER = 120, 240
+
+local function newClient(name, hasReceivedData)
+    return {
+        name = name,
+        isActive = true,
+        dataSent = false,
+        hasReceivedData = hasReceivedData or false,
+        addedAntiSpam = 0,
+        addedBlackList = 0,
+        removedBlackList = 0,
+    }
 end
-function AceTimer:CallBackSyncTimeOut()
-    ns.code:fOut('Sync timed out')
-    sync:StopSync()
-end
+
+-- Timer Callbacks
+function AceTimer:timerEvent(message, sender) sync:FailRoutines(message, sender) end
 
 function sync:Init()
-    self.tblData = {}
+    self.clubID = nil -- Passed from ns.core
 
+    self.isSyncing = false
     self.isAutoSync = false
-    self.syncStarted = false
-    self.timeOutTimer = nil
-    self.syncStartTime = 0
 
-    -- Master Variables
-    self.isMaster = false
-    self.masterName = nil
+    -- Master Sync Variables
+    self.masterSync = nil
+    self.isMasterSync = false
+
+    -- Sync Timer Variables
+    self.syncStartTime = GetTime()
 
     -- Client Variables
-    self.clientTimer = nil
+    self.tblClient = {}
+    self.clientFound = false
 
-    self.startInvited = 0
-    self.startBlackListed = 0
+    -- Timer Variables
+    self.tblTimer = {}
 end
-function sync:console(msg, debug, force)
-    if debug then ns.code:dOut(msg)
-    else
-        if force then ns.code:fOut(msg) else ns.code:cOut(msg) end
+-- Start/Stop Sync
+function sync:StartSync(isMaster, sender, autoSync)
+    local tblScreen = ns.screens.base.tblFrame
+    if self.isSyncing or not ns.core.fullyStarted then return end
+
+    self.masterSync = isMaster and UnitName('player')..'-'..GetRealmName() or (sender or nil)
+    self.isMasterSync = isMaster or false
+    if not self.isMasterSync then return end
+
+    ns.core.ignoreAutoSync = true
+
+    self.isSyncing = true
+    self.tblTimer = self.tblTimer and table.wipe(self.tblTimer) or {}
+    self.syncStartTime = GetTime()
+
+    ns.screens.base.isSyncing = true
+    if tblScreen.syncIcon then
+        tblScreen.syncIcon:GetNormalTexture():SetVertexColor(0, 1, 0, 1)
     end
-    ns.code:statusOut(msg)
+
+    local function masterSyncStartUp()
+        if autoSync then ns.sync:cOut(L['Auto-sync']..' '..L['started']..'...', true)
+        else ns.sync:cOut(L['Master sync']..' '..L['started']..'...', true) end
+
+        function AceTimer:masterSyncStart()
+            if ns.sync.clientFound then
+                ns.sync:cOut(L['Sending data requests to client']..' '..ns.sync.masterSync)
+                for k in pairs(ns.sync.tblClient) do
+                    if not ns.sync.tblClient[k].hasReceivedData then
+                        ns.sync:SendCommMessage('DATA_REQUEST', 'WHISPER', k)
+                        ns.sync.tblTimer[k] = AceTimer:ScheduleTimer('timerEvent', DATA_WAIT_TIMEOUT, 'DATA_REQUEST_TIMEOUT', k)
+                    end
+                end
+
+                sync:CancelTimer('SYNC_REQUEST_TIMEOUT')
+            else
+                ns.sync:cOut(L['No clients found to sync with.'])
+                ns.sync:StopSync()
+            end
+        end
+
+        ns.sync.tblClient = table.wipe(ns.sync.tblClient or {})
+        ns.sync.clientFound = false
+
+        ns.sync:SendCommMessage('SYNC_REQUESTED', 'GUILD')
+        ns.sync.tblTimer['FULL_SYNC_FAILED'] = AceTimer:ScheduleTimer('timerEvent', SYNC_FAIL_TIMER, 'FULL_SYNC_FAILED')
+        ns.sync.tblTimer['SYNC_REQUEST_TIMEOUT'] = AceTimer:ScheduleTimer('masterSyncStart', REQUEST_TIMEOUT)
+    end
+    local function clientSyncStartUp()
+        sync:SendCommMessage('SYNC_REQUEST_HEARD', 'WHISPER', sender)
+        self.tblTimer['CLIENT_SYNC_FAIL'] = AceTimer:Scheduletimer('timerEvent', SYNC_FAIL_TIMER, 'CLIENT_SYNC_FAIL')
+    end
+
+    self.isAutoSync = autoSync or false
+    if isMaster or autoSync then masterSyncStartUp()
+    elseif not isMaster then clientSyncStartUp() end
 end
--- Start/Stop Sync Routines
-function sync:StopSync()
-    if ns.screen.tblFrame.syncIcon then
-        ns.screen.tblFrame.syncIcon:GetNormalTexture():SetVertexColor(1, 1, 1, 1) end
-    if not self.syncStarted then return end
+function sync:StopSync(as, bl, rem)
+    self.isSyncing = false
+    self.clientFound = false
 
-    self.syncStarted, self.isMaster, self.masterName = false, false, nil
+    for k in pairs(self.tblTimer) do sync:CancelTimer(k) end
+    self.tblTimer = table.wipe(self.tblTimer or {})
 
-    if self.timeOutTimer then
-        AceTimer:CancelTimer(self.timeOutTimer)
-        self.timeOutTimer = nil
+    as, bl, rem = (as or 0), (bl or 0), (rem or 0)
+    if self.masterSync then
+        for _, r in pairs(self.tblClient) do
+            as = r.addedAntiSpam or 0
+            bl = r.addedBlackList or 0
+            rem = r.removedBlackList or 0
+        end
     end
 
-    local syncType = self.isMaster and 'Master' or 'Client'
-    if self.isAutoSync then
-        self:console('Auto sync completed.', false, 'FORCE')
-    else
-        self:console('Sync took '..ns.code:round(GetTime() - self.syncStartTime, 2)..' seconds to complete', 'DEBUG')
-        self:console(syncType..' sync completed.', false, 'FORCE')
+    ns.screens.base.isSyncing = false
+    local tblScreen = ns.screens.base.tblFrame
+    if tblScreen.syncIcon then
+        tblScreen.syncIcon:GetNormalTexture():SetVertexColor(1, 1, 1, 1)
     end
 
-    ns.code:saveTables()
+    if as > 0 then self:cOut(string.format(L['Added %s anti-spam records'], as), 'FF00FF00') end
+    if bl > 0 then self:cOut(string.format(L['Added %s black list records'], bl), 'FF00FF00') end
+    if rem > 0 then self:cOut(string.format(L['MARKED_FOR_DELETE'], rem), 'FF00FF00') end
+
+    if self.isAutoSync then self:cOut(L['Auto-sync']..' '..L['complete'], true)
+    elseif self.isMasterSync then self:cOut(L['Master sync']..' '..L['complete'], true)
+    else sync:cOut(L['Sync']..' '..L['complete'], true) end
 
     self.isAutoSync = false
-
-    C_Timer.After(5, function() ns.code:statusOut(' ') end)
-end -- Decide the function to stop the sync
-function sync:StartSyncServer()
-    if self.syncStarted then return end
-
-    self.isMaster, self.masterName = true, UnitName("player")
-    self.syncStarted, self.syncStartTime = true, GetTime()
-
-    self.timeOutTimer = AceTimer:ScheduleTimer('CallBackSyncTimeOut', SYNC_FAIL_TIMER)
-
-    if ns.screen.tblFrame.syncIcon then
-        ns.screen.tblFrame.syncIcon:GetNormalTexture():SetVertexColor(0, 1, 0, 1) end
-
-    if self.isAutoSync then
-        self:console('Auto sync started.', false, 'FORCE')
-    else self:console('Master sync started.', false, 'FORCE') end
-
-    self.tblData = table.wipe(self.tblData) or {}
-    self.totalInvited, self.totalBlackListed = 0, 0
-
-    for _ in pairs(ns.tblInvited and ns.tblInvited or {}) do self.startInvited = self.startInvited + 1 end
-    for _ in pairs(ns.tblBlackList and ns.tblBlackList or {}) do self.startBlackListed = self.startBlackListed + 1 end
-
-    self:SendCommMessage('SYNC_REQUEST')
-    AceTimer:ScheduleTimer('CallBackRequest', REQUEST_TIMEOUT)
-end
-function sync:StartSyncClient(masterName)
-    if self.syncStarted then return end
-
-    if ns.screen.tblFrame.syncIcon then
-        ns.screen.tblFrame.syncIcon:GetNormalTexture():SetVertexColor(0, 1, 0, 1) end
-
-    ns.core.stopSync = true
-    self.isMaster, self.masterName = false, masterName
-    self.syncStarted, self.syncStartTime = true, GetTime()
-    self.timeOutTimer = AceTimer:ScheduleTimer('CallBackSyncTimeOut', SYNC_FAIL_TIMER)
-
-    self:console('Client sync started.', false, 'FORCE')
+    self.masterSync = nil
+    self.isMasterSync = false
 end
 
 -- Comm Routines
 function sync:SendCommMessage(msg, chatType, target)
     if not msg then return end
     chatType = chatType or 'GUILD'
-    GRADDON:SendCommMessage(COMM_PREFIX, msg, chatType, (target or nil), 'ALERT')
+    GR:SendCommMessage(COMM_PREFIX, msg, chatType, (target or nil), 'ALERT')
 end
-function sync:OnCommReceived(prefix, message, distribution, sender)
-    if message ~= 'DATA_REQUEST_TIMEOUT' and message ~= 'SYNC_REQUEST_TIMEOUT' then
-        local distroOk = (distribution == 'GUILD' or distribution == 'WHISPER') and true or false
-        if not distroOk or not sender or sender == UnitName('player') then return
-        elseif not message or prefix ~= GRADDON.prefix then return end
+function sync:CommReceived(message, sender)
+    if not sender or sender == '' or sender == UnitName('player') then return
+    elseif not message then return end
+
+    local function prepIncommingData()
+        local msg = L['Sync data received from']..' '..sender
+        local success, tbl = ns.code:decompressData(message, 'DECODE_FOR_WOW')
+        if success and tbl then
+            if self.isMasterSync then self:CancelTimer(sender)
+            else self:CancelTimer('CLIENT_SYNC_FAIL') end
+
+            self:cOut(msg, 'FF00FF00')
+            self:ProcessIncommingData(sender, tbl)
+        else
+            self:cOut(msg..' '..L['is invalid'], 'FFFF0000', true)
+            self:StopSync()
+            return
+        end
     end
 
-    local function sendMasterData()
-        local invAdded, blAdded, blRemoved = 0, 0, 0
-        for k, r in pairs(self.tblData) do
-            if r.hasReceivedData then
-                local inv, bl, blRem = self:MergeSyncData(k, r.rawData)
-                invAdded = invAdded + inv
-                blAdded = blAdded + bl
-                blRemoved = blRemoved + blRem
+    if self.isMasterSync then
+        if message:match('SYNC_REQUEST_HEARD') then
+            if not self.isSyncing then return end
+
+            ns.code:dOut('Sync request heard from '..sender, 'FFFFFF00')
+            self.clientFound = true
+            self.tblClient[sender] = newClient(sender)
+        else prepIncommingData() end
+    elseif not self.isMasterSync then
+        if message:match('SYNC_REQUESTED') then
+            if self.isSyncing then return end
+
+            self:cOut('Client sync started...', true)
+            self:cOut('Sync requested for '..sender, 'FF00FF00', true)
+            self:StartSync(false, sender)
+            sync:SendCommMessage('SYNC_REQUEST_HEARD', 'WHISPER', sender)
+        elseif sender == self.masterSync and message:match('DATA_REQUEST') then
+            self:cOut('Data requested from '..sender, 'FF00FF00')
+            self:PrepareAndSendData()
+        else prepIncommingData() end
+    end
+end
+
+-- Data Routines
+function sync:CheckIfAllDataReceived()
+    local allData = true
+    for _, r in pairs(self.tblClient) do
+        if not r.hasReceivedData then allData = false end
+    end
+    if not allData then self:PrepareAndSendData() end
+
+    return allData
+end
+function sync:PrepareAndSendData()
+    for _, r in pairs(ns.tblBlackList) do r.sent = true end
+    local tblData = {
+        version = GR.version,
+        guildInfo = ns.dbGlobal.guildInfo,
+        gmSettings = ns.gmSettings,
+        antiSpamList = ns.tblInvited,
+        blackList = ns.tblBlackList,
+    }
+    tblData.guildInfo.isGuildLeader = ns.isGuildLeader
+
+    local dataOutput = ns.code:compressData(tblData, 'ENCODE_FOR_WOW')
+
+    if self.isMasterSync then
+        for k, r in pairs(self.tblClient) do
+            if r.isActive and not r.dataSent then
+                self:SendCommMessage(dataOutput, 'WHISPER', k)
+                self.tblClient[k].dataSent = true
             end
         end
-        sync:ConsoleStatsDisplay(invAdded, blAdded, blRemoved)
 
-        local sendData = self:PrepareDataToSend()
-        for k in pairs(self.tblData) do
-            self:SendCommMessage(sendData, 'WHISPER', k)
-        end
+        self:StopSync()
+    else self:SendCommMessage(dataOutput, 'WHISPER', self.masterSync) end
+end
+function sync:ProcessIncommingData(sender, tblData)
+    if not sender or sender == '' or not tblData then return end
 
-        sync:StopSync()
-    end
-
-    -- Master Sync Error Handling
-    if message:match('DATA_REQUEST_TIMEOUT') then
-        if not self.tblData[sender] then return end
-
-        self.tblData[sender] = nil
-        ns.code:fOut('Failed to sync with '..(sender or 'unknown sender'))
-
-        local completed, remain = true, 0
-        for _, r in pairs(self.tblData) do
-            if not r.hasReceivedData then
-                completed = false
-                remain = remain + 1
-            elseif r.hasReceivedData then completed = false end
-        end
-        if completed then sync:StopSync()
-        elseif remain == 0 then sendMasterData() end
-    elseif message:match('SYNC_REQUEST_TIMEOUT') then
-        local clientFound = false
-        for k, r in pairs(self.tblData) do
-            clientFound = true
-            sync:console('Sending data request to '..k, 'DEBUG')
-            sync:SendCommMessage('DATA_REQUEST', 'WHISPER', k)
-            r.timerID = AceTimer:ScheduleTimer('CallBackSync', DATA_WAIT_TIMEOUT, k)
-        end
-
-        if not clientFound then
-            sync:console('No clients found to sync with', false, self.isAutoSync)
-            sync:StopSync()
-            return
-        else self:console('Sent sync requests, waiting for response...') end
-    elseif message:match('INCOMMING_DATA') then
-        self:console('Getting data from '..(sender or 'unknown sender'))
+    if sync:IncorrectVersionOutput(tblData.version, sender) then
+        if sync:CheckIfAllDataReceived() then sync:PrepareAndSendData() end
         return
     end
 
-    if self.isMaster and sender ~= self.masterName then
-        if message == 'SYNC_REQUEST_HEARD' then
-            self.tblData[sender] = {}
-            self.tblData[sender].hasReceivedData = false
-            ns.code:dOut('Received sync acknowledgement from '..(sender or 'unknown sender'))
-        elseif message and self.tblData[sender] then
-            self:console('Received Client Data from '..(sender or 'remote client.'), 'DEBUG')
+    local gmName = ns.dbGlobal.guildInfo and (ns.dbGlobal.guildInfo.guildLeaderName or nil) or nil
+    local gmNameData = tblData.guildInfo.guildLeaderName or nil
+    if not ns.isGuildLeader and tblData.guildInfo.isGuildLeader then
+        ns.db.global[C_Club.GetGuildClubId()].guildInfo = tblData.guildInfo
+        ns.dbGlobal.guildInfo.isGuildLeader = false
+        ns.db.global[C_Club.GetGuildClubId()].gmSettings = tblData.gmSettings
+    end
 
-            self.tblData[sender].hasReceivedData = true
-            AceTimer:CancelTimer(self.tblData[sender].timerID)
-            self.tblData[sender].timerID = nil
-            self.tblData[sender].rawData = message
-
-            local waitLonger = false
-            for _, r in pairs(self.tblData) do
-                if not r.hasReceivedData then waitLonger = true break end
-            end
-            if not waitLonger then sendMasterData() end
-        end
-    else
-        if message == 'SYNC_REQUEST' then
-            sync:StartSyncClient(sender)
-
-            ns.code:fOut('Received sync request from '..(sender or 'unknown sender'))
-            sync:SendCommMessage('SYNC_REQUEST_HEARD', 'WHISPER', sender)
-
-            self.clientTimer = AceTimer:ScheduleTimer('CallBackClientTimeOut', 10, sender)
-        elseif message == 'DATA_REQUEST' and sender == self.masterName then
-            self:console('Sending data to '..(sender or 'sync master.'))
-
-            AceTimer:CancelTimer(self.clientTimer)
-
-            sync:SendCommMessage('INCOMMING_DATA', 'WHISPER', sender)
-            sync:SendCommMessage(self:PrepareDataToSend(), 'WHISPER', sender)
-        elseif sender == self.masterName and message then
-            self:console('Received Master Data from '..(sender or 'remote master.'))
-            local invAdded, blAdded, blRemoved = sync:MergeSyncData(sender, message)
-            if invAdded == -1 then sync:StopSync() return end
-            sync:ConsoleStatsDisplay(invAdded, blAdded, blRemoved)
-            sync:StopSync()
+    local antiSpamCount = 0
+    for k, r in pairs(tblData.antiSpamList) do
+        if not ns.tblInvited[k] then
+            ns.tblInvited[k] = r
+            ns.tblInvited[k].addedBy = sender
+            antiSpamCount = antiSpamCount + 1
         end
     end
+
+    local blackListCount, removedCount = 0, 0
+    for k, r in pairs(tblData.blackList) do
+        if not ns.tblBlackList[k] then
+            ns.tblBlackList[k] = r
+            blackListCount = blackListCount + 1
+        end
+
+        if ns.tblBlackList[k] and not ns.tblBlackList[k].markedForDelete and r.markedForDelete then
+            ns.tblBlackList[k].markedForDelete = r.markedForDelete
+            ns.tblBlackList[k].expirationDate = r.expirationDate
+            removedCount = removedCount + 1
+        end
+    end
+
+    if self.tblClient[sender] then
+        self.tblClient[sender].hasReceivedData = true
+        self.tblClient[sender].addedAntiSpam = antiSpamCount
+        self.tblClient[sender].addedBlackList = blackListCount
+        self.tblClient[sender].removedBlackList = removedCount
+
+        sync:CancelTimer(sender)
+    else sync:CancelTimer('DATA_REQUEST_TIMEOUT') end
+
+    if self.isMasterSync and self:CheckIfAllDataReceived() then sync:PrepareAndSendData()
+    else sync:StopSync(antiSpamCount, blackListCount, removedCount) end
 end
 
--- Data Parsing Routines
+-- Support Routines
+function sync:cOut(msg, color, force)
+    if not msg then return end
+    color = type(color) == 'string' and color or 'FF3EB9D8'
+    force = type(color) == 'boolean' and color or (force or false)
+
+    if force then ns.code:fOut(msg, color)
+    else ns.code:cOut(msg, color) end
+end
+function sync:CancelTimer(key)
+    if not self.tblTimer[key] then return end
+
+    AceTimer:CancelTimer(self.tblTimer[key])
+    self.tblTimer[key] = nil
+end
 function sync:IncorrectVersionOutput(version, sender)
     sender = (sender and sender ~= '') and sender or 'unknown sender'
     if not version or not sender then
-        ns.code:fOut('IncorrectVersionOutput: Missing version or sender ('..version..'/'..sender..')')
-        return
+        ns.code:dOut('IncorrectVersionOutput: Missing version or sender ('..version..'/'..sender..')', true)
+        return true
     end
-    if not version or GRADDON.version ~= version then
-        ns.code:fOut('Addon version mismatch with '..(sender or 'unknown sender'), 'FFFFFF00')
-        ns.code:fOut('Your version: '..GRADDON.version, 'FFFF0000')
-        ns.code:fOut('Their version: '..(version or 'Unknown'), 'FFFF0000')
+    if not version or GR.version ~= version then
+        self:cOut('Addon version mismatch with '..(sender or 'unknown sender'), 'FFFFFF00', true)
+        self:cOut('Your version: '..GR.version, 'FF00FF00', true)
+        self:cOut('Their version: '..(version or 'Unknown'), 'FFFF0000', true)
+        return true
     end
+
+    return false
 end
-function sync:ConsoleStatsDisplay(invAdded, blAdded, blRemoved)
-    if invAdded > 0 then
-        ns.code:fOut(invAdded..' players added to invited list') end
-    if blAdded > 0 then
-        ns.code:fOut(blAdded..' players added to black list') end
-    if blRemoved > 0 then
-        ns.code:fOut(blRemoved..' players removed from black list') end
-end
-function sync:MergeSyncData(sender, message)
-    if not ns.dbGlobal.guildInfo or not message or not sender then return end
-
-    local function mergeTheData(tbl)
-        local invAdded, blAdded, blRemoved = 0, 0, 0
-        if GRADDON.version ~= tbl.dbVersion then
-            self:IncorrectVersionOutput(tbl.dbVersion, sender)
-            return 0, 0, 0
-        end
-
-        if not ns.isGuildLeader and not ns.hasGuildLeader then
-            local tblGuildInfo = tbl.guildInfo or nil
-            local tblGuildData = tbl.guildData or nil
-
-            tblGuildInfo.guildLeader = nil
-            tblGuildInfo.hasGuildLeader = false
-
-            if tblGuildInfo then ns.dbGlobal.guildInfo = tblGuildInfo end
-            if tblGuildData then ns.dbGlobal.guildData = tblGuildData end
-
-            if not ns.settings.welcomeMessage and ns.dbGlobal.guildInfo.welcomeMessage then
-                ns.settings.welcomeMessage = ns.dbGlobal.guildInfo.welcomeMessage end
-            if not ns.settings.greetingMsg and ns.dbGlobal.guildInfo.greetingMsg then
-                ns.settings.greetingMsg = ns.dbGlobal.guildInfo.greetingMsg end
-        end
-
-        ns.tblInvited = ns.tblInvited or {}
-        for k, r in pairs(tbl.invitedPlayers and tbl.invitedPlayers or {}) do
-            if not ns.tblInvited[k] then
-                ns.tblInvited[k] = r
-                invAdded = invAdded + 1
-            end
-        end
-
-        ns.tblBlackList = ns.tblBlackList or {}
-        for k, r in pairs(tbl.blackListedPlayers and tbl.blackListedPlayers or {}) do
-            if not ns.tblBlackList[k] and type(k) == 'string' and k ~= 'blacklist' then
-                ns.tblBlackList[k] = r
-                blAdded = blAdded + 1
-            elseif r.markedForDeletion then
-                ns.tblBlackList[k].markedForDeletion = true
-                ns.tblBlackList[k].expirationTime = r.expirationTime
-                blRemoved = blRemoved + 1
-            end
-        end
-
-        return invAdded, blAdded, blRemoved
+function sync:FailRoutines(message, sender)
+    sync:CancelTimer((sender or message))
+    if message:match('FULL_SYNC_FAILED') then
+        self:cOut('Sync failed', 'FFFF0000', true)
+        self:StopSync()
+    elseif message:match('DATA_REQUEST_TIMEOUT') then
+        self:cOut('Data request timed out for '..sender, 'FFFF0000', true)
+        if self.isMasterSync then
+            self.tblClient[sender].isActive = false
+            self.tblClient[sender].hasReceivedData = true
+            if self:CheckIfAllDataReceived() then sync:PrepareAndSendData() end
+        else self:StopSync() end
     end
-
-    local function decodeFailed()
-        self:console('Failed to decode data from '..(sender or 'unknown sender'), false, 'FORCE')
-        return -1, -1, -1
-    end
-
-    local invAdded, blAdded, blRemoved = 0, 0, 0
-    local success, tbl = ns.code:decompressData(message, 'DECODE_FOR_WOW')
-    if success and tbl and type(tbl) == 'table' then
-        -- _, tbl.blackListedPlayers = ns.code:decompressData(tbl.blackListedPlayers)
-        invAdded, blAdded, blRemoved = mergeTheData(tbl)
-        return invAdded, blAdded, blRemoved
-    else decodeFailed() end
-end
-function sync:PrepareDataToSend() -- Used when sending client data (Client)
-    local tbl = {}
-    tbl.dbVersion = GRADDON.version
-
-    tbl.guildInfo = ns.dbGlobal.guildInfo
-    tbl.guildData = ns.dbGlobal.guildData
-
-    tbl.invitedPlayers = ns.tblInvited
-    tbl.blackListedPlayers = ns.tblBlackList --ns.code:compressData(ns.tblBlackList)
-
-    for k, r in pairs(ns.tblBlackList) do
-        ns.tblBlackList[k] = {
-            reason = r.reason,
-            expirationTime = r.expirationTime,
-            markedForDeletion = r.markedForDeletion,
-            whoDidIt = r.whoDidIt,
-            sent = true,
-        }
-    end
-
-    return ns.code:compressData(tbl, 'ENCODE_FOR_WOW')
 end
 sync:Init()
 
 local function OnCommReceived(prefix, message, distribution, sender)
-    sync:OnCommReceived(prefix, message, distribution, sender) end
-GRADDON:RegisterComm(GRADDON.prefix, OnCommReceived)
+    if prefix ~= COMM_PREFIX then return
+    elseif distribution ~= 'GUILD' and distribution ~= 'WHISPER' then return end
+
+    sync:CommReceived(message, sender)
+end
+GR:RegisterComm(COMM_PREFIX, OnCommReceived)

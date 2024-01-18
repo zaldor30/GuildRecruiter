@@ -1,33 +1,27 @@
--- Guild Recruiter Base Screen
 local _, ns = ... -- Namespace (myaddon, namespace)
+local L = LibStub('AceLocale-3.0'):GetLocale('GuildRecruiter')
 
-ns.screen = {}
-local screen, template = ns.screen, {}
+ns.screens = {}
+ns.screens.base, ns.iconBar = {}, {}
 
--- Frame Dragging Routine
+-- Frame Dragging Routines
 local function OnDragStart(self)
-    if template.locked then return end
+    if ns.screens.base.isMoveLocked then return end
     self:StartMoving()
 end
 local function OnDragStop(self)
     self:StopMovingOrSizing()
-    template.screenPos.point,_,_, template.screenPos.x, template.screenPos.y = self:GetPoint()
-    ns.db.settings.screenPos = template.screenPos
+
+    ns.screens.base.screenPos.point,_,_, ns.screens.base.screenPos.x, ns.screens.base.screenPos.y = self:GetPoint()
+    ns.settings.screenPos = ns.screens.base.screenPos
 end
 
-function screen:Init()
+local base = ns.screens.base
+function base:Init()
+    self.isSyncing = false
+    self.isMoveLocked = true
+
     self.tblFrame = {}
-end
-function screen:AddonLoaded()
-    template.screenPos = ns.db.settings.screenPos or template.screenPos
-
-    template:BuildTemplate()
-    self.tblFrame.frame:SetShown(false)
-end
-screen:Init()
-
-function template:Init()
-    self.locked = true
 
     self.screenPos = { -- Get default position and current position
         point = 'CENTER',
@@ -35,87 +29,79 @@ function template:Init()
         y = 0
     }
 end
-function template:BuildTemplate()
-    if screen.tblFrame.frame then return end
+function base:StartUp()
+    self:BuildBase()
+    self:BuildTopFrame()
+    self:BuildIconFrame()
+    self:BuildStatusBarFrame()
+end
+function base:BuildBase()
+    if base.tblFrame.frame then return end
 
-    local tblFrame = screen.tblFrame
-
-    local f = CreateFrame('Frame', 'GR_BASE_FRAME', UIParent, 'BackdropTemplate')
+    local tblFrame = self.tblFrame
+    local f = CreateFrame('Frame', 'GR_Base', UIParent, 'BackdropTemplate')
+    self.screenPos = ns.settings.screenPos or self.screenPos
+    f:SetPoint(self.screenPos.point, self.screenPos.x, self.screenPos.y)
     f:SetBackdrop(BackdropTemplate())
     f:SetFrameStrata(DEFAULT_STRATA)
     f:SetClampedToScreen(true)
-    f:SetBackdropColor(0, 0, 0, .75)
+    f:SetBackdropColor(0, 0, 0, .85)
     f:SetBackdropBorderColor(1, 1, 1, 1)
     f:SetSize(500, 400)
-    f:SetPoint(self.screenPos.point, self.screenPos.x, self.screenPos.y)
     f:EnableMouse(true)
-    f:SetMovable(false)
-    f:RegisterForDrag("LeftButton")
+    f:SetMovable(true)
+    f:RegisterForDrag('LeftButton')
     f:SetScript('OnMouseDown', OnDragStart)
     f:SetScript('OnMouseUp', OnDragStop)
     f:SetScript('OnHide', function()
+        if ns.core.fullyStarted then
+            ns.code:saveTables()
+        else return end
+
+        local notSpecial = false
+        for _, r in pairs(UISpecialFrames) do
+            if r == 'GuildRecruiter' then
+                notSpecial = true
+                break
+            end
+        end
+        if not notSpecial then
+            _G['GuildRecruiter'] = self.tblFrame.frame
+            tinsert(UISpecialFrames, 'GuildRecruiter')
+        end
+
         tblFrame.frame:SetShown(false)
         ns.observer:Notify('CLOSE_SCREENS')
-        if ns.core.fullyStarted then
-            ns.code:saveTables() end
     end)
     tblFrame.frame = f
-
-    _G["GuildRecruiter"] = f
-    tinsert(UISpecialFrames, "GuildRecruiter")
-
-    self:BuildTitleFrame()
-    self:BuildIconBar()
-
-    -- Status Bar
-    local statusBar = CreateFrame('StatusBar', 'GR_BASE_STATUSBAR', f, 'BackdropTemplate')
-    statusBar:SetPoint('BOTTOMLEFT', f, 'BOTTOMLEFT', 5, 5)
-    statusBar:SetSize(f:GetWidth() - 10, 25)
-    statusBar:SetBackdrop(BackdropTemplate())
-    statusBar:SetBackdropColor(1, 1, 1, 0)
-    statusBar:SetBackdropBorderColor(1, 1, 1, .5)
-    statusBar:SetShown(true)
-    tblFrame.statusBar = statusBar
-
-    local statusText = statusBar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    statusText:SetPoint("LEFT", statusBar, "LEFT", 5, 0) -- Set the text position
-    statusText:SetText('')
-    statusText:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
-    statusText:SetJustifyH('LEFT')
-    tblFrame.statusText = statusText
-
-    f:SetScript('OnSizeChanged', function()
-        statusBar:SetSize(f:GetWidth() - 10, 25)
-    end)
 end
-function template:BuildTitleFrame()
-    local tblFrame = screen.tblFrame
+function base:BuildTopFrame()
+    local tblFrame = base.tblFrame
 
-    local f = CreateFrame('Frame', 'GR_BASE_titleFrame', tblFrame.frame, 'BackdropTemplate')
-    f:SetBackdrop(BackdropTemplate(BLANK_BACKGROUND))
-    f:SetBackdropColor(0, 0, 0, 0)
+    local f = CreateFrame('Frame', 'GR_BASE_topFrame', tblFrame.frame, 'BackdropTemplate')
+    f:SetBackdrop(BackdropTemplate())
+    f:SetBackdropColor(0, 0, 0, 1)
     f:SetBackdropBorderColor(1, 1, 1, .5)
     f:SetPoint('TOPLEFT', tblFrame.frame, 'TOPLEFT', 5, -5)
     f:SetPoint('BOTTOMRIGHT', tblFrame.frame, 'TOPRIGHT', -5, -55)
     f:SetShown(true)
-
-    tblFrame.titleFrame = f
+    tblFrame.topFrame = f
 
     -- Application (About) Icon
     local appIconButton = CreateFrame('Button', 'GR_BASE_APPICON', f)
     appIconButton:SetSize(16, 16)
     appIconButton:SetPoint('TOPLEFT', 7, -7)
-    appIconButton:SetNormalTexture(GRADDON.icon)
+    appIconButton:SetNormalTexture(GR.icon)
     appIconButton:SetHighlightTexture(BLUE_HIGHLIGHT)
-    appIconButton:SetScript('OnClick', function() ns.screen.about:EnterAboutScreen() end)
-    appIconButton:SetScript('OnEnter', function() ns.code:createTooltip('About '..GRADDON.title) end)
+    appIconButton:SetScript('OnClick', function() ns.screens.about:StartUp() end)
+    appIconButton:SetScript('OnEnter', function() ns.code:createTooltip(L['About']..' '..L['TITLE']) end)
     appIconButton:SetScript('OnLeave', function() GameTooltip:Hide() end)
     appIconButton:SetShown(true)
 
     -- Title Text
     local textString = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     textString:SetPoint('LEFT', appIconButton, 'RIGHT', 5, 0) -- Set the text position
-    textString:SetText(GRADDON.title)
+    textString:SetText(L['TITLE'])
     textString:SetTextColor(1, 1, 1, 1) -- Set the text color (r,g,b,a) values
     textString:SetFont(DEFAULT_FONT, 16, 'OUTLINE')
 
@@ -126,7 +112,7 @@ function template:BuildTitleFrame()
     closeButton:SetNormalTexture(ICON_PATH..'GR_Exit')
     closeButton:SetHighlightTexture(BLUE_HIGHLIGHT)
     closeButton:SetScript('OnClick', function() tblFrame.frame:SetShown(false) end)
-    closeButton:SetScript('OnEnter', function() ns.code:createTooltip('Close '..GRADDON.title) end)
+    closeButton:SetScript('OnEnter', function() ns.code:createTooltip(L['Close']..' '..L['TITLE']) end)
     closeButton:SetScript('OnLeave', function() GameTooltip:Hide() end)
     closeButton:SetShown(true)
 
@@ -137,77 +123,79 @@ function template:BuildTitleFrame()
     lockButton:SetNormalTexture(BUTTON_LOCKED)
     lockButton:SetHighlightTexture(BLUE_HIGHLIGHT)
     lockButton:SetScript('OnClick', function()
-        self.locked = not self.locked
-        tblFrame.frame:SetMovable(not self.locked)
+        self.isMoveLocked = not self.isMoveLocked
+        tblFrame.frame:SetMovable(not self.isMoveLocked)
 
-        if self.locked then
-            lockButton:SetNormalTexture(BUTTON_LOCKED)
-        else
-            lockButton:SetNormalTexture(BUTTON_UNLOCKED)
-        end
+        if self.isMoveLocked then lockButton:SetNormalTexture(BUTTON_LOCKED)
+        else lockButton:SetNormalTexture(BUTTON_UNLOCKED) end
     end)
-    lockButton:SetScript('OnEnter', function() ns.code:createTooltip('Lock '..GRADDON.title) end)
+    lockButton:SetScript('OnEnter', function() ns.code:createTooltip(L['Lock']..' '..L['TITLE']) end)
     lockButton:SetScript('OnLeave', function() GameTooltip:Hide() end)
     lockButton:SetShown(true)
 end
-function template:BuildIconBar()
-    local tblFrame = screen.tblFrame
+function base:BuildIconFrame()
+    local tblFrame = base.tblFrame
 
-    local f = CreateFrame('Frame', 'GR_BASE_ICONBAR', tblFrame.titleFrame, 'BackdropTemplate')
+    local f = CreateFrame('Frame', 'GR_BASE_ICONBAR', tblFrame.topFrame, 'BackdropTemplate')
     f:SetBackdrop(BackdropTemplate())
     f:SetBackdropColor(1, 1, 1, 0)
     f:SetBackdropBorderColor(1, 1, 1, 0)
-    f:SetPoint('TOPLEFT', tblFrame.titleFrame, 'TOPLEFT', 0, -25)
-    f:SetPoint('BOTTOMRIGHT', tblFrame.titleFrame, 'BOTTOMRIGHT', 0, 0)
+    f:SetPoint('TOPLEFT', tblFrame.topFrame, 'TOPLEFT', 0, -25)
+    f:SetPoint('BOTTOMRIGHT', tblFrame.topFrame, 'BOTTOMRIGHT', 0, 0)
     f:SetShown(true)
-
     tblFrame.iconFrame = f
 
     -- Settings Icon
-    local settingsIconButton = CreateFrame('Button', 'GR_BASE_SETTINGSICON', tblFrame.titleFrame)
+    local settingsIconButton = CreateFrame('Button', 'GR_BASE_SETTINGSICON', tblFrame.topFrame)
     settingsIconButton:SetSize(20, 20)
     settingsIconButton:SetPoint('BOTTOMLEFT', 5, 5)
     settingsIconButton:SetNormalTexture(ICON_PATH..'GR_Settings')
     settingsIconButton:SetHighlightTexture(BLUE_HIGHLIGHT)
     settingsIconButton:SetScript('OnClick', function() InterfaceOptionsFrame_OpenToCategory(ns.addonOptions) end)
-    settingsIconButton:SetScript('OnEnter', function() ns.code:createTooltip(GRADDON.title..' Settings') end)
+    settingsIconButton:SetScript('OnEnter', function() ns.code:createTooltip(L['TITLE']..' '..L['Settings']) end)
     settingsIconButton:SetScript('OnLeave', function() GameTooltip:Hide() end)
     settingsIconButton:SetShown(true)
 
     -- Sync Icon
-    local syncIconButton = CreateFrame('Button', 'GR_BASE_SYNCICON', tblFrame.titleFrame)
+    local syncIconButton = CreateFrame('Button', 'GR_BASE_SYNCICON', tblFrame.topFrame)
     syncIconButton:SetSize(20, 20)
     syncIconButton:SetPoint('LEFT', settingsIconButton, 'RIGHT', 5, 0)
     syncIconButton:SetNormalTexture(ICON_PATH..'GR_Sync')
     syncIconButton:SetHighlightTexture(BLUE_HIGHLIGHT)
-    syncIconButton:SetScript('OnClick', function() ns.sync:StartSyncServer() end)
-    syncIconButton:SetScript('OnEnter', function() ns.code:createTooltip('Sync '..GRADDON.title) end)
+    syncIconButton:SetScript('OnClick', function() ns.sync:StartSync(true) end)
+    syncIconButton:SetScript('OnEnter', function() ns.code:createTooltip('Sync '..L['TITLE']) end)
     syncIconButton:SetScript('OnLeave', function() GameTooltip:Hide() end)
-    screen.tblFrame.syncIcon = syncIconButton
+    if self.isSyncing then syncIconButton:GetNormalTexture():SetVertexColor(0,1,0,1)
+    else syncIconButton:GetNormalTexture():SetVertexColor(1,1,1,1) end
+    tblFrame.syncIcon = syncIconButton
 
     -- Stats Icon
-    local statsIconButton = CreateFrame('Button', 'GR_BASE_STATSICON', tblFrame.titleFrame)
+    local statsIconButton = CreateFrame('Button', 'GR_BASE_STATSICON', tblFrame.topFrame)
     statsIconButton:SetSize(20, 20)
     statsIconButton:SetPoint('LEFT', syncIconButton, 'RIGHT', 5, 0)
     statsIconButton:SetNormalTexture(ICON_PATH..'GR_Stats')
     statsIconButton:SetHighlightTexture(BLUE_HIGHLIGHT)
-    statsIconButton:SetScript('OnClick', function() ns.stats:StartStatsScreen() end)
-    statsIconButton:SetScript('OnEnter', function() ns.code:createTooltip(GRADDON.title..' Stats') end)
+    statsIconButton:SetScript('OnClick', function() ns.screens.analytics:StartStatsScreen() end)
+    statsIconButton:SetScript('OnEnter', function() ns.code:createTooltip(L['TITLE']..' '..L['Analytics']) end)
     statsIconButton:SetScript('OnLeave', function() GameTooltip:Hide() end)
-    screen.tblFrame.statsButton = statsIconButton
+    tblFrame.statsButton = statsIconButton
 
     -- Add to Black List Icon
-    local blacklistIconButton = CreateFrame('Button', 'GR_BASE_BLACKLISTICON', tblFrame.titleFrame)
+    local blacklistIconButton = CreateFrame('Button', 'GR_BASE_BLACKLISTICON', tblFrame.topFrame)
     blacklistIconButton:SetSize(20, 20)
     blacklistIconButton:SetPoint('LEFT', statsIconButton, 'RIGHT', 5, 0)
     blacklistIconButton:SetNormalTexture(ICON_PATH..'GR_Blacklist')
     blacklistIconButton:SetHighlightTexture(BLUE_HIGHLIGHT)
     blacklistIconButton:SetScript('OnClick', function()
         local POPUP_NAME, POPUP_REASON, blName = "inputName", "inputReason", nil
+        local blMsg = L['WHO_TO_BLACK_LIST']
+        blMsg = blMsg..'\n'..L['BL_WARNING_LINE_1']
+        blMsg = blMsg..'\n'..L['BL_WARNING_LINE_2']
+
         StaticPopupDialogs[POPUP_NAME] = {
-            text = "Who would you like to Black List?\nSpelling counts, include realm name if needed.\n \nBetter to right click on player\nto add to black list.",
-            button1 = "OK",
-            button2 = "Cancel",
+            text = blMsg,
+            button1 = L['OK'],
+            button2 = L['Cancel'],
             OnAccept = function(data)
                 local value = data.editBox:GetText()
                 if not value or value == '' then return end
@@ -215,19 +203,19 @@ function template:BuildIconBar()
                 blName = value
 
                 StaticPopupDialogs[POPUP_REASON] = {
-                    text = "Why do you want to black list:\n"..blName,
-                    button1 = "OK",
-                    button2 = "Cancel",
+                    text = L['Why do you want to black list?']..'\n'..blName,
+                    button1 = L['OK'],
+                    button2 = L['Cancel'],
                     OnAccept = function(rData)
                         if not blName then return end
 
                         value = rData.editBox:GetText()
-                        value = value ~= '' and value or 'No reason'
+                        value = value ~= '' and value or L['No Reason']
 
                         if not blName or not value then return end
                         ns.blackList:AddToBlackList(blName, value)
                     end,
-                    OnCancel = function() UIErrorsFrame:AddMessage(blName..' was not added to Black List.', 1.0, 0.1, 0.1, 1.0) end,
+                    OnCancel = function() UIErrorsFrame:AddMessage(blName..' '..L['BL_NAME_NOT_ADDED'], 1.0, 0.1, 0.1, 1.0) end,
                     timeout = 0,
                     whileDead = true,
                     hideOnEscape = true,
@@ -239,7 +227,7 @@ function template:BuildIconBar()
 
                 StaticPopup_Show(POPUP_REASON)
             end,
-            OnCancel = function() UIErrorsFrame:AddMessage('No one will be added to the black list.', 1.0, 0.1, 0.1, 1.0) end,
+            OnCancel = function() UIErrorsFrame:AddMessage(L['BL_NO_ONE_ADDED'], 1.0, 0.1, 0.1, 1.0) end,
             timeout = 0,
             whileDead = true,
             hideOnEscape = true,
@@ -251,47 +239,83 @@ function template:BuildIconBar()
 
         StaticPopup_Show(POPUP_NAME)
     end)
-    blacklistIconButton:SetScript('OnEnter', function() ns.code:createTooltip('Add to Blacklist') end)
+    blacklistIconButton:SetScript('OnEnter', function() ns.code:createTooltip(L['Add to Blacklist']) end)
     blacklistIconButton:SetScript('OnLeave', function() GameTooltip:Hide() end)
     blacklistIconButton:SetShown(true)
 
+    -- Create Filter Icon
+    local filterIconButton = CreateFrame('Button', 'GR_BASE_FILTERICON', tblFrame.topFrame)
+    filterIconButton:SetSize(20, 20)
+    filterIconButton:SetPoint('LEFT', blacklistIconButton, 'RIGHT', 5, 0)
+    filterIconButton:SetNormalTexture(ICON_PATH..'GR_Filter')
+    filterIconButton:SetHighlightTexture(BLUE_HIGHLIGHT)
+    filterIconButton:SetScript('OnClick', function() ns.screens.filter:StartUp() end)
+    filterIconButton:SetScript('OnEnter', function() ns.code:createTooltip(L['Create Filter']) end)
+    filterIconButton:SetScript('OnLeave', function() GameTooltip:Hide() end)
+
     -- Reset Filter Icon
-    local resetIconButton = CreateFrame('Button', 'GR_BASE_RESETICON', tblFrame.titleFrame)
+    local resetIconButton = CreateFrame('Button', 'GR_BASE_RESETICON', tblFrame.topFrame)
     resetIconButton:SetSize(20, 20)
-    resetIconButton:SetPoint('LEFT', blacklistIconButton, 'RIGHT', 5, 0)
+    resetIconButton:SetPoint('LEFT', filterIconButton, 'RIGHT', 5, 0)
     resetIconButton:SetNormalTexture(ICON_PATH..'GR_Reset')
     resetIconButton:SetHighlightTexture(BLUE_HIGHLIGHT)
-    resetIconButton:SetScript('OnClick', function() ns.scanner:ResetFilter() end)
-    resetIconButton:SetScript('OnEnter', function() ns.code:createTooltip('Reset Filters') end)
+    resetIconButton:SetScript('OnClick', function() ns.screens.scanner:BuildFilter(false, 'RESET') end)
+    resetIconButton:SetScript('OnEnter', function() ns.code:createTooltip(L['Reset Filters']) end)
     resetIconButton:SetScript('OnLeave', function() GameTooltip:Hide() end)
     resetIconButton:SetShown(false)
     tblFrame.resetButton = resetIconButton
 
     -- Go Back Icon
-    local backIconButton = CreateFrame('Button', 'GR_BASE_BACKICON', tblFrame.titleFrame)
+    local backIconButton = CreateFrame('Button', 'GR_BASE_BACKICON', tblFrame.topFrame)
     backIconButton:SetSize(20, 20)
     backIconButton:SetPoint('BOTTOMRIGHT', f, 'BOTTOMRIGHT', -5, 5)
     backIconButton:SetNormalTexture(ICON_PATH..'GR_Back')
     backIconButton:SetHighlightTexture(BLUE_HIGHLIGHT)
-    backIconButton:SetScript('OnClick', function()
-        ns.screen.home:EnterHomeScreen()
-    end)
-    backIconButton:SetScript('OnEnter', function() ns.code:createTooltip('Go Back') end)
+    backIconButton:SetScript('OnClick', function() ns.screens.home:StartUp() end)
+    backIconButton:SetScript('OnEnter', function() ns.code:createTooltip(L['Home']) end)
     backIconButton:SetScript('OnLeave', function() GameTooltip:Hide() end)
     backIconButton:SetShown(false)
     tblFrame.backButton = backIconButton
 
     -- Compact Mode Icon
-    local compactIconButton = CreateFrame('Button', 'GR_BASE_COMPACTICON', tblFrame.titleFrame)
+    local compactIconButton = CreateFrame('Button', 'GR_BASE_COMPACTICON', tblFrame.topFrame)
     compactIconButton:SetSize(20, 20)
     compactIconButton:SetPoint('RIGHT', backIconButton, 'LEFT', -5, 0)
     compactIconButton:SetNormalTexture(ICON_PATH..'GR_Compact')
     compactIconButton:SetHighlightTexture(BLUE_HIGHLIGHT)
     compactIconButton:SetShown(false)
-    compactIconButton:SetScript('OnClick', function() ns.scanner:ChangeCompact() end)
-    compactIconButton:SetScript('OnEnter', function() ns.code:createTooltip('Compact Mode') end)
+    compactIconButton:SetScript('OnClick', function()
+        ns.settings.compactMode = not ns.settings.compactMode
+        ns.screens.scanner.isCompact = ns.settings.compactMode
+        ns.screens.scanner:SwitchCompactMode()
+    end)
+    compactIconButton:SetScript('OnEnter', function() ns.code:createTooltip(L['Compact Mode']) end)
     compactIconButton:SetScript('OnLeave', function() GameTooltip:Hide() end)
     compactIconButton:SetShown(false)
     tblFrame.compactButton = compactIconButton
 end
-template:Init()
+function base:BuildStatusBarFrame()
+    local tblFrame = self.tblFrame
+
+    -- Status Bar
+    local statusBar = CreateFrame('StatusBar', 'GR_BASE_STATUSBAR', tblFrame.frame, 'BackdropTemplate')
+    statusBar:SetPoint('BOTTOMLEFT', tblFrame.frame, 'BOTTOMLEFT', 5, 5)
+    statusBar:SetSize(tblFrame.frame:GetWidth() - 10, 25)
+    statusBar:SetBackdrop(BackdropTemplate())
+    statusBar:SetBackdropColor(1, 1, 1, 1)
+    statusBar:SetBackdropBorderColor(1, 1, 1, .5)
+    statusBar:SetShown(true)
+    tblFrame.statusBar = statusBar
+
+    local statusText = statusBar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    statusText:SetPoint("LEFT", statusBar, "LEFT", 5, 0) -- Set the text position
+    statusText:SetText('')
+    statusText:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
+    statusText:SetJustifyH('LEFT')
+    tblFrame.statusText = statusText
+
+    tblFrame.frame:SetScript('OnSizeChanged', function()
+        statusBar:SetSize(tblFrame.frame:GetWidth() - 10, 25)
+    end)
+end
+base:Init()

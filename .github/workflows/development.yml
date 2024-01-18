@@ -16,9 +16,6 @@ on:
 env:
   CF_API_KEY: ${{ secrets.CF_API_KEY }}
 
-
-  # WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
-
 jobs:
 #  full_package_release:
 #    runs-on: ubuntu-latest
