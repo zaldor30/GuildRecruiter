@@ -1,12 +1,12 @@
-name: "Release AddOn"
+name: 'Release AddOn'
 
 on:
   push:
     branches:
-      - 'main'
-    tags:
-      - "-**-alpha**"
-      - "-**-beta**"
+      - 'main/**'
+    tags-ignore:
+      - '**-alpha**'
+      - '**-beta**'
 
 env:
   CF_API_KEY: ${{ secrets.CF_API_KEY }}
