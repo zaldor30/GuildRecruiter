@@ -20,5 +20,3 @@ standalone_release:
       with:
         pkgmeta: package_gr.pkgmeta
         args: -p 882061
-      
-        
