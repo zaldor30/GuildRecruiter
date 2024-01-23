@@ -1,17 +1,15 @@
 name: "Release AddOn"
 
-#on: [push]
 on:
   push:
     branches:
-      - 'main/**'
+      - 'main'
     tags:
       - "-**-alpha**"
       - "-**-beta**"
-      - '**'
 
 env:
-CF_API_KEY: ${{ secrets.CF_API_KEY }}
+  CF_API_KEY: ${{ secrets.CF_API_KEY }}
 
 jobs:
 standalone_release:
@@ -25,3 +23,4 @@ standalone_release:
       with:
         pkgmeta: package_gr.pkgmeta
         args: -p 882061
+        
