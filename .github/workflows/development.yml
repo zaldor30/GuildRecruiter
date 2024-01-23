@@ -10,6 +10,8 @@ on:
     branches:
       #- development
       - main
+    tags:
+      - '**'
     #tags:
       #- "**-alpha**"
       #- "**-beta**"
@@ -37,4 +39,4 @@ jobs:
       - uses: BigWigsMods/packager@v2
         with:
           pkgmeta: package_gr.pkgmeta
-          args: -p 882061
+          args: -a 882061
