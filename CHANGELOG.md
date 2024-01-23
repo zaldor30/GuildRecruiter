@@ -1,3 +1,6 @@
+## 2.2.44
+* Fixed an issue on single server realms, checking names would cause LUA error.
+
 ## 2.2.43
 * WARNING!! Data will be reset with this update.  This is due to the new database structure.
 * NOTE: Custom filters are under construction!!  They will be back soon.
