@@ -5,7 +5,7 @@ local ds = ns.ds
 
 function ds:Init()
     self.dbVersion = '3.0.0'
-    self.grVersion = '2.2.44'
+    self.grVersion = '2.2.45'
 
     self.tblRaces = self:races()
     self.tblClasses = self:classes()
@@ -21,6 +21,9 @@ function ds:WhatsNew()
          |CFF55D0FF** Please report any bugs or issues in Discord **
                 Discord: https://discord.gg/ZtS6Q2sKRH
              (or click on the icon in the top left corner)|r
+
+    |CFFFFFF00v2.2.45 Notes|r
+        * Fixed an issue with not being able to create/edit non-GM messages.
 
     |CFFFFFF00v2.2.44 Notes|r
         * Fixed an issue on single server realms, checking names would cause LUA error.

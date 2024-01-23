@@ -740,7 +740,6 @@ ns.addonSettings = {
                     type = 'input',
                     multiline = false,
                     width = 'full',
-                    disabled = function() return not ns.isGuildLeader end,
                     set = function(_, val) tblMessage.desc = val end,
                     get = function() return tblMessage.desc or '' end,
                 },
@@ -750,7 +749,6 @@ ns.addonSettings = {
                     type = 'input',
                     multiline = 7,
                     width = 'full',
-                    disabled = function() return not ns.isGuildLeader end,
                     set = function(_, val) tblMessage.message = ns.code:capitalKeyWord(val:trim()) end,
                     get = function() return tblMessage.message or '' end,
                 },
@@ -805,7 +803,6 @@ ns.addonSettings = {
                     confirm = function() return 'Are you sure you want to delete this message?' end,
                     width = .5,
                     disabled = function() return not invActiveMessage and true or false end,
-                    hidden = function() return not ns.isGuildLeader end,
                     func = function()
                         local msg = ns.gSettings.messageList or nil
                         local active = invActiveMessage or nil
@@ -825,7 +822,6 @@ ns.addonSettings = {
                     disabled = function()
                         if not tblMessage then return true end
                         return not ((tblMessage.desc and strlen(tblMessage.desc) > 0) and (tblMessage.message and strlen(tblMessage.message) > 0)) end,
-                    hidden = function() return not ns.isGuildLeader end,
                     func = function()
                         local msg = ns.gSettings.messageList or {}
                         local active = invActiveMessage
