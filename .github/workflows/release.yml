@@ -1,4 +1,4 @@
-name: Release AddOn
+name: "Release AddOn"
 
 #on: [push]
 on:
@@ -6,8 +6,8 @@ on:
     branches:
       - 'main/**'
     tags:
-      - "!**-alpha**"
-      - "!**-beta**"
+      - "-**-alpha**"
+      - "-**-beta**"
       - '**'
 
 env:
