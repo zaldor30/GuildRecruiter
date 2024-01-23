@@ -1,3 +1,6 @@
+## 2.2.44
+* Fixed an issue on single server realms, checking names would cause LUA error.
+
 ## 2.2.43
 * WARNING!! Data will be reset with this update.  This is due to the new database structure.
 * NOTE: Custom filters are under construction!!  They will be back soon.
@@ -14,7 +17,7 @@
 * Added saving of session data for later updates.
 * Added total counts for invited players and black list to analytics.
 * Scans will now resume from where you left off if you leave the scan screen and return.
-* Added reasons to unguilded players in /who results.
+* Added reasons to un-guilded players in /who results.
 * Only works when not in compact mode.
 * Moved custom filters and reworked to main icon bar.
 * Updated ACE3 libraries.

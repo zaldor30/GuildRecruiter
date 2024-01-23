@@ -539,9 +539,10 @@ function scanner:ShowResults(whichResult, refreshInvite)
             checkBox:SetLabel(ns.code:cPlayer(pName, pClass))
             checkBox:SetRelativeWidth(.85)
             checkBox:SetValue(false)
-            checkBox:SetCallback('OnValueChanged', function(_, _, value)
-                self.tblInvites[pName].isChecked = value
-                self:SetButtonStates()
+            checkBox:SetCallback('OnValueChanged', function(_,_, value)
+                local name = pName:match('-') and pName or pName..'-'..GetRealmName()
+                scanner.tblInvites[name].isChecked = value
+                scanner:SetButtonStates()
             end)
             tblFrame.scrollInvite:AddChild(checkBox)
 
