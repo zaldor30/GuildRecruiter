@@ -4,36 +4,20 @@ name: Release AddOn
 on:
   push:
     branches:
-      - master
-    tags:
-      - '**'
-      - "!**-alpha**"
-      - "!**-beta**"
-      - "!**-Alpha**"
-      - "!**-Beta**"
+      - 'main/**'
 
 env:
-  CF_API_KEY: ${{ secrets.CF_API_KEY }}
-  # WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
+CF_API_KEY: ${{ secrets.CF_API_KEY }}
 
 jobs:
-#  full_package_release:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v3
-#        with:
-#          fetch-depth: 0
+standalone_release:
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
 
-#      - uses: BigWigsMods/packager@v2
-
-  standalone_release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - uses: BigWigsMods/packager@v2
-        with:
-          pkgmeta: package_gr.pkgmeta
-          args: -p 882061
+    - uses: BigWigsMods/packager@v2
+      with:
+        pkgmeta: package_gr.pkgmeta
+        args: -p 882061
