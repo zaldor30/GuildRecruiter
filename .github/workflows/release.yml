@@ -3,7 +3,10 @@ name: 'Release AddOn'
 on:
   push:
     branches:
-      - 'main/**'
+      - 'main'
+    tags:
+      - '!**-alpha**'
+      - '!**-beta**'
     tags-ignore:
       - '**-alpha**'
       - '**-beta**'
@@ -19,8 +22,7 @@ standalone_release:
       with:
         fetch-depth: 0
 
-    - uses: BigWigsMods/packager@v2
+      - uses: BigWigsMods/packager@v2
       with:
         pkgmeta: package_gr.pkgmeta
         args: -p 882061
-        
