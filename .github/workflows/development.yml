@@ -8,27 +8,15 @@ name: Package and test
 on:
   push:
     branches:
-      #- development
-      - main
-    tags:
-      - '**'
+      - development
     #tags:
-      #- "**-alpha**"
-      #- "**-beta**"
+      - "**-alpha**"
+      - "**-beta**"
 
 env:
   CF_API_KEY: ${{ secrets.CF_API_KEY }}
 
 jobs:
-#  full_package_release:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v3
-#        with:
-#          fetch-depth: 0
-
-#      - uses: BigWigsMods/packager@v2
-
   standalone_release:
     runs-on: ubuntu-latest
     steps:
@@ -39,4 +27,4 @@ jobs:
       - uses: BigWigsMods/packager@v2
         with:
           pkgmeta: package_gr.pkgmeta
-          args: -a 882061
+          args: -p 882061
