@@ -1,3 +1,6 @@
+## 2.2.45
+* Fixed an issue with not being able to create/edit non-GM messages.
+
 ## 2.2.44
 * Fixed an issue on single server realms, checking names would cause LUA error.
 
