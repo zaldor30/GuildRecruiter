@@ -8,10 +8,11 @@ name: Package and test
 on:
   push:
     branches:
-      - development
-    tags:
-      - "**-alpha**"
-      - "**-beta**"
+      #- development
+      - main
+    #tags:
+      #- "**-alpha**"
+      #- "**-beta**"
 
 env:
   CF_API_KEY: ${{ secrets.CF_API_KEY }}
