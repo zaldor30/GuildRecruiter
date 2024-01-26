@@ -1,5 +1,10 @@
 # Guild Recruiter
 
+## 2.2.47 - Alpha
+- Fixed an specifying levels and then having to /rl before it would work.
+- Fixed issue with sending a welcome/greeting message when inviting from chat.
+- Fixed type in settings (HIDE minimap icon, should be SHOW minimap icon).
+
 ## 2.2.45
 - Fixed an issue with not being able to create/edit non-GM messages.
 

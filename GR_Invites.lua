@@ -59,9 +59,6 @@ local function UpdateInvitePlayerStatus(doUpdate, ...)
 
     local showGreeting = ns.gmSettings.sendGreeting or ns.gSettings.sendGreeting
     local msgGreeting = (ns.gmSettings.sendGreeting and ns.gmSettings.greetingMessage) and ns.gmSettings.greetingMessage or ns.gSettings.greetingMessage
-    if invite.tblSent[pName].skipGreetings then -- Set to skipGreetings so true would be false
-        showGreeting, showWelcome = false, false
-    end
 
     if msg:match(L['is not online']) then ns.code:dOut('Not Online') cancelInvite()
     elseif msg:match(L['has already been invited to a guild']) then cancelInvite()
@@ -70,11 +67,12 @@ local function UpdateInvitePlayerStatus(doUpdate, ...)
     elseif strlower(msg):match(L['no player named']) then cancelInvite()
     elseif msg:match(L['declines your guild invitation']) then updateSent('PlayersDeclined')
     elseif msg:match(L["joined the guild"]) then
-        if showWelcome and msgWelcome then
+        if not invite.tblSent[pName].skipGreetings and  showWelcome and msgWelcome then
             msgWelcome = ns.code:variableReplacement(msgWelcome, pName, 'REMOVE<>')
             SendChatMessage(msgWelcome, 'GUILD')
         end
-        if showGreeting and msgGreeting then
+
+        if not invite.tblSent[pName].skipGreetings and showGreeting and msgGreeting then
             msgGreeting = ns.code:variableReplacement(msgGreeting, pName, 'REMOVE<>')
             SendChatMessage(msgGreeting, 'WHISPER', nil, pName)
         end
@@ -195,7 +193,7 @@ function invite:InvitePlayer(name, sendGuildInvite, whisperMessage, skipGreeting
     end
 
     ns.analytics:saveStats('PlayersInvited')
-    self.tblSent[nameWithRealm] = { skipGreeting = skipGreetings, sentTime = GetTime() } or false
+    self.tblSent[nameWithRealm] = { skipGreetings = (skipGreetings or false), sentTime = GetTime() }
     self.sentCount = self.sentCount + 1
 
     if not manualInvite and self.antiSpam and ns.settings.inviteFormat ~= 1 then

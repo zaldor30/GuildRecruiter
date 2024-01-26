@@ -58,11 +58,16 @@ function scanner:Init()
     self.totalFilters = 0 -- Used for progress
 
     self.whisperMessage = nil
+
+    self.isNewLevels = false
     self.minLevel, self.maxLevel = 1, MAX_CHARACTER_LEVEL
 
     self.scanWaitTime = 0
 end
 function scanner:StartUp(whisperMessage, minLevel, maxLevel)
+    minLevel = tonumber(minLevel) or minLevel or 1
+    maxLevel = tonumber(maxLevel) or maxLevel or MAX_CHARACTER_LEVEL
+
     local tblBase, tblFrame = ns.screens.base.tblFrame, self.tblFrame
 
     ns.observer:Notify('CLOSE_SCREENS')
@@ -71,6 +76,8 @@ function scanner:StartUp(whisperMessage, minLevel, maxLevel)
     self.isCompact = ns.settings.isCompact or false
     self.activeFilter = ns.settings.activeFilter or 1
     self.whisperMessage = whisperMessage or nil
+
+    self.isNewLevels = (self.minLevel ~= minLevel or self.maxLevel ~= maxLevel) or false
     self.minLevel, self.maxLevel = (minLevel or 1), (maxLevel or MAX_CHARACTER_LEVEL)
 
     tblBase.backButton:SetShown(true)
@@ -616,6 +623,7 @@ function scanner:SwitchCompactMode()
     self:UpdateAnalyticsSection()
 
     if not self.tblFilter then self:BuildFilter()
+    elseif self.isNewLevels then self:BuildFilter(true, true)
     else scanner:GetNextFilterRecord('onlyDisplay') end
 
     tblBase.frame:SetSize(600, 470)

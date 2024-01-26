@@ -177,11 +177,14 @@ function code:ConvertDateTime(val, showHours)
     local d = date("*t", val)
     return (d and showHours) and string.format("%02d/%02d/%04d %02d:%02d", d.month, d.day, d.year, d.hour, d.minute) or (string.format("%02d/%02d/%04d", d.month, d.day, d.year) or nil)
 end
-function code:verifyRealm(realm)
+function code:verifyRealm(realm, realmOnly)
     if not realm then return end
 
-    if not realm:match('-') then return true
+    if not realmOnly and not realm:match('-') then return true
     elseif realm:match(GetRealmName()) then return true end
+
+    ns.ds.tblConnected = ns.ds.tblConnected or ns.ds:GetConnectedRealms()
+
     for k in pairs(ns.ds.tblConnected) do
         if realm:match(k) then return true end
     end
