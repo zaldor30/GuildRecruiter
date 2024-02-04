@@ -5,7 +5,7 @@ local ds = ns.ds
 
 function ds:Init()
     self.dbVersion = '3.0.0'
-    self.grVersion = '2.2.45'
+    self.grVersion = '2.2.47'
 
     self.tblRaces = self:races()
     self.tblClasses = self:classes()
@@ -22,7 +22,7 @@ function ds:WhatsNew()
                 Discord: https://discord.gg/ZtS6Q2sKRH
              (or click on the icon in the top left corner)|r
 
-    |CFFFFFF002.2.47 - Beta Notes|r
+    |CFFFFFF00v2.2.47 Notes|r
         * Fixed an specifying levels and then having to /rl before it would work.
         * Fixed issue with sending a welcome/greeting message when inviting from chat.
         * Fixed type in settings (HIDE minimap icon, should be SHOW minimap icon).

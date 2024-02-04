@@ -183,7 +183,7 @@ function code:verifyRealm(realm, realmOnly)
     if not realmOnly and not realm:match('-') then return true
     elseif realm:match(GetRealmName()) then return true end
 
-    ns.ds.tblConnected = ns.ds.tblConnected or ns.ds:GetConnectedRealms()
+    ns.ds.tblConnected = ns.ds.tblConnected or ns.ds:GetConnectedRealms() or {}
 
     for k in pairs(ns.ds.tblConnected) do
         if realm:match(k) then return true end
