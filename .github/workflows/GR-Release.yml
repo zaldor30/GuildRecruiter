@@ -1,5 +1,4 @@
-name: GR-Beta
-
+name: GR-Release
 on:
   push:
     branches:
