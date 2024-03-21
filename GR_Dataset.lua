@@ -5,7 +5,7 @@ local ds = ns.ds
 
 function ds:Init()
     self.dbVersion = '3.0.0'
-    self.grVersion = '2.2.47'
+    self.grVersion = '2.2.48'
 
     self.tblRaces = self:races()
     self.tblClasses = self:classes()
@@ -22,6 +22,8 @@ function ds:WhatsNew()
                 Discord: https://discord.gg/ZtS6Q2sKRH
              (or click on the icon in the top left corner)|r
 
+    |CFFFFFF00v2.2.48 Notes|r
+        * Bump in World of Warcraft version.
     |CFFFFFF00v2.2.47 Notes|r
         * Fixed an specifying levels and then having to /rl before it would work.
         * Fixed issue with sending a welcome/greeting message when inviting from chat.
@@ -56,68 +58,6 @@ function ds:WhatsNew()
             * Only works when not in compact mode.
         * Moved custom filters and reworked to main icon bar.
         * Updated ACE3 libraries.
-
-    |CFFFFFF00v2.1.42 Notes|r
-        * Increment for patch 10.2
-        * Added total invited players and black listed players in
-            analytics.
-        * Fixed error with default race filter.
-
-    |CFFFFFF00v2.1.40 Notes|r
-        * Fixes for invited players and black list anti-spam.
-
-    |CFFFFFF00v2.1.39 Notes|r
-        * Added compression to database for invited players and
-            black list.
-            |CFF55D0FFNote: This is to facilitate larger lists with less penealty
-            to performance while logging in.|r
-        * Changed anti-spam to base 7 days and up to 6 months.
-            |CFF55D0FFNote: Go into settings to make sure it is correct.|r
-        * Added anti-spam for when not forced by Guild Master.
-        * Added keybindings for inviting and scanning
-            (Found in settings, Invite Settings).
-            |CFF55D0FFNote: This does not overwrite any existing
-            keybindings in WoW.|r
-        * Players in instances will not be invited or messaged (fixed).
-        * Fixed issue with welcome message not using GM settings.
-        * Fixed issues with analytics not tracking black list and
-            invited players.
-        * Black listed players can be removed right away as long as
-            a sync has not occurred.
-
-I have posted the updated beta for it.
-
-    |CFFFFFF00v2.1.33 Notes|r
-        * Brought back adding black list players to the icon bar.
-        * Added the ability to send greeting/welcome message
-            when inviting via the menu (right click on
-            player name in chat).
-        * Added message length to greeting message and
-            restricted to 255 characters (1 message).
-        * Restricting welcome message to 255 characters.
-
-    |CFFFFFF00v2.1.33 Notes|r
-        * Fixed invite issue with connected realms.
-        * Fixed anti-spam issue with connected realms.
-        * UI improvements and clean up.
-        * Default message is guild wide on your account.
-            Meaning, if you change it on one character, it will
-            change on all.
-        * Added option to disable the 'What's New' message.
-        * Added skip if you don't want to invite a player right
-            now, it will add them to the skip list.
-        * Scans now remember where you left off if you close
-            the addon and reopen (note: not if you log off
-            or reload UI.)
-        * Compact mode now remembers when you click on the icon.
-        * Opened GM settings from any character on GM's account.
-        * Added guild welcome message to the GM settings window.
-        * Added auto sync on login (will begin 60 seconds
-            after login).
-        * Fixed issues with auto sync not transferring all data.
-
-        -> Sync with older versions will time out.
-        -> Everyone needs to be on the current version.
     ]]
 
     return title, msg, height, update
@@ -210,15 +150,9 @@ function ds:classes()
             name = class,
             icon = icons[classFile],
             color = select(4, GetClassColor(classFile)),
-            classFile = classFile,
+            classFile = strupper(classFile),
         }
     end
-
-    return tbl
-end
-function ds:classesByName()
-    local tbl, sorted = {}, ns.code:sortTableByField(self.tblClasses, 'name')
-    for _, r in pairs(sorted) do tbl[r.name] = r end
 
     return tbl
 end
@@ -257,7 +191,7 @@ function ds:races()
                 tbl[raceInfo.raceName] = {
                     ['id'] = raceInfo.raceID,
                     ['name'] = raceInfo.raceName,
-                    ['fileName'] = raceInfo.clientFileString,
+                    ['raceFile'] = strupper(raceInfo.clientFileString),
                 }
             end
         end

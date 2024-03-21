@@ -15,12 +15,96 @@ local function obsCloseScreens()
 
     ns.screens.base.tblFrame.statusText:SetText('')
 end
-
 function filter:Init()
     self.tblFrame = {}
-    self.tblFilter = nil
+    self.tblFilter = {}
     self.activeRecord = nil
+
+    self.tblRaceByFileName = {}
+    self.tblClassByFileName = {}
 end
+function filter:FilterTable()
+    local tblFunc = {}
+
+    -- Class/Race Table
+    function tblFunc:rNew(fileName, regionName, isChecked, id)
+        return {
+            id = id or nil,
+            fileName = fileName,
+            regionName = regionName,
+            isChecked = isChecked,
+        }
+    end
+    function tblFunc:rSave(listType, id, isChecked, fileName, regionName)
+        local tblFilter = filter.tblFilter
+        if not tblFilter then return end
+
+        local tbl = listType == 'CLASS' and tblFilter.CLASS or tblFilter.RACE
+
+        if not tbl[id] then tbl[id] = filter.filterData:rNew(fileName, regionName, isChecked)
+        else tbl[id].isChecked = isChecked end
+    end
+    function tblFunc:rGet(listType, key)
+        local tblFilter = filter.tblFilter
+        local tbl = listType == 'CLASS' and tblFilter.CLASS or tblFilter.RACE
+        if type(key) == 'string' then
+            key = strupper(key)
+            tbl = listType == 'CLASS' and tblFilter.tblClassByclassFile or tblFilter.tblRaceByclassFile end
+
+        return tbl[key]
+    end
+
+    -- Class/Race Routines
+    function tblFunc:createRecords()
+        local tblRaceByFileName = filter.tblRaceByFileName
+        local tblClassByFileName = filter.tblClassByFileName
+
+        for k, v in pairs(ns.tblRacesByName) do
+            filter.filterData:rSave('RACE', v.id, true, v.raceFile, v.name)
+            tblRaceByFileName[v.raceFile] = filter.filterData:rNew(v.raceFile, v.name, v.isChecked, k)
+        end
+        for k, v in pairs(ns.tblClassesByName) do
+            filter.filterData:rSave('CLASS', v.id, true, v.classFile, v.name)
+            tblClassByFileName[v.classFile] = filter.filterData:rNew(v.classFile, v.name, v.isChecked, k)
+        end
+    end
+
+    -- Filter Record Table
+    function tblFunc:fNew()
+        local newRecord = {
+            recordID = nil,
+            name = nil,
+            whoCommand = nil,
+            RACE = {},
+            CLASS = {},
+        }
+        newRecord.RACE.allChecked = true
+        newRecord.CLASS.allChecked = true
+
+        return newRecord
+    end
+    function tblFunc:fSave(name, whoCommand)
+        if not filter.tblFilter then return end
+
+        filter.tblFilter = {
+            recordID = filter.tblFilter.recordID or nil,
+            name = name or filter.tblFilter.name,
+            whoCommand = whoCommand or filter.tblFilter.whoCommand,
+            RACE = filter.tblFilter.RACE or {},
+            CLASS = filter.tblFilter.CLASS or {},
+        }
+    end
+    function tblFunc:fSaveCheck(listType, tbl)
+        if not filter.tblFilter then return end
+
+        filter.tblFilter[listType] = tbl
+    end
+    function tblFunc:fGetList()
+    end
+
+    return tblFunc
+end
+
 function filter:StartUp()
     local tblBase = ns.screens.base.tblFrame
 
@@ -28,358 +112,272 @@ function filter:StartUp()
     ns.observer:Notify('CLOSE_SCREENS')
     ns.observer:Register('CLOSE_SCREENS', obsCloseScreens)
 
+    -- Set Base Frame
     tblBase.backButton:SetShown(true)
-    tblBase.frame:SetSize(500, 500)
+    tblBase.frame:SetSize(500, 580)
     tblBase.frame:SetShown(true)
 
-    filter.fData:getFilters()
+    -- Create Filter Table
+    self.tblFilter = filter.filterData:fNew()
+    self.filterData:createRecords()
 
-    self:BuildFilterScreen()
-    self:BuildFilterTop()
-    self:BuildClassList()
-    self:BuildRaceList()
-
-    self:CheckEnable()
+    -- Create UI
+    self.createUI:BaseFilterUI()
+    self.createUI:BuildFilterTopUI()
+    self.createUI:BuildClassListUI()
+    self.createUI:BuildRaceListUI()
 end
-function filter:BuildFilterScreen()
-    local tblFrame, tblBase = self.tblFrame, ns.screens.base.tblFrame
+function filter:CreateUI()
+    local tblFunc = {}
+    local skipCheckmarks = false
 
-    local f = tblFrame.frame or CreateFrame('Frame', nil, tblBase.frame)
-    f:SetFrameStrata(DEFAULT_STRATA)
-    f:SetPoint('TOPLEFT', tblBase.topFrame, 'BOTTOMLEFT', -5, 20)
-    f:SetPoint('BOTTOMRIGHT', tblBase.statusBar, 'TOPRIGHT', 0, -5)
-    f:SetShown(true)
-    tblFrame.frame = f
+    -- CheckBox Routines
+    local function evaluateIfAllChecked(listType)
+        local checkBoxes = filter.tblFrame.inline[listType].checkBoxes
 
-    local inline = tblFrame.inline or aceGUI:Create('InlineGroup')
-    inline:SetLayout('Flow')
-    inline:SetPoint('TOPLEFT', f, 'TOPLEFT', 5, 0)
-    inline:SetPoint('BOTTOMRIGHT', f, 'BOTTOMRIGHT', 0, 5)
-    inline.frame:SetShown(true)
-    tblFrame.inline = inline
-end
-function filter:BuildFilterTop()
-    local tblFrame = self.tblFrame
-
-    local inline = aceGUI:Create('InlineGroup')
-    inline:SetLayout('Flow')
-    inline:SetFullWidth(true)
-    tblFrame.inline:AddChild(inline)
-
-    -- Title combobox
-    local combobox = aceGUI:Create('Dropdown')
-    combobox:SetLabel('Filter:')
-    combobox:SetRelativeWidth(.5)
-    combobox:SetList(filter.fData:getFilters())
-    combobox:SetCallback('OnValueChanged', function(_, _, val)
-        self.activeRecord = val
-        filter.fData:loadFilter(self.activeRecord)
-        self:CheckEnable()
-    end)
-    inline:AddChild(combobox)
-    tblFrame.inline.filterCombo = combobox
-
-    -- New Button
-    local btnNew = aceGUI:Create('Button')
-    btnNew:SetText('New Filter')
-    btnNew:SetRelativeWidth(.25)
-    btnNew:SetCallback('OnClick', function()
-        self.activeRecord = nil
-        filter.tblFilter = nil
-        tblFrame.inline.filterCombo:SetValue(nil)
-
-        self.fData:loadClassRace()
-        self:CheckEnable()
-    end)
-    inline:AddChild(btnNew)
-    tblFrame.inline.btnNew = btnNew
-
-    -- Delete Button
-    local btnDelete = aceGUI:Create('Button')
-    btnDelete:SetText('Delete Filter')
-    btnDelete:SetRelativeWidth(.25)
-    btnDelete:SetCallback('OnClick', function()
-        if not self.activeRecord then return end
-
-        local tblFilters = ns.dbGlobal.filterList and ns.dbGlobal.filterList or {}
-        tremove(tblFilters, self.activeRecord)
-        ns.dbGlobal.filterList = tblFilters
-
-        self.activeRecord = nil
-        filter.tblFilter = nil
-
-        tblFrame.inline.filterCombo:SetList(filter.fData:getFilters())
-        tblFrame.inline.filterCombo:SetValue(nil)
-
-        self.fData:loadClassRace()
-        self:CheckEnable()
-    end)
-    inline:AddChild(btnDelete)
-    tblFrame.inline.btnDelete = btnDelete
-
-    -- Filter Name
-    local editbox = aceGUI:Create('EditBox')
-    editbox:SetLabel('-- FILTERS ARE UNDER CONSTRUCTION-- FbtnFilter Name/Desc:')
-    editbox:SetRelativeWidth(.7)
-    editbox:SetCallback('OnEnterPressed', function(_,_, text)
-        local badName = false
-        local tblFilters = ns.dbGlobal.filterList and ns.dbGlobal.filterList or {}
-        for x=1,#tblFilters do
-            if strlower(tblFilters[x].name) == strlower(text) then
-                print(x, self.activeRecord)
-                if x ~= self.activeRecord then
-                    badName = true break end
-            end
-        end
-        if badName then
-            ns.screens.base.tblFrame.statusText:SetText(ns.code:cText('FFFF0000', 'Filter name already exists.'))
-            return
-        else ns.screens.base.tblFrame.statusText:SetText('') end
-
-        if filter.tblFilter then filter.tblFilter.name = text
-        else filter.tblFilter = filter.fData:new(text) end
-
-        self.activeRecord = 0
-
-        filter.fData:loadClassRace()
-        filter:CheckEnable()
-    end)
-    inline:AddChild(editbox)
-    tblFrame.inline.filterName = editbox
-
-    local btnSave = aceGUI:Create('Button')
-    btnSave:SetText('Save')
-    btnSave:SetRelativeWidth(.3)
-    btnSave:SetCallback('OnClick', function()
-        --if not filter.tblFilter then return end
-        if filter.tblFilter then return end
-
-        local tblFilters = ns.dbGlobal.filterList and ns.dbGlobal.filterList or {}
-
-        local badName = false
-        for x=1,#tblFilters do
-            if strlower(tblFilters[x].name) == strlower(filter.tblFilter.name) then
-                badName = true
+        skipCheckmarks = true
+        filter.tblFrame.inline[listType].checkBoxAll:SetValue(true)
+        for _, v in pairs(checkBoxes) do
+            if not v:GetValue() then
+                filter.tblFilter[listType].allChecked = false
+                filter.tblFrame.inline[listType].checkBoxAll:SetValue(false)
                 break
             end
         end
-        if badName then
-            ns.screens.base.tblFrame.statusText:SetText(ns.code:cText('FFFF0000', 'Filter name already exists.'))
-            return
+        skipCheckmarks = false
+    end
+    local function buildCheckBoxList(listType, control)
+        local tblList = listType == 'CLASS' and ns.tblClasses or ns.tblRaces
+        local tbl = ns.code:sortTableByField(tblList, 'name')
+
+        filter.tblFrame.inline[listType].checkBoxes = {}
+        for _, v in pairs(tbl) do
+            local fName = listType == 'CLASS' and ns.code:cText(v.color, v.name) or v.name
+            local checkBox = aceGUI:Create('CheckBox')
+            checkBox:SetLabel(fName)
+            checkBox:SetValue(filter.tblFilter[listType][v.id].isChecked or false)
+            checkBox:SetRelativeWidth(.5)
+            checkBox:SetCallback('OnValueChanged', function(_, _, isChecked)
+                filter.filterData:rSave(listType, v.id, isChecked)
+                evaluateIfAllChecked(listType)
+            end)
+            control:AddChild(checkBox)
+            filter.tblFrame.inline[listType].checkBoxes[v.id] = checkBox
         end
+    end
+    local function checkAllCheckBoxes(listType)
+        local checkBoxes = filter.tblFrame.inline[listType].checkBoxes
+        skipCheckmarks = true
 
-        if filter:CheckTheCheckBoxes() then return end
+        for _, v in pairs(checkBoxes) do
+            v:SetValue(filter.tblFilter[listType].allChecked)
+        end
+        skipCheckmarks = false
+    end
+    local function checkControls(disableSave)
+        -- New Button
+        filter.tblFrame.inline.btnNew:SetDisabled(not (filter.tblFilter.recordID or false))
 
-        local classes, races = {}, {}
-        for k, v in pairs(filter.tblFrame.CLASS) do classes[k.name] = v:GetValue() or false end
-        for k, v in pairs(filter.tblFrame.RACE) do races[k.name] = v:GetValue() or false end
+        -- Delete Button
+        filter.tblFrame.inline.btnDelete:SetDisabled(not (filter.tblFilter.recordID or false))
 
-        filter.tblFilter.classes = classes
-        filter.tblFilter.races = races
+        -- Save Button
+        filter.tblFrame.inline.btnSave:SetDisabled(disableSave or (not filter.tblFilter.name))
+    end
+    local function resetCustomFilter()
+        local tblFrame = filter.tblFrame
 
-        self.activeRecord = self.activeRecord > 0 and self.activeRecord or #tblFilters + 1
-        tblFilters[self.activeRecord] = filter.tblFilter
-        ns.dbGlobal.filterList = tblFilters
+        filter.tblFilter = filter.filterData:fNew()
 
-        tblFrame.inline.filterCombo:SetList(filter.fData:getFilters())
+        tblFrame.inline.filterName:SetText('')
+        tblFrame.inline.whoEditbox:SetText('')
+        tblFrame.inline.filterCombo:SetList(filter.filterData:fGetList())
 
-        self.activeRecord = nil
-        filter.tblFilter = nil
+        tblFrame.inline.RACE.checkBoxAll:SetValue(true)
+        tblFrame.inline.CLASS.checkBoxAll:SetValue(true)
 
-        self.fData:loadClassRace()
-        self:CheckEnable()
-    end)
-    inline:AddChild(btnSave)
-    tblFrame.inline.btnSave = btnSave
+        checkAllCheckBoxes('RACE')
+        checkAllCheckBoxes('CLASS')
 
-    -- Who Command Editor
-    local whoEditbox = aceGUI:Create('EditBox')
-    whoEditbox:SetLabel('Who Command (Chosse classes/races bellow):')
-    whoEditbox:SetFullWidth(true)
-    whoEditbox:SetCallback('OnEnterPressed', function(_, _, text)
-        if self.tblFilter then self.tblFilter.whoCommand = text end
+        checkControls()
+    end
 
-        local whoCommand = self.tblFilter and self.tblFilter.whoCommand or nil
-        if not whoCommand then return end
+    -- Base Filter UI
+    function tblFunc:BaseFilterUI()
+        local tblBase, tblFrame = ns.screens.base.tblFrame, filter.tblFrame
 
-        whoCommand = whoCommand:gsub('%d%d?%p%d%d?', '')
-    end)
-    inline:AddChild(whoEditbox)
-    tblFrame.inline.whoEditbox = whoEditbox
-end
--- Build Lists
-function filter:BuildCheckBoxList(listType, control, tblList, tblData)
-    control:ReleaseChildren()
-    self.tblFrame[listType] = {}
-    local tbl = ns.code:sortTableByField(tblList, 'name')
-    for _, v in pairs(tbl) do
-        local checkbox = aceGUI:Create('CheckBox')
-        checkbox:SetLabel(v.name)
-        checkbox:SetValue(tblData and (tblData[v] or false) or true)
-        checkbox:SetCallback('OnValueChanged', function(_,_, value)
-            tblData[v] = value
-            filter:CheckTheCheckBoxes()
+        local f = tblFrame.frame or CreateFrame('Frame', nil, tblBase.frame)
+        f:SetFrameStrata(DEFAULT_STRATA)
+        f:SetPoint('TOPLEFT', tblBase.topFrame, 'BOTTOMLEFT', -5, 15)
+        f:SetPoint('BOTTOMRIGHT', tblBase.statusBar, 'TOPRIGHT', 0, -5)
+        f:SetShown(true)
+        tblFrame.frame = f
+
+        local inline = tblFrame.inline or aceGUI:Create('InlineGroup')
+        inline:SetLayout('Flow')
+        inline:SetPoint('TOPLEFT', f, 'TOPLEFT', 5, 0)
+        inline:SetPoint('BOTTOMRIGHT', f, 'BOTTOMRIGHT', 0, 5)
+        inline.frame:SetShown(true)
+        tblFrame.inline = inline
+    end
+    function tblFunc:BuildFilterTopUI()
+        local tblFrame = filter.tblFrame
+
+        local inline = aceGUI:Create('InlineGroup')
+        inline:SetLayout('Flow')
+        inline:SetFullWidth(true)
+        tblFrame.inline:AddChild(inline)
+
+        -- Title combobox
+        local combobox = aceGUI:Create('Dropdown')
+        combobox:SetLabel(L['Custom Filters']..' (Still under development.):')
+        combobox:SetRelativeWidth(.5)
+        combobox:SetList(filter.filterData:fGetList())
+        combobox:SetCallback('OnValueChanged', function(_, _, val)
         end)
-        control:AddChild(checkbox)
-        self.tblFrame[listType][v] = checkbox
+        inline:AddChild(combobox)
+        tblFrame.inline.filterCombo = combobox
 
-        if tblData then
-            tblData[v] = type(tblData[v]) == 'boolean' and (tblData[v] or false) or true end
+        -- New Button
+        local btnNew = aceGUI:Create('Button')
+        btnNew:SetText(L['New'])
+        btnNew:SetRelativeWidth(.25)
+        btnNew:SetCallback('OnClick', function()
+            resetCustomFilter()
+        end)
+        inline:AddChild(btnNew)
+        tblFrame.inline.btnNew = btnNew
+
+        -- Delete Button
+        local btnDelete = aceGUI:Create('Button')
+        btnDelete:SetText(L['Delete'])
+        btnDelete:SetRelativeWidth(.25)
+        btnDelete:SetCallback('OnClick', function()
+
+        end)
+        inline:AddChild(btnDelete)
+        tblFrame.inline.btnDelete = btnDelete
+
+        -- Filter Name
+        local editbox = aceGUI:Create('EditBox')
+        editbox:SetLabel(L['Filter Name']..':')
+        editbox:SetRelativeWidth(.7)
+        editbox:SetCallback('OnEnterPressed', function(_,_, text)
+            local name = strlower(text)
+            local tblBase = ns.screens.base.tblFrame
+
+            tblBase.statusText:SetText('')
+            for _, r in pairs(ns.dbGlobal.filterList and ns.dbGlobal.filterList or {}) do
+                if strlower(r.name) == name then
+                    tblBase.statusText:SetText(L['Filter Name Already Exists'])
+                    checkControls('DISABLE_SAVE')
+                    editbox:SetFocus() -- Set focus back to the editbox
+                    return
+                end
+            end
+
+            filter.filterData:fSave(name)
+            checkControls()
+        end)
+        inline:AddChild(editbox)
+        tblFrame.inline.filterName = editbox
+
+        -- Save Button
+        local btnSave = aceGUI:Create('Button')
+        btnSave:SetText(L['Save'])
+        btnSave:SetRelativeWidth(.3)
+        btnSave:SetCallback('OnClick', function()
+            local tblBase = ns.screens.base.tblFrame
+
+            local tblFilters = ns.dbGlobal.filterList and ns.dbGlobal.filterList or {}
+
+        end)
+        inline:AddChild(btnSave)
+        tblFrame.inline.btnSave = btnSave
+
+        -- Who Command Editor
+        local whoEditbox = aceGUI:Create('EditBox')
+        whoEditbox:SetLabel(L['Who Command'])
+        whoEditbox:SetFullWidth(true)
+        whoEditbox:SetCallback('OnEnterPressed', function(_, _, text)
+            filter.tblFilter.whoCommand = text
+        end)
+        inline:AddChild(whoEditbox)
+        tblFrame.inline.whoEditbox = whoEditbox
+
+        checkControls()
     end
-end
-function filter:BuildClassList()
-    local tblFrame = self.tblFrame
 
-    local inline = aceGUI:Create('InlineGroup')
-    inline:SetLayout('Flow')
-    inline:SetRelativeWidth(.5)
-    inline:SetHeight(195)
-    inline:SetTitle('Classes')
-    tblFrame.inline:AddChild(inline)
+    -- Build CheckBox List UI
+    local scrollBoxHeight = 75
+    function tblFunc:BuildClassListUI()
+        local tblFrame = filter.tblFrame
+        tblFrame.inline.CLASS, tblFrame.inline.RACE = {}, {}
 
-    local scrollBox = aceGUI:Create('ScrollFrame')
-    scrollBox:SetLayout('Flow')
-    scrollBox:SetFullWidth(true)
-    scrollBox:SetHeight(150)
-    inline:AddChild(scrollBox)
-    tblFrame.inline.classScrollBox = scrollBox
+        local inline = aceGUI:Create('InlineGroup')
+        inline:SetTitle(L['Classes'])
+        inline:SetLayout('Flow')
+        inline:SetFullWidth(true)
+        inline:SetHeight(scrollBoxHeight)
+        tblFrame.inline:AddChild(inline)
+        tblFrame.inline.CLASS.inline = inline
 
-    self:BuildCheckBoxList('CLASS', scrollBox, ns.ds.tblClasses)
+        local checkBox = aceGUI:Create('CheckBox')
+        checkBox:SetLabel(ns.code:cText('FFFFFF00', 'Select/Deselect All Classes'))
+        checkBox:SetValue(true)
+        checkBox:SetRelativeWidth(1)
+        checkBox:SetCallback('OnValueChanged', function(_, _, isChecked)
+            if not skipCheckmarks then
+                filter.tblFilter.CLASS.allChecked = isChecked
+                checkAllCheckBoxes('CLASS')
+            end
+        end)
+        inline:AddChild(checkBox)
+        tblFrame.inline.CLASS.checkBoxAll = checkBox
 
-    local btnCheck = aceGUI:Create('Button')
-    btnCheck:SetText('Check All')
-    btnCheck:SetRelativeWidth(1)
-    btnCheck:SetCallback('OnClick', function()
-        for _, v in pairs(tblFrame.CLASS) do
-            v:SetValue(true)
-        end
-    end)
-    inline:AddChild(btnCheck)
-    tblFrame.inline.btnClassCheck = btnCheck
-end
-function filter:BuildRaceList()
-    local tblFrame = self.tblFrame
+        local scrollBox = aceGUI:Create('ScrollFrame')
+        scrollBox:SetLayout('Flow')
+        scrollBox:SetFullWidth(true)
+        scrollBox:SetHeight(scrollBoxHeight)
+        inline:AddChild(scrollBox)
 
-    local inline = aceGUI:Create('InlineGroup')
-    inline:SetLayout('Flow')
-    inline:SetRelativeWidth(.5)
-    inline:SetHeight(215)
-    inline:SetTitle('Races')
-    tblFrame.inline:AddChild(inline)
-
-    local scrollBox = aceGUI:Create('ScrollFrame')
-    scrollBox:SetLayout('Flow')
-    scrollBox:SetFullWidth(true)
-    scrollBox:SetHeight(145)
-    inline:AddChild(scrollBox)
-    tblFrame.inline.raceScrollBox = scrollBox
-
-    self:BuildCheckBoxList('RACE', scrollBox, ns.ds.tblRaces)
-
-    local btnCheck = aceGUI:Create('Button')
-    btnCheck:SetText('Check All')
-    btnCheck:SetRelativeWidth(1)
-    btnCheck:SetCallback('OnClick', function()
-        for _, v in pairs(tblFrame.RACE) do
-            v:SetValue(true)
-        end
-    end)
-    inline:AddChild(btnCheck)
-    tblFrame.inline.btnRaceCheck = btnCheck
-end
-
--- Filter Data
-function filter:tableFilterData()
-    local tblFunc = {}
-    function tblFunc:new(name)
-        return {
-            name = name or nil,
-            whoCommand = nil,
-            races = {},
-            classes = {},
-        }
+        buildCheckBoxList('CLASS', scrollBox)
     end
-    function tblFunc:getFilters()
-        local tblFilter = ns.dbGlobal.filterList and ns.dbGlobal.filterList or {}
+    function tblFunc:BuildRaceListUI()
+        local tblFrame = filter.tblFrame
 
-        local tbl = {}
-        for x=1,#tblFilter do
-            tinsert(tbl, tblFilter[x].name)
-        end
-        return tbl
-    end
-    function tblFunc:loadFilter(filterID)
-        if not filterID or filterID < 1 then return end
+        local inline = aceGUI:Create('InlineGroup')
+        inline:SetTitle(L['Races'])
+        inline:SetLayout('Flow')
+        inline:SetFullWidth(true)
+        inline:SetHeight(scrollBoxHeight)
+        --inline:SetPoint('TOPLEFT', tblFrame.inline.CLASS.inline.frame, 'TOPRIGHT')
+        tblFrame.inline:AddChild(inline)
 
-        local tblFilters = ns.dbGlobal.filterList and ns.dbGlobal.filterList or {}
-        local tblFilter = tblFilters[filterID]
-        filter.tblFrame.inline.filterName:SetText(tblFilter.name)
-        for k in pairs(filter.tblFrame.CLASS) do
-            filter.tblFrame.CLASS[k]:SetValue(tblFilter.classes[k.name] or false)
-        end
-        for k in pairs(filter.tblFrame.RACE) do
-            filter.tblFrame.RACE[k]:SetValue(tblFilter.races[k.name] or false)
-        end
-    end
-    function tblFunc:loadClassRace()
-        local tblFrame, tblFilter = ns.screens.filter.tblFrame.inline, ns.screens.filter.tblFilter
+        local checkBox = aceGUI:Create('CheckBox')
+        checkBox:SetLabel(ns.code:cText('FFFFFF00', 'Select/Deselect All Races'))
+        checkBox:SetValue(true)
+        checkBox:SetRelativeWidth(1)
+        checkBox:SetCallback('OnValueChanged', function(_, _, isChecked)
+            if not skipCheckmarks then
+                filter.tblFilter.RACE.allChecked = isChecked
+                checkAllCheckBoxes('RACE')
+            end
+        end)
+        inline:AddChild(checkBox)
+        tblFrame.inline.RACE.checkBoxAll = checkBox
 
-        filter:BuildCheckBoxList('RACE', tblFrame.raceScrollBox, ns.ds.tblRaces, (tblFilter and tblFilter.races or nil))
-        filter:BuildCheckBoxList('CLASS', tblFrame.classScrollBox, ns.ds.tblClasses, (tblFilter and tblFilter.classes or nil))
+        local scrollBox = aceGUI:Create('ScrollFrame')
+        scrollBox:SetLayout('Flow')
+        scrollBox:SetFullWidth(true)
+        scrollBox:SetHeight(scrollBoxHeight)
+        inline:AddChild(scrollBox)
 
-        tblFrame.filterName:SetText(tblFilter and tblFilter.name or nil)
-        tblFrame.whoEditbox:SetText(tblFilter and tblFilter.whoCommand or nil)
+        buildCheckBoxList('RACE', scrollBox)--]]
     end
 
     return tblFunc
 end
--- Set Enable/Disable
-function filter:CheckEnable()
-    local tblFrame = self.tblFrame.inline
-    local enableAll = false
-
-    if self.activeRecord and self.activeRecord > 0 then enableAll = true end
-
-    tblFrame.filterCombo:SetDisabled(enableAll)
-    tblFrame.whoEditbox:SetDisabled(not enableAll)
-
-    for _, v in pairs(self.tblFrame.CLASS) do
-        v:SetDisabled(not enableAll)
-    end
-
-    for _, v in pairs(self.tblFrame.RACE) do
-        v:SetDisabled(not enableAll)
-    end
-
-    tblFrame.btnNew:SetDisabled(not enableAll)
-    tblFrame.btnSave:SetDisabled(not enableAll)
-    tblFrame.btnDelete:SetDisabled(not (self.activeRecord and self.activeRecord > 0))
-    tblFrame.btnRaceCheck:SetDisabled(not enableAll)
-    tblFrame.btnClassCheck:SetDisabled(not enableAll)
-end
-function filter:CheckTheCheckBoxes()
-    ns.screens.base.tblFrame.statusText:SetText('')
-
-    local noClass = true
-    for _, v in pairs(filter.tblFilter.classes) do
-        if v then noClass = false break end
-    end
-    if noClass then
-        ns.screens.base.tblFrame.statusText:SetText(ns.code:cText('FFFF0000', 'You must select at least one class.'))
-        return true
-    end
-
-    local noRace = true
-    for _, v in pairs(filter.tblFilter.races) do
-        if v then noRace = false break end
-    end
-    if noRace then
-        ns.screens.base.tblFrame.statusText:SetText(ns.code:cText('FFFF0000', 'You must select at least one race.'))
-        return true
-    end
-
-    return false
-end
+filter.createUI = filter:CreateUI()
+filter.filterData = filter:FilterTable()
 filter:Init()
-
-filter.fData = filter:tableFilterData()

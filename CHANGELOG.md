@@ -1,5 +1,8 @@
 # Guild Recruiter
 
+## 2.2.48
+- Bump in World of Warcraft versioning for 10.2.6
+
 ## 2.2.47
 - Fixed an specifying levels and then having to /rl before it would work.
 - Fixed issue with sending a welcome/greeting message when inviting from chat.

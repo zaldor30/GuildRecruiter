@@ -18,6 +18,8 @@ L['has already been invited to a guild'] = true
 L['ENABLED'] = 'is enabled'
 L['DISABLED'] = 'is disabled'
 L['Disabled'] = true
+L['Check All'] = true
+L['Uncheck All'] = true
 
 -- Guild Message Replacement keys
 L['GUILDLINK'] = true
@@ -258,6 +260,7 @@ L['GM_DISABLE_NOTE'] = 'NOTE: Disabled options are controlled by the Guild Maste
 L['Invite Messages'] = true
 
 ----Custom Filters
+L['Filter'] = true
 L['Classes'] = true
 L['Races'] = true
 L['Choose a filter type'] = true
@@ -265,7 +268,7 @@ L['Custom Filters'] = true
 L['Select a filter to edit'] = true
 L['Create a new filter.'] = true
 L['Create/Edit Filter'] = true
-L['Filter Description'] = true
+L['Filter Name'] = true
 L['FILTER_DESC'] = 'Short description of the filter.'
 L['FILTER_CREATE_EDIT_DESC'] = 'Edit and/or create your filter.'
 L['FILTER_CLASS_NAME'] = 'Classes (Only select "All Classes" or multiple classes)'
@@ -277,6 +280,15 @@ L['CLASS_BOX_NAME'] = 'Select either all classes or role.'
 L['CLASS_BOX_DESC'] = 'This will filter out all classes except the selected roles.'
 L['RACE_BOX_NAME'] = 'Select either all races or roles.'
 L['RACE_BOX_DESC'] = 'This will filter out all races except the selected roles.'
+L['Who Command'] = 'Who Command Editor (Choose classes/races bellow):'
+
+---- Filter Editor
+L['New Filter'] = true
+L['Save Filter'] = true
+L['Delete Filter'] = true
+L['Select Filter'] = true
+L['Filter Name/Desc:'] = true
+L['Filter Name Already Exists'] = true
 
 ------Cutom Filter Command Instructions
 L['Filter Instructions and Commands'] = true

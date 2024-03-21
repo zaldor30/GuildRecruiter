@@ -24,7 +24,8 @@ function GR:OnInitialize()
             if not core.isEnabled then return end
             core:PerformRecordMaintenance()
 
-            ns.tblClassesByName = ns.ds:classesByName()
+            ns.tblRacesByName = ns.code:sortTableByField(ns.ds.tblRaces, 'name')
+            ns.tblClassesByName = ns.code:sortTableByField(ns.ds.tblClasses, 'name')
             ns.code.fPlayerName = ns.code:cPlayer('player')
 
             ns.invite:StartUp()
