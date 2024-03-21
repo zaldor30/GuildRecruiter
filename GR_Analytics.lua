@@ -34,8 +34,8 @@ function analytics:saveStats(index, amt, session)
         self.tblSavedSessions[date('%m%d%Y')] = self.tblSavedSessions[date('%m%d%Y')] or {}
         self.tblSavedSessions[date('%m%d%Y')] = self.tblSession
     end
-    ns.dbAP[index] = ns.code:inc(ns.dbAP[index], amt)
-    ns.dbAG[index] = ns.code:inc(ns.dbAG[index], amt)
+    ns.dbAP[index] = ns.dbAP[index] and ns.code:inc(ns.dbAP[index], amt) or amt
+    ns.dbAG[index] = ns.dbAG[index] and ns.code:inc(ns.dbAG[index], amt) or amt
 end
 function analytics:WaitingOnPlayer(index, amt)
     -- No saving to session only temporary data

@@ -2,9 +2,6 @@
 	"folders": [
 		{
 			"path": "."
-		},
-		{
-			"path": "C:/Users/jhart/Downloads/GuildRecruiter-2.1.42"
 		}
 	],
 	"settings": {
@@ -75,7 +72,12 @@
 			"ReloadUI",
 			"InterfaceOptionsFrame_OpenToCategory",
 			"GetClubFinderLink",
-			"CloseDropDownMenus"
+			"CloseDropDownMenus",
+			"CLASS",
+			"RACE",
+			"WHO",
+			"NAME",
+			"COLORS"
 		]
 	}
 }
