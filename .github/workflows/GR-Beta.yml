@@ -9,6 +9,7 @@ on:
       - "**-beta**"
     paths-ignore:
       - '.github/**'
+      - 'My_Documentation/**'
 
 jobs:
   standalone_release:

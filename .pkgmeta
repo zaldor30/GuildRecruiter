@@ -30,3 +30,4 @@ ignore:
   - .gitignore
   - .vscode
   - .README.md
+  - My_Documentation
