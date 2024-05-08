@@ -4,5 +4,4 @@
  ..\FrameXML\UI.xsd">
 
     <Script file = "enUS.lua"/>
-    <Script file = "esMX.lua"/>
 </Ui>

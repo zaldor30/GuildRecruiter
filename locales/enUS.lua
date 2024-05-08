@@ -233,7 +233,7 @@ L['GM_MESSAGE_DESC_2'] = ': Clickable link to allow player to join the guild.'
 L['GM_MESSAGE_DESC_3'] = ': Guild name ('
 L['GM_MESSAGE_DESC_4'] = ': Player name that is being invited to the guild.'
 L['GM_MESSAGE_ACTIVE'] = 'Invite Messages'
-L['GM_MESSAGE_ACTIVE_DESC'] = 'The messges that will be sent to potential recruits.'
+L['GM_MESSAGE_ACTIVE_DESC'] = 'The messges that will be sent to potential recruits.\n \nNote: You might need to /rl after a sync to see changes.'
 ------GM Buttons
 L['NEW_DESC'] = 'Add a new message.'
 L['Invite Description'] = true
@@ -287,6 +287,7 @@ L['New Filter'] = true
 L['Save Filter'] = true
 L['Delete Filter'] = true
 L['Select Filter'] = true
+L['Filter Saved'] = true
 L['Filter Name/Desc:'] = true
 L['Filter Name Already Exists'] = true
 

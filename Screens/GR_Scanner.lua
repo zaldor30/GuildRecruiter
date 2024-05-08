@@ -237,7 +237,7 @@ end
 function scanner:BuildScanSection()
     local inline = self.tblFrame.inline
     local tblControls = inline.controls or {}
-    local tblBase, tblFrame = ns.screens.base.tblFrame, self.tblFrame
+    local tblFrame = ns.screens.base.tblFrame
     local scrollHeight = 55
 
     local inlineBottomLeft = tblControls.inlineScanner or aceGUI:Create('InlineGroup')
@@ -378,9 +378,11 @@ function scanner:BuildFilter(skipNext, isReset)
             for i=min, max, 5 do
                 local rangeStart, rangeEnd = i, i + 5
                 if rangeEnd > max then rangeEnd = max end
-                tinsert(self.tblFilter, { name = c.name, query =  query..' '..rangeStart..'-'..rangeEnd })
+                --tinsert(self.tblFilter, { name = c.name, query =  query..' '..rangeStart..'-'..rangeEnd })
+                self.tblFilter[c.name] = { name = c.name, query =  query..' '..rangeStart..'-'..rangeEnd }
             end
         end
+
         self.tblFilter = ns.code:sortTableByField(self.tblFilter, 'name')
     end
     local function createRaceFilter()
@@ -441,7 +443,8 @@ function scanner:BuildFilter(skipNext, isReset)
         if self.tblFilter then self.tblFilter = createCustomFilter(tblFilter) end
     end
 
-    self.totalFilters = #self.tblFilter -- Used for progress
+    self.totalFilters = #self.tblFilter or 0 -- Used for progress
+
     if isReset then ns.screens.base.tblFrame.statusText:SetText('') end
     if not skipNext and #self.tblFilter > 0 then
         self:GetNextFilterRecord('DISPLAY_ONLY') end
@@ -453,7 +456,7 @@ function scanner:GetNextFilterRecord(onlyDisplay)
     local filter = self.tblFilter[1].query
     if not onlyDisplay then
         filter = table.remove(self.tblFilter, 1)
-        if #self.tblFilter == 0 then self:BuildFilter('SKIP') end
+        if self.totalFilters == 0 then self:BuildFilter('SKIP') end
 
         local function startWhoQuery()
             if ns.settings.showWho and FriendsFrame:IsShown() then

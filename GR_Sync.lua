@@ -232,8 +232,9 @@ function sync:ProcessIncommingData(sender, tblData)
     local gmNameData = tblData.guildInfo.guildLeaderName or nil
     if not ns.isGuildLeader and tblData.guildInfo.isGuildLeader then
         ns.db.global[C_Club.GetGuildClubId()].guildInfo = tblData.guildInfo
-        ns.dbGlobal.guildInfo.isGuildLeader = false
         ns.db.global[C_Club.GetGuildClubId()].gmSettings = tblData.gmSettings
+
+        ns.dbGlobal.guildInfo.isGuildLeader = false
     end
 
     local antiSpamCount = 0

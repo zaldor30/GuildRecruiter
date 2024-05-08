@@ -59,8 +59,10 @@ function code:sortTableByField(tbl, sortField, reverse)
 
     local keyArray = {}
     for key, rec in pairs(tbl) do
-        if type(key) == 'string' then rec.key = key end
-        table.insert(keyArray, rec)
+        if type(key) == 'string' then
+            rec.key = key
+            table.insert(keyArray, rec)
+        end
     end
 
     reverse = reverse or false
@@ -72,7 +74,6 @@ function code:sortTableByField(tbl, sortField, reverse)
     end
 
     table.sort(keyArray, sortFunc)
-
     return keyArray
 end
 -- Console Output

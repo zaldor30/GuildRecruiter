@@ -5,7 +5,7 @@ local ds = ns.ds
 
 function ds:Init()
     self.dbVersion = '3.0.0'
-    self.grVersion = '2.2.48'
+    self.grVersion = '2.2.49'
 
     self.tblRaces = self:races()
     self.tblClasses = self:classes()
@@ -21,6 +21,16 @@ function ds:WhatsNew()
          |CFF55D0FF** Please report any bugs or issues in Discord **
                 Discord: https://discord.gg/ZtS6Q2sKRH
              (or click on the icon in the top left corner)|r
+
+    |CFFFFFF00v2.2.49 Notes|r
+        Sorry all, have been taking a break from WoW and my computer for a bit.  I am back
+        and if you have an issue, please let me know in Discord or on CurseForge (quciker
+        response in Discord).  I will be working on the addon again and getting the filter
+        working soon, been kicking my butt.
+
+        * Bump in World of Warcraft versioning for 10.2.7
+        * Fixed an issue where Start Search would not work.
+        If you were having an issue clicking on players, let me know if still an issue.
 
     |CFFFFFF00v2.2.48 Notes|r
         * Bump in World of Warcraft version.

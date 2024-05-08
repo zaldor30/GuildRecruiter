@@ -1,4 +1,13 @@
 # Guild Recruiter
+## 2.2.49
+  Sorry all, have been taking a break from WoW and my computer for a bit.  I am back
+  and if you have an issue, please let me know in Discord or on CurseForge (quciker
+  response in Discord).  I will be working on the addon again and getting the filter
+  working soon, been kicking my butt.
+
+- Bump in World of Warcraft versioning for 10.2.7
+- Fixed an issue where Start Search would not work.
+  If you were having an issue clicking on players, let me know if still an issue.
 
 ## 2.2.48
 - Bump in World of Warcraft versioning for 10.2.6
