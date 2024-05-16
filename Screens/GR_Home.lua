@@ -190,7 +190,7 @@ function home:BuildInviteArea()
             return
         end
 
-        ns.screens.scanner:StartUp(msg, ns.settings.minLevel, ns.settings.maxLevel)
+        ns.screens.scanner:StartUp(msg)
     end)
     inline:AddChild(scanButton)
     tblFrame.scanButton = scanButton
