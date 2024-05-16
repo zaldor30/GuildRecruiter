@@ -557,7 +557,7 @@ function scanner:ShowResults(whichResult, refreshInvite)
             checkBox:SetValue(false)
             checkBox:SetCallback('OnValueChanged', function(_,_, value)
                 local name = (not scanner.tblInvites[pName] and not pName:match('-')) and pName..'-'..GetRealmName() or pName
-                if not not scanner.tblInvites[pName] then return end
+                if not scanner.tblInvites[name] then return end
 
                 scanner.tblInvites[name].isChecked = value
                 scanner:SetButtonStates()
