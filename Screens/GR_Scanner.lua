@@ -64,9 +64,9 @@ function scanner:Init()
 
     self.scanWaitTime = 0
 end
-function scanner:StartUp(whisperMessage, minLevel, maxLevel)
-    minLevel = tonumber(minLevel) or minLevel or 1
-    maxLevel = tonumber(maxLevel) or maxLevel or MAX_CHARACTER_LEVEL
+function scanner:StartUp(whisperMessage)
+    local minLevel = ns.settings.minLevel or 1
+    local maxLevel = ns.settings.maxLevel or MAX_CHARACTER_LEVEL
 
     local tblBase, tblFrame = ns.screens.base.tblFrame, self.tblFrame
 
@@ -78,7 +78,7 @@ function scanner:StartUp(whisperMessage, minLevel, maxLevel)
     self.whisperMessage = whisperMessage or nil
 
     self.isNewLevels = (self.minLevel ~= minLevel or self.maxLevel ~= maxLevel) or false
-    self.minLevel, self.maxLevel = (minLevel or 1), (maxLevel or MAX_CHARACTER_LEVEL)
+    self.minLevel, self.maxLevel = (tonumber(minLevel) or 1), (tonumber(maxLevel) or MAX_CHARACTER_LEVEL)
 
     tblBase.backButton:SetShown(true)
     tblBase.resetButton:SetShown(true)
@@ -370,31 +370,37 @@ function scanner:BuildFilter(skipNext, isReset)
     self.tblFilter = {}
 
     local filter = ns.dbGlobal.filter
-    local min, max = (self.minLevel), (self.maxLevel)
+    local recordCounter = 0
 
     local function createClassFilter()
         for _,c in pairs(ns.tblClassesByName) do
             local query = 'c-"'..c.name..'"'
-            for i=min, max, 5 do
-                local rangeStart, rangeEnd = i, i + 5
-                if rangeEnd > max then rangeEnd = max end
-                --tinsert(self.tblFilter, { name = c.name, query =  query..' '..rangeStart..'-'..rangeEnd })
-                self.tblFilter[c.name] = { name = c.name, query =  query..' '..rangeStart..'-'..rangeEnd }
+            local min, max = self.minLevel, self.maxLevel
+
+            while (min <= max) do
+                recordCounter = recordCounter + 1
+                local rangeEnd = min + 5 > max and max or min + 5
+                self.tblFilter[recordCounter] = { name = c.name, query = query..' '..min..'-'..rangeEnd }
+
+                min = (rangeEnd < max and (rangeEnd - min > 0)) and rangeEnd or max + 1
+                if max - min > 0 then min = min + 1 end
             end
         end
-
-        self.tblFilter = ns.code:sortTableByField(self.tblFilter, 'name')
     end
     local function createRaceFilter()
-        for _,r in pairs(ns.tblRaces) do
+        for _,r in pairs(ns.tblRacesByName) do
             local query = 'r-"'..r.name..'"'
-            for i=min, max, 5 do
-                local rangeStart, rangeEnd = i, i + 5
-                if rangeEnd > max then rangeEnd = max end
-                tinsert(self.tblFilter, { name = r.name, query = query..' '..rangeStart..'-'..rangeEnd })
+            local min, max = self.minLevel, self.maxLevel
+
+            while (min <= max) do
+                recordCounter = recordCounter + 1
+                local rangeEnd = min + 5 > max and max or min + 5
+                self.tblFilter[recordCounter] = { name = r.name, query = query..' '..min..'-'..rangeEnd }
+
+                min = (rangeEnd < max and (rangeEnd - min > 0)) and rangeEnd or max + 1
+                if max - min > 0 then min = min + 1 end
             end
         end
-        self.tblFilter = ns.code:sortTableByField(self.tblFilter, 'name')
     end
     local function createCustomFilter(filterList)
         if not filterList then return end
@@ -550,7 +556,9 @@ function scanner:ShowResults(whichResult, refreshInvite)
             checkBox:SetRelativeWidth(.85)
             checkBox:SetValue(false)
             checkBox:SetCallback('OnValueChanged', function(_,_, value)
-                local name = pName:match('-') and pName or pName..'-'..GetRealmName()
+                local name = (not scanner.tblInvites[pName] and not pName:match('-')) and pName..'-'..GetRealmName() or pName
+                if not not scanner.tblInvites[pName] then return end
+
                 scanner.tblInvites[name].isChecked = value
                 scanner:SetButtonStates()
             end)
@@ -568,8 +576,14 @@ function scanner:ShowResults(whichResult, refreshInvite)
             for _, r in pairs(self.tblWho) do
                 local name = ns.tblConnectedRealms and r.fullName or (r.fullName:match('-') or r.fullName..'-'..GetRealmName())
                 if (not r.guild or r.guild == '') and ns.invite:CheckIfCanBeInvited(r) then
-                    self.tblInvites[name] = r
-                    self.tblInvites[name].isChecked = false
+                    self.tblInvites[name] = {
+                        fullName = r.fullName,
+                        zone = r.zone,
+                        guild = r.guild,
+                        class = r.class,
+                        level = r.level,
+                        isChecked = false
+                    }
                 end
             end
         end
