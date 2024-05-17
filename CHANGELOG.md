@@ -1,5 +1,5 @@
 # Guild Recruiter
-## 2.2.50 (Beta)
+## 2.2.50
 - Fix issue give nil error when trying to skip/black list a player.
 - Fix issue with min/max level not working properly.
 
