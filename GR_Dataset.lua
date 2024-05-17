@@ -5,7 +5,7 @@ local ds = ns.ds
 
 function ds:Init()
     self.dbVersion = '3.0.0'
-    self.grVersion = '2.2.49'
+    self.grVersion = '2.2.50'
 
     self.tblRaces = self:races()
     self.tblClasses = self:classes()
@@ -22,6 +22,9 @@ function ds:WhatsNew()
                 Discord: https://discord.gg/ZtS6Q2sKRH
              (or click on the icon in the top left corner)|r
 
+    |CFFFFFF00v2.2.50 Notes|r
+        * Fix issue give nil error when trying to skip/black list a player.
+        * Fix issue with min/max level not working properly.
     |CFFFFFF00v2.2.49 Notes|r
         Sorry all, have been taking a break from WoW and my computer for a bit.  I am back
         and if you have an issue, please let me know in Discord or on CurseForge (quciker
