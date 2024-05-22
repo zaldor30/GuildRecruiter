@@ -22,6 +22,8 @@ function ds:WhatsNew()
                 Discord: https://discord.gg/ZtS6Q2sKRH
              (or click on the icon in the top left corner)|r
 
+    |CFFFFFF00v2.2.52 Notes|r
+        * Forgot to enable old dungeons and raids when inviting players.
     |CFFFFFF00v2.2.51 Notes|r
         * Fix issue give nil error when filter is finished and will now restart.
     |CFFFFFF00v2.2.50 Notes|r
@@ -111,29 +113,29 @@ function ds:invalidZones()
         --raids
         ["Amirdrassil, the Dream's Hope"] = { id = 0, name = "Amirdrassil, the Dream's Hope", reason = 'Season 3 Raid' },
         ["Aberrus, the Shadowed Crucible"] = {  id = 2569, name = "Aberrus, the Shadowed Crucible", reason = 'Season 2 Raid' },
-        --[2522] = { name = "Vault of the Incarnates", reason = 'Season 1 Raid' },
+        ["Vault of the Incarnates"] = { id = 2522, name = "Vault of the Incarnates", reason = 'Season 1 Raid' },
         --dungeons
-        --[2451] = { name = "Uldaman: Legacy of Tyr", reason = 'DF Dungeon' },
-        --[2515] = { name = "The Azure Vault", reason = 'DF Dungeon' },
-        --[2516] = { name = "The Nokhud Offensive", reason = 'DF Dungeon' },
-        --[2519] = { name = "Neltharus", reason = 'DF Dungeon' },
-        --[2520] = { name = "Brackenhide Hollow", reason = 'DF Dungeon' },
-        --[2521] = { name = "Ruby Life Pools", reason = 'DF Dungeon' },
-        --[2526] = { name = "Algeth'ar Academy", reason = 'DF Dungeon' },
-        --[2527] = { name = "Halls of Infusion", reason = 'DF Dungeon' },
+        [2451] = { name = "Uldaman: Legacy of Tyr", reason = 'DF Dungeon' },
+        [2515] = { name = "The Azure Vault", reason = 'DF Dungeon' },
+        [2516] = { name = "The Nokhud Offensive", reason = 'DF Dungeon' },
+        [2519] = { name = "Neltharus", reason = 'DF Dungeon' },
+        [2520] = { name = "Brackenhide Hollow", reason = 'DF Dungeon' },
+        [2521] = { name = "Ruby Life Pools", reason = 'DF Dungeon' },
+        [2526] = { name = "Algeth'ar Academy", reason = 'DF Dungeon' },
+        [2527] = { name = "Halls of Infusion", reason = 'DF Dungeon' },
             --M+ rotating
-        ["Freehold"] = { id = 1754, name = "Freehold", reason = 'Season 2 Dungeon' },
-        ["The Underrot"] = { id = 1841, name = "The Underrot", reason = 'Season 2 Dungeon' },
-        ["Neltharion's Lair"] = { id = 1458, name = "Neltharion's Lair", reason = 'Season 2 Dungeon' },
-        ["The Vortex Pinnacle"] = { id = 657, name = "The Vortex Pinnacle", reason = 'Season 2 Dungeon' },
-        ["Darkheart Thicket"] = { id = 1466, name = "Darkheart Thicket", reason = 'Season 3 Dungeon' },
-        ['Black Rook Hold'] = { id = 1501, name = 'Black Rook Hold', reason = 'Season 3 Dungeon' },
-        ['Waycrest Manor'] = { id = 1862, name = 'Waycrest Manor', reason = 'Season 3 Dungeon' },
-        ["Atal'Dazar"] = { id = 1763, name = "Atal'Dazar", reason = 'Season 3 Dungeon' },
-        ['The Everbloom'] = { id = 1279, name = 'The Everbloom', reason = 'Season 3 Dungeon' },
-        ['Throne of Tides'] = { id = 643, name = 'Throne of Tides', reason = 'Season 3 Dungeon' },
-        ["Dawn of the Infinite: Galakrond's Fall"] = { id = 0, name = "Dawn of the Infinite: Galakrond's Fall", reason = 'Season 3 Dungeon' },
-        ["Dawn of the Infinite Murozond's Rise"] = { id = 0, name = "Dawn of the Infinite Murozond's Rise", reason = 'Season 3 Dungeon' },
+        --["Freehold"] = { id = 1754, name = "Freehold", reason = 'Season 2 Dungeon' },
+        --["The Underrot"] = { id = 1841, name = "The Underrot", reason = 'Season 2 Dungeon' },
+        --["Neltharion's Lair"] = { id = 1458, name = "Neltharion's Lair", reason = 'Season 2 Dungeon' },
+        --["The Vortex Pinnacle"] = { id = 657, name = "The Vortex Pinnacle", reason = 'Season 2 Dungeon' },
+        --["Darkheart Thicket"] = { id = 1466, name = "Darkheart Thicket", reason = 'Season 3 Dungeon' },
+        --['Black Rook Hold'] = { id = 1501, name = 'Black Rook Hold', reason = 'Season 3 Dungeon' },
+        --['Waycrest Manor'] = { id = 1862, name = 'Waycrest Manor', reason = 'Season 3 Dungeon' },
+        --["Atal'Dazar"] = { id = 1763, name = "Atal'Dazar", reason = 'Season 3 Dungeon' },
+        --['The Everbloom'] = { id = 1279, name = 'The Everbloom', reason = 'Season 3 Dungeon' },
+        --['Throne of Tides'] = { id = 643, name = 'Throne of Tides', reason = 'Season 3 Dungeon' },
+        --["Dawn of the Infinite: Galakrond's Fall"] = { id = 0, name = "Dawn of the Infinite: Galakrond's Fall", reason = 'Season 3 Dungeon' },
+        --["Dawn of the Infinite Murozond's Rise"] = { id = 0, name = "Dawn of the Infinite Murozond's Rise", reason = 'Season 3 Dungeon' },
     }
 
     return tbl

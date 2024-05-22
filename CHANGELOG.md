@@ -1,4 +1,6 @@
 # Guild Recruiter
+## 2.2.52
+- Forgot to enable old dungeons and raids when inviting players.
 ## 2.2.51
 - Fix issue give nil error when filter is finished and will now restart.
 ## 2.2.50
