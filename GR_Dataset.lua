@@ -22,6 +22,8 @@ function ds:WhatsNew()
                 Discord: https://discord.gg/ZtS6Q2sKRH
              (or click on the icon in the top left corner)|r
 
+    |CFFFFFF00v2.2.51 Notes|r
+        * Fix issue give nil error when filter is finished and will now restart.
     |CFFFFFF00v2.2.50 Notes|r
         * Fix issue give nil error when trying to skip/black list a player.
         * Fix issue with min/max level not working properly.

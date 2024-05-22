@@ -415,6 +415,7 @@ function scanner:BuildFilter(skipNext, isReset)
 
             local tbl = {}
             local function buildLevelFilter(filterOut)
+                local min, max = self.minLevel, self.maxLevel
                 for i=min, max, 5 do
                     local rangeStart, rangeEnd = i, i + 4
                     if rangeEnd > max then rangeEnd = max end
@@ -457,12 +458,13 @@ function scanner:BuildFilter(skipNext, isReset)
 end
 function scanner:GetNextFilterRecord(onlyDisplay)
     local tblControls = self.tblFrame.inline.controls
-    if #self.tblFilter == 0 then self:BuildFilter(true) return end
 
-    local filter = self.tblFilter[1].query
+    local filter = (self.tblFilter and self.tblFilter[1]) and self.tblFilter[1].query or nil
     if not onlyDisplay then
+        if #self.tblFilter <= 0 and not filter then self:BuildFilter(true, true) return end
+
         filter = table.remove(self.tblFilter, 1)
-        if self.totalFilters == 0 then self:BuildFilter('SKIP') end
+        if not filter then return end
 
         local function startWhoQuery()
             if ns.settings.showWho and FriendsFrame:IsShown() then
@@ -491,14 +493,15 @@ function scanner:GetNextFilterRecord(onlyDisplay)
         startWhoQuery()
         self:ProgressPercent()
 
+        if not self.tblFilter or #self.tblFilter == 0 then self:BuildFilter(true) end
         waitTimer((ns.settings.scanWaitTime or SCAN_WAIT_TIME), filter)
     end
 
     self:ProgressPercent()
-    tblControls.lblNextFilter:SetText(ns.code:cText('FF00FF00', self.tblFilter[1].query))
+    tblControls.lblNextFilter:SetText(ns.code:cText('FF00FF00', (#self.tblFilter > 0 and self.tblFilter[1].query or 'Restarting Query')))
 end
 function scanner:ProgressPercent()
-    local percent = (self.totalFilters - #self.tblFilter) / self.totalFilters
+    local percent = (self.totalFilters - (self.tblFilter and #self.tblFilter or 0)) / self.totalFilters
     local statusMsg = 'Filter progress: '..FormatPercentage(percent, 2)
     ns.screens.base.tblFrame.statusText:SetText(statusMsg)
 end
