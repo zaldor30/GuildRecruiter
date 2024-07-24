@@ -1,4 +1,4 @@
-## X-Curse-Project-ID: 882061
+## X-Curse-Project-ID: 110000
 
 ## Interface: 100207
 ## Version: 2.2.51
