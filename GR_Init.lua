@@ -5,13 +5,17 @@ ICON_PATH = 'Interface\\AddOns\\GuildRecruiter\\Images\\'
 
 GR = LibStub('AceAddon-3.0'):NewAddon('GuildRecruiter', 'AceConsole-3.0', 'AceEvent-3.0', 'AceHook-3.0', 'AceComm-3.0')
 GR.debug = false
+GR.author  = C_AddOns.GetAddOnMetadata('GuildRecruiter', 'Author')
+GR.version = C_AddOns.GetAddOnMetadata('GuildRecruiter', 'Version')
+
+-- Icons
 GR.icon = ICON_PATH..'GR_Icon.tga'
-GR.author  = GetAddOnMetadata('GuildRecruiter', 'Author')
-GR.version = GetAddOnMetadata('GuildRecruiter', 'Version')
+BUTTON_LOCKED = ICON_PATH..'GR_Locked'
+BUTTON_UNLOCKED = ICON_PATH..'GR_Unlocked'
 
 -- Global Variables
-SECONDS_IN_A_DAY = 86400
 PLAYER_PROFILE = UnitName('player')..'-'..GetRealmName()
+SECONDS_IN_A_DAY = 86400
 MAX_CHARACTER_LEVEL = GetMaxPlayerLevel()
 
 -- Backdrop Templates
@@ -53,7 +57,3 @@ SKURRI_FONT = 'Fonts\\SKURRI.ttf'
 DEFAULT_FONT = 'Fonts\\FRIZQT__.ttf'
 MORPHEUS_FONT = 'Fonts\\MORPHEUS.ttf'
 DEFAULT_FONT_SIZE = 12
-
--- Icons
-BUTTON_LOCKED = ICON_PATH..'GR_Locked'
-BUTTON_UNLOCKED = ICON_PATH..'GR_Unlocked'
