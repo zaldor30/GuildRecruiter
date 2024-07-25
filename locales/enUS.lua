@@ -14,8 +14,22 @@ L["declines your guild invitation"] = true
 L["has already been invited to a guild"] = true
 
 -- * Icon Menu and Slash Commands
-L["help"] = true
-L["config"] = true
-L["reload"] = true
-L["recruiter"] = true
-L["blacklist"] = true
+L["HELP"] = 'help'
+L["CONFIG"] = 'cofig'
+L["RELOAD"] = 'reload'
+L["RECRUITER"] = 'recruiter'
+L["BLACKLIST"] = 'blacklist'
+
+-- * GR General Messages
+L['IS_ENABLED'] = ' is enabled.'
+
+-- * Default Values
+L['DEFAULT_GUILD_WELCOME'] = 'Welcome PLAYERNAME to GUILDNAME!' -- Default Guild Welcome Message
+
+-- * GR Core Messages
+L['GUILD_LINK_INSTRUCTIONS'] = 'You can create a guild link only after setting up recruitment under (Guild and Communities).  Once you have done that type /rl to create a link.'
+
+-- ? GR Error Messages
+L['NO GUILD'] = "You are not in a guild."
+L['NOT_LOADED'] = 'Guild Recruiter will not load.'
+L['CANNOT_INVITE'] = 'You do not have permission to invite to the guild.'

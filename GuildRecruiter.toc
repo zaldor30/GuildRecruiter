@@ -32,7 +32,7 @@ locales\Locales.xml
 
 GR_Init.lua
 
-GR_Code.lua
+shared\GR_Code.lua
 ##GR_Sync.lua
 ##GR_Events.lua
 ##GR_Dataset.lua
@@ -40,7 +40,7 @@ GR_Code.lua
 ##GR_BlackList.lua
 ##GR_Analytics.lua
 
-##GR_Core.lua
+GR_Core.lua
 ##GR_Settings.lua
 
 ##Screens\GR_Base.lua
