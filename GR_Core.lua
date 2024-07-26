@@ -230,7 +230,7 @@ function core:StartMiniMapIcon()
         icon = GR.icon,
         OnClick = function(_, button)
             if button == 'LeftButton' then ns.screens.home:StartUp()
-            elseif button == 'RightButton' then InterfaceOptionsFrame_OpenToCategory(ns.addonOptions) end
+            elseif button == 'RightButton' then Settings.(ns.addonOptions) end
         end,
         OnTooltipShow = function(GameTooltip)
             local title = code:cText('FFFFFF00', L['TITLE']..' v'..GR.version..':')

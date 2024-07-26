@@ -63,3 +63,25 @@ Right Click: Open Config
 
 %AntiSpam in invited list.
 %BlackList in blacklisted list.]]
+
+-- * GR Config Window Messages
+L['General Settings'] = true
+
+-- ? GR Config Window Tooltips
+L['GEN_TOOLTIPS'] = 'Show all tooltips'
+L['GEN_TOOLTIP_DESC'] = 'Show all tooltips in the Guild Recruiter addon'
+L['GEN_MINIMAP'] = 'Show Minimap Icon'
+L['GEN_MINIMAP_DESC'] = 'Show the Guild Recruiter minimap icon.'
+L['GEN_CONTEXT'] = 'Enable inviting from chat'
+L['GEN_CONTEXT_DESC'] = 'Show the Guild Recruiter context menu when right clicking a name in chat.'
+L['GEN_WHATS_NEW'] = 'Show What\'s New?'
+L['GEN_WHATS_NEW_DESC'] = 'Show the What\'s New? window when Guild Recruiter is updated.'
+L['GEN_ADDON_MESSAGES'] = 'Show System Messages'
+L['GEN_ADDON_MESSAGES_DESC'] = 'Show system messages from Guild Recruiter.'
+L['KEYBINDING_HEADER'] = 'Keybindings'
+L['KEYBINDING_INVITE'] = 'Invite Keybinding'
+L['KEYBINDING_INVITE_DESC'] = 'Keybinding to invite a player to the guild.'
+L['KEYBINDING_SCAN'] = 'Scan Keybinding'
+L['KEYBINDING_SCAN_DESC'] = 'Keybinding to scan for players looking for a guild.'
+L['KEY_BINDING_NOTE'] = 'Note: Keybinds will not effect WoW keybindings.'
+L['GEN_ACCOUNT_WIDE'] = 'indicates effects all guild-wide characters'
