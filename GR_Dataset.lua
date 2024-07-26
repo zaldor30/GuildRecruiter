@@ -5,7 +5,7 @@ local ds = ns.ds
 
 function ds:Init()
     self.dbVersion = '3.0.0'
-    self.grVersion = '2.2.50'
+    self.grVersion = '2.2.53'
 
     self.tblRaces = self:races()
     self.tblClasses = self:classes()
@@ -16,11 +16,16 @@ function ds:WhatsNew()
     local update = false -- True and will save seen message
     local height = 410 -- Adjust size of what's new window
     local title, msg = '', ''
-    title = ns.code:cText('FFFFFF00', "What's new in v"..GR.version.."?")
+    title = ns.code:cText('FFFFFF00', "What's new in v"..GR.version.." (Beta)?")
     msg = [[
          |CFF55D0FF** Please report any bugs or issues in Discord **
                 Discord: https://discord.gg/ZtS6Q2sKRH
              (or click on the icon in the top left corner)|r
+
+    |CFFFFFF00v2.2.53 Notes|r
+        * Removed server restrictions
+        * Fixed issue with options not opening up
+        * Added a delay to sending messages after player joins guild
 
     |CFFFFFF00v2.2.52 Notes|r
         * Forgot to enable old dungeons and raids when inviting players.
