@@ -33,15 +33,15 @@ locales\Locales.xml
 GR_Init.lua
 
 shared\GR_Code.lua
-##GR_Sync.lua
-##GR_Events.lua
-##GR_Dataset.lua
+shared\GR_Events.lua
+shared\GR_Dataset.lua
 ##GR_Invites.lua
 ##GR_BlackList.lua
 ##GR_Analytics.lua
 
+##GR_Sync.lua
 GR_Core.lua
-##GR_Settings.lua
+GR_Settings.lua
 
 ##Screens\GR_Base.lua
 ##Screens\GR_Home.lua

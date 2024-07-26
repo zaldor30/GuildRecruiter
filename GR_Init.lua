@@ -5,6 +5,7 @@ ICON_PATH = 'Interface\\AddOns\\GuildRecruiter\\Images\\'
 
 GR = LibStub('AceAddon-3.0'):NewAddon('GuildRecruiter', 'AceConsole-3.0', 'AceEvent-3.0', 'AceHook-3.0', 'AceComm-3.0')
 GR.debug = false
+GR.isBeta = true
 GR.author  = C_AddOns.GetAddOnMetadata('GuildRecruiter', 'Author')
 GR.version = C_AddOns.GetAddOnMetadata('GuildRecruiter', 'Version')
 
@@ -45,6 +46,7 @@ TOOLTIP_STRATA = 'TOOLTIP'
 DEFAULT_STRATA = BACKGROUND_STRATA
 
 -- Default Colors
+GRColor = 'FF3EB9D8' -- Guild Recruiter Color
 GM_DESC_COLOR = 'FFAF640C'
 
 -- Highlgiht Images

@@ -21,15 +21,45 @@ L["RECRUITER"] = 'recruiter'
 L["BLACKLIST"] = 'blacklist'
 
 -- * GR General Messages
-L['IS_ENABLED'] = ' is enabled.'
+L['IS_ENABLED'] = 'is enabled.'
 
 -- * Default Values
 L['DEFAULT_GUILD_WELCOME'] = 'Welcome PLAYERNAME to GUILDNAME!' -- Default Guild Welcome Message
 
 -- * GR Core Messages
-L['GUILD_LINK_INSTRUCTIONS'] = 'You can create a guild link only after setting up recruitment under (Guild and Communities).  Once you have done that type /rl to create a link.'
+L['FIRST_TIME_INFO'] = [[
+Welcome to Guild Recruiter!
+You can access by right clicking on the minimap icon or by typing /gr config.
+Left click on the minimap icon to open the recruitment window.
+If you have any issues, click on the About menu option to get our Discord link.
+]]
+L['NEW_VERSION_INFO'] = [[
+Guild Recruiter has been updated!
+Please check the " What's New?" for what has changed.
+]]
+L['BETA_INFORMATION'] = [[
+You are using a beta version of Guild Recruiter.
+Please report any issues on our Discord server.]]
 
 -- ? GR Error Messages
 L['NO GUILD'] = "You are not in a guild."
 L['NOT_LOADED'] = 'Guild Recruiter will not load.'
 L['CANNOT_INVITE'] = 'You do not have permission to invite to the guild.'
+
+-- * GR Slash Commands
+L['SLASH_COMMANDS'] = [[
+Guild Recruiter Slash Commands:
+/rl will reload the WoW UI (like /reload).
+/gr help - Displays this help message.
+/gr config - Opens the configuration window.
+/gr blacklist <player name> - Will add the player to the blacklist.
+]]
+
+-- * GR Minimap Icon Tooltip
+-- Keep %AntiSpam and %BlackList in the tooltip.
+L['MINIMAP_TOOLTIP'] = [[
+Left Click: Open Guild Recruiter
+Right Click: Open Config
+
+%AntiSpam in invited list.
+%BlackList in blacklisted list.]]
