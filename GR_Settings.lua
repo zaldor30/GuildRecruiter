@@ -33,26 +33,26 @@ ns.addonSettings = {
                     desc = L['GEN_MINIMAP_DESC'],
                     type = 'toggle',
                     width = 'full',
-                    set = function(_, val) ns.pSettings.showMinimap = val end,
-                    get = function() return ns.pSettings.showMinimap end,
-                },
-                genContext = {
-                    order = 3,
-                    name = L['GEN_CONTEXT'],
-                    desc = L['GEN_CONTEXT_DESC'],
-                    type = 'toggle',
-                    width = 'full',
-                    set = function(_, val) ns.pSettings.showContextMenu = val end,
-                    get = function() return ns.pSettings.showContextMenu end,
+                    set = function(_, val) ns.pSettings.minimap = val end,
+                    get = function() return ns.pSettings.minimap end,
                 },
                 genWhatsNew = {
-                    order = 5,
+                    order = 3,
                     name = bulletAccountWide..L['GEN_WHATS_NEW'],
                     desc = L['GEN_WHATS_NEW_DESC'],
                     type = 'toggle',
                     width = 'full',
                     set = function(_, val) ns.gSettings.showWhatsNew = val end,
                     get = function() return type(ns.gSettings.showWhatsNew) == 'boolean' and ns.db.global.showWhatsNew or true end,
+                },
+                genContext = {
+                    order = 4,
+                    name = L['GEN_CONTEXT'],
+                    desc = L['GEN_CONTEXT_DESC'],
+                    type = 'toggle',
+                    width = 'full',
+                    set = function(_, val) ns.pSettings.showContextMenu = val end,
+                    get = function() return ns.pSettings.showContextMenu end,
                 },
                 genAddonMessages = {
                     order = 6,
@@ -78,11 +78,11 @@ ns.addonSettings = {
                     order = 20
                 },
                 genKeybindingInvite = {
-                    order = 8,
+                    order = 21,
                     name = bulletAccountWide..L['KEYBINDING_INVITE'],
                     desc = L['KEYBINDING_INVITE_DESC'],
                     type = 'keybinding',
-                    width = 21,
+                    width = 1,
                     set = function(_, val)
                         if strlen(val) == 0 or val == '' then ns.g.keybindInvite = nil
                         elseif val and val == ns.g.keybindScan then
@@ -140,8 +140,8 @@ ns.addonSettings = {
                     desc = 'Show/Hide debug messages.',
                     type = 'toggle',
                     width = 'full',
-                    set = function(_, val) ns.settings.debugMode = val end,
-                    get = function() return ns.settings.debugMode end,
+                    set = function(_, val) ns.pSettings.debugMode = val end,
+                    get = function() return ns.pSettings.debugMode end,
                 },
             }
         }

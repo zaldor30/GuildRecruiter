@@ -55,6 +55,7 @@ function core:Init()
                 debugMode = false, -- Debug Mode
                 debugAutoSync = false, -- Debug Auto Sync (false = on)
                 showAppMsgs = true, -- Show Application Messages
+                disableAutoSync = false, -- Disable Auto Sync
             },
             analytics = {}
         },
@@ -128,7 +129,6 @@ function core:StartDatabase(clubID)
     ns.pAnalytics = ns.p.analytics or {} -- Profile Analytics
 
     GR.debug = ns.pSettings.debugMode or false -- Set the debug mode
-    GR.debug = true --!Change after settings is made
 end
 
 --!Remove dOut after testing in StartGuildSetup
@@ -212,7 +212,7 @@ function core:StartSlashCommands()
 
         if not msg or msg == '' then ns.screens.home:StartUp()
         elseif msg == L['HELP'] then ns.code:fOut(L['SLASH_COMMANDS'], GRColor, true)
-        elseif strlower(msg) == L['CONFIG'] then InterfaceOptionsFrame_OpenToCategory(ns.addonOptions)
+        elseif strlower(msg) == L['CONFIG'] then Settings.OpenToCategory('Guild Recruiter')
         elseif strlower(msg):match(tostring(L['BLACKLIST'])) then
             msg = strlower(msg):gsub(tostring(L['BLACKLIST']), ''):trim()
             local name = strupper(strsub(msg,1,1))..strlower(strsub(msg,2))
@@ -229,8 +229,8 @@ function core:StartMiniMapIcon()
         type = 'data source',
         icon = GR.icon,
         OnClick = function(_, button)
-            if button == 'LeftButton' then ns.screens.home:StartUp()
-            elseif button == 'RightButton' then Settings.(ns.addonOptions) end
+            if button == 'LeftButton' then return--ns.screens.home:StartUp()
+            elseif button == 'RightButton' then Settings.OpenToCategory('Guild Recruiter') end
         end,
         OnTooltipShow = function(GameTooltip)
             local title = code:cText('FFFFFF00', L['TITLE']..' v'..GR.version..':')
@@ -264,8 +264,8 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     ns.code:dOut('Starting Guild Recruiter')
 
     -- ToDo: Add Options
-    --AC:RegisterOptionsTable('GR_Options', ns.addonSettings) -- Register the options table
-    --ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter') -- Add the options to the Blizzard options
+    AC:RegisterOptionsTable('GR_Options', ns.addonSettings) -- Register the options table
+    ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter') -- Add the options to the Blizzard options
 
     ns.code.fPlayerName = ns.code:cPlayer(GetUnitName('player', false), select(2, UnitClass("player"))) -- Set the player name
 
