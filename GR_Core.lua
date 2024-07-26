@@ -56,6 +56,7 @@ function core:Init()
                 debugAutoSync = false, -- Debug Auto Sync (false = on)
                 showAppMsgs = true, -- Show Application Messages
                 disableAutoSync = false, -- Disable Auto Sync
+                showWhispers = false, -- Show Whispers
             },
             analytics = {}
         },
@@ -65,9 +66,9 @@ function core:Init()
                 -- GM Settings
                 antiSpam = false,
                 antiSpamDays = 7,
-                sendWelcome = false,
+                sendGuildGreeting = false,
                 welcomeMessage = L['DEFAULT_GUILD_WELCOME'],
-                sendGreeting = false,
+                sendWhisperGreeting = false,
                 greetingMessage = '',
                 messageList = {},
                 isGuildLeader = false,
@@ -78,12 +79,11 @@ function core:Init()
                 showToolTips = true, -- Show Tool Tips
                 showConsoleMessages = false, -- Show Console Messages
                 -- Invite Settings
-                showWhispers = false, -- Show Whispers
                 antiSpam = true,
                 antiSpamDays = 7,
-                sendWelcome = true,
+                sendGuildGreeting = false,
                 welcomeMessage = L['DEFAULT_GUILD_WELCOME'],
-                sendGreeting = false,
+                sendWhisperGreeting = false,
                 greetingMessage = '',
                 scanWaitTime = 6,
                 -- Messages
@@ -118,10 +118,16 @@ function core:StartDatabase(clubID)
     ns.p = db.profile -- Profile Settings
 
     ns.gSettings, ns.pSettings = ns.g.settings, ns.p.settings -- General Settings
-
     -- Guild Settings Variables Declaration
     ns.guildInfo = ns.g.guildInfo or {} -- Guild Info
     ns.gmSettings = ns.g.gmSettings or self.addonSettings.global.gmSettings -- GM Settings
+
+    -- Fix for old DB settings
+    ns.gmSettings.sendGuildGreeting = ns.gmSettings.sendGuildGreeting or ns.gmSettings.sendWelcome
+    ns.gmSettings.sendWhisperGreeting = ns.gmSettings.sendWhisperGreeting or ns.gmSettings.sendGreeting
+
+    ns.gSettings.sendGuildGreeting = ns.gSettings.sendGuildGreeting or ns.gSettings.sendWelcome
+    ns.gSettings.sendWhisperGreeting = ns.gSettings.sendWhisperGreeting or ns.gSettings.sendGreeting
 
     -- Other Variables Declaration
     ns.gFilterList = ns.g.filterList or {} -- Global Filter List

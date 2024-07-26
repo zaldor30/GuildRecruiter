@@ -65,12 +65,33 @@ ns.addonSettings = {
                 },
                 genDisableAutoSync = {
                     order = 7,
-                    name = 'Disable Auto Sync',
-                    desc = 'Disables auto sync with guild members.',
+                    name = L['AUTO_SYNC'],
+                    desc = L['AUTO_SYNC_DESC'],
                     type = 'toggle',
                     width = 'full',
                     set = function(_, val) ns.pSettings.debugAutoSync = val end,
                     get = function() return ns.pSettings.debugAutoSync end,
+                },
+                invShowInvite = {
+                    order = 8,
+                    name = L['SHOW_WHISPERS'],
+                    desc = L['SHOW_WHISPERS_DESC'],
+                    type = 'toggle',
+                    width = 'full',
+                    set = function(_, val) ns.pSettings.showWhispers = val end,
+                    get = function() return ns.pSettings.showWhispers end,
+                },
+                invScanInterval = {
+                    order = 9,
+                    name = bulletAccountWide..L['SCAN_WAIT_TIME'],
+                    desc = L['SCAN_WAIT_TIME_DESC'],
+                    type = 'input',
+                    width = 'full',
+                    set = function(_, val)
+                        if tonumber(val) >=2 and tonumber(val) < 10 then ns.gSettings.scanWaitTime = tonumber(val)
+                        else return tostring(ns.gSettings.scanWaitTime) end
+                    end,
+                    get = function() return tostring(ns.gSettings.scanWaitTime) end,
                 },
                 genHeader3 = {
                     name = L['KEYBINDING_HEADER'],
@@ -144,6 +165,223 @@ ns.addonSettings = {
                     get = function() return ns.pSettings.debugMode end,
                 },
             }
-        }
+        },
+        blankHeader1 = {
+            order = 1,
+            name = ' ',
+            type = 'group',
+            args = {}
+        },
+        gmSettings = {
+            name = L['GM_SETTINGS'],
+            type = 'group',
+            order = 2,
+            args = {
+                invHeader1 = {
+                    name = L['GM_SETTINGS'],
+                    type = 'header',
+                    order = 0,
+                },
+                gmSettingsDesc = {
+                    order = 1,
+                    name = ns.code:cText('FFFFFF00', L['GM_SETTINGS_DESC']),
+                    type = 'description',
+                    fontSize = 'medium',
+                },
+                genSpacer = {
+                    order = 2,
+                    name = ' ',
+                    type = 'description',
+                },
+                invAntiSpamEnable = {
+                    order = 3,
+                    name = bulletAccountWide..L['ENABLE_ANTI_SPAM'],
+                    desc = L['ENABLE_ANTI_SPAM_DESC'],
+                    type = 'toggle',
+                    width = 1.5,
+                    disabled = function() return not ns.gmSettings.isGuildLeader end,
+                    set = function(_, val) ns.gmSettings.antiSpam = val end,
+                    get = function() return ns.gmSettings.antiSpam end,
+                },
+                invAntiSpamInterval = {
+                    order = 4,
+                    name = bulletAccountWide..L['ANTI_SPAM_DAYS'],
+                    desc = L['ANTI_SPAM_DAYS_DESC'],
+                    type = 'select',
+                    style = 'dropdown',
+                    width = 1,
+                    disabled = function() return not ns.gmSettings.isGuildLeader end,
+                    values = function()
+                        return {
+                            [7] = '7 days',
+                            [14] = '14 days',
+                            [30] = '30 days (1 month)',
+                            [190] = '190 days (3 months)',
+                            [380] = '380 days (6 months)',
+                        }
+                    end,
+                    set = function(_, val) ns.gmSettings.antiSpamDays = tonumber(val) end,
+                    get = function() return ns.gmSettings.antiSpamDays or 7 end,
+                },
+                invSendWelcome = {
+                    order = 10,
+                    name = bulletAccountWide..L['GUILD_WELCOME_MSG'],
+                    desc = L['GUILD_WELCOME_MSG_DESC'],
+                    type = 'toggle',
+                    width = 'full',
+                    disabled = function() return not ns.gmSettings.isGuildLeader end,
+                    set = function(_, val) ns.gmSettings.sendWelcome = val end,
+                    get = function() return ns.gmSettings.sendWelcome end,
+                },
+                invWelcomeMessage = {
+                    order = 11,
+                    name = bulletAccountWide..L['WHISPER_WELCOME_MSG'],
+                    desc = L['WHISPER_WELCOME_MSG_DESC'],
+                    type = 'input',
+                    width = 'full',
+                    disabled = function() return not ns.gmSettings.isGuildLeader end,
+                    set = function(_, val) ns.gmSettings.welcomeMessage = val end,
+                    get = function() return ns.gmSettings.welcomeMessage end,
+                },
+                invSendGreeting = {
+                    order = 12,
+                    name = bulletAccountWide..L['WHISPER_WELCOME_MSG'],
+                    desc = L['WHISPER_WELCOME_MSG_DESC'],
+                    type = 'toggle',
+                    width = 'full',
+                    disabled = function() return not ns.gmSettings.isGuildLeader end,
+                    set = function(_, val) ns.gmSettings.sendWhisperGreeting = val end,
+                    get = function() return ns.gmSettings.sendWhisperGreeting end,
+                },
+                invGreetingMessage = {
+                    order = 13,
+                    name = bulletAccountWide..L['WHISPER_WELCOME_MSG'],
+                    desc = L['WHISPER_WELCOME_MSG_DESC'],
+                    type = 'input',
+                    multiline = 3,
+                    width = 'full',
+                    disabled = function() return not ns.gmSettings.isGuildLeader end,
+                    set = function(_, val) ns.gmSettings.greetingMessage = ns.code:capitalKeyWord(val:trim()) end,
+                    get = function() return ns.gmSettings.greetingMessage end,
+                },
+            }
+        },
+        gmMessageList = {
+            order = 3,
+            name = L['GM_INVITE'],
+            type = 'group',
+            hidden = function() return not ns.gmSettings.isGuildLeader end,
+            args = {
+            }
+        },
+        blankHeader2 = {
+            order = 4,
+            name = ' ',
+            type = 'group',
+            hidden = function() return ns.gmSettings.sendGuildGreeting and ns.gmSettings.sendWhisperGreeting and ns.gmSettings.antiSpam end,
+            args = {}
+        },
+        inviteSettings = {
+            order = 5,
+            name = L['INVITE_SETTINGS'],
+            type = 'group',
+            hidden = function() return ns.gmSettings.sendGuildGreeting and ns.gmSettings.sendWhisperGreeting and ns.gmSettings.antiSpam end,
+            args = {
+                invHeader1 = {
+                    name = L['INVITE_SETTINGS'],
+                    type = 'header',
+                    order = 0,
+                },
+                invAntiSpamEnable = {
+                    order = 6,
+                    name = bulletAccountWide..L['ENABLE_ANTI_SPAM'],
+                    desc = L['ENABLE_ANTI_SPAM_DESC'],
+                    type = 'toggle',
+                    width = 1.5,
+                    disabled = function() return ns.gmSettings.antiSpam end,
+                    set = function(_, val) ns.gSettings.antiSpam = val end,
+                    get = function()
+                        if ns.gSettings.antiSpam then return ns.gSettings.antiSpam
+                        else return ns.gSettings.antiSpam end
+                    end,
+                },
+                invAntiSpamInterval = {
+                    order = 7,
+                    name = bulletAccountWide..L['ANTI_SPAM_DAYS'],
+                    desc = L['ANTI_SPAM_DAYS_DESC'],
+                    type = 'select',
+                    style = 'dropdown',
+                    width = 1,
+                    disabled = function() return ns.gmSettings.antiSpam end,
+                    values = function()
+                        return {
+                            [7] = '7 days',
+                            [14] = '14 days',
+                            [30] = '30 days (1 month)',
+                            [190] = '190 days (3 months)',
+                            [380] = '380 days (6 months)',
+                        }
+                    end,
+                    set = function(_, val) ns.gSettings.antiSpamDays = tonumber(val) end,
+                    get = function()
+                        if ns.gSettings.antiSpam then return ns.gSettings.antiSpamDays
+                        else return ns.gSettings.antiSpamDays or 7 end
+                    end,
+                },
+                invSendWelcome = {
+                    order = 10,
+                    name = bulletAccountWide..L['GUILD_WELCOME_MSG'],
+                    desc = L['GUILD_WELCOME_MSG_DESC'],
+                    type = 'toggle',
+                    width = 'full',
+                    disabled = function() return ns.gmSettings.sendGuildGreeting end,
+                    set = function(_, val) ns.gSettings.sendWelcome = val end,
+                    get = function()
+                        if ns.gmSettings.sendGuildGreeting then return ns.gmSettings.sendGuildGreeting
+                        else return ns.gSettings.sendGuildGreeting end
+                    end,
+                },
+                invWelcomeMessage = {
+                    order = 11,
+                    name = bulletAccountWide..L['GUILD_WELCOME_MSG'],
+                    desc = L['GUILD_WELCOME_MSG_DESC'],
+                    type = 'input',
+                    width = 'full',
+                    disabled = function() return ns.gmSettings.sendGuildGreeting end,
+                    set = function(_, val) ns.gSettings.welcomeMessage = val end,
+                    get = function()
+                        if ns.gmSettings.welcomeMessage then return ns.gmSettings.welcomeMessage
+                        else return ns.gSettings.welcomeMessage end
+                    end,
+                },
+                invSendGreeting = {
+                    order = 12,
+                    name = bulletAccountWide..L['WHISPER_WELCOME_MSG'],
+                    desc = L['WHISPER_WELCOME_MSG_DESC'],
+                    type = 'toggle',
+                    width = 'full',
+                    disabled = function() return ns.gmSettings.sendWhisperGreeting end,
+                    set = function(_, val) ns.gSettings.sendGreeting = val end,
+                    get = function()
+                        if ns.gmSettings.sendGreeting then return ns.gmSettings.sendGreeting
+                        else return ns.gSettings.sendGreeting end
+                    end,
+                },
+                invGreetingMessage = {
+                    order = 13,
+                    name = bulletAccountWide..L['WHISPER_WELCOME_MSG'],
+                    desc = L['WHISPER_WELCOME_MSG_DESC'],
+                    type = 'input',
+                    multiline = 3,
+                    width = 'full',
+                    disabled = function() return ns.gmSettings.sendGreeting end,
+                    set = function(_, val) ns.gSettings.greetingMessage = ns.code:capitalKeyWord(val:trim()) end,
+                    get = function()
+                        if ns.gmSettings.sendGreeting and ns.gmSettings.greetingMessage then return ns.gmSettings.greetingMessage
+                        else return ns.gSettings.greetingMessage end
+                    end,
+                },
+            }
+        },
     }
 }
