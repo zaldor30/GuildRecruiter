@@ -13,6 +13,24 @@ L["is already in a guild"] = true
 L["declines your guild invitation"] = true
 L["has already been invited to a guild"] = true
 
+-- * GR Basic Command Messages
+L["INVITE"] = 'Invite'
+L["SCAN"] = 'Scan'
+L["ABOUT"] = 'About'
+L["CLOSE"] = 'Close'
+L["CANCEL"] = 'Cancel'
+L["SAVE"] = 'Save'
+L["YES"] = 'Yes'
+L["NO"] = 'No'
+L["OK"] = 'OK'
+L["ENABLE"] = 'Enable'
+L["DISABLE"] = 'Disable'
+L["REMOVE"] = 'Remove'
+L['SAVE'] = 'Save'
+L['DELETE'] = 'Delete'
+L['DELETE_CONFIRMATION'] = 'Are you sure you want to delete this record?'
+
+
 -- * Icon Menu and Slash Commands
 L["HELP"] = 'help'
 L["CONFIG"] = 'cofig'
@@ -25,6 +43,12 @@ L['IS_ENABLED'] = 'is enabled.'
 
 -- * Default Values
 L['DEFAULT_GUILD_WELCOME'] = 'Welcome PLAYERNAME to GUILDNAME!' -- Default Guild Welcome Message
+L['GUILDLINK'] = 'GUILDLINK' -- Guild Link Keyword
+L['GUILD_LINK_NOT_FOUND'] = 'No Guild Link' -- No Guild Link Message
+L['GUILDNAME'] = 'GUILDNAME' -- Guild Name Keyword
+L['NO_GUILD_NAME'] = 'No Guild Name' -- No Guild Name Message
+L['PLAYERNAME'] = 'PLAYERNAME' -- Player Name Keyword
+L['NO_PLAYER_NAME'] = 'player' -- No Player Name Message
 
 -- * GR Core Messages
 L['FIRST_TIME_INFO'] = [[
@@ -67,6 +91,19 @@ Right Click: Open Config
 -- * GR Config Window Messages
 L['General Settings'] = true
 
+-- ? GR Config Window General Settings
+L['MESSAGE_REPLACEMENT_INSTRUCTIONS'] = [[
+GUILDLINK - Will create a clickable link to your guild.
+GUILDNAME - Will display your guild name.
+PLAYERNAME - Will display the invited player's name.]]
+
+L['INVITE_DESC'] = 'Description of the invite message:'
+L['INVITE_DESC_TOOLTIP'] = 'A description of the invite message.'
+L['INVITE_ACTIVE_MESSAGE'] = 'Invite Messages:'
+L['INVITE_ACTIVE_MESSAGE_DESC'] = [['The messges that will be sent to potential recruits.
+Note: You might need to /rl after a sync to see changes.']]
+L['NEW_MESSAGE'] = 'New'
+L['NEW_MESSAGE_DESC'] = 'Add a description of the message to the invite list.'
 -- ? GR Config Window Tooltips
 L['GEN_TOOLTIPS'] = 'Show all tooltips'
 L['GEN_TOOLTIP_DESC'] = 'Show all tooltips in the Guild Recruiter addon'
@@ -94,8 +131,14 @@ L['GEN_ACCOUNT_WIDE'] = 'indicates effects all guild-wide characters'
 -- ? GR GM Settings Window
 L['GM_SETTINGS'] = 'GM Settings'
 L['GM_SETTINGS_DESC'] = 'Note: Guild Masters have access to these settings on all their characters.'
+L['MAX_CHARS'] = '(<sub> characters per message)' -- Max Characters per message
+L['LENGTH_INFO'] = 'Assumes 12 characters when using PLAYERNAME'
+L['MESSAGE_LENGTH'] = 'Message Length' -- Message Length Keyword
 -- ? GR GM Invite Settings Window
-L['GM_INVITE'] = 'GM Invite'
+L['GM_INVITE'] = 'GM Messages'
+L['ENABLED_NOTE'] = 'Note: Disabled items are controlled by GM.'
+L['OVERRIDE_GM_SETTINGS'] = 'Override GM Settings'
+L['OVERRIDE_GM_SETTINGS_DESC'] = 'Override the GM settings for this character.'
 --? GR Not GM Invite Settings Window
 L['INVITE_SETTINGS'] = 'Invite Settings'
 L['ENABLE_ANTI_SPAM'] = 'Enable Anti-Spam'
@@ -106,3 +149,5 @@ L['GUILD_WELCOME_MSG'] = 'Guild Welcome Message'
 L['GUILD_WELCOME_MSG_DESC'] = 'The message to send to guild chat when a new player joins.'
 L['WHISPER_WELCOME_MSG'] = 'Whisper Welcome Message'
 L['WHISPER_WELCOME_MSG_DESC'] = 'Whispered message sent to a player when they join the guild.'
+--? GR Invite Messages Window
+L['INVITE_MESSAGES'] = 'Invite Messages'

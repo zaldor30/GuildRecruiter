@@ -107,3 +107,39 @@ function code:createTooltip(text, body, force, frame)
     if body then GameTooltip:AddLine(body,1,1,1) end
     GameTooltip:Show()
 end
+
+-- *Keyword Replacement Routines
+function code:capitalKeyWord(input)
+    if not input or input == '' then return end
+
+    local keys = { L['GUILDLINK'], L['GUILDNAME'], L['PLAYERNAME'] }
+
+    for i=1,#keys do
+        local startPos, endPos = (strupper(input)):find(keys[i])
+
+        if startPos then
+            local prefix = string.sub(input, 1, startPos - 1)
+            local suffix = string.sub(input, endPos + 1)
+            input = prefix..strupper(keys[i])..suffix
+        end
+    end
+
+    return input
+end
+function code:variableReplacement(msg, playerName, removeGT)
+    local gi = ns.guildInfo
+    if not gi or not msg or msg == '' then return end
+
+    playerName = strsplit('-', playerName)
+
+    msg = code:capitalKeyWord(msg)
+    if not msg then return end
+
+    local gLink, gName = gi.guildLink or nil, gi.guildName or nil
+
+    msg = msg:gsub(L['GUILDLINK'], (gLink or L['No Guild Link']))
+    msg = msg:gsub(L['GUILDNAME'], (gName and (removeGT and gName or '<'..gName..'>') or L['No Guild Name']))
+    msg = msg:gsub(L['PLAYERNAME'], (playerName or 'player'))
+
+    return msg
+end

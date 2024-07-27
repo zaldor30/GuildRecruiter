@@ -26,7 +26,6 @@ function GR:OnInitialize()
             ns.code:dOut(L['NOT_LOADED'])
             return
         elseif not IsInGuild() or not clubID or not select(1, GetGuildInfo('player')) then -- If the player is not in a guild, then check again in 1 second
-            print('Checking if in guild', count + 1)
             C_Timer.After(1, function() checkIfInGuild(count + 1) end)
         elseif clubID then core:StartGuildRecruiter(clubID) end
     end
@@ -35,11 +34,11 @@ function GR:OnInitialize()
 end
 
 function core:Init()
+    self.hasGM = false
+    self.iAmGM = false
     self.isEnabled = false
     self.fullyStarted = false
     self.ignoreAutoSync = false
-
-    self.isGuildLeader = false
 
     self.addonSettings = {
         profile = {
@@ -72,7 +71,7 @@ function core:Init()
                 greetingMessage = '',
                 messageList = {},
                 isGuildLeader = false,
-                GuildLeaderToon = nil,
+                guildLeaderToon = nil,
             },
             settings = {
                 -- General Settings
@@ -88,6 +87,7 @@ function core:Init()
                 scanWaitTime = 6,
                 -- Messages
                 messageList = {},
+                overrideGM = false,
             },
             keybindings = {
                 scan = 'CTRL-SHIFT-S',
@@ -113,9 +113,10 @@ function core:StartDatabase(clubID)
     db.profile.settings = db.profile.settings or self.addonSettings.profile.settings
     db.profile.analytics = db.profile.analytics or self.addonSettings.profile.analytics
 
-    -- General Settings Variables Declaration
+    -- General Settings Variables 
     ns.g = db.global[clubID] -- Global Settings
     ns.p = db.profile -- Profile Settings
+    ns.global = db.global -- Global Settings
 
     ns.gSettings, ns.pSettings = ns.g.settings, ns.p.settings -- General Settings
     -- Guild Settings Variables Declaration
@@ -144,18 +145,18 @@ function core:StartGuildSetup(clubID) -- Get Guild Info and prep database
 
     local function checkIfGuildLeader()
         if IsGuildLeader() then
-            ns.gmSettings.isGuildLeader = true
-            ns.gmSettings.GuildLeaderToon = GetUnitName('player', true)
+            ns.guildInfo.isGuildLeader = true
+            ns.guildInfo.guildLeaderToon = GetUnitName('player', true)
             ns.code:dOut('You are the Guild Leader')
         elseif not IsGuildLeader() then
-            if ns.gmSettings.GuildLeaderToon == GetUnitName('player', true) then
-                ns.gmSettings.isGuildLeader = false
-                ns.gmSettings.GuildLeaderToon = nil
+            if ns.guildInfo.guildLeaderToon == GetUnitName('player', true) then
+                ns.guildInfo.isGuildLeader = false
+                ns.guildInfo.guildLeaderToon = nil
                 ns.code:dOut(GetUnitName('player', true)..' is no longer the Guild Leader')
-            elseif not ns.gmSettings.GuildLeaderToon then
-                ns.gmSettings.isGuildLeader = false
+            elseif not ns.guildInfo.guildLeaderToon then
+                ns.guildInfo.isGuildLeader = false
                 ns.code:dOut('You are not the Guild Leader')
-            else ns.code:dOut('Current Guild Leader: '..(ns.gmSettings.GuildLeaderToon or 'No One')) end
+            else ns.code:dOut('Current Guild Leader: '..(ns.guildInfo.guildLeaderToon or 'No One')) end
         end
     end
 
@@ -231,7 +232,7 @@ function core:StartSlashCommands()
 end
 function core:StartMiniMapIcon()
     local code = ns.code
-    local iconData = LibStub("LibDataBroker-1.1"):NewDataObject("GuildRecruiter", { -- Minimap Icon Settings
+    local iconData = LibStub("LibDataBroker-1.1"):NewDataObject("GR_Icon", { -- Minimap Icon Settings
         type = 'data source',
         icon = GR.icon,
         OnClick = function(_, button)
@@ -269,15 +270,17 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     self.isEnabled = true
     ns.code:dOut('Starting Guild Recruiter')
 
-    -- ToDo: Add Options
-    AC:RegisterOptionsTable('GR_Options', ns.addonSettings) -- Register the options table
-    ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter') -- Add the options to the Blizzard options
-
     ns.code.fPlayerName = ns.code:cPlayer(GetUnitName('player', false), select(2, UnitClass("player"))) -- Set the player name
 
     self:StartDatabase(clubID) -- Start the database
     self:StartGuildSetup(clubID) -- Start the guild setup
     if not self.isEnabled then return end -- If the guild is not enabled, then return
+
+    AC:RegisterOptionsTable('GR_Options', ns.addonSettings) -- Register the options table
+    ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter') -- Add the options to the Blizzard options
+    self.hasGM = (ns.guildInfo.isGuildLeader and ns.guildInfo.guildLeaderToon) or false
+    self.iAmGM = (ns.guildInfo.isGuildLeader or ns.guildInfo.guildLeaderToon == GetUnitName('player', true)) or false
+    ns.gSettings.overrideGM = self.iAmGM and ns.gSettings.overrideGM or false
 
     core:PerformRecordMaintenance() -- Perform record maintenance
     core:StartSlashCommands() -- Start the slash commands
