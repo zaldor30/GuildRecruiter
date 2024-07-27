@@ -94,7 +94,9 @@ function core:Init()
                 invite = 'CTRL-SHIFT-I',
             },
             blackList = {},
+            blackListRemoved = {},
             antiSpamList = {},
+            zoneList = {},
             filterList = {},
             analytics = {},
         }
@@ -276,6 +278,11 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     self:StartGuildSetup(clubID) -- Start the guild setup
     if not self.isEnabled then return end -- If the guild is not enabled, then return
 
+    -- Setup Tables
+    ns.tblRaces, ns.tblClasses, ns.tblInvalidZones = ns.ds:races(), ns.ds:classes(), ns.ds:invalidZones()
+    ns.tblRacesSortedByName = ns.code:sortTableByField(ns.tblRaces, 'name')
+    ns.tblClassesSortedByName = ns.code:sortTableByField(ns.tblClasses, 'name')
+
     AC:RegisterOptionsTable('GR_Options', ns.addonSettings) -- Register the options table
     ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter') -- Add the options to the Blizzard options
     self.hasGM = (ns.guildInfo.isGuildLeader and ns.guildInfo.guildLeaderToon) or false
@@ -285,11 +292,7 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     core:PerformRecordMaintenance() -- Perform record maintenance
     core:StartSlashCommands() -- Start the slash commands
     core:StartMiniMapIcon() -- Start the mini map icon
-    
-    -- Setup Tables
-    ns.tblRaces, ns.tblClasses, ns.tblBadZonesByName = ns.ds.tblRaces, ns.ds.tblClasses, ns.ds.tblBadZonesByName
-    ns.tblRacesSortedByName = ns.code:sortTableByField(ns.tblRaces, 'name')
-    ns.tblClassesSortedByName = ns.code:sortTableByField(ns.tblClasses, 'name')
+
     -- ToDo: Invite Startup
 
     core:StartBaseEvents() -- Start the base events

@@ -71,7 +71,7 @@ function code:saveTables(whichOne)
         ns.g.sessionData = ns.code:compressData(ns.ds.tblSavedSessions) or ''
     end
 end
-function code:sortTableByField(tbl, sortField, reverse)
+function code:sortTableByField(tbl, sortField, reverse, showit)
     if not tbl or not sortField then return end
 
     local keyArray = {}

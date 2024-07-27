@@ -32,11 +32,35 @@ local function newMsg()
         message = '',
     }
 end
+local function newZone()
+    return {
+        id = '',
+        name = '',
+        reason = '',
+    }
+end
 
+local tblZoneByName = nil
+local function zoneOut()
+    local tbl = {}
+    local tblTemp = ns.ds:convertZoneKeyToName()
+    local tblZonesOut = ns.code:sortTableByField(tblTemp, 'name', true, true)
+    for _, r in pairs(tblZonesOut or {}) do
+        local personal = ns.global.zoneList[r.id] and '|cFF00FF00*|r' or ''
+        if r.id and r.reason and r.name then
+            tbl[r.id] = personal..ns.code:cText('FFFFFF00', r.name)..' ('..r.reason..')'
+        end
+    end
+
+    tblZoneByName = tbl
+    return tbl
+end
+
+local tblZone = newZone()
 local tblMessage = newMsg()
 local tblGMMessage = newMsg()
 
-local gmActiveMessage, invActiveMessage = nil, nil
+local gmActiveMessage, invActiveMessage, activeZone = nil, nil, nil
 
 BL_DAYS_TO_WAIT = 14
 
@@ -207,7 +231,7 @@ ns.addonSettings = {
             }
         },
         blankHeader1 = {
-            order = 1,
+            order = 5,
             name = ' ',
             type = 'group',
             hidden = function() return not ns.guildInfo.isGuildLeader and not ns.guildInfo.GuildLeaderToon end,
@@ -216,7 +240,7 @@ ns.addonSettings = {
         gmSettings = {
             name = L['GM_SETTINGS'],
             type = 'group',
-            order = 2,
+            order = 6,
             hidden = function() return not ns.core.hasGM end,
             args = {
                 invHeader1 = {
@@ -340,7 +364,7 @@ ns.addonSettings = {
             }
         },
         gmMessageList = {
-            order = 3,
+            order = 7,
             name = L['GM_INVITE'],
             type = 'group',
             hidden = function() return not ns.core.hasGM end,
@@ -498,14 +522,14 @@ ns.addonSettings = {
             },
         },
         blankHeader2 = {
-            order = 4,
+            order = 10,
             name = ' ',
             type = 'group',
             hidden = function() return (hasGM and not iAmGM) and ns.gmSettings.sendWhisperGreeting and ns.gmSettings.sendGuildGreeting and ns.gmSettings.antiSpam end,
             args = {}
         },
         inviteSettings = {
-            order = 5,
+            order = 11,
             name = L['INVITE_SETTINGS'],
             type = 'group',
             hidden = function() return (hasGM and not iAmGM) and ns.gmSettings.sendWhisperGreeting and ns.gmSettings.sendGuildGreeting and ns.gmSettings.antiSpam end,
@@ -643,7 +667,7 @@ ns.addonSettings = {
             }
         },
         inviteMessages = {
-            order = 6,
+            order = 12,
             name = L['INVITE_MESSAGES'],
             type = 'group',
             hidden = function() return (hasGM and not iAmGM) and ns.gmSettings.sendWhisperGreeting end,
@@ -804,6 +828,275 @@ ns.addonSettings = {
                     end,
                     type = 'description',
                     fontSize = 'medium',
+                },
+            }
+        },
+        blankHeader3 = {
+            order = 15,
+            name = ' ',
+            type = 'group',
+            args = {}
+        },
+        blackList = {
+            name = L['BLACK_LIST'],
+            type = 'group',
+            order = 16,
+            args = {
+                blHeader1 = {
+                    order = 0,
+                    name = L['BLACK_LIST'],
+                    type = 'header',
+                },
+                blRemoveButton = {
+                    name = L['BLACK_LIST_REMOVE'],
+                    type = 'execute',
+                    width = 'full',
+                    confirm = function() return L['DELETE_CONFIRMATION'] end,
+                    order = 1,
+                    func = function()
+                        ns.g.blackListRemoved = ns.g.blackListRemoved and ns.g.blackListRemoved or {}
+                        for k, r in pairs(ns.tblBlackList and ns.tblBlackList or {}) do
+                            if r.selected then
+                                ns.g.blackListRemoved[k] = C_DateAndTime.GetServerTimeLocal()
+                                ns.blackList[k] = nil
+                            end
+                        end
+
+                        ns.code:saveTables('BLACK_LIST')
+                    end,
+                },
+                blHeader3 = {
+                    order = 2,
+                    name = '',
+                    type = 'header',
+                },
+                blMultiSelect = {
+                    order = 3,
+                    type = 'multiselect',
+                    name = 'Black Listed Players',
+                    width = 'full',
+                    values = function()
+                        local tbl = {}
+                        for k, r in pairs(ns.tblBlackList or {}) do
+                            local name = k
+                            tbl[k] = (name..': '..(r.reason or 'Unknown'))
+                        end
+
+                        return tbl
+                    end,
+                    set = function(_, key, val) ns.tblBlackList[key].selected = val end,
+                    get = function(_, key) return ns.tblBlackList[key].selected or false end,
+                }
+            }
+        },
+        invalidZones = {
+            name = L['INVALID_ZONE'],
+            type = 'group',
+            order = 17,
+            args = {
+                zonesHeader1 = {
+                    order = 0,
+                    name = L['INVALID_ZONE'],
+                    type = 'header',
+                },
+                zoneID = {
+                    order = 1,
+                    name = L['ZONE_ID'],
+                    desc = L['ZONE_ID_DESC'],
+                    type = 'input',
+                    width = .7,
+                    set = function(_, val)
+                        if not tonumber(val) then return end
+                        tblZone.id = tonumber(val)
+                    end,
+                    get = function() return tostring(tblZone.id) end,
+                },
+                zoneName = {
+                    order = 2,
+                    name = L['ZONE_NAME'],
+                    type = 'input',
+                    width = .9,
+                    set = function(_, val) tblZone.name = val end,
+                    get = function() return tostring(tblZone.name) end,
+                },
+                zoneDesc = {
+                    order = 2,
+                    name = L['ZONE_TYPE'],
+                    type = 'input',
+                    width = .8,
+                    set = function(_, val) tblZone.reason = val end,
+                    get = function() return tostring(tblZone.reason) end,
+                },
+                invNewButton = {
+                    order = 4,
+                    name = L['NEW'],
+                    type = 'execute',
+                    width = .5,
+                    disabled = function() return not activeZone end,
+                    func = function()
+                        tblZone = newZone()
+                        activeZone = nil
+                    end,
+                },
+                invSaveButton = {
+                    order = 4,
+                    name = L['SAVE'],
+                    type = 'execute',
+                    width = .5,
+                    disabled = function()
+                        local saveFail = tblZone.id == '' or tblZone.name == '' or tblZone.reason == ''
+                        if not activeZone then
+                            for _, r in pairs(ns.tblInvalidZones) do
+                                if strlower(r.name) == strlower(tblZone.name) then
+                                    saveFail = true
+                                    break
+                                end
+                            end
+                        end
+
+                        return saveFail
+                    end,
+                    func = function()
+                        ns.global.zoneList[tonumber(tblZone.id)] = tblZone
+                        ns.tblInvalidZones = ns.ds:invalidZones()
+                        tblZone = newZone()
+                        activeZone = nil
+                        zoneOut()
+                    end,
+                },
+                invMessageListInstructions = {
+                    order = 5,
+                    name = ' ',
+                    type = 'description',
+                    fontSize = 'medium',
+                    width = .5,
+                },
+                invDeleteButton = {
+                    order = 6,
+                    name = L['DELETE'],
+                    confirm = function() return L['DELETE_CONFIRMATION'] end,
+                    type = 'execute',
+                    width = .5,
+                    disabled = function() return not activeZone end,
+                    func = function()
+                        if not activeZone then return end
+
+                        ns.global.zoneList[activeZone] = nil
+                        ns.tblInvalidZones = ns.ds:invalidZones()
+                        activeZone = nil
+                        tblZone = newZone()
+                        zoneOut()
+                    end,
+                },
+                ZoneNote = {
+                    order = 14,
+                    name = L['ZONE_NOTE'],
+                    type = 'description',
+                    fontSize = 'medium',
+                },
+                zonesList = {
+                    order = 15,
+                    name = L['ZONE_LIST_NAME'],
+                    type = 'multiselect',
+                    width = 'full',
+                    values = function()
+                        if not tblZoneByName then zoneOut() end
+                        return tblZoneByName
+                    end,
+                    set = function(_, key)
+                        if not tblZoneByName or not tblZoneByName[key] then return end
+                        activeZone = key
+                        tblZone = {
+                            id = key,
+                            name = ns.tblInvalidZones[key].name,
+                            reason = ns.tblInvalidZones[key].reason
+                        }
+                        zoneOut()
+                    end,
+                },
+                ZoneInstructions = {
+                    order = 90,
+                    name = L['ZONE_ID_DESC'],
+                    type = 'description',
+                    fontSize = 'medium',
+                },
+            }
+        },
+        blankHeader4 = {
+            type = 'group',
+            name = ' ',
+            order = 90,
+            args = {}
+        },
+        about = {
+            type = 'group',
+            name = L['ABOUT']..' '..L['TITLE'],
+            order = 91,
+            args = {
+                aboutDesc1 = {
+                    order = 0,
+                    name = L['TITLE'],
+                    type = 'description',
+                    image = GR.icon,
+                    imageWidth = 32,
+                    imageHeight = 32,
+                    fontSize = 'medium',
+                },
+                aboutDesc2 = {
+                    order = 1,
+                    name = L['ABOUT_LINE'],
+                    type = 'description',
+                    fontSize = 'medium',
+                },
+                aboutHeader1 = {
+                    order = 2,
+                    name = L['ABOUT_DOC_LINKS'],
+                    type = 'header',
+                },
+                aboutLink1 = {
+                    order = 3,
+                    name = 'CurseForge',
+                    type = 'input',
+                    width = 'full',
+                    set = function() ns.code:OpenURL('https://www.curseforge.com/wow/addons/guild-recruiter') end,
+                    get = function() return 'https://www.curseforge.com/wow/addons/guild-recruiter' end,
+                },
+                aboutLink2 = {
+                    order = 4,
+                    name = L['GITHUB_LINK'],
+                    type = 'input',
+                    width = 'full',
+                    set = function() ns.code:OpenURL('https://github.com/zaldor30/GuildRecruiter') end,
+                    get = function() return 'https://github.com/zaldor30/GuildRecruiter' end,
+                },
+                aboutLink3 = {
+                    order = 5,
+                    name = L['ABOUT_DISCORD_LINK'],
+                    type = 'input',
+                    width = 'full',
+                    set = function() ns.code:OpenURL('https://discord.gg/ZtS6Q2sKRH') end,
+                    get = function() return 'https://discord.gg/ZtS6Q2sKRH' end,
+                },
+                aboutHeader2 = {
+                    order = 6,
+                    name = string.format(L['SUPPORT_LINKS'], L['TITLE']),
+                    type = 'header',
+                },
+                aboutLink4 = {
+                    order = 7,
+                    name = 'Patreon Page',
+                    type = 'input',
+                    width = 'full',
+                    set = function() ns.code:OpenURL('https://www.patreon.com/AlwaysBeConvoking') end,
+                    get = function() return 'https://www.patreon.com/AlwaysBeConvoking' end,
+                },
+                aboutLink5 = {
+                    order = 8,
+                    name = 'Buy Me a Coffee',
+                    type = 'input',
+                    width = 'full',
+                    set = function() ns.code:OpenURL('https://bmc.link/alwaysbeconvoking') end,
+                    get = function() return 'https://bmc.link/alwaysbeconvoking' end,
                 },
             }
         },

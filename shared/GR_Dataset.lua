@@ -8,7 +8,7 @@ function ds:Init()
     self.tblRaces = self:races()
     self.tblClasses = self:classes()
     self.tblClassesByName = nil
-    self.tblBadZonesByName = self:invalidZones()
+    self.tblZones = self:invalidZones()
 end
 function ds:WhatsNew() -- What's new in the current version
     local height = 410 -- Adjust size of what's new window
@@ -28,46 +28,46 @@ end
 function ds:invalidZones() -- Invalid zones for recruitment
     local tbl = {
         --battlegrounds
-        ['Alterac Valley'] = { id = 30, name = "Alterac Valley", reason = 'Battlegrounds' },
-        ["Warsong Gulch"] = { id = 489, name = "Warsong Gulch", reason = 'Battlegrounds' },
-        ["Arathi Basin (Classic)"] = { id = 529, name = "Arathi Basin (Classic)", reason = 'Battlegrounds' },
-        ["Eye of the Storm"] = { id = 566, name = "Eye of the Storm", reason = 'Battlegrounds' },
-        ["Strand of the Ancients"] = { id = 607, name = "Strand of the Ancients", reason = 'Battlegrounds' },
-        ["Isle of Conquest"] = { id = 628, name = "Isle of Conquest", reason = 'Battlegrounds' },
-        ["Twin Peaks"] = { id = 726, name = "Twin Peaks", reason = 'Battlegrounds' },
-        ["Silvershard Mines"] = { id = 727, name = "Silvershard Mines", reason = 'Battlegrounds' },
-        ["The Battle for Gilneas"] = { id = 761, name = "The Battle for Gilneas", reason = 'Battlegrounds' },
-        ["Eye of the Storm (Rated)"] = { id = 968, name = "Eye of the Storm (Rated)", reason = 'Battlegrounds' },
-        ["Temple of Kotmogu"] = { id = 998, name = "Temple of Kotmogu", reason = 'Battlegrounds' },
-        ["Deepwind Gorge"] = { id = 1105, name = "Deepwind Gorge", reason = 'Battlegrounds' },
-        ["Arathi Basin (Winter)"] = { id = 1681, name = "Arathi Basin (Winter)", reason = 'Battlegrounds' },
-        ["Seething Shore"] = { id = 1803, name = "Seething Shore", reason = 'Battlegrounds' },
-        ["Arathi Basin"] = { id = 2107, name = "Arathi Basin", reason = 'Battlegrounds' },
-        ["Arathi Basin Comp Stomp"] = { id = 2177, name = "Arathi Basin Comp Stomp", reason = 'Battlegrounds' },
+        [30] = { id = 30, name = "Alterac Valley", reason = 'Battlegrounds' },
+        [489] = { id = 489, name = "Warsong Gulch", reason = 'Battlegrounds' },
+        [529] = { id = 529, name = "Arathi Basin (Classic)", reason = 'Battlegrounds' },
+        [566] = { id = 566, name = "Eye of the Storm", reason = 'Battlegrounds' },
+        [607] = { id = 607, name = "Strand of the Ancients", reason = 'Battlegrounds' },
+        [628] = { id = 628, name = "Isle of Conquest", reason = 'Battlegrounds' },
+        [726] = { id = 726, name = "Twin Peaks", reason = 'Battlegrounds' },
+        [727] = { id = 727, name = "Silvershard Mines", reason = 'Battlegrounds' },
+        [761] = { id = 761, name = "The Battle for Gilneas", reason = 'Battlegrounds' },
+        [968] = { id = 968, name = "Eye of the Storm (Rated)", reason = 'Battlegrounds' },
+        [998] = { id = 998, name = "Temple of Kotmogu", reason = 'Battlegrounds' },
+        [1105] = { id = 1105, name = "Deepwind Gorge", reason = 'Battlegrounds' },
+        [1681] = { id = 1681, name = "Arathi Basin (Winter)", reason = 'Battlegrounds' },
+        [1803] = { id = 1803, name = "Seething Shore", reason = 'Battlegrounds' },
+        [2107] = { id = 2107, name = "Arathi Basin", reason = 'Battlegrounds' },
+        [2177] = { id = 2177, name = "Arathi Basin Comp Stomp", reason = 'Battlegrounds' },
         --arenas
-        ["Ruins of Lordaeron"] = { id = 572, name = "Ruins of Lordaeron", reason = 'Arena' },
-        ["Dalaran Arena"] = { id = 617, name = "Dalaran Arena", reason = 'Arena' },
-        ["The Ring of Valor"] = { id = 618, name = "The Ring of Valor", reason = 'Arena' },
-        ["Tol'Viron Arena"] = { id = 980, name = "Tol'Viron Arena", reason = 'Arena' },
-        ["Tiger's Peak"] = { id = 1134, name = "Tiger's Peak", reason = 'Arena' },
-        ["Nagrand Arena"] = { id = 1505, name = "Nagrand Arena", reason = 'Arena' },
-        ["Blade's Edge Arena"] = { id = 1672, name = "Blade's Edge Arena", reason = 'Arena' },
-        ["The Robodrome"] = { id = 2167, name = "The Robodrome", reason = 'Arena' },
+        [572] = { id = 572, name = "Ruins of Lordaeron", reason = 'Arena' },
+        [617] = { id = 617, name = "Dalaran Arena", reason = 'Arena' },
+        [618] = { id = 618, name = "The Ring of Valor", reason = 'Arena' },
+        [980] = { id = 980, name = "Tol'Viron Arena", reason = 'Arena' },
+        [1134] = { id = 1134, name = "Tiger's Peak", reason = 'Arena' },
+        [1505] = { id = 1505, name = "Nagrand Arena", reason = 'Arena' },
+        [1672] = { id = 1672, name = "Blade's Edge Arena", reason = 'Arena' },
+        [2167] = { id = 2167, name = "The Robodrome", reason = 'Arena' },
 
             --@version-retail@
         --raids
-        ["Amirdrassil, the Dream's Hope"] = { id = 0, name = "Amirdrassil, the Dream's Hope", reason = 'Season 3 Raid' },
-        ["Aberrus, the Shadowed Crucible"] = {  id = 2569, name = "Aberrus, the Shadowed Crucible", reason = 'Season 2 Raid' },
-        ["Vault of the Incarnates"] = { id = 2522, name = "Vault of the Incarnates", reason = 'Season 1 Raid' },
+        [0] = { id = 0, name = "Amirdrassil, the Dream's Hope", reason = 'Season 3 Raid' },
+        [2569] = {  id = 2569, name = "Aberrus, the Shadowed Crucible", reason = 'Season 2 Raid' },
+        [2522] = { id = 2522, name = "Vault of the Incarnates", reason = 'Season 1 Raid' },
         --dungeons
-        [2451] = { name = "Uldaman: Legacy of Tyr", reason = 'DF Dungeon' },
-        [2515] = { name = "The Azure Vault", reason = 'DF Dungeon' },
-        [2516] = { name = "The Nokhud Offensive", reason = 'DF Dungeon' },
-        [2519] = { name = "Neltharus", reason = 'DF Dungeon' },
-        [2520] = { name = "Brackenhide Hollow", reason = 'DF Dungeon' },
-        [2521] = { name = "Ruby Life Pools", reason = 'DF Dungeon' },
-        [2526] = { name = "Algeth'ar Academy", reason = 'DF Dungeon' },
-        [2527] = { name = "Halls of Infusion", reason = 'DF Dungeon' },
+        [2451] = { id = 2451, name = "Uldaman: Legacy of Tyr", reason = 'DF Dungeon' },
+        [2515] = { id = 2515, name = "The Azure Vault", reason = 'DF Dungeon' },
+        [2516] = { id = 2516, name = "The Nokhud Offensive", reason = 'DF Dungeon' },
+        [2519] = { id = 2519, name = "Neltharus", reason = 'DF Dungeon' },
+        [2520] = { id = 2520, name = "Brackenhide Hollow", reason = 'DF Dungeon' },
+        [2521] = { id = 2521, name = "Ruby Life Pools", reason = 'DF Dungeon' },
+        [2526] = { id = 2526, name = "Algeth'ar Academy", reason = 'DF Dungeon' },
+        [2527] = { id = 2527, name = "Halls of Infusion", reason = 'DF Dungeon' },
             --M+ rotating
         --["Freehold"] = { id = 1754, name = "Freehold", reason = 'Season 2 Dungeon' },
         --["The Underrot"] = { id = 1841, name = "The Underrot", reason = 'Season 2 Dungeon' },
@@ -83,6 +83,16 @@ function ds:invalidZones() -- Invalid zones for recruitment
         --["Dawn of the Infinite Murozond's Rise"] = { id = 0, name = "Dawn of the Infinite Murozond's Rise", reason = 'Season 3 Dungeon' },
     }
 
+    ns.global.zoneList = ns.global.zoneList or {}
+    for k, r in pairs(ns.global.zoneList and ns.global.zoneList or {}) do tbl[k] = r end
+
+    return tbl
+end
+function ds:convertZoneKeyToName()
+    local tbl = {}
+    for k, v in pairs(ns.tblInvalidZones) do
+        tbl[v.name] = v
+    end
     return tbl
 end
 function ds:classes() -- Class data

@@ -26,9 +26,11 @@ L["OK"] = 'OK'
 L["ENABLE"] = 'Enable'
 L["DISABLE"] = 'Disable'
 L["REMOVE"] = 'Remove'
+L['NEW'] = 'New'
 L['SAVE'] = 'Save'
 L['DELETE'] = 'Delete'
 L['DELETE_CONFIRMATION'] = 'Are you sure you want to delete this record?'
+L['ABOUT'] = 'About'
 
 
 -- * Icon Menu and Slash Commands
@@ -151,3 +153,28 @@ L['WHISPER_WELCOME_MSG'] = 'Whisper Welcome Message'
 L['WHISPER_WELCOME_MSG_DESC'] = 'Whispered message sent to a player when they join the guild.'
 --? GR Invite Messages Window
 L['INVITE_MESSAGES'] = 'Invite Messages'
+--? BlackList Settings Window
+L['BLACK_LIST'] = 'Black List'
+L['BLACK_LIST_REMOVE'] = 'Remove Selected Black List Entries'
+--? Invalid Settings Window
+L['INVALID_ZONE'] = 'Invalid Zones'
+L['ZONE_ID'] = 'Zone ID (Numeric ID)'
+L['ZONE_NAME'] = 'Name of the Zone:'
+L['ZONE_TYPE'] = 'Type of Zone:'
+L['ZONE_ID_DESC'] = [[
+The zone ID for the invalid zone.
+
+List of instances:
+    https://wowpedia.fandom.com/wiki/InstanceID
+
+Best World Zone IDs I can Find:
+    https://wowpedia.fandom.com/wiki/UiMapID
+    
+If you find a zone that should be added, please let me know.]]
+L['ZONE_NOTE'] = 'Zones with |cFF00FF00*|r are the only editable zones.'
+L['ZONE_LIST_NAME'] = 'The following zones will be ignored by the scanner:'
+L['ABOUT_LINE'] = 'Thank you for using Guild Recruiter, I hope you find this addon useful!'
+L['ABOUT_DOC_LINKS'] = 'Documentation and Links'
+L['GITHUB_LINK'] = 'GitHub (Support documentation)'
+L['ABOUT_DISCORD_LINK'] = 'Discord Link'
+L['SUPPORT_LINKS'] = 'Support Guild Recruiter Links'
