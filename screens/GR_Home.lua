@@ -189,6 +189,16 @@ function home:CreateMessageSelection()
     msgListDropDown:SetCallback('OnValueChanged', function(_, _, val) self:MessageChanged(val) end)
     inline:AddChild(msgListDropDown)
     tblFrame.msgList = msgListDropDown
+
+    -- Filter List DropDown Ace3
+    local filterListDropDown = aceGUI:Create('Dropdown')
+    filterListDropDown:SetLabel(L['Filter List']..':')
+    filterListDropDown:SetRelativeWidth(.5)
+    filterListDropDown:SetList(self.tblFilters)
+    filterListDropDown:SetValue(ns.settings.activeFilter or 1)
+    filterListDropDown:SetCallback('OnValueChanged', function(_, _, val) ns.gSettings.activeFilter = (val == 0 and 99 or val) end)
+    inline:AddChild(filterListDropDown)
+    tblFrame.filterList = filterListDropDown
 end
 function home:CreateMessagePreview()
     local inline = self.tblFrame.inline
