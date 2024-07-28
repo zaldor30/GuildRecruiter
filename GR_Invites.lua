@@ -67,15 +67,17 @@ local function UpdateInvitePlayerStatus(doUpdate, ...)
     elseif strlower(msg):match(L['no player named']) then cancelInvite()
     elseif msg:match(L['declines your guild invitation']) then updateSent('PlayersDeclined')
     elseif msg:match(L["joined the guild"]) then
-        if not invite.tblSent[pName].skipGreetings and  showWelcome and msgWelcome then
-            msgWelcome = ns.code:variableReplacement(msgWelcome, pName, 'REMOVE<>')
-            SendChatMessage(msgWelcome, 'GUILD')
-        end
+            C_Timer.After(5, function()
+            if not invite.tblSent[pName].skipGreetings and  showWelcome and msgWelcome then
+                msgWelcome = ns.code:variableReplacement(msgWelcome, pName, 'REMOVE<>')
+                SendChatMessage(msgWelcome, 'GUILD')
+            end
 
-        if not invite.tblSent[pName].skipGreetings and showGreeting and msgGreeting then
-            msgGreeting = ns.code:variableReplacement(msgGreeting, pName, 'REMOVE<>')
-            SendChatMessage(msgGreeting, 'WHISPER', nil, pName)
-        end
+            if not invite.tblSent[pName].skipGreetings and showGreeting and msgGreeting then
+                msgGreeting = ns.code:variableReplacement(msgGreeting, pName, 'REMOVE<>')
+                SendChatMessage(msgGreeting, 'WHISPER', nil, pName)
+            end
+        end)
 
         updateSent('PlayersJoined')
         ns.code:cOut(pName..' '..L['JOINED_GUILD_MESSAGE'])
