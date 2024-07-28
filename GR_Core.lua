@@ -60,6 +60,7 @@ function core:Init()
             analytics = {}
         },
         global = {
+            showWhatsNew = true,
             guildInfo = {},
             gmSettings = {
                 -- GM Settings
@@ -174,7 +175,8 @@ function core:StartGuildSetup(clubID) -- Get Guild Info and prep database
 
     checkIfGuildLeader()
 end
-function core:PerformRecordMaintenance()
+function core:PerformRecordMaintenance() -- Perform Record Maintenance
+    -- ToDo: Remove old deleted black list records
     -- Decode Black List
     local blSuccess, tblBL = ns.code:decompressData(ns.g.blackList or {})
     if blSuccess then ns.blackList = tblBL or {}
@@ -215,11 +217,11 @@ function core:PerformRecordMaintenance()
     ns.code:fOut('Anti-Spam Records Removed: '..antiSpamRemoved, GRColor)
     ns.code:fOut('Black List Records Removed: '..blackListRemoved, GRColor)
 end
-function core:StartSlashCommands()
+function core:StartSlashCommands() -- Start Slash Commands
     local function slashCommand(msg)
         msg = strlower(msg:trim())
 
-        if not msg or msg == '' then ns.screens.home:StartUp()
+        if not msg or msg == '' then ns.win.home:StartUp()
         elseif msg == L['HELP'] then ns.code:fOut(L['SLASH_COMMANDS'], GRColor, true)
         elseif strlower(msg) == L['CONFIG'] then Settings.OpenToCategory('Guild Recruiter')
         elseif strlower(msg):match(tostring(L['BLACKLIST'])) then
@@ -232,13 +234,13 @@ function core:StartSlashCommands()
     GR:RegisterChatCommand('gr', slashCommand)
     GR:RegisterChatCommand(L["RECRUITER"], slashCommand)
 end
-function core:StartMiniMapIcon()
+function core:StartMiniMapIcon() -- Start Mini Map Icon
     local code = ns.code
     local iconData = LibStub("LibDataBroker-1.1"):NewDataObject("GR_Icon", { -- Minimap Icon Settings
         type = 'data source',
         icon = GR.icon,
         OnClick = function(_, button)
-            if button == 'LeftButton' then return--ns.screens.home:StartUp()
+            if button == 'LeftButton' then return ns.win.base:SetShown(true)
             elseif button == 'RightButton' then Settings.OpenToCategory('Guild Recruiter') end
         end,
         OnTooltipShow = function(GameTooltip)
@@ -297,8 +299,8 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
 
     core:StartBaseEvents() -- Start the base events
     self.fullyStarted = true
-    -- ToDo: ns.screens.base:StartUp()
-    --!Load Base but hide
+    ns.win.base:StartUp() -- Build the base window
+    ns.win.base:SetShown(false) -- Hide the base window
 
     -- Display info based on version change
     if not ns.g.currentVersion then ns.code:fOut(L['FIRST_TIME_INFO'], GRColor, true)
@@ -306,7 +308,7 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     ns.g.currentVersion = GR.version -- Set the current version
 
     ns.code:fOut(L['TITLE']..' ('..GR.version..(GR.isBeta and ' Beta) ')..L['IS_ENABLED'], GRColor, true)
-    ns.code:fOut(L['BETA_INFORMATION'], 'FF0000', true)
+    if GR.isBeta then ns.code:fOut(L['BETA_INFORMATION'], 'FF0000', true) end
 
     -- ToDo: Sync Timer Routine
 end

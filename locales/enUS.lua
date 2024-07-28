@@ -31,7 +31,25 @@ L['SAVE'] = 'Save'
 L['DELETE'] = 'Delete'
 L['DELETE_CONFIRMATION'] = 'Are you sure you want to delete this record?'
 L['ABOUT'] = 'About'
+L['ABOUT_TOOLTIP'] = 'See What\'s New and support info.'
 
+-- * GR Icon Bar
+L['LOCK'] = 'Lock'
+L['LOCK_TOOLTIP'] = 'Lock or unlock the window from repositioning.'
+L['SETTINGS'] = 'Settings'
+L['SETTINGS_TOOLTIP'] = 'Open the Guild Recruiter settings window.'
+L['SYNC'] = 'Sync'
+L['SYNC_TOOLTIP'] = 'Manual sync with guild members.'
+L['ANALYTICS'] = 'Analytics'
+L['ANALYTICS_TOOLTIP'] = 'View the analytics window.'
+L['BLACKLIST'] = 'Blacklist'
+L['BLACKLIST_TOOLTIP'] = 'Add a player to the blacklist.'
+L['FILTER_EDITOR'] = 'Filter Editor'
+L['FILTER_EDITOR_TOOLTIP'] = 'Open the filter editor window.'
+L['COMPACT_MODE'] = 'Compact Mode'
+L['COMPACT_MODE_TOOLTIP'] = 'Toggle compact scanner compact mode.'
+L['RESET_FILTER'] = 'Reset Filter'
+L['RESET_FILTER_TOOLTIP'] = 'Reset the filter to the restart scan.'
 
 -- * Icon Menu and Slash Commands
 L["HELP"] = 'help'
@@ -89,6 +107,26 @@ Right Click: Open Config
 
 %AntiSpam in invited list.
 %BlackList in blacklisted list.]]
+
+-- * GR Home Screen
+L['SCAN'] = 'Scan'
+L['MESSAGE_ONLY'] = 'Message ONLY' -- Invite Message Only
+L['GUILD_INVITE_ONLY'] = 'Guild Invite ONLY' -- Guild Invite Only
+L['GUILD_INVITE_AND_MESSAGE'] = 'Guild Invite and Message' -- Guild Invite and Message
+L['MESSAGE_ONLY_IF_INVITE_DECLINED'] = 'Message Only if Invitation is declined' -- Message Only if Invitation is declined
+L['CLASS_FILTER'] = 'Default Class Filter' -- Default Class Filter
+L['RACE_FILTER'] = 'Default Race Filter' -- Default Race Filter
+L['INVITE_FORMAT'] = 'Recruit Invite Format:' -- Recruit Invite Format
+L['MIN_LVL'] = 'Min Level:' -- Minimum level
+L['MAX_LVL'] = 'Max Level:' -- Maximum level
+L['MESSAGE_LIST'] = 'Invite Messages' -- Invite Messages
+L['GUILD_INVITE_ONLY'] = 'No message will be sent. Only guild invite will be sent.'
+L['SELECT_MESSAGE'] = 'Select a message from the list or create one in settings.'
+
+-- * GR Error Message
+L['INVALID_LEVEL'] = 'You must enter a number between 1 and'
+L['MIN_LVL_HIGHER_ERROR'] = 'The minimum level must be higher than the maximum level.'
+L['MAX_LVL_LOWER_ERROR'] = 'The maximum level must be lower than the minimum level.'
 
 -- * GR Config Window Messages
 L['General Settings'] = true

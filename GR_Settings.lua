@@ -106,8 +106,8 @@ ns.addonSettings = {
                     desc = L['GEN_WHATS_NEW_DESC'],
                     type = 'toggle',
                     width = 'full',
-                    set = function(_, val) ns.gSettings.showWhatsNew = val end,
-                    get = function() return ns.gSettings.showWhatsNew end,
+                    set = function(_, val) ns.global.showWhatsNew = val end,
+                    get = function() return ns.global.showWhatsNew end,
                 },
                 genContext = {
                     order = 4,

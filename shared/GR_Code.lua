@@ -130,7 +130,7 @@ function code:variableReplacement(msg, playerName, removeGT)
     local gi = ns.guildInfo
     if not gi or not msg or msg == '' then return end
 
-    playerName = strsplit('-', playerName)
+    playerName = (playerName and playerName ~= '') and strsplit('-', playerName) or ''
 
     msg = code:capitalKeyWord(msg)
     if not msg then return end
@@ -142,4 +142,12 @@ function code:variableReplacement(msg, playerName, removeGT)
     msg = msg:gsub(L['PLAYERNAME'], (playerName or 'player'))
 
     return msg
+end
+
+-- *Frame Routines
+function code:createPadding(frame, rWidth)
+    local widget = LibStub("AceGUI-3.0"):Create('Label')
+    if rWidth <=2 then widget:SetRelativeWidth(rWidth)
+    else widget:SetWidth(rWidth) end
+    frame:AddChild(widget)
 end
