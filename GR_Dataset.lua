@@ -16,7 +16,7 @@ function ds:WhatsNew()
     local update = false -- True and will save seen message
     local height = 410 -- Adjust size of what's new window
     local title, msg = '', ''
-    title = ns.code:cText('FFFFFF00', "What's new in v"..GR.version.." (Beta)?")
+    title = ns.code:cText('FFFFFF00', "What's new in v"..GR.version.."?")
     msg = [[
          |CFF55D0FF** Please report any bugs or issues in Discord **
                 Discord: https://discord.gg/ZtS6Q2sKRH
