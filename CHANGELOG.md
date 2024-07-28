@@ -1,4 +1,6 @@
 # Guild Recruiter
+## 2.2.53
+- War within Update
 ## 2.2.52
 - Forgot to enable old dungeons and raids when inviting players.
 ## 2.2.51
