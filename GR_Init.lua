@@ -5,18 +5,13 @@ ICON_PATH = 'Interface\\AddOns\\GuildRecruiter\\Images\\'
 
 GR = LibStub('AceAddon-3.0'):NewAddon('GuildRecruiter', 'AceConsole-3.0', 'AceEvent-3.0', 'AceHook-3.0', 'AceComm-3.0')
 GR.debug = false
-GR.isBeta = true
-GR.author  = C_AddOns.GetAddOnMetadata('GuildRecruiter', 'Author')
-GR.version = C_AddOns.GetAddOnMetadata('GuildRecruiter', 'Version')
-
--- Icons
 GR.icon = ICON_PATH..'GR_Icon.tga'
-BUTTON_LOCKED = ICON_PATH..'GR_Locked'
-BUTTON_UNLOCKED = ICON_PATH..'GR_Unlocked'
+GR.author  = GetAddOnMetadata('GuildRecruiter', 'Author')
+GR.version = GetAddOnMetadata('GuildRecruiter', 'Version')
 
 -- Global Variables
-PLAYER_PROFILE = UnitName('player')..'-'..GetRealmName()
 SECONDS_IN_A_DAY = 86400
+PLAYER_PROFILE = UnitName('player')..'-'..GetRealmName()
 MAX_CHARACTER_LEVEL = GetMaxPlayerLevel()
 
 -- Backdrop Templates
@@ -46,7 +41,6 @@ TOOLTIP_STRATA = 'TOOLTIP'
 DEFAULT_STRATA = BACKGROUND_STRATA
 
 -- Default Colors
-GRColor = 'FF3EB9D8' -- Guild Recruiter Color
 GM_DESC_COLOR = 'FFAF640C'
 
 -- Highlgiht Images
@@ -59,3 +53,7 @@ SKURRI_FONT = 'Fonts\\SKURRI.ttf'
 DEFAULT_FONT = 'Fonts\\FRIZQT__.ttf'
 MORPHEUS_FONT = 'Fonts\\MORPHEUS.ttf'
 DEFAULT_FONT_SIZE = 12
+
+-- Icons
+BUTTON_LOCKED = ICON_PATH..'GR_Locked'
+BUTTON_UNLOCKED = ICON_PATH..'GR_Unlocked'
