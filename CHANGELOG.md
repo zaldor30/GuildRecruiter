@@ -1,4 +1,6 @@
 # Guild Recruiter
+## 2.2.54
+- Fixed settings
 ## 2.2.53
 - War within Update
 ## 2.2.52

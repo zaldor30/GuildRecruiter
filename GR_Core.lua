@@ -231,7 +231,7 @@ function core:CreateMiniMapIcon()
         icon = GR.icon,
         OnClick = function(_, button)
             if button == 'LeftButton' then ns.screens.home:StartUp()
-            elseif button == 'RightButton' then InterfaceOptionsFrame_OpenToCategory(ns.addonOptions) end
+            elseif button == 'RightButton' then Settings.OpenToCategory('Guild Recruiter')(ns.addonOptions) end
         end,
         OnTooltipShow = function(GameTooltip)
             local title = code:cText('FFFFFF00', L['TITLE'])
@@ -258,7 +258,7 @@ function core:SlashCommands()
             ns.code:fOut(L['SLASH_HELP3'])
             ns.code:fOut(L['SLASH_HELP4'])
             ns.code:fOut(L['SLASH_HELP5'])
-        elseif strlower(msg) == L['config'] then InterfaceOptionsFrame_OpenToCategory(ns.addonOptions)
+        elseif strlower(msg) == L['config'] then Settings.OpenToCategory('Guild Recruiter')(ns.addonOptions)
         elseif strlower(msg):match(tostring(L['blacklist'])) then
             msg = strlower(msg):gsub(tostring(L['blacklist']), ''):trim()
             local name = strupper(strsub(msg,1,1))..strlower(strsub(msg,2))
