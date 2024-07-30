@@ -205,13 +205,14 @@ function core:PerformRecordMaintenance() -- Perform Record Maintenance
     end
 
     -- Black List Maintenance
-    local blExpire = C_DateAndTime.GetServerTimeLocal()
-    for k, r in pairs(ns.blackList) do
+    --[[local blExpire = C_DateAndTime.GetServerTimeLocal()
+    for k, r in pairs(ns.blackList and ns.blackList or {}) do
+        for k1,r1 in pairs(r) do print(k1,r1) end
         if r.timeStamp < blExpire then
             ns.blackList[k] = nil
             blackListRemoved = blackListRemoved + 1
         end
-    end
+    end]]--
 
     -- Report to console
     ns.code:fOut('Anti-Spam Records Removed: '..antiSpamRemoved, GRColor)
@@ -221,7 +222,7 @@ function core:StartSlashCommands() -- Start Slash Commands
     local function slashCommand(msg)
         msg = strlower(msg:trim())
 
-        if not msg or msg == '' then ns.win.home:StartUp()
+        if not msg or msg == '' and not ns.win.home:IsShown() then return ns.win.home:SetShown(true)
         elseif msg == L['HELP'] then ns.code:fOut(L['SLASH_COMMANDS'], GRColor, true)
         elseif strlower(msg) == L['CONFIG'] then Settings.OpenToCategory('Guild Recruiter')
         elseif strlower(msg):match(tostring(L['BLACKLIST'])) then
@@ -240,7 +241,7 @@ function core:StartMiniMapIcon() -- Start Mini Map Icon
         type = 'data source',
         icon = GR.icon,
         OnClick = function(_, button)
-            if button == 'LeftButton' then return ns.win.base:SetShown(true)
+            if button == 'LeftButton' and not ns.win.home:IsShown() then return ns.win.home:SetShown(true)
             elseif button == 'RightButton' then Settings.OpenToCategory('Guild Recruiter') end
         end,
         OnTooltipShow = function(GameTooltip)
@@ -315,3 +316,46 @@ end
 core:Init()
 
 -- * Right Click Invite Routines
+function core:RightClickInvite(name, guid)
+    if not name or not guid then return end
+
+    local function invitePlayer()
+        if not CanGuildInvite() then ns.code:dOut(L['CANNOT_INVITE']) return end
+        GuildInvite(name)
+    end
+
+    if ns.gSettings.sendGuildGreeting then
+        local msg = ns.gSettings.welcomeMessage:gsub(L['GUILDNAME'], ns.guildInfo.guildName)
+        msg = msg:gsub(L['GUILDLINK'], ns.guildInfo.guildLink or L['GUILD_LINK_NOT_FOUND'])
+        msg = msg:gsub(L['PLAYERNAME'], name or L['NO_PLAYER_NAME'])
+        msg = msg:gsub(L['NO_PLAYER_NAME'], L['NO_PLAYER_NAME'])
+
+        if ns.gSettings.sendWhisperGreeting then
+            SendChatMessage(msg, 'WHISPER', nil, name)
+            ns.code:dOut('Whispered Greeting to '..name)
+        end
+
+        if ns.gSettings.overrideGM then
+            invitePlayer()
+            ns.code:dOut('Invited '..name)
+        else
+            local msg = ns.gmSettings.welcomeMessage:gsub(L['GUILDNAME'], ns.guildInfo.guildName)
+            msg = msg:gsub(L['GUILDLINK'], ns.guildInfo.guildLink or L['GUILD_LINK_NOT_FOUND'])
+            msg = msg:gsub(L['PLAYERNAME'], name or L['NO_PLAYER_NAME'])
+            msg = msg:gsub(L['NO_PLAYER_NAME'], L['NO_PLAYER_NAME'])
+
+            StaticPopupDialogs['GR_GUILD_INVITE'] = {
+                text = msg,
+                button1 = ACCEPT,
+                button2 = CANCEL,
+                OnAccept = function() invitePlayer() end,
+                timeout = 0,
+                whileDead = true,
+                hideOnEscape = true,
+                preferredIndex = 3,
+            }
+
+            StaticPopup_Show('GR_GUILD_INVITE')
+        end
+    else invitePlayer() end
+end

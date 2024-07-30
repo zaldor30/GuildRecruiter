@@ -8,10 +8,9 @@ local home = ns.win.home
 -- Observer Call Backs
 local function obsCLOSE_SCREENS()
     ns.observer:Unregister('CLOSE_SCREENS', obsCLOSE_SCREENS)
-    if not home.tblFrame.frame or not ns.screens.home.tblFrame.inline then return end
+    if not home.tblFrame.frame or not home.tblFrame.inline then return end
 
-    home.tblFrame.frame:SetShown(false)
-    home.tblFrame.inline.frame:Hide()
+    home:SetShown(false)
 end
 
 function home:Init()
@@ -31,16 +30,26 @@ function home:Init()
         [4] = L['MESSAGE_ONLY_IF_INVITE_DECLINED'],
     }
 end
+function home:IsShown() return ns.win.base.tblFrame.frame:IsShown() end
 function home:SetShown(val)
     local tblHome = ns.win.base.tblFrame
 
-    if not val and tblHome.frame then tblHome.frame:SetShown(false) return
-    elseif not tblHome.frame then return end
+    local function clearInline()
+        -- Clear home Ace3 children
+        if self.tblFrame.inline then
+            self.tblFrame.inline:ReleaseChildren()
+            self.tblFrame.inline.frame:Hide()
+            --self.tblFrame.inline:Release()
+            --self.tblFrame.inline = nil
+        end
+    end
 
-    ns.win.base.tblFrame.frame:SetSize(500, 300)
-    ns.pSettings.inviteFormat = ns.pSettings.inviteFormat or 2
-    self.minLevel = ns.pSettings.minLevel or MAX_CHARACTER_LEVEL - 5
-    self.maxLevel = ns.pSettings.maxLevel or MAX_CHARACTER_LEVEL
+    if not val then
+        tblHome.frame:SetShown(false)
+        self.tblFrame.frame:SetShown(false)
+        clearInline()
+        return
+    end
 
     -- Setup for Close Routines
     ns.observer:Notify('CLOSE_SCREENS')
@@ -54,12 +63,22 @@ function home:SetShown(val)
     }
     for k, r in pairs(ns.gSettings.filterList and ns.gSettings.filterList or {}) do self.tblFilters[k+100] = r.desc end
 
-    -- Clear home Ace3 children
-    if self.tblFrame and self.tblFrame.inline then
-        self.tblFrame.inline:ReleaseChildren()
-    end
+    ns.win.base:SetShown(true)
+    ns.win.base.tblFrame.frame:SetSize(500, 300)
+    ns.pSettings.inviteFormat = ns.pSettings.inviteFormat or 2
+    self.minLevel = ns.pSettings.minLevel or MAX_CHARACTER_LEVEL - 5
+    self.maxLevel = ns.pSettings.maxLevel or MAX_CHARACTER_LEVEL
 
-    if not self.tblFrame or not self.tblFrame.frame then self:CreateHomeFrame() end
+    -- Ace GUI Frame for Ace Controls
+    clearInline() -- Clear any existing children
+    self:CreateHomeFrame()
+
+    self:CreateInviteArea()
+    self:CreateMessageSelection()
+    self:CreateMessagePreview()
+
+    self:MessageChanged(ns.pSettings.activeMessage)
+    self.tblFrame.frame:SetShown(true)
 end
 
 -- *Create Invite Area
@@ -159,14 +178,14 @@ function home:CreateInviteArea()
     scanButton:SetRelativeWidth(.15)
     scanButton:SetCallback('OnClick', function()
         tblBase.statusText:SetText('')
-        local msgID = ns.settings.activeMessage
+        local msgID = ns.pSettings.activeMessage
         local msg = (msgID and self.tblWhipsers[msgID]) and self.tblWhipsers[msgID].message or nil
-        if ns.settings.inviteFormat ~= 2 and (not msgID or not msg) then
+        if ns.pSettings.inviteFormat ~= 2 and (not msgID or not msg) then
             ns.statusText:SetText(ns.code:cText('FFFF0000', L['Select a message from the list or create one in settings.']))
             return
         else ns.statusText:SetText('') end
 
-        ns.screens.scanner:StartUp(msg)
+        ns.win.scanner:SetShown(true)
     end)
     inline:AddChild(scanButton)
     tblFrame.scanButton = scanButton
@@ -192,11 +211,11 @@ function home:CreateMessageSelection()
 
     -- Filter List DropDown Ace3
     local filterListDropDown = aceGUI:Create('Dropdown')
-    filterListDropDown:SetLabel(L['Filter List']..':')
+    filterListDropDown:SetLabel(L['FILTERS']..':')
     filterListDropDown:SetRelativeWidth(.5)
     filterListDropDown:SetList(self.tblFilters)
-    filterListDropDown:SetValue(ns.settings.activeFilter or 1)
-    filterListDropDown:SetCallback('OnValueChanged', function(_, _, val) ns.gSettings.activeFilter = (val == 0 and 99 or val) end)
+    filterListDropDown:SetValue(ns.pSettings.activeFilter or 1)
+    filterListDropDown:SetCallback('OnValueChanged', function(_, _, val) ns.pSettings.activeFilter = (val == 0 and 99 or val) end)
     inline:AddChild(filterListDropDown)
     tblFrame.filterList = filterListDropDown
 end
@@ -235,27 +254,20 @@ function home:CreateHomeFrame()
 
     -- Base Regular Frame
     local f = tblFrame.frame or CreateFrame('Frame', 'GR_HOME_FRAME', tblBase.frame, 'BackdropTemplate')
-    f:SetBackdrop(BackdropTemplate())
+    f:SetBackdrop(BLANK_BACKGROUND)
     f:SetFrameStrata(DEFAULT_STRATA)
     f:SetBackdropColor(0, 0, 0, 0)
-    f:SetBackdropBorderColor(1, 1, 1, 0)
+    f:SetBackdropBorderColor(0, 0, 0, 0)
     f:SetPoint('TOPLEFT', tblBase.topFrame, 'BOTTOMLEFT', -5, 20)
     f:SetPoint('BOTTOMRIGHT', tblBase.statusBar, 'TOPRIGHT', 0, -5)
     tblFrame.frame = f
 
-    -- Ace GUI Frame for Ace Controls
-    local inline = tblFrame.inline or aceGUI:Create('InlineGroup')
+    local inline = self.tblFrame.inline or aceGUI:Create('InlineGroup')
     inline:SetLayout('Flow')
     inline:SetPoint('TOPLEFT', f, 'TOPLEFT', 5, -5)
     inline:SetPoint('BOTTOMRIGHT', f, 'BOTTOMRIGHT', 0, 5)
     inline.frame:SetShown(true)
-    tblFrame.inline = inline
-
-    self:CreateInviteArea()
-    self:CreateMessageSelection()
-    self:CreateMessagePreview()
-
-    self:MessageChanged(ns.pSettings.activeMessage)
+    self.tblFrame.inline = inline
 end
 
 -- *Support Functions
@@ -287,6 +299,7 @@ function home:MessageChanged(val)
 
     self.activeMessage = nil
     ns.pSettings.activeMessage = val
+    ns.win.base.inviteMessage = self.tblWhipsers[val].message
     self.activeMessage = self.tblWhipsers[val].message:gsub('|c', ''):gsub('|r', ''):gsub(GM_DESC_COLOR, '')
     self.activeMessage = ns.code:variableReplacement(self.activeMessage)
 

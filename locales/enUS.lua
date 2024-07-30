@@ -50,6 +50,7 @@ L['COMPACT_MODE'] = 'Compact Mode'
 L['COMPACT_MODE_TOOLTIP'] = 'Toggle compact scanner compact mode.'
 L['RESET_FILTER'] = 'Reset Filter'
 L['RESET_FILTER_TOOLTIP'] = 'Reset the filter to the restart scan.'
+L['FILTERS'] = 'Filters'
 
 -- * Icon Menu and Slash Commands
 L["HELP"] = 'help'

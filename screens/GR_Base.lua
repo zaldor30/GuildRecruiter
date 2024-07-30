@@ -19,6 +19,7 @@ end
 -- * Create the Main (base) Window
 local base = ns.win.base
 function base:Init()
+    self.inviteMessage = nil
     self.isMoveLocked = true
 
     self.tblFrame = {}
@@ -273,8 +274,5 @@ function base:CreateStatusBarFrame()
         statusBar:SetSize(tblFrame.frame:GetWidth() - 10, 25)
     end)
 end
-function base:SetShown(val)
-    self.tblFrame.frame:SetShown(val)
-    ns.win.home:SetShown(val)
-end
+function base:SetShown(val) self.tblFrame.frame:SetShown(val) end
 base:Init()
