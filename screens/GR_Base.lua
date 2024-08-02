@@ -75,10 +75,10 @@ function base:CreateBaseFrame()
     checkIfGuildRecuiterIsEnabled()
 end
 function base:CreateBaseHeaderFrame()
-    local tblFrame = self.tblFrame
+    local tblFrame = base.tblFrame
 
     -- Create the top frame
-    local f = CreateFrame('Frame', 'GR_BASE_topFrame', tblFrame.frame, 'BackdropTemplate')
+    local f = tblFrame.topFrame or CreateFrame('Frame', 'GR_BASE_topFrame', tblFrame.frame, 'BackdropTemplate')
     f:SetBackdrop(BackdropTemplate())
     f:SetBackdropColor(0, 0, 0, 1)
     f:SetBackdropBorderColor(1, 1, 1, .5)
@@ -89,7 +89,6 @@ function base:CreateBaseHeaderFrame()
 
     -- Application (About) Icon
     -- ToDo: Change onClick
-
 
     -- Title Text
     local textString = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -132,11 +131,14 @@ function base:CreateBaseHeaderFrame()
     backIconButton:SetPoint('TOPRIGHT', lockButton, 'TOPLEFT', 0, 0)
     backIconButton:SetNormalTexture(ICON_PATH..'GR_Back')
     backIconButton:SetHighlightTexture(BLUE_HIGHLIGHT)
-    backIconButton:SetScript('OnClick', function() ns.screens.home:StartUp() end)
-    backIconButton:SetScript('OnEnter', function() ns.code:createTooltip(L['Home']) end)
+    backIconButton:SetScript('OnClick', function()
+        ns.observer:Notify('CLOSE_SCREENS')
+        ns.win.home:SetShown(true)
+    end)
+    backIconButton:SetScript('OnEnter', function() ns.code:createTooltip(L['HOME_BUTTON']) end)
     backIconButton:SetScript('OnLeave', function() GameTooltip:Hide() end)
     backIconButton:SetShown(false)
-    tblFrame.frame.backButton = backIconButton
+    tblFrame.backButton = backIconButton
 end
 function base:CreateBaseIconFrame()
     local tblFrame = base.tblFrame
@@ -198,7 +200,7 @@ function base:CreateBaseIconFrame()
     blacklistIconButton:SetShown(true)
 
     -- Create Filter 
-    if GR.isBeta then
+    if GR.isTest then
         local filterIconButton = CreateFrame('Button', 'GR_BASE_FILTERICON', tblFrame.topFrame)
         filterIconButton:SetSize(20, 20)
         filterIconButton:SetPoint('LEFT', blacklistIconButton, 'RIGHT', 5, 0)
@@ -218,7 +220,7 @@ function base:CreateBaseIconFrame()
     aboutButton:SetScript('OnClick', function() ns.screens.home:StartUp() end)
     aboutButton:SetScript('OnEnter', function() ns.code:createTooltip(L['ABOUT']..' '..L['TITLE'], L['ABOUT_TOOLTIP']) end)
     aboutButton:SetScript('OnLeave', function() GameTooltip:Hide() end)
-    tblFrame.backButton = aboutButton
+    tblFrame.aboutButton = aboutButton
 
     -- Compact Mode Icon
     local compactIconButton = CreateFrame('Button', 'GR_BASE_COMPACTICON', tblFrame.topFrame)

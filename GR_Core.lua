@@ -241,7 +241,8 @@ function core:StartMiniMapIcon() -- Start Mini Map Icon
         type = 'data source',
         icon = GR.icon,
         OnClick = function(_, button)
-            if button == 'LeftButton' and not ns.win.home:IsShown() then return ns.win.home:SetShown(true)
+            if button == 'LeftButton' and IsShiftKeyDown() then ns.win.scanner:SetShown(true)
+            elseif button == 'LeftButton' and not ns.win.home:IsShown() then return ns.win.home:SetShown(true)
             elseif button == 'RightButton' then Settings.OpenToCategory('Guild Recruiter') end
         end,
         OnTooltipShow = function(GameTooltip)
@@ -308,8 +309,8 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     elseif ns.g.currentVersion ~= GR.version then ns.code:fOut(L['NEW_VERSION_INFO'], GRColor, true) end
     ns.g.currentVersion = GR.version -- Set the current version
 
-    ns.code:fOut(L['TITLE']..' ('..GR.version..(GR.isBeta and ' Beta) ')..L['IS_ENABLED'], GRColor, true)
-    if GR.isBeta then ns.code:fOut(L['BETA_INFORMATION'], 'FF0000', true) end
+    ns.code:fOut(L['TITLE']..' ('..GR.version..(GR.isTest and ' Beta) ')..L['IS_ENABLED'], GRColor, true)
+    if GR.isTest then ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', strlower(GR.testLevel)), 'FF0000', true) end
 
     -- ToDo: Sync Timer Routine
 end

@@ -65,7 +65,7 @@ local gmActiveMessage, invActiveMessage, activeZone = nil, nil, nil
 BL_DAYS_TO_WAIT = 14
 
 ns.addonSettings = {
-    name = L['TITLE']..' ('..GR.version..(GR.isBeta and ' Beta)' or ')'),
+    name = L['TITLE']..' ('..GR.version..(GR.isTest and ' '..GR.testLevel..')' or ')'),
     type = 'group',
     args = {
         grSettings = { -- Guild Recruiter Settings

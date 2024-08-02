@@ -32,6 +32,10 @@ L['DELETE'] = 'Delete'
 L['DELETE_CONFIRMATION'] = 'Are you sure you want to delete this record?'
 L['ABOUT'] = 'About'
 L['ABOUT_TOOLTIP'] = 'See What\'s New and support info.'
+L['PLEASE_WAIT'] = 'Please wait'
+L['ERROR_SCAN_WAIT'] = ' seconds before scanning again.'
+
+-- *? Version 3.0 Changes
 
 -- * GR Icon Bar
 L['LOCK'] = 'Lock'
@@ -58,6 +62,7 @@ L["CONFIG"] = 'cofig'
 L["RELOAD"] = 'reload'
 L["RECRUITER"] = 'recruiter'
 L["BLACKLIST"] = 'blacklist'
+L['HOME_BUTTON'] = 'Home'
 
 -- * GR General Messages
 L['IS_ENABLED'] = 'is enabled.'
@@ -70,12 +75,47 @@ L['GUILDNAME'] = 'GUILDNAME' -- Guild Name Keyword
 L['NO_GUILD_NAME'] = 'No Guild Name' -- No Guild Name Message
 L['PLAYERNAME'] = 'PLAYERNAME' -- Player Name Keyword
 L['NO_PLAYER_NAME'] = 'player' -- No Player Name Message
+L['BLACK_LIST'] = 'Black List' -- Black List Keyword
+
+-- * GR scanner Messages
+L['BL'] = 'BL' -- Button Abbreviation for Black List
+L['INVITE'] = 'Invite'
+L['READY_INVITE'] = 'Ready to invite'
+L['BL_ADD_PLAYER'] = 'Add Player to black list'
+L['SKIP'] = 'Skip'
+L['SKIP_DESC'] = 'Skip the current player and move to the next player.'
+L['WHO_RESULTS'] = 'Who Results'
+L['NEXT_FILTER'] = 'Next Query'
+L['RESETTING_FILTERS'] = 'Resetting filters on next scan.'
+L['NUMBER_PLAYERS_FOUND'] = 'Number of players found'
+L['INVITE_BUTTON_TOOLTIP'] = 'Invite player to the guild.'
+L['INVITE_BUTTON_BODY_TOOLTIP'] = [[Only unchecked players will be invited.
+
+Checked players are for black list and skip.]]
+L['BL_BUTTON_TOOLTIP'] = 'Add player to the blacklist.'
+L['BL_BUTTON_BODY_TOOLTIP'] = [[Add the player to the blacklist and skip to the next player.
+
+Can only invite if no players are checked.]]
+L['SKIP_BUTTON_TOOLTIP'] = 'Skip player and move to the next player.'
+L['SKIP_BUTTON_BODY_TOOLTIP'] = [[Skip the current player and move to the next player.
+This will add the player to already invited and will try to
+invite the player after the anti-spam expires.
+
+Can only invite if no players are checked.]]
+-- Analytics
+L['TOTAL_SCANNED'] = 'Players Scanned'
+L['TOTAL_INVITED'] = 'Players Invited'
+L['INVITES_PENDING'] = 'Invites Pending'
+L['TOTAL_DECLINED'] = 'Invites Declined'
+L['TOTAL_ACCEPTED'] = 'Invites Accepted'
+L['TOTAL_BLACKLISTED'] = 'Black Listed'
 
 -- * GR Core Messages
 L['FIRST_TIME_INFO'] = [[
 Welcome to Guild Recruiter!
 You can access by right clicking on the minimap icon or by typing /gr config.
 Left click on the minimap icon to open the recruitment window.
+
 If you have any issues, click on the About menu option to get our Discord link.
 ]]
 L['NEW_VERSION_INFO'] = [[
@@ -83,7 +123,7 @@ Guild Recruiter has been updated!
 Please check the " What's New?" for what has changed.
 ]]
 L['BETA_INFORMATION'] = [[
-You are using a beta version of Guild Recruiter.
+You are using a VER version of Guild Recruiter.
 Please report any issues on our Discord server.]]
 
 -- ? GR Error Messages
@@ -104,6 +144,7 @@ Guild Recruiter Slash Commands:
 -- Keep %AntiSpam and %BlackList in the tooltip.
 L['MINIMAP_TOOLTIP'] = [[
 Left Click: Open Guild Recruiter
+Shift+Left Click: Open Scanner
 Right Click: Open Config
 
 %AntiSpam in invited list.

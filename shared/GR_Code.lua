@@ -151,3 +151,20 @@ function code:createPadding(frame, rWidth)
     else widget:SetWidth(rWidth) end
     frame:AddChild(widget)
 end
+function code:wordWrap(inputString, maxLineLength)
+    local lines = {}
+    local currentLine = ""
+
+    maxLineLength = maxLineLength or 50
+    for word in inputString:gmatch("%S+") do
+        if #currentLine + #word <= maxLineLength then
+            currentLine = currentLine .. " " .. word
+        else
+            table.insert(lines, currentLine)
+            currentLine = word
+        end
+    end
+
+    table.insert(lines, currentLine)
+    return table.concat(lines, "\n")
+end

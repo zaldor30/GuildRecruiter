@@ -13,7 +13,7 @@ end
 function ds:WhatsNew() -- What's new in the current version
     local height = 410 -- Adjust size of what's new window
     local title, msg = '', ''
-    title = ns.code:cText('FFFFFF00', "What's new in v"..GR.version..(GR.isBeta and ' (Beta)' or '').."?")
+    title = ns.code:cText('FFFFFF00', "What's new in v"..GR.version..(GR.isTest and ' ('..GR.testLevel..')' or '').."?")
     msg = [[
             |CFF55D0FF** Please report any bugs or issues in Discord **
                     Discord: https://discord.gg/ZtS6Q2sKRH

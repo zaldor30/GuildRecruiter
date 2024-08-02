@@ -39,8 +39,6 @@ function home:SetShown(val)
         if self.tblFrame.inline then
             self.tblFrame.inline:ReleaseChildren()
             self.tblFrame.inline.frame:Hide()
-            --self.tblFrame.inline:Release()
-            --self.tblFrame.inline = nil
         end
     end
 
@@ -299,7 +297,7 @@ function home:MessageChanged(val)
 
     self.activeMessage = nil
     ns.pSettings.activeMessage = val
-    ns.win.base.inviteMessage = self.tblWhipsers[val].message
+    ns.win.base.inviteMessage = (self.tblWhipsers[val] and self.tblWhipsers[val].message) and self.tblWhipsers[val].message or nil
     self.activeMessage = self.tblWhipsers[val].message:gsub('|c', ''):gsub('|r', ''):gsub(GM_DESC_COLOR, '')
     self.activeMessage = ns.code:variableReplacement(self.activeMessage)
 
