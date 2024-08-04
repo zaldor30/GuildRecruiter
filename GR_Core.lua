@@ -176,19 +176,21 @@ function core:StartGuildSetup(clubID) -- Get Guild Info and prep database
     checkIfGuildLeader()
 end
 function core:PerformRecordMaintenance() -- Perform Record Maintenance
+    core:CreateBLandAntiSpamTables() -- Create the black list and anti-spam tables
+
     -- ToDo: Remove old deleted black list records
     -- Decode Black List
     local blSuccess, tblBL = ns.code:decompressData(ns.g.blackList or {})
-    if blSuccess then ns.blackList = tblBL or {}
+    if blSuccess then ns.tblBlackList = tblBL or {}
     else
-        ns.blackList = {}
+        ns.tblBlackList = {}
         ns.code:dOut('There was an issue decoding the Black List (Record Maint)') end
 
     -- Decode Anti-Spam List
     local asSuccess, tblAS = ns.code:decompressData(ns.g.antiSpamList or {})
-    if asSuccess then ns.antiSpamList = tblAS or {}
+    if asSuccess then ns.tblAntiSpamList = tblAS or {}
     else
-        ns.antiSpamList = {}
+        ns.tblAntiSpamList = {}
         ns.code:dOut('There was an issue decoding the Anti-Spam List (Record Maint)') end
 
     -- Start Record Maintenance
@@ -197,22 +199,12 @@ function core:PerformRecordMaintenance() -- Perform Record Maintenance
     local antiSpamExpire = C_DateAndTime.GetServerTimeLocal() - (antiSpamDays * SECONDS_IN_A_DAY)
 
     -- Anti-Spam List Maintenance
-    for k, r in pairs(ns.antiSpamList) do
+    for k, r in pairs(ns.tblAntiSpamList) do
         if r.timeStamp < antiSpamExpire then
-            ns.antiSpamList[k] = nil
+            ns.tblAntiSpamList[k] = nil
             antiSpamRemoved = antiSpamRemoved + 1
         end
     end
-
-    -- Black List Maintenance
-    --[[local blExpire = C_DateAndTime.GetServerTimeLocal()
-    for k, r in pairs(ns.blackList and ns.blackList or {}) do
-        for k1,r1 in pairs(r) do print(k1,r1) end
-        if r.timeStamp < blExpire then
-            ns.blackList[k] = nil
-            blackListRemoved = blackListRemoved + 1
-        end
-    end]]--
 
     -- Report to console
     ns.code:fOut('Anti-Spam Records Removed: '..antiSpamRemoved, GRColor)
@@ -249,8 +241,8 @@ function core:StartMiniMapIcon() -- Start Mini Map Icon
             local title = code:cText('FFFFFF00', L['TITLE']..' v'..GR.version..':')
             local body = code:cText('FFFFFFFF', L['MINIMAP_TOOLTIP'])
 
-            local antiSpam = #ns.antiSpamList > 0 and ' |cFFFF0000'..#ns.antiSpamList..'|r' or 0
-            local blackList = #ns.blackList > 0 and ' |cFFFF0000'..#ns.blackList..'|r' or 0
+            local antiSpam = #ns.tblAntiSpamList > 0 and ' |cFFFF0000'..#ns.tblAntiSpamList..'|r' or 0
+            local blackList = #ns.tblBlackList > 0 and ' |cFFFF0000'..#ns.tblAntiSpamList..'|r' or 0
 
             body = body:gsub('%%AntiSpam', antiSpam)
             body = body:gsub('%%BlackList', blackList)
@@ -269,8 +261,17 @@ function core:StartBaseEvents()
     local function CHAT_MSG_SYSTEM(...) ns.observer:Notify('CHAT_MSG_SYSTEM', ...) end
     ns.events:RegisterEvent('CHAT_MSG_SYSTEM', CHAT_MSG_SYSTEM)
 
-    -- Saves the ns.blackList and ns.antiSpamList tables on logout
+    -- Saves the ns.tblBlackList and ns.antiSpamList tables on logout
     ns.events:RegisterEvent('PLAYER_LOGOUT', function() ns.code:saveTables() end)
+end
+function core:CreateBLandAntiSpamTables()
+    ns.tblBlackList, ns.antiSpamList = {}, {}
+
+    local blSuccess, tblBL = ns.code:decompressData(ns.g.blackList or {})
+    ns.tblBlackList = blSuccess and tblBL or {}
+
+    local asSuccess, tblAS = ns.code:decompressData(ns.g.antiSpamList or {})
+    ns.tblAntiSpamList = asSuccess and tblAS or {}
 end
 function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     self.isEnabled = true
@@ -283,7 +284,11 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     if not self.isEnabled then return end -- If the guild is not enabled, then return
 
     -- Setup Tables
-    ns.tblRaces, ns.tblClasses, ns.tblInvalidZones = ns.ds:races(), ns.ds:classes(), ns.ds:invalidZones()
+    ns.tblRaces, ns.tblClasses = ns.ds:races(), ns.ds:classes()
+
+    --* Setup Tables
+    ns.tblInvalidZones = ns.ds:invalidZones()
+    ns.tblInvalidZonesByName = ns.ds:convertZoneKeyToName()
     ns.tblRacesSortedByName = ns.code:sortTableByField(ns.tblRaces, 'name')
     ns.tblClassesSortedByName = ns.code:sortTableByField(ns.tblClasses, 'name')
 
@@ -296,8 +301,6 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     core:PerformRecordMaintenance() -- Perform record maintenance
     core:StartSlashCommands() -- Start the slash commands
     core:StartMiniMapIcon() -- Start the mini map icon
-
-    -- ToDo: Invite Startup
 
     core:StartBaseEvents() -- Start the base events
     self.fullyStarted = true

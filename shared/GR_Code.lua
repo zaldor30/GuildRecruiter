@@ -63,11 +63,12 @@ end
 
 -- * Tables and Data Sorting Routines
 function code:saveTables(whichOne)
-    if whichOne == 'BLACK_LIST' then ns.dbBL = ns.code:compressData(ns.tblBlackList)
-    elseif whichOne == 'INVITED' then ns.dbInv = ns.code:compressData(ns.tblInvited)
+    local db = {}
+    if whichOne == 'BLACK_LIST' then ns.g.blackList = ns.code:compressData(ns.tblBlackList)
+    elseif whichOne == 'ANTI_SPAM_LIST' then ns.g.antiSpamList = ns.code:compressData(ns.tblAntiSpamList)
     else
         ns.g.blackList = ns.code:compressData(ns.tblBlackList) or ''
-        ns.g.antiSpamList = ns.code:compressData(ns.tblInvited) or ''
+        ns.g.antiSpamList = ns.code:compressData(ns.tblAntiSpamList) or ''
         ns.g.sessionData = ns.code:compressData(ns.ds.tblSavedSessions) or ''
     end
 end
@@ -167,4 +168,16 @@ function code:wordWrap(inputString, maxLineLength)
 
     table.insert(lines, currentLine)
     return table.concat(lines, "\n")
+end
+function code:Confirmation(msg, func)
+    StaticPopupDialogs["MY_YES_NO_DIALOG"] = {
+        text = msg,
+        button1 = "Yes",
+        button2 = "No",
+        OnAccept = func,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = false,
+    }
+    StaticPopup_Show("MY_YES_NO_DIALOG")
 end

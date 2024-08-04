@@ -79,6 +79,8 @@ L['BLACK_LIST'] = 'Black List' -- Black List Keyword
 
 -- * GR scanner Messages
 L['BL'] = 'BL' -- Button Abbreviation for Black List
+L['BLACK_LISTED'] = 'Black listed' -- Blacklisted Message
+L['ANTI_SPAM'] = 'Anti-Spam' -- Button Abbreviation for Anti-Spam
 L['INVITE'] = 'Invite'
 L['READY_INVITE'] = 'Ready to invite'
 L['BL_ADD_PLAYER'] = 'Add Player to black list'

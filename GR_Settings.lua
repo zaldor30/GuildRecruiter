@@ -858,7 +858,7 @@ ns.addonSettings = {
                         for k, r in pairs(ns.tblBlackList and ns.tblBlackList or {}) do
                             if r.selected then
                                 ns.g.blackListRemoved[k] = C_DateAndTime.GetServerTimeLocal()
-                                ns.blackList[k] = nil
+                                ns.tblBlackList[k] = nil
                             end
                         end
 

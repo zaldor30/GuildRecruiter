@@ -81,6 +81,21 @@ function ds:invalidZones() -- Invalid zones for recruitment
         --['Throne of Tides'] = { id = 643, name = 'Throne of Tides', reason = 'Season 3 Dungeon' },
         --["Dawn of the Infinite: Galakrond's Fall"] = { id = 0, name = "Dawn of the Infinite: Galakrond's Fall", reason = 'Season 3 Dungeon' },
         --["Dawn of the Infinite Murozond's Rise"] = { id = 0, name = "Dawn of the Infinite Murozond's Rise", reason = 'Season 3 Dungeon' },
+
+        --* Delves
+        [1] = { id = 1, name = 'Earthcrawl Mines', reason = 'Delves' },
+        [2] = { id = 1, name = 'Fungal Folly', reason = 'Delves' },
+        [3] = { id = 1, name = "Kriegval’s Rest", reason = 'Delves' },
+        [4] = { id = 1, name = 'The Waterworks', reason = 'Delves' },
+        [5] = { id = 1, name = 'The Dread Pit', reason = 'Delves' },
+        [6] = { id = 1, name = 'Nightfall Sanctum', reason = 'Delves' },
+        [7] = { id = 1, name = 'The Sinkhole', reason = 'Delves' },
+        [8] = { id = 1, name = 'Skittering Breach', reason = 'Delves' },
+        [9] = { id = 1, name = 'Mycomancer Cavern', reason = 'Delves' },
+        [10] = { id = 1, name = 'The Spiral Weave', reason = 'Delves' },
+        [11] = { id = 1, name = 'Tak-Rethan Abyss', reason = 'Delves' },
+        [12] = { id = 1, name = 'Underkeep', reason = 'Delves' },
+        [13] = { id = 1, name = "Zekvir’s Lair", reason = 'Delves' },
     }
 
     ns.global.zoneList = ns.global.zoneList or {}

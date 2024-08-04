@@ -8,6 +8,7 @@ on:
     paths-ignore:
       - '.github/**'
       - 'My_Documentation/**'
+      - 'GuildRecruiter.code-workspace'
 
 jobs:
   standalone_release:
@@ -15,7 +16,7 @@ jobs:
     
     steps:
       - name: Checkout addon
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -24,6 +25,3 @@ jobs:
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
           GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
-      #with:
-      #  pkgmeta: package_gr.pkgmeta
-      #  args: -p 882061
