@@ -299,7 +299,7 @@ function home:MessageChanged(val)
     ns.pSettings.activeMessage = val
     ns.win.base.inviteMessage = (self.tblWhipsers[val] and self.tblWhipsers[val].message) and self.tblWhipsers[val].message or nil
     self.activeMessage = self.tblWhipsers[val].message:gsub('|c', ''):gsub('|r', ''):gsub(GM_DESC_COLOR, '')
-    self.activeMessage = ns.code:variableReplacement(self.activeMessage)
+    --self.activeMessage = ns.code:variableReplacement(self.activeMessage)
 
     home:CreatePreview()
     --! Set Button States

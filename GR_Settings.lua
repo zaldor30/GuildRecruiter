@@ -306,8 +306,8 @@ ns.addonSettings = {
                     type = 'input',
                     width = 'full',
                     disabled = function() return not ns.core.iAmGM end,
-                    set = function(_, val) ns.gmSettings.welcomeMessage = val end,
-                    get = function() return ns.gmSettings.welcomeMessage end,
+                    set = function(_, val) ns.gmSettings.guildMessage = val end,
+                    get = function() return ns.gmSettings.guildMessage end,
                 },
                 invSendGreeting = {
                     order = 12,
@@ -315,7 +315,7 @@ ns.addonSettings = {
                     desc = L['WHISPER_WELCOME_MSG_DESC'],
                     type = 'toggle',
                     width = 'full',
-                    disabled = function() return not not ns.core.iAmGM end,
+                    disabled = function() return not ns.core.iAmGM end,
                     set = function(_, val) ns.gmSettings.sendWhisperGreeting = val end,
                     get = function() return ns.gmSettings.sendWhisperGreeting end,
                 },
@@ -327,13 +327,13 @@ ns.addonSettings = {
                     multiline = 3,
                     width = 'full',
                     disabled = function() return not ns.core.iAmGM end,
-                    set = function(_, val) ns.gmSettings.greetingMessage = ns.code:capitalKeyWord(val:trim()) end,
-                    get = function() return ns.gmSettings.greetingMessage end,
+                    set = function(_, val) ns.gmSettings.whisperMessage = ns.code:capitalKeyWord(val:trim()) end,
+                    get = function() return ns.gmSettings.whisperMessage end,
                 },
                 gmPreviewCount = {
                     order = 14,
                     name = function()
-                        local playerNameFound, count = MessageLength(ns.gmSettings.greetingMessage)
+                        local playerNameFound, count = MessageLength(ns.gmSettings.whisperMessage)
 
                         local msg = L['MAX_CHARS']
                         local color = count < maxChars and 'FF00FF00' or 'FFFF0000'
@@ -462,7 +462,7 @@ ns.addonSettings = {
                 gmPreviewCount = {
                     order = 20,
                     name = function()
-                        local playerNameFound, count = MessageLength(ns.gmSettings.greetingMessage)
+                        local playerNameFound, count = MessageLength(ns.gmSettings.whisperMessage)
 
                         local msg = L['MAX_CHARS']
                         local color = count < maxChars and 'FF00FF00' or 'FFFF0000'
@@ -609,8 +609,8 @@ ns.addonSettings = {
                     type = 'input',
                     width = 'full',
                     disabled = function() return hasGM and ns.gmSettings.sendGuildGreeting end,
-                    set = function(_, val) ns.gSettings.welcomeMessage = val end,
-                    get = function() return ns.gSettings.welcomeMessage end,
+                    set = function(_, val) ns.gSettings.guildMessage = val end,
+                    get = function() return ns.gSettings.guildMessage end,
                 },
                 invSendGreeting = {
                     order = 12,
@@ -630,13 +630,13 @@ ns.addonSettings = {
                     multiline = 3,
                     width = 'full',
                     disabled = function() return hasGM and ns.gmSettings.sendWhisperGreeting end,
-                    set = function(_, val) ns.gSettings.greetingMessage = ns.code:capitalKeyWord(val:trim()) end,
-                    get = function() return ns.gSettings.greetingMessage end,
+                    set = function(_, val) ns.gSettings.whisperMessage = ns.code:capitalKeyWord(val:trim()) end,
+                    get = function() print(ns.gSettings.whisperMessage) return ns.gSettings.whisperMessage end,
                 },
                 invPreviewCount = {
                     order = 14,
                     name = function()
-                        local playerNameFound, count = MessageLength(ns.gSettings.greetingMessage)
+                        local playerNameFound, count = MessageLength(ns.gSettings.whisperMessage)
 
                         local msg = L['MAX_CHARS']
                         local color = count < maxChars and 'FF00FF00' or 'FFFF0000'
@@ -756,7 +756,7 @@ ns.addonSettings = {
                 invPreviewCount = {
                     order = 14,
                     name = function()
-                        local playerNameFound, count = MessageLength(ns.gSettings.greetingMessage)
+                        local playerNameFound, count = MessageLength(ns.gSettings.whisperMessage)
 
                         local msg = L['MAX_CHARS']
                         local color = count < maxChars and 'FF00FF00' or 'FFFF0000'

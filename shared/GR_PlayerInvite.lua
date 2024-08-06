@@ -26,7 +26,15 @@ function invite:whoInviteChecks(r)
     return nil -- Returns error is not ok to invite
 end
 
-function invite:SendInvite(pName, isManual)
+function invite:SendAutoInvite(pName, sendInvMessage)
+    self:StartInvite(pName, sendInvMessage, true, true, false)
+end
+function invite:SendManualInvite(pName, sendWhisper, sendGreeting)
+    self:StartInvite(pName, false, sendWhisper, sendGreeting, true)
+end
+function invite:StartInvite(pName, invMessage, sendWhisper, sendGreeting, isManual)
+    if not pName then return end
+
     local fName = pName:find('-') and pName or pName..'-'..GetRealmName() -- Add realm name if not present
     pName = pName:gsub('*-', '') -- Remove realm name if present
 
@@ -34,12 +42,17 @@ function invite:SendInvite(pName, isManual)
         if not isManual then ns.code:fOut(fName..' is on the Black List', 'FF0000') return
         elseif not ns.code:confirmDialog('Player '..fName..' is on the Black List. Do you want to invite anyway?', function() return true end) then return end
     elseif not isManual and antiSpam:isOnAntiSpamList(fName) then
-
         ns.code:fOut(fName..' is on the Anti Spam List', 'FF0000')
         return
     end
 
-
+    local GMOverride = ns.gSettings.GMOverride or false
+    local msgInvite = (invMessage and ns.scanner.invMessage) and ns.scanner.invMessage or nil
+    local msgGreeting = (GMOverride or not ns.gmSettings.sendWhisperGreeting) and (ns.gSettings.whisperMessage or nil) or (ns.gmSettings.whisperMessage or nil)
+    if msgGreeting then
+        
+    end
+    local msgWelcome = (ns.scanner.sendWhisperGreeting and ((GMOverride and ns.gSettings.sendWhisperGreeting) or ns.gmSettings.sendWhisperGreeting)) and ns.scanner.greetingMessage or nil
 end
 invite:Init() -- Init invite
 
@@ -78,6 +91,7 @@ function blackList:AddToBlackList(pName, reason)
         blBy = UnitName('player'),
         date = C_DateAndTime.GetServerTimeLocal(),
     }
+    ns.analytics:saveStats('PlayersBlackListed')
 
     return true
 end

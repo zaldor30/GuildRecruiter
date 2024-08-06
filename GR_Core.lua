@@ -67,9 +67,9 @@ function core:Init()
                 antiSpam = false,
                 antiSpamDays = 7,
                 sendGuildGreeting = false,
-                welcomeMessage = L['DEFAULT_GUILD_WELCOME'],
+                guildMessage = L['DEFAULT_GUILD_WELCOME'],
                 sendWhisperGreeting = false,
-                greetingMessage = '',
+                whisperMessage = '',
                 messageList = {},
                 isGuildLeader = false,
                 guildLeaderToon = nil,
@@ -82,9 +82,9 @@ function core:Init()
                 antiSpam = true,
                 antiSpamDays = 7,
                 sendGuildGreeting = false,
-                welcomeMessage = L['DEFAULT_GUILD_WELCOME'],
+                guildMessage = L['DEFAULT_GUILD_WELCOME'],
                 sendWhisperGreeting = false,
-                greetingMessage = '',
+                whisperMessage = '',
                 scanWaitTime = 6,
                 -- Messages
                 messageList = {},
@@ -137,8 +137,27 @@ function core:StartDatabase(clubID)
     ns.gFilterList = ns.g.filterList or {} -- Global Filter List
     ns.gAnalytics = ns.g.analytics or {} -- Global Analytics
     ns.pAnalytics = ns.p.analytics or {} -- Profile Analytics
+    ns.analytics:Start()
 
     GR.debug = ns.pSettings.debugMode or false -- Set the debug mode
+
+    --? Fix variable Rename
+    if ns.gSettings.welcomeMessage and ns.gSettings.welcomeMessage ~= '' then
+        ns.gSettings.guildMessage = ns.gSettings.welcomeMessage and ns.gSettings.welcomeMessage or ns.gSettings.guildMessage
+        ns.gSettings.welcomeMessage = nil
+    end
+    if ns.gmSettings.welcomeMessage and ns.gmSettings.welcomeMessage ~= '' then
+        ns.gmSettings.guildMessage = ns.gmSettings.welcomeMessage and ns.gmSettings.welcomeMessage or ns.gmSettings.guildMessage
+        ns.gmSettings.welcomeMessage = nil
+    end
+    if ns.gSettings.greetingMessage and ns.gSettings.greetingMessage ~= '' then
+        ns.gSettings.whisperMessage = ns.gSettings.greetingMessage or nil
+        ns.gSettings.greetingMessage = nil
+    end
+    if ns.gmSettings.greetingMessage and ns.gmSettings.greetingMessage ~= '' then
+        ns.gmSettings.whisperMessage = ns.gmSettings.greetingMessage or nil
+        ns.gmSettings.greetingMessage = nil
+    end
 end
 
 --!Remove dOut after testing in StartGuildSetup
@@ -196,11 +215,11 @@ function core:PerformRecordMaintenance() -- Perform Record Maintenance
     -- Start Record Maintenance
     local antiSpamRemoved, blackListRemoved = 0, 0
     local antiSpamDays = (ns.gmSettings.antiSpam and ns.gmSettings.antiSpamDays) and ns.gmSettings.antiSpamDays or (ns.gSettings.antiSpamDays or 7)
-    local antiSpamExpire = C_DateAndTime.GetServerTimeLocal() - (antiSpamDays * SECONDS_IN_A_DAY)
 
     -- Anti-Spam List Maintenance
-    for k, r in pairs(ns.tblAntiSpamList) do
-        if r.timeStamp < antiSpamExpire then
+    local antiSpamExpire = C_DateAndTime.GetServerTimeLocal() - (antiSpamDays * SECONDS_IN_A_DAY)
+    for k, r in pairs(ns.tblAntiSpamList or {}) do
+        if r.date < antiSpamExpire then
             ns.tblAntiSpamList[k] = nil
             antiSpamRemoved = antiSpamRemoved + 1
         end
@@ -241,8 +260,13 @@ function core:StartMiniMapIcon() -- Start Mini Map Icon
             local title = code:cText('FFFFFF00', L['TITLE']..' v'..GR.version..':')
             local body = code:cText('FFFFFFFF', L['MINIMAP_TOOLTIP'])
 
-            local antiSpam = #ns.tblAntiSpamList > 0 and ' |cFFFF0000'..#ns.tblAntiSpamList..'|r' or 0
-            local blackList = #ns.tblBlackList > 0 and ' |cFFFF0000'..#ns.tblAntiSpamList..'|r' or 0
+            local count = 0
+            for _ in pairs(ns.tblAntiSpamList) do count = count + 1 end
+            local antiSpam = ' |cFFFF0000'..count..'|r'
+
+            count = 0
+            for _ in pairs(ns.tblBlackList) do count = count + 1 end
+            local blackList = ' |cFFFF0000'..count..'|r'
 
             body = body:gsub('%%AntiSpam', antiSpam)
             body = body:gsub('%%BlackList', blackList)
@@ -313,7 +337,7 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     ns.g.currentVersion = GR.version -- Set the current version
 
     ns.code:fOut(L['TITLE']..' ('..GR.version..(GR.isTest and ' Beta) ')..L['IS_ENABLED'], GRColor, true)
-    if GR.isTest then ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', strlower(GR.testLevel)), 'FF0000', true) end
+    if GR.isTest then ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.testLevel))), 'FFFFFF00') end
 
     -- ToDo: Sync Timer Routine
 end
@@ -321,45 +345,5 @@ core:Init()
 
 -- * Right Click Invite Routines
 function core:RightClickInvite(name, guid)
-    if not name or not guid then return end
-
-    local function invitePlayer()
-        if not CanGuildInvite() then ns.code:dOut(L['CANNOT_INVITE']) return end
-        GuildInvite(name)
-    end
-
-    if ns.gSettings.sendGuildGreeting then
-        local msg = ns.gSettings.welcomeMessage:gsub(L['GUILDNAME'], ns.guildInfo.guildName)
-        msg = msg:gsub(L['GUILDLINK'], ns.guildInfo.guildLink or L['GUILD_LINK_NOT_FOUND'])
-        msg = msg:gsub(L['PLAYERNAME'], name or L['NO_PLAYER_NAME'])
-        msg = msg:gsub(L['NO_PLAYER_NAME'], L['NO_PLAYER_NAME'])
-
-        if ns.gSettings.sendWhisperGreeting then
-            SendChatMessage(msg, 'WHISPER', nil, name)
-            ns.code:dOut('Whispered Greeting to '..name)
-        end
-
-        if ns.gSettings.overrideGM then
-            invitePlayer()
-            ns.code:dOut('Invited '..name)
-        else
-            local msg = ns.gmSettings.welcomeMessage:gsub(L['GUILDNAME'], ns.guildInfo.guildName)
-            msg = msg:gsub(L['GUILDLINK'], ns.guildInfo.guildLink or L['GUILD_LINK_NOT_FOUND'])
-            msg = msg:gsub(L['PLAYERNAME'], name or L['NO_PLAYER_NAME'])
-            msg = msg:gsub(L['NO_PLAYER_NAME'], L['NO_PLAYER_NAME'])
-
-            StaticPopupDialogs['GR_GUILD_INVITE'] = {
-                text = msg,
-                button1 = ACCEPT,
-                button2 = CANCEL,
-                OnAccept = function() invitePlayer() end,
-                timeout = 0,
-                whileDead = true,
-                hideOnEscape = true,
-                preferredIndex = 3,
-            }
-
-            StaticPopup_Show('GR_GUILD_INVITE')
-        end
-    else invitePlayer() end
+    
 end

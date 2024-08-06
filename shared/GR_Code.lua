@@ -44,6 +44,7 @@ function code:fOut(msg, color, noPrefix) -- Force console print routine)
     if msg == '' then return
     else code:consolePrint(msg, (color or '97FFFFFF'), noPrefix) end
 end
+
 -- * Data Compression Routines
 function code:compressData(data, encode)
     if not data then return end
@@ -63,13 +64,12 @@ end
 
 -- * Tables and Data Sorting Routines
 function code:saveTables(whichOne)
-    local db = {}
     if whichOne == 'BLACK_LIST' then ns.g.blackList = ns.code:compressData(ns.tblBlackList)
     elseif whichOne == 'ANTI_SPAM_LIST' then ns.g.antiSpamList = ns.code:compressData(ns.tblAntiSpamList)
     else
         ns.g.blackList = ns.code:compressData(ns.tblBlackList) or ''
         ns.g.antiSpamList = ns.code:compressData(ns.tblAntiSpamList) or ''
-        ns.g.sessionData = ns.code:compressData(ns.ds.tblSavedSessions) or ''
+        if ns.guildSession then ns.gAnalytics.session = ns.code:compressData(ns.guildSession) end
     end
 end
 function code:sortTableByField(tbl, sortField, reverse, showit)
@@ -181,3 +181,6 @@ function code:Confirmation(msg, func)
     }
     StaticPopup_Show("MY_YES_NO_DIALOG")
 end
+
+--* Miscellaneous Routines
+function code:inc(data, count) return (data or 0) + (count or 1) end

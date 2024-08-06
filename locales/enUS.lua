@@ -88,6 +88,7 @@ L['SKIP'] = 'Skip'
 L['SKIP_DESC'] = 'Skip the current player and move to the next player.'
 L['WHO_RESULTS'] = 'Who Results'
 L['NEXT_FILTER'] = 'Next Query'
+L['FILTER_PROGRESS'] = 'Filter Progress'
 L['RESETTING_FILTERS'] = 'Resetting filters on next scan.'
 L['NUMBER_PLAYERS_FOUND'] = 'Number of players found'
 L['INVITE_BUTTON_TOOLTIP'] = 'Invite player to the guild.'
@@ -125,7 +126,7 @@ Guild Recruiter has been updated!
 Please check the " What's New?" for what has changed.
 ]]
 L['BETA_INFORMATION'] = [[
-You are using a VER version of Guild Recruiter.
+This is a VER version of Guild Recruiter.
 Please report any issues on our Discord server.]]
 
 -- ? GR Error Messages
