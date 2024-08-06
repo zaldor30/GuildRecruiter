@@ -4,17 +4,19 @@ local L = LibStub("AceLocale-3.0"):NewLocale("GuildRecruiter", "enUS", true)
 L["TITLE"] = "Guild Recruiter"
 
 -- * WoW System Message Translations
-L["is not online"] = true
-L["no player named"] = true
-L["player not found"] = true
-L["joined the guild"] = true
-L["has joined the guild"] = true
-L["is already in a guild"] = true
-L["declines your guild invitation"] = true
-L["has already been invited to a guild"] = true
+--! MUST BE IN LOWERCASE!
+L['PLAYER_NOT_ONLINE'] = "is not online"
+L['NO_PLAYER_NAMED'] = "no player named"
+L['PLAYER_NOT_FOUND'] = "no player named"
+L['PLAYER_IN_GUILD'] = "has already been invited to a guild"
+L['PLAYER_ALREADY_IN_GUILD'] = "is already in a guild"
+L['PLAYER_JOINED_GUILD'] = "has joined the guild"
+L['PLAYER_DECLINED_INVITE'] = "declines your guild invitation"
 
 -- * GR Basic Command Messages
 L["INVITE"] = 'Invite'
+L['INVITE_MESSAGES_MENU'] = 'with Messages'
+L['INVITE_NO_MESSAGES_MENU'] = 'without Messages'
 L["SCAN"] = 'Scan'
 L["ABOUT"] = 'About'
 L["CLOSE"] = 'Close'
@@ -46,8 +48,11 @@ L['SYNC'] = 'Sync'
 L['SYNC_TOOLTIP'] = 'Manual sync with guild members.'
 L['ANALYTICS'] = 'Analytics'
 L['ANALYTICS_TOOLTIP'] = 'View the analytics window.'
-L['BLACKLIST'] = 'Blacklist'
+L['BLACKLIST'] = 'Black List'
 L['BLACKLIST_TOOLTIP'] = 'Add a player to the blacklist.'
+L['BLACK_LIST_REASON_INPUT'] = 'Why do you want to black list?'
+L['BL_NAME_NOT_ADDED'] = 'Black list name not added.'
+L['ADDED_TO_BLACK_LIST'] = 'was added to the black list with %s as a reason.'
 L['FILTER_EDITOR'] = 'Filter Editor'
 L['FILTER_EDITOR_TOOLTIP'] = 'Open the filter editor window.'
 L['COMPACT_MODE'] = 'Compact Mode'
@@ -76,10 +81,19 @@ L['NO_GUILD_NAME'] = 'No Guild Name' -- No Guild Name Message
 L['PLAYERNAME'] = 'PLAYERNAME' -- Player Name Keyword
 L['NO_PLAYER_NAME'] = 'player' -- No Player Name Message
 L['BLACK_LIST'] = 'Black List' -- Black List Keyword
+L['OK_INVITE'] = 'Do you want to invite anyway?' -- Invite Confirmation Message
+L['NO_INVITE_MESSAGE'] = 'No message selected. Please select a message in the home screen.' -- No Invite Message Selected
+L['INVITE_IN_GUILD'] = 'is already in the guild' -- Player is already in the guild
+L['IS_ON_SPAM_LIST'] = 'is on the Anti-Spam list' -- Player is on the Anti-Spam list
+L['GUILD_INVITE_SENT'] = 'Guild invite sent to' -- Guild Invite Sent
+L['INVITE_MESSAGE_SENT'] = 'Invite message sent to' -- Invite Message Sent
+L['INVITE_ALREADY_SENT'] = 'has already been invited' -- Player has already been invited
 
 -- * GR scanner Messages
 L['BL'] = 'BL' -- Button Abbreviation for Black List
 L['BLACK_LISTED'] = 'Black listed' -- Blacklisted Message
+L['IS_ON_BLACK_LIST'] = 'is on the Black List.' -- Is on the Black List Message
+L['BLACK_LIST_CONFIRM'] = 'Are you sure you want to add this player to the black list?'
 L['ANTI_SPAM'] = 'Anti-Spam' -- Button Abbreviation for Anti-Spam
 L['INVITE'] = 'Invite'
 L['READY_INVITE'] = 'Ready to invite'

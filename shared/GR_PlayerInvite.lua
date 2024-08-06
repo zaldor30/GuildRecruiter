@@ -6,6 +6,8 @@ local invite, blackList, antiSpam = ns.invite, ns.blackList, ns.antiSpam
 
 --* Invite
 function invite:Init()
+    self.tblSent = {}
+    self.sentCount = 0
 end
 function invite:IsInvalidZone(zone)
     if ns.tblInvalidZonesByName[zone] then return true
@@ -26,33 +28,166 @@ function invite:whoInviteChecks(r)
     return nil -- Returns error is not ok to invite
 end
 
-function invite:SendAutoInvite(pName, sendInvMessage)
-    self:StartInvite(pName, sendInvMessage, true, true, false)
+function invite:SendAutoInvite(pName, class, sendInvMessage)
+    self:StartInvite(pName, class, sendInvMessage, true, true, false)
 end
-function invite:SendManualInvite(pName, sendWhisper, sendGreeting)
-    self:StartInvite(pName, false, sendWhisper, sendGreeting, true)
+function invite:SendManualInvite(pName, class, sendWhisper, sendGreeting)
+    self:StartInvite(pName, class, false, sendWhisper, sendGreeting, true)
 end
-function invite:StartInvite(pName, invMessage, sendWhisper, sendGreeting, isManual)
+function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreetingMsg, isManual)
     if not pName then return end
 
     local fName = pName:find('-') and pName or pName..'-'..GetRealmName() -- Add realm name if not present
-    pName = pName:gsub('*-', '') -- Remove realm name if present
+    local name = pName:gsub('*-', '') -- Remove realm name if present
+    local cName = class and ns.code:cPlayerName(name, class) or name
 
-    if blackList:isOnBlackList(fName) then
-        if not isManual then ns.code:fOut(fName..' is on the Black List', 'FF0000') return
-        elseif not ns.code:confirmDialog('Player '..fName..' is on the Black List. Do you want to invite anyway?', function() return true end) then return end
+    -- Make sure player is not on the black list or anti spam list
+    if self.tblSent[fName] then
+        ns.code:fOut(cName..' '..L['INVITE_ALREADY_SENT'])
+        return
+    elseif blackList:IsOnBlackList(fName) then
+        if not isManual then ns.code:fOut(fName..' '..L['IS_ON_BLACK_LIST'], 'FF0000') return
+        elseif not ns.code:confirmDialog('Player '..fName..L['IS_ON_BLACK_LIST']..'\n'..L['OK_INVITE'], function() return true end) then return end
     elseif not isManual and antiSpam:isOnAntiSpamList(fName) then
-        ns.code:fOut(fName..' is on the Anti Spam List', 'FF0000')
+        ns.code:fOut(fName..' '..L['IS_ON_SPAM_LIST'], 'FF0000')
         return
     end
 
-    local GMOverride = ns.gSettings.GMOverride or false
-    local msgInvite = (invMessage and ns.scanner.invMessage) and ns.scanner.invMessage or nil
-    local msgGreeting = (GMOverride or not ns.gmSettings.sendWhisperGreeting) and (ns.gSettings.whisperMessage or nil) or (ns.gmSettings.whisperMessage or nil)
-    if msgGreeting then
-        
+    -- Message Prep
+    local msgInvite = nil
+    if useInviteMsg then
+        local tblGMMessages = ns.gmSettings.messageList and ns.gmSettings.messageList or {}
+        local tblPlayerMessages = ns.pSettings.messageList and ns.pSettings.messageList or {}
+        local tblMessages = {}
+
+        for _, v in pairs(tblGMMessages) do tinsert(tblMessages, v.message) end
+        for _, v in pairs(tblPlayerMessages) do tinsert(tblMessages, v.message) end
+        msgInvite = tblMessages[ns.pSettings.activeMessage] or nil
+        msgInvite = msgInvite and ns.code:variableReplacement(msgInvite, name) or nil
     end
-    local msgWelcome = (ns.scanner.sendWhisperGreeting and ((GMOverride and ns.gSettings.sendWhisperGreeting) or ns.gmSettings.sendWhisperGreeting)) and ns.scanner.greetingMessage or nil
+
+    -- Verify if there is a invite message if not guild invite only.
+    local invFormat = ns.pSettings.inviteFormat or 2
+    if invFormat ~= 2 and not msgInvite and not isManual then
+        ns.code:fOut(L['NO_INVITE_MESSAGE'])
+        return
+    end
+
+    -- Check if in my guild
+    local function isInMyGuild()
+        local totalMembers = GetNumGuildMembers()
+        for i = 1, totalMembers do
+            local gName = GetGuildRosterInfo(i)
+            if strlower(gName) == strlower(name) then return true
+            elseif strlower(gName) == strlower(fName) then return true end
+        end
+        return false
+    end
+    if isManual and isInMyGuild() then
+        ns.code:fOut(cName..' '..L['INVITE_IN_GUILD'])
+        return
+    end
+
+    if invFormat > 1 and pName then -- Guild Invite
+        C_GuildInfo.Invite(pName)
+        ns.code:fOut(L['GUILD_INVITE_SENT']..' '..cName, 'FFFFFF00')
+        ns.analytics:saveStats('PlayersInvited') -- Save stats
+    end
+
+    if invFormat ~= 2 and invFormat ~= 4 and msgInvite then -- Whisper Invite
+        if not ns.gSettings.showWhispers then
+            ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER', function(_, _, msg) return msg == msgInvite end, msgInvite)
+            ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER_INFORM', function(_, _, msg) return msg == msgInvite end, msgInvite)
+            ns.code:fOut(L['INVITE_MESSAGE_SENT']..' '..cName, 'FFFFFF00')
+        end
+        SendChatMessage(msgInvite, 'WHISPER', nil, pName)
+    end
+
+    invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg)
+end
+
+-- After Invite Routines
+local function UpdateInvitePlayerStatus(_, ...)
+    if not invite.tblSent then
+        ns.observer:Unregister('CHAT_MSG_SYSTEM', UpdateInvitePlayerStatus)
+        return
+    end
+
+    local msg = ...
+    if not msg then return end
+
+    msg = strlower(msg)
+    local fName, key = nil, nil
+    for _, v in pairs(invite.tblSent) do
+        local nHold = strlower(v.name)
+        local noRealm = nHold:gsub('-.*', '') -- Remove realm name
+        local withRealm = nHold:find('-') and nHold or nHold..'-'..GetRealmName() -- Add realm name if not present
+        if msg:find(noRealm) or msg:find(strlower(withRealm)) then
+            fName = withRealm break end
+    end
+    if not fName then return end
+
+    --* CHAT_MSG_SYSTEM Response Routines
+    key = strlower(fName)
+    if not invite.tblSent[key] then return
+    elseif msg:find(L['PLAYER_NOT_ONLINE']) then
+        ns.analytics:saveStats('PlayersInvited', -1)
+        invite.tblSent[key] = nil
+    elseif msg:find(L['NO_PLAYER_NAMED']) then
+        ns.analytics:saveStats('PlayersInvited', -1)
+        invite.tblSent[key] = nil
+    elseif msg:find(L['PLAYER_NOT_FOUND']) then
+        ns.analytics:saveStats('PlayersInvited', -1)
+        invite.tblSent[key] = nil
+    elseif msg:find(L['PLAYER_IN_GUILD']) or msg:find(L['PLAYER_ALREADY_IN_GUILD']) then
+        ns.analytics:saveStats('PlayersInvited', -1)
+        invite.tblSent[key] = nil
+    elseif msg:find(L['PLAYER_JOINED_GUILD']) then
+        C_Timer.After(5, function()
+            if invite.tblSent[key].guild then SendChatMessage(invite.tblSent[key].guild, 'GUILD') end
+            if invite.tblSent[key].whisper then SendChatMessage(invite.tblSent[key].whisper, 'WHISPER', nil, key) end
+            ns.analytics:saveStats('PlayersJoined')
+            ns.win.scanner:UpdateAnalytics()
+            invite.tblSent[key] = nil
+        end)
+    elseif msg:find(L['PLAYER_DECLINED_INVITE']) then
+        ns.analytics:saveStats('PlayersDeclined')
+        invite.tblSent[key] = nil
+    end
+
+    ns.win.scanner:UpdateAnalytics()
+    if not next(invite.tblSent) then -- Close out event handler if not more invites
+        ns.observer:Unregister('CHAT_MSG_SYSTEM', UpdateInvitePlayerStatus)
+    end
+end
+function invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg)
+    if not pName then return end
+    local fName = pName:find('-') and pName or pName..'-'..GetRealmName() -- Add realm name if not present
+    pName = pName:gsub('*-', '') -- Remove realm name if present
+    local cName = class and ns.code:cPlayerName(pName, class) or pName
+
+    local GMOverride = ns.gSettings.GMOverride or false
+    local msgWhisper, msgGuild = nil, nil
+    if useWhisperMsg and (ns.gSettings.whisperMessage or ns.gmSettings.whisperMessage) then
+        if (not GMOverride and ns.gSettings.sendWhsiper) or ns.gmSettings.sendWhsiper('') then msgWhisper = ns.gmSettings.whisperMessage
+        elseif ns.gSettings.sendWhsiper then msgWhisper = ns.gSettings.whisperMessage end
+        msgWhisper = msgWhisper and ns.code:variableReplacement(msgWhisper, pName) or nil
+    end
+    if useGreetingMsg and (ns.gSettings.guildMessage or ns.gmSettings.guildMessage) then
+        if not GMOverride and ns.gmSettings.sendGuildGreeting then msgGuild = ns.gmSettings.guildMessage
+        elseif ns.pSettings.sendGuildGreeting then msgGuild = ns.gSettings.guildMessage end
+        msgGuild = msgGuild and ns.code:variableReplacement(msgGuild, pName) or nil
+    end
+
+    self.tblSent[strlower(fName)] = {
+        name = pName,
+        fName = fName,
+        cName = cName,
+        whisper = msgWhisper and msgWhisper:gsub('<', ''):gsub('>', '') or nil,
+        guild = msgGuild and msgGuild:gsub('<', ''):gsub('>', '') or nil,
+    }
+
+    ns.observer:Register("CHAT_MSG_SYSTEM", UpdateInvitePlayerStatus)
 end
 invite:Init() -- Init invite
 
@@ -79,7 +214,6 @@ function blackList:IsOnBlackList(pName)
     return found
 end
 function blackList:AddToBlackList(pName, reason)
-    print('AddToBlackList', pName, reason)
     if not pName then return false end
 
     pName = pName:find('-') and pName or pName..'-'..GetRealmName() -- Add realm name if not present
@@ -94,6 +228,98 @@ function blackList:AddToBlackList(pName, reason)
     ns.analytics:saveStats('PlayersBlackListed')
 
     return true
+end
+function blackList:ManualBlackListPrompt(blMsg, blName, POPUP_NAME)
+    local name = blName:find('-') and blName or blName..'-'..GetRealmName() -- Add realm name if not present
+    if blackList:IsOnBlackList(name) then
+        ns.code:fOut(blName..' '..L['IS_ON_BLACK_LIST'], 'FFFFFF00')
+        return
+    end
+
+    local POPUP_REASON = "inputReason"
+    POPUP_NAME = POPUP_NAME or "inputName"
+
+    StaticPopupDialogs[POPUP_NAME] = {
+        text = blMsg,
+        button1 = L['OK'],
+        button2 = L['CANCEL'],
+        OnAccept = function(data)
+        local value = nil
+        value = data.editBox:GetText()
+        if not value or value == '' then return end
+
+        blName = value
+
+            StaticPopupDialogs[POPUP_REASON] = {
+                text = L['BLACK_LIST_REASON_INPUT']..'\n'..blName,
+                button1 = L['OK'],
+                button2 = L['CANCEL'],
+                OnAccept = function(rData)
+                    if not blName then return end
+
+                    value = rData.editBox:GetText()
+                    value = value ~= '' and value or L['No Reason']
+
+                    if not blName or not value then return end
+                    ns.blackList:AddToBlackList(blName, value)
+                    ns.code:fOut(string.format(blName..' '..L['ADDED_TO_BLACK_LIST'], '\"'..value..'\"'))
+                end,
+                OnCancel = function() UIErrorsFrame:AddMessage(blName..' '..L['BL_NAME_NOT_ADDED'], 1.0, 0.1, 0.1, 1.0) end,
+                timeout = 0,
+                whileDead = true,
+                hideOnEscape = true,
+                preferredIndex = 3,
+                hasEditBox = true,
+                maxLetters = 255,
+                -- You can add more properties as needed
+            }
+
+            StaticPopup_Show(POPUP_REASON)
+        end,
+        OnCancel = function() UIErrorsFrame:AddMessage(L['BL_NO_ONE_ADDED'], 1.0, 0.1, 0.1, 1.0) end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+        preferredIndex = 3,
+        hasEditBox = true,
+        maxLetters = 255,
+    }
+
+    StaticPopup_Show(POPUP_NAME)
+end
+function blackList:BlackListReasonPrompt(blName)
+    local name = blName:find('-') and blName or blName..'-'..GetRealmName() -- Add realm name if not present
+    if blackList:IsOnBlackList(name) then
+        ns.code:fOut(blName..' '..L['IS_ON_BLACK_LIST'], 'FFFFFF00')
+        return
+    end
+
+    local POPUP_REASON = "inputReason"
+    local fName = select(2, UnitClass(blName)) and ns.code:cPlayer(blName, select(2, UnitClass(blName))) or blName
+    StaticPopupDialogs[POPUP_REASON] = {
+        text = L['BLACK_LIST_REASON_INPUT']..":\n"..(fName or blName),
+        button1 = L["OK"],
+        button2 = L["CANCEL"],
+        OnAccept = function(data)
+            if not blName then return end
+
+            local value = data.editBox:GetText()
+            value = value ~= '' and value or L['No Reason']
+
+            blackList:AddToBlackList(blName, value)
+
+            ns.code:fOut(string.format(blName..' '..L['ADDED_TO_BLACK_LIST'], '\"'..value..'\"'))
+        end,
+        OnCancel = function() UIErrorsFrame:AddMessage(L['BL_NAME_NOT_ADDED'], 1.0, 0.1, 0.1, 1.0) end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+        preferredIndex = 3,
+        hasEditBox = true,
+        maxLetters = 255,
+    }
+
+    StaticPopup_Show(POPUP_REASON)
 end
 blackList:Init() -- Init blackList
 

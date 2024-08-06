@@ -17,9 +17,9 @@ function code:cText(color, text)
     return '|c'..color..text..'|r'
 end
 function code:cPlayer(name, class, color) -- Colorize player names
-    if name == '' or (class == '' and color == '') or not name then return end
+    if name == '' or ((not class or class == '') and (not color or color == '')) or not name then return end
 
-    local c = class ~= '' and select(4, GetClassColor(class)) or color
+    local c = (not class or class ~= '') and color or select(4, GetClassColor(class))
     if c then return code:cText(c, name)
     else return end
 end

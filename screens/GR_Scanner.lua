@@ -15,7 +15,7 @@ local function CallBackWhoListUpdate()
     ns.analytics:saveStats('PlayersScanned', C_FriendList.GetNumWhoResults())
 
     local sessionStats = ns.analytics:getSessionStats('PlayersScanned')
-    scanner.ctrlAnalyics.lblPlayersScanned:SetText(L['TOTAL_SCANNED']..': '..sessionStats)
+    scanner:UpdateAnalytics()
 
     scanner:ProcessWhoList(C_FriendList.GetNumWhoResults())
 end
@@ -105,6 +105,7 @@ function scanner:SetShown(isShown)
         self:ResetFilters()
     end
     self:DisplayNextFilter() -- Display Next Filter
+    self:UpdateAnalytics()
     self:SetInviteButtonsState()
 end
 function scanner:CreateBaseFrame()
@@ -170,7 +171,7 @@ function scanner:CreateInviteFrame()
         ns.code:createTooltip(title, body)
     end)
     btnInvite:SetCallback('OnLeave', function() GameTooltip:Hide() end)
-    btnInvite:SetCallback('OnClick', function() scanner:InvitePlayers() end)
+    btnInvite:SetCallback('OnClick', function() self:InvitePlayers() end)
     inlineInvite:AddChild(btnInvite)
     self.ctrlInvite.btnInvite = btnInvite
 
@@ -291,6 +292,7 @@ function scanner:CreateAnalyticsFrame()
     local inlineAnalytics = aceGUI:Create('InlineGroup')
     inlineAnalytics:SetLayout('Flow')
     inlineAnalytics:SetRelativeWidth(.6)
+    inlineAnalytics:SetTitle('Session Analytics:')
     inlineAnalytics:SetHeight(95)
     self.ctrlBase.inline:AddChild(inlineAnalytics)
 
@@ -310,44 +312,44 @@ function scanner:CreateAnalyticsFrame()
 
     -- Left Analytic Controls
     local lblScanned = aceGUI:Create("Label")
-    lblScanned:SetText(L['TOTAL_SCANNED']..': '..ns.analytics:getSessionStats('PlayersScanned'))
     lblScanned:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+    lblScanned:SetText(' ')
     lblScanned:SetFullWidth(true)
     scrollLeftAnalytic:AddChild(lblScanned)
     self.ctrlAnalyics.lblPlayersScanned = lblScanned
 
     local lblInvited = aceGUI:Create("Label")
-    lblInvited:SetText(L['TOTAL_INVITED']..': '..ns.analytics:getSessionStats('PlayersInvited'))
     lblInvited:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+    lblInvited:SetText(' ')
     lblInvited:SetFullWidth(true)
     scrollLeftAnalytic:AddChild(lblInvited)
     self.ctrlAnalyics.lblTotalInvites = lblInvited
 
     local lblWaitingOn = aceGUI:Create("Label")
-    lblWaitingOn:SetText(L['INVITES_PENDING']..': '..ns.analytics:getSessionStats('WaitingOnInvite'))
     lblWaitingOn:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+    lblWaitingOn:SetText(' ')
     lblWaitingOn:SetFullWidth(true)
     scrollLeftAnalytic:AddChild(lblWaitingOn)
     self.ctrlAnalyics.lblWaitingOn = lblWaitingOn
 
     -- Right Analytic Controls
     local lblDeclined = aceGUI:Create("Label")
-    lblDeclined:SetText(L['TOTAL_DECLINED']..': '..ns.analytics:getSessionStats('PlayersDeclined'))
     lblDeclined:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+    lblDeclined:SetText(' ')
     lblDeclined:SetFullWidth(true)
     scrollRightAnalytic:AddChild(lblDeclined)
     self.ctrlAnalyics.lblDeclined = lblDeclined
 
     local lblTotalAccepted = aceGUI:Create("Label")
-    lblTotalAccepted:SetText(L['TOTAL_ACCEPTED']..': '..ns.analytics:getSessionStats('PlayersJoined'))
     lblTotalAccepted:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+    lblTotalAccepted:SetText(' ')
     lblTotalAccepted:SetFullWidth(true)
     scrollRightAnalytic:AddChild(lblTotalAccepted)
     self.ctrlAnalyics.lblAccepted = lblTotalAccepted
 
     local lblBlackList = aceGUI:Create("Label")
-    lblBlackList:SetText(L['TOTAL_BLACKLISTED']..': '..ns.analytics:getSessionStats('PlayersBlackListed'))
     lblBlackList:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+    lblBlackList:SetText(' ')
     lblBlackList:SetFullWidth(true)
     scrollRightAnalytic:AddChild(lblBlackList)
     self.ctrlAnalyics.lblTotalBlackList = lblBlackList
@@ -357,6 +359,27 @@ function scanner:ChangeCompactMode()
     ns.pSettings.isCompact = self.tblScanner.isCompact
 
     self:SetShown(true)
+end
+function scanner:UpdateAnalytics()
+    if self.tblScanner.isCompact then return end
+
+    local sessionStats = ns.analytics:getSessionStats('PlayersScanned')
+    self.ctrlAnalyics.lblPlayersScanned:SetText(L['TOTAL_SCANNED']..': '..sessionStats)
+
+    sessionStats = ns.analytics:getSessionStats('PlayersInvited')
+    self.ctrlAnalyics.lblTotalInvites:SetText(L['TOTAL_INVITED']..': '..sessionStats)
+
+    sessionStats = ns.analytics:getSessionStats('WaitingOnInvite')
+    self.ctrlAnalyics.lblWaitingOn:SetText(L['INVITES_PENDING']..': '..sessionStats)
+
+    sessionStats = ns.analytics:getSessionStats('PlayersDeclined')
+    self.ctrlAnalyics.lblDeclined:SetText(L['TOTAL_DECLINED']..': '..sessionStats)
+
+    sessionStats = ns.analytics:getSessionStats('PlayersJoined')
+    self.ctrlAnalyics.lblAccepted:SetText(L['TOTAL_ACCEPTED']..': '..sessionStats)
+
+    sessionStats = ns.analytics:getSessionStats('PlayersBlackListed')
+    self.ctrlAnalyics.lblTotalBlackList:SetText(L['TOTAL_BLACKLISTED']..': '..sessionStats)
 end
 
 --* Invite Routines
@@ -394,13 +417,13 @@ function scanner:BlackListPlayer()
     self:SetInviteButtonsState()
 end
 function scanner:InvitePlayers()
-    local tbl = tremove(self.tblInvites, 1)
+    local key, tbl = next(self.tblInvites)
     if not tbl then return end
 
-    local invFormat = ns.pSettings.inviteFormat or 2
-    local invMessager = nil
+    self.tblInvites[key] = nil
+    self:DispalyInviteList()
 
-    ns.invite:SendInvite(tbl.fullName, ns.invite.SendAutoInvite(tbl.fullName, (invFormat ~= 2 or false)))
+    ns.invite:SendAutoInvite(tbl.fullName, (select(2, UnitClass(tbl.fullName)) or nil), ((ns.pSettings.inviteFormat > 1) or false))
 end
 function scanner:SetInviteButtonsState()
     local anyChecked, count = false, 0

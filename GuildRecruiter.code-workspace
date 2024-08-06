@@ -5,6 +5,71 @@
 		},
 		{
 			"path": "../../../../../../Users/zalro/Documents/GitHub/GuildRecruiter-old"
+		},
+		{
+			"path": "../InviteNotify"
 		}
-	]
+	],
+	"settings": {
+		"Lua.diagnostics.globals": [
+			"SlashCmdList",
+			"ERR_BAD_PLAYER_NAME_S",
+			"ChatFrame_RemoveMessageEventFilter",
+			"PLAYER",
+			"UIDropDownMenu_CreateInfo",
+			"UIDROPDOWNMENU_INIT_MENU",
+			"UnitPopupMenus",
+			"UIDropDownMenu_AddSeparator",
+			"ToggleDropDownMenu",
+			"SetItemRef",
+			"CreateFrame",
+			"IsGuildLeader",
+			"C_DateAndTime",
+			"date",
+			"strlower",
+			"C_Timer",
+			"strupper",
+			"GetCVar",
+			"strsplit",
+			"C_CreatureInfo",
+			"GetClassInfo",
+			"GetAutoCompleteRealms",
+			"strlen",
+			"C_GuildInfo",
+			"GetNumGuildMembers",
+			"GetGuildRosterInfo",
+			"GetUnitName",
+			"C_AddOns",
+			"C_FriendList",
+			"FormatPercentage",
+			"Enum",
+			"securecallfunction",
+			"InCombatLockdown",
+			"GetCurrentRegionName",
+			"WOW_PROJECT_ID",
+			"WOW_PROJECT_MAINLINE",
+			"C_Spell",
+			"issecurevariable",
+			"Minimap",
+			"tremove",
+			"time",
+			"UIDropDownMenu_Initialize",
+			"UIDropDownMenu_AddButton"
+		],
+		"Lua.runtime.version": "Lua 5.1",
+		"Lua.runtime.builtin": {
+			"basic": "disable",
+			"debug": "disable",
+			"io": "disable",
+			"math": "disable",
+			"os": "disable",
+			"package": "disable",
+			"string": "disable",
+			"table": "disable",
+			"utf8": "disable"
+		},
+		"Lua.workspace.library": [
+			"c:\\Users\\zalro\\.vscode\\extensions\\ketho.wow-api-0.15.2\\Annotations"
+		]
+	}
 }

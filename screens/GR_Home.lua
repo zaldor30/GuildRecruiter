@@ -54,7 +54,7 @@ function home:SetShown(val)
     ns.observer:Register('CLOSE_SCREENS', obsCLOSE_SCREENS)
 
     -- Get Invite Messages
-    self.tblWhipsers = self:GetWhisperMessages()
+    self.tblWhipsers = self:GetInviteMessages()
     self.tblFilters = {
         [1] = L['CLASS_FILTER'],
         [2] = L['RACE_FILTER'],
@@ -121,7 +121,6 @@ function home:CreateInviteArea()
         end
 
         if errMsg then
-            print('Error:', errMsg)
             widget:SetText(tostring(self.minLevel) or '1')
             ns.statusText:SetText(errMsg)
             return
@@ -269,7 +268,7 @@ function home:CreateHomeFrame()
 end
 
 -- *Support Functions
-function home:GetWhisperMessages()
+function home:GetInviteMessages()
     local tblWhispers = {}
     local tblGMMessages = ns.gmSettings.messageList and ns.gmSettings.messageList or {}
     local tblPlayerMessages = ns.pSettings.messageList and ns.pSettings.messageList or {}

@@ -118,7 +118,10 @@
         "DEFAULT",
         "GetMaxPlayerLevel",
         "GetNumClasses",
-        "SendChatMessage"
+        "SendChatMessage",
+        "UIDropDownMenu_Initialize",
+        "ToggleDropDownMenu",
+        "UIDropDownMenu_CreateInfo"
     ],
     "Lua.diagnostics.disable": [
         "undefined-field",

@@ -68,7 +68,7 @@ function core:Init()
                 antiSpamDays = 7,
                 sendGuildGreeting = false,
                 guildMessage = L['DEFAULT_GUILD_WELCOME'],
-                sendWhisperGreeting = false,
+                sendWhsiper = false,
                 whisperMessage = '',
                 messageList = {},
                 isGuildLeader = false,
@@ -83,7 +83,7 @@ function core:Init()
                 antiSpamDays = 7,
                 sendGuildGreeting = false,
                 guildMessage = L['DEFAULT_GUILD_WELCOME'],
-                sendWhisperGreeting = false,
+                sendWhsiper = false,
                 whisperMessage = '',
                 scanWaitTime = 6,
                 -- Messages
@@ -128,10 +128,10 @@ function core:StartDatabase(clubID)
 
     -- Fix for old DB settings
     ns.gmSettings.sendGuildGreeting = ns.gmSettings.sendGuildGreeting or ns.gmSettings.sendWelcome
-    ns.gmSettings.sendWhisperGreeting = ns.gmSettings.sendWhisperGreeting or ns.gmSettings.sendGreeting
+    ns.gmSettings.sendWhsiper = ns.gmSettings.sendWhsiper or ns.gmSettings.sendGreeting
 
     ns.gSettings.sendGuildGreeting = ns.gSettings.sendGuildGreeting or ns.gSettings.sendWelcome
-    ns.gSettings.sendWhisperGreeting = ns.gSettings.sendWhisperGreeting or ns.gSettings.sendGreeting
+    ns.gSettings.sendWhsiper = ns.gSettings.sendWhsiper or ns.gSettings.sendGreeting
 
     -- Other Variables Declaration
     ns.gFilterList = ns.g.filterList or {} -- Global Filter List
@@ -141,23 +141,31 @@ function core:StartDatabase(clubID)
 
     GR.debug = ns.pSettings.debugMode or false -- Set the debug mode
 
-    --? Fix variable Rename
-    if ns.gSettings.welcomeMessage and ns.gSettings.welcomeMessage ~= '' then
-        ns.gSettings.guildMessage = ns.gSettings.welcomeMessage and ns.gSettings.welcomeMessage or ns.gSettings.guildMessage
-        ns.gSettings.welcomeMessage = nil
+    local function fixDB() --? Fix variable Rename - v3.0 (8/6/2024)
+        if ns.gSettings.welcomeMessage and ns.gSettings.welcomeMessage ~= '' then
+            ns.gSettings.guildMessage = ns.gSettings.welcomeMessage and ns.gSettings.welcomeMessage or ns.gSettings.guildMessage
+            ns.gSettings.welcomeMessage = nil
+        end
+        if ns.gmSettings.welcomeMessage and ns.gmSettings.welcomeMessage ~= '' then
+            ns.gmSettings.guildMessage = ns.gmSettings.welcomeMessage and ns.gmSettings.welcomeMessage or ns.gmSettings.guildMessage
+            ns.gmSettings.welcomeMessage = nil
+        end
+        if ns.gSettings.greetingMessage and ns.gSettings.greetingMessage ~= '' then
+            ns.gSettings.whisperMessage = ns.gSettings.greetingMessage or nil
+            ns.gSettings.greetingMessage = nil
+        end
+        if ns.gmSettings.greetingMessage and ns.gmSettings.greetingMessage ~= '' then
+            ns.gmSettings.whisperMessage = ns.gmSettings.greetingMessage or nil
+            ns.gmSettings.greetingMessage = nil
+        end
+        if ns.gSettings.sendWhisperGreeting or ns.gmSettings.sendWhisperGreeting then
+            ns.gSettings.sendWhsiper = ns.gSettings.sendWhisperGreeting or ns.gSettings.sendWhsiper
+            ns.gmSettings.sendWhsiper = ns.gmSettings.sendWhisperGreeting or ns.gmSettings.sendWhsiper
+            ns.gSettings.sendWhisperGreeting = nil
+            ns.gmSettings.sendWhisperGreeting = nil
+        end
     end
-    if ns.gmSettings.welcomeMessage and ns.gmSettings.welcomeMessage ~= '' then
-        ns.gmSettings.guildMessage = ns.gmSettings.welcomeMessage and ns.gmSettings.welcomeMessage or ns.gmSettings.guildMessage
-        ns.gmSettings.welcomeMessage = nil
-    end
-    if ns.gSettings.greetingMessage and ns.gSettings.greetingMessage ~= '' then
-        ns.gSettings.whisperMessage = ns.gSettings.greetingMessage or nil
-        ns.gSettings.greetingMessage = nil
-    end
-    if ns.gmSettings.greetingMessage and ns.gmSettings.greetingMessage ~= '' then
-        ns.gmSettings.whisperMessage = ns.gmSettings.greetingMessage or nil
-        ns.gmSettings.greetingMessage = nil
-    end
+    fixDB()
 end
 
 --!Remove dOut after testing in StartGuildSetup
@@ -344,6 +352,109 @@ end
 core:Init()
 
 -- * Right Click Invite Routines
-function core:RightClickInvite(name, guid)
-    
+-- Function to send a guild invite to a player
+local function InviteToGuild(name)
+    if name then
+        GuildInvite(name)
+        print("Guild invite sent to:", name)
+    else
+        print("No player name detected.")
+    end
+end
+
+-- Create a custom dropdown frame for the additional options
+local customDropdown = CreateFrame("Frame", "CustomChatDropdown", UIParent, "UIDropDownMenuTemplate")
+
+-- Function to initialize the custom dropdown menu
+local function InitializeDropdownMenu(self, level)
+    local cPlayerName = ns.code:cText(GRColor, self.chatPlayerName)
+    if level == 1 then
+        local info = UIDropDownMenu_CreateInfo()
+        info.text = L["INVITE"]..' '..cPlayerName..'\n'..ns.code:cText('FFFFFF00', L['INVITE_NO_MESSAGES_MENU'])
+        info.notCheckable = true
+        info.func = function()
+            ns.invite:SendManualInvite(self.chatPlayerName, select(2, UnitClass(self.chatPlayerName)))
+        end
+        UIDropDownMenu_AddButton(info, level)
+
+        -- Separator for spacing
+        info = UIDropDownMenu_CreateInfo()
+        info.disabled = true
+        info.notCheckable = true
+        UIDropDownMenu_AddButton(info, level)
+
+        info = UIDropDownMenu_CreateInfo()
+        info.text = L["INVITE"]..' '..cPlayerName..'\n'..ns.code:cText('FFFFFF00', L['INVITE_MESSAGES_MENU'])
+        info.notCheckable = true
+        info.func = function()
+            ns.invite:SendManualInvite(self.chatPlayerName, select(2, UnitClass(self.chatPlayerName)), true, true)
+        end
+        UIDropDownMenu_AddButton(info, level)
+
+        local name = self.chatPlayerName:find('-') and self.chatPlayerName or self.chatPlayerName..'-'..GetRealmName() -- Add realm name if not present
+        if not ns.blackList:IsOnBlackList(name) then
+            -- Separator for spacing
+            info = UIDropDownMenu_CreateInfo()
+            info.disabled = true
+            info.notCheckable = true
+            UIDropDownMenu_AddButton(info, level)
+
+            info = UIDropDownMenu_CreateInfo()
+            info.text = L['BLACKLIST']..' '..cPlayerName
+            info.notCheckable = true
+            info.func = function()
+                ns.blackList:BlackListReasonPrompt(self.chatPlayerName)
+            end
+            UIDropDownMenu_AddButton(info, level)
+        end
+    end
+end
+
+-- Function to position the custom dropdown menu
+local function PositionCustomDropdown()
+    local systemDropdown = DropDownList1
+    if not systemDropdown then
+        return 0, 0
+    end
+
+    local systemDropdownWidth = systemDropdown:GetWidth()
+    local systemDropdownX, systemDropdownY = systemDropdown:GetCenter()
+    local screenWidth = GetScreenWidth()
+
+    local xOffset = 0
+    local yOffset = 0
+
+    -- Calculate the new position, ensuring it stays within the screen bounds
+    if systemDropdownX and (systemDropdownX + systemDropdownWidth / 2 + customDropdown:GetWidth() > screenWidth) then
+        xOffset = -customDropdown:GetWidth() - 10
+    else
+        xOffset = systemDropdownWidth - 20
+    end
+
+    return xOffset, yOffset
+end
+
+-- Original SetItemRef function
+local originalSetItemRef = SetItemRef
+
+-- Override SetItemRef to capture right-clicks on player names
+SetItemRef = function(link, text, button, chatFrame)
+    if button == "RightButton" then
+        local type, name = strsplit(":", link)
+        if type == "player" then
+            -- Store the clicked player name in the dropdown frame
+            customDropdown.chatPlayerName = name
+            -- Show the system context menu
+            originalSetItemRef(link, text, button, chatFrame)
+            -- Calculate the position for the custom dropdown menu
+            C_Timer.After(0.1, function()
+                local xOffset, yOffset = PositionCustomDropdown()
+                -- Initialize and show the custom dropdown menu
+                UIDropDownMenu_Initialize(customDropdown, InitializeDropdownMenu, "MENU")
+                ToggleDropDownMenu(1, nil, customDropdown, "cursor", xOffset, yOffset)
+            end)
+            return
+        end
+    end
+    originalSetItemRef(link, text, button, chatFrame)
 end
