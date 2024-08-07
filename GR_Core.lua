@@ -167,7 +167,6 @@ function core:StartDatabase(clubID)
     end
     fixDB()
 end
-
 function core:StartGuildSetup(clubID) -- Get Guild Info and prep database
     if not clubID then return end
 
@@ -223,10 +222,12 @@ function core:PerformRecordMaintenance() -- Perform Record Maintenance
     antiSpamDays = (not ns.gmSettings.antiSpam and (ns.gSettings.antiSpam and ns.gSettings.antiSpamDays)) and ns.gSettings.antiSpamDays or 7
 
     local antiSpamExpire = C_DateAndTime.GetServerTimeLocal() - (antiSpamDays * SECONDS_IN_A_DAY)
-    --! Remove after testing
     if not antiSpamExpire then ns.code:fOut('Issue with anti-spam, notify the author.') end
     for k, r in pairs(ns.tblAntiSpamList or {}) do
-        if r.date < antiSpamExpire then
+        if not r.date then
+            ns.tblAntiSpamList[k] = nil
+            antiSpamRemoved = antiSpamRemoved + 1
+        elseif r.date < antiSpamExpire then
             ns.tblAntiSpamList[k] = nil
             antiSpamRemoved = antiSpamRemoved + 1
         end
@@ -264,7 +265,7 @@ function core:StartMiniMapIcon() -- Start Mini Map Icon
             elseif button == 'RightButton' then Settings.OpenToCategory('Guild Recruiter') end
         end,
         OnTooltipShow = function(GameTooltip)
-            local title = code:cText('FFFFFF00', L['TITLE']..' v'..GR.version..':')
+            local title = code:cText('FFFFFF00', L['TITLE']..' (v'..GR.version..'):')
             local body = code:cText('FFFFFFFF', L['MINIMAP_TOOLTIP'])
 
             local count = 0
@@ -275,14 +276,11 @@ function core:StartMiniMapIcon() -- Start Mini Map Icon
             for _ in pairs(ns.tblBlackList) do count = count + 1 end
             local blackList = ' |cFFFF0000'..count..'|r'
 
-            body = body:gsub('%%AntiSpam', antiSpam)
-            body = body:gsub('%%BlackList', blackList)
+            body = body:gsub('%%AntiSpam', antiSpam):gsub('%%BlackList', blackList)
 
             ns.code:createTooltip(title, body, 'FORCE_TOOLTIP')
         end,
-        OnLeave = function()
-            GameTooltip:Hide() -- Hide the tooltip when the mouse leaves the icon
-        end,
+        OnLeave = function() GameTooltip:Hide() end,
     })
 
     icon:Register('GR_Icon', iconData, ns.pSettings.minimap)
@@ -356,28 +354,112 @@ end
 core:Init()
 
 --* Hook /ginvite command
-local OriginalGuildInvite = GuildInvite -- Original GuildInvite function reference
-local function HookedGuildInvite(playerName) -- Fires when /ginvite is called
-    if not playerName then return end
-
-    playerName = playerName:sub(1,1):upper()..playerName:sub(2):lower()
-    local cPlayer = ns.code:cPlayer(playerName, select(2, UnitClass(playerName)), 'FFFFFF00')
-    ns.code:fOut("You have sent a guild invite to: "..cPlayer, 'FFFFFF00')
-    ns.invite:SendManualInvite(playerName, (select(2, UnitClass(playerName) or nil)), false, false) -- Call the original GuildInvite function to actually send the invite
+-- Function to send a guild invite to a player
+local function InviteToGuild(name)
+    if name then
+        GuildInvite(name)
+        print("Guild invite sent to:", name)
+    else
+        print("No player name detected.")
+    end
 end
-GuildInvite = HookedGuildInvite -- Hook the GuildInvite function
-local function HandleGInviteCommand(msg) -- Function to handle /ginvite command
-    local playerName = msg:match("^%s*(.-)%s*$")
-    if playerName and playerName ~= "" then HookedGuildInvite(playerName)
-    else ns.code:fOut("Usage: /ginvite <playername>", 'FFFFFF00') end
-end
--- Register the /ginvite slash command
-SLASH_GINVITE1 = "/ginvite"
-SlashCmdList["GINVITE"] = HandleGInviteCommand
 
--- * Right Click Invite Routines
 -- Create a custom dropdown frame for the additional options
 local customDropdown = CreateFrame("Frame", "CustomChatDropdown", UIParent, "UIDropDownMenuTemplate")
+
+-- Function to initialize the custom dropdown menu
+local function InitializeDropdownMenu(self, level)
+    local cPlayerName = ns.code:cText(GRColor, self.chatPlayerName)
+    if level == 1 then
+        local info = UIDropDownMenu_CreateInfo()
+        info.text = L["INVITE"]..' '..cPlayerName..'\n'..ns.code:cText('FFFFFF00', L['INVITE_NO_MESSAGES_MENU'])
+        info.notCheckable = true
+        info.func = function()
+            ns.invite:SendManualInvite(self.chatPlayerName, select(2, UnitClass(self.chatPlayerName)))
+        end
+        UIDropDownMenu_AddButton(info, level)
+
+        -- Separator for spacing
+        info = UIDropDownMenu_CreateInfo()
+        info.disabled = true
+        info.notCheckable = true
+        UIDropDownMenu_AddButton(info, level)
+
+        info = UIDropDownMenu_CreateInfo()
+        info.text = L["INVITE"]..' '..cPlayerName..'\n'..ns.code:cText('FFFFFF00', L['INVITE_MESSAGES_MENU'])
+        info.notCheckable = true
+        info.func = function()
+            ns.invite:SendManualInvite(self.chatPlayerName, select(2, UnitClass(self.chatPlayerName)), true, true)
+        end
+        UIDropDownMenu_AddButton(info, level)
+
+        local name = self.chatPlayerName:find('-') and self.chatPlayerName or self.chatPlayerName..'-'..GetRealmName() -- Add realm name if not present
+        if not ns.blackList:IsOnBlackList(name) then
+            -- Separator for spacing
+            info = UIDropDownMenu_CreateInfo()
+            info.disabled = true
+            info.notCheckable = true
+            UIDropDownMenu_AddButton(info, level)
+
+            info = UIDropDownMenu_CreateInfo()
+            info.text = L['BLACKLIST']..' '..cPlayerName
+            info.notCheckable = true
+            info.func = function()
+                ns.blackList:BlackListReasonPrompt(self.chatPlayerName)
+            end
+            UIDropDownMenu_AddButton(info, level)
+        end
+    end
+end
+
+-- Function to position the custom dropdown menu
+local function PositionCustomDropdown()
+    local systemDropdown = DropDownList1
+    if not systemDropdown then
+        return 0, 0
+    end
+
+    local systemDropdownWidth = systemDropdown:GetWidth()
+    local systemDropdownX, systemDropdownY = systemDropdown:GetCenter()
+    local screenWidth = GetScreenWidth()
+
+    local xOffset = 0
+    local yOffset = 0
+
+    -- Calculate the new position, ensuring it stays within the screen bounds
+    if systemDropdownX and (systemDropdownX + systemDropdownWidth / 2 + customDropdown:GetWidth() > screenWidth) then
+        xOffset = -customDropdown:GetWidth() - 10
+    else
+        xOffset = systemDropdownWidth - 20
+    end
+
+    return xOffset, yOffset
+end
+
+-- Original SetItemRef function
+local originalSetItemRef = SetItemRef
+
+-- Override SetItemRef to capture right-clicks on player names
+SetItemRef = function(link, text, button, chatFrame)
+    if button == "RightButton" then
+        local type, name = strsplit(":", link)
+        if type == "player" then
+            -- Store the clicked player name in the dropdown frame
+            customDropdown.chatPlayerName = name
+            -- Show the system context menu
+            originalSetItemRef(link, text, button, chatFrame)
+            -- Calculate the position for the custom dropdown menu
+            C_Timer.After(0.1, function()
+                local xOffset, yOffset = PositionCustomDropdown()
+                -- Initialize and show the custom dropdown menu
+                UIDropDownMenu_Initialize(customDropdown, InitializeDropdownMenu, "MENU")
+                ToggleDropDownMenu(1, nil, customDropdown, "cursor", xOffset, yOffset)
+            end)
+            return
+        end
+    end
+    originalSetItemRef(link, text, button, chatFrame)
+end
 
 -- Function to initialize the custom dropdown menu
 local function InitializeDropdownMenu(self, level)
