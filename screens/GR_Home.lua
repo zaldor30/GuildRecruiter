@@ -92,7 +92,7 @@ function home:CreateInviteArea()
     formatDrop:SetValue(ns.pSettings.inviteFormat or 2)
     formatDrop:SetCallback('OnValueChanged', function(_, _, val)
         ns.pSettings.inviteFormat = tonumber(val)
-      self:CreatePreview()
+        self:CreatePreview()
         self:SetButtonStates()
     end)
     inline:AddChild(formatDrop)
@@ -313,5 +313,13 @@ function home:CreatePreview()
         msg = msg..ns.code:cText('FFFF80FF', ']: '..(ns.code:variableReplacement(self.activeMessage, UnitName('player')) or ''))
     end
     self.tblFrame.preview:SetText(msg or '')
+end
+function home:SetButtonStates()
+    local invFormat = ns.gSettings.inviteFormat or 2
+    local activeMessage = ns.pSettings.activeMessage or nil
+
+    self.tblFrame.scanButton:SetDisabled(true)
+    if invFormat == 2 then self.tblFrame.scanButton:SetDisabled(false)
+    elseif activeMessage and self.tblWhipsers[activeMessage] then self.tblFrame.scanButton:SetDisabled(false) end
 end
 home:Init()
