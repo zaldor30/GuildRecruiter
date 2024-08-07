@@ -1,11 +1,17 @@
 # Guild Recruiter
 ## 3.0 - War Within Release (Alpha)
 ### Alpha Fixes v3.0:
-- Fixed preview showing |c2
+- Fixed preview showing '|c2'
 - Fixed issue with lblPlayersScanned error.
 - Right Click Invite Menu:
     - Added option to send invite message.
     - Now checks if player is in the guild.
+- Added back in about screen.
+- Added back in What's New screen.
+- Added back analytics screen.
+- Still Needed:
+    - Double check all analytics.
+    - Syncing with other players.
 
 I have done pretty much a full rewrite of Guild Recruiter.  I have added a lot of new features and fixed a lot of bugs.
 
@@ -26,5 +32,3 @@ I have done pretty much a full rewrite of Guild Recruiter.  I have added a lot o
 - Scanner Changes:
     - Whispers will now show when show whispers is enabled.
     - Invite list and Who will show after leaving the screen.
-
-

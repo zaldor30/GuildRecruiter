@@ -184,6 +184,10 @@ end
 
 --* Miscellaneous Routines
 function code:inc(data, count) return (data or 0) + (count or 1) end
+function code:ConvertDateTime(val, showHours)
+    local d = date("*t", val)
+    return (d and showHours) and string.format("%02d/%02d/%04d %02d:%02d", d.month, d.day, d.year, d.hour, d.minute) or (string.format("%02d/%02d/%04d", d.month, d.day, d.year) or nil)
+end
 function code:getInviteMessage(name)
     local tblGMMessages = ns.gmSettings.messageList and ns.gmSettings.messageList or {}
     local tblPlayerMessages = ns.pSettings.messageList and ns.pSettings.messageList or {}

@@ -20,12 +20,18 @@ function ds:WhatsNew() -- What's new in the current version
                 (or click on the icon in the top left corner)|r
                 
     |CFFFFFF00v3.0 Notes|r
-        Alpha Fixes v3.0.6:
-        - Fixed preview showing |c2
+        Alpha Fixes v3.0.9:
+        - Fixed preview showing '|c2'
         - Fixed issue with lblPlayersScanned error.
         - Right Click Invite Menu:
             - Added option to send invite message.
             - Now checks if player is in the guild.
+        - Added back in about screen.
+        - Added back in What's New screen.
+        - Added back analytics screen.
+        - Still Needed:
+            - Double check all analytics.
+            - Syncing with other players.
 
         I have done pretty much a full rewrite of Guild Recruiter.
         I have added a lot of new features and fixed a lot of bugs.

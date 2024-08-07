@@ -54,7 +54,9 @@
 			"tremove",
 			"time",
 			"UIDropDownMenu_Initialize",
-			"UIDropDownMenu_AddButton"
+			"UIDropDownMenu_AddButton",
+			"Settings",
+			"UISpecialFrames"
 		],
 		"Lua.runtime.version": "Lua 5.1",
 		"Lua.runtime.builtin": {

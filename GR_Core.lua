@@ -42,7 +42,6 @@ function core:Init()
 
     self.addonSettings = {
         profile = {
-            currentVersion = nil, -- If nil show first time info, if not same version show what's new prompt
             settings = {
                 -- Starting Levels
                 minLevel = MAX_CHARACTER_LEVEL - 4,
@@ -261,7 +260,7 @@ function core:StartMiniMapIcon() -- Start Mini Map Icon
         icon = GR.icon,
         OnClick = function(_, button)
             if button == 'LeftButton' and IsShiftKeyDown() then ns.win.scanner:SetShown(true)
-            elseif button == 'LeftButton' and not ns.win.home:IsShown() then return ns.win.home:SetShown(true)
+            elseif button == 'LeftButton' and not ns.win.home:IsShown() then ns.win.home:SetShown(true)
             elseif button == 'RightButton' then Settings.OpenToCategory('Guild Recruiter') end
         end,
         OnTooltipShow = function(GameTooltip)
@@ -335,21 +334,46 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     core:StartMiniMapIcon() -- Start the mini map icon
 
     core:StartBaseEvents() -- Start the base events
-    self.fullyStarted = true
-    ns.win.base:StartUp() -- Build the base window
+    ns.win.base:StartUp() -- Show the base window
     ns.win.base:SetShown(false) -- Hide the base window
-
-    -- Display info based on version change
-    if not ns.g.currentVersion then ns.code:fOut(L['FIRST_TIME_INFO'], GRColor, true)
-    elseif ns.g.currentVersion ~= GR.version then ns.code:fOut(L['NEW_VERSION_INFO'], GRColor, true) end
-    ns.g.currentVersion = GR.version -- Set the current version
+    self.fullyStarted = true
 
     ns.code:fOut(L['TITLE']..' ('..GR.version..(GR.isTest and ' Beta) ')..L['IS_ENABLED'], GRColor, true)
-    if GR.isTest then ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.testLevel))), 'FFFFFF00') end
+    if GR.isTest then
+        ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.testLevel))), 'FFFFFF00')
+     end
 
+    if type(ns.global.showWhatsNew) ~= 'boolean' then
+        ns.win.whatsnew.startUpWhatsNew = true
+        ns.code:fOut(L['FIRST_TIME_INFO'], GRColor, true) -- Show the first time info
+        C_Timer.After(3, function() ns.win.whatsnew:SetShown(true) end) -- Show the what's new window
+    elseif ns.global.showWhatsNew and ns.global.currentVersion ~= GR.version then
+        ns.win.whatsnew.startUpWhatsNew = true
+        C_Timer.After(3, function() ns.win.whatsnew:SetShown(true) end) -- Show the what's new window
+    elseif ns.global.currentVersion ~= GR.version then ns.code:fOut(L['NEW_VERSION_INFO'], GRColor, true) end
     -- ToDo: Sync Timer Routine
 end
 core:Init()
+
+--* Hook /ginvite command
+local OriginalGuildInvite = GuildInvite -- Original GuildInvite function reference
+    local function HookedGuildInvite(playerName) -- Fires when /ginvite is called
+        if not playerName then return end
+
+        playerName = playerName:sub(1,1):upper()..playerName:sub(2):lower()
+        local cPlayer = ns.code:cPlayer(playerName, select(2, UnitClass(playerName)), 'FFFFFF00')
+        ns.code:fOut("You have sent a guild invite to: "..cPlayer, 'FFFFFF00')
+        ns.invite:SendManualInvite(playerName, (select(2, UnitClass(playerName) or nil)), false, false) -- Call the original GuildInvite function to actually send the invite
+    end
+    GuildInvite = HookedGuildInvite -- Hook the GuildInvite function
+    local function HandleGInviteCommand(msg) -- Function to handle /ginvite command
+        local playerName = msg:match("^%s*(.-)%s*$")
+        if playerName and playerName ~= "" then HookedGuildInvite(playerName)
+        else ns.code:fOut("Usage: /ginvite <playername>", 'FFFFFF00') end
+    end
+    -- Register the /ginvite slash command
+    SLASH_GINVITE1 = "/ginvite"
+    SlashCmdList["GINVITE"] = HandleGInviteCommand
 
 -- * Right Click Invite Routines
 -- Create a custom dropdown frame for the additional options

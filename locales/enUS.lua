@@ -14,6 +14,11 @@ L['PLAYER_ALREADY_IN_GUILD'] = "is already in a guild"
 L['PLAYER_JOINED_GUILD'] = "has joined the guild"
 L['PLAYER_DECLINED_INVITE'] = "declines your guild invitation"
 
+L['DONATION_MESSAGE'] = [[
+I hope you find this addon useful.  I have put a lot oftime and effort into
+making this addon.  If you would like to donate, please use the link below.
+Thank you for your support!]]
+
 -- * GR Basic Command Messages
 L["INVITE"] = 'Invite'
 L['INVITE_MESSAGES_MENU'] = 'Invite with Messages'
@@ -127,6 +132,8 @@ L['INVITES_PENDING'] = 'Invites Pending'
 L['TOTAL_DECLINED'] = 'Invites Declined'
 L['TOTAL_ACCEPTED'] = 'Invites Accepted'
 L['TOTAL_BLACKLISTED'] = 'Black Listed'
+L['TOTAL_ANTI_SPAM'] = 'Players on Anti-Spam'
+L['SESSION_STATS'] = 'Session Stats'
 
 -- * GR Core Messages
 L['FIRST_TIME_INFO'] = [[
