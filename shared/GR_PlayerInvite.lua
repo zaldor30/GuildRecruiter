@@ -54,17 +54,7 @@ function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreeti
     end
 
     -- Message Prep
-    local msgInvite = nil
-    if useInviteMsg then
-        local tblGMMessages = ns.gmSettings.messageList and ns.gmSettings.messageList or {}
-        local tblPlayerMessages = ns.pSettings.messageList and ns.pSettings.messageList or {}
-        local tblMessages = {}
-
-        for _, v in pairs(tblGMMessages) do tinsert(tblMessages, v.message) end
-        for _, v in pairs(tblPlayerMessages) do tinsert(tblMessages, v.message) end
-        msgInvite = tblMessages[ns.pSettings.activeMessage] or nil
-        msgInvite = msgInvite and ns.code:variableReplacement(msgInvite, name) or nil
-    end
+    local msgInvite = useInviteMsg and ns.code:getInviteMessage(name, class) or nil
 
     -- Verify if there is a invite message if not guild invite only.
     local invFormat = ns.pSettings.inviteFormat or 2
@@ -74,16 +64,7 @@ function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreeti
     end
 
     -- Check if in my guild
-    local function isInMyGuild()
-        local totalMembers = GetNumGuildMembers()
-        for i = 1, totalMembers do
-            local gName = GetGuildRosterInfo(i)
-            if strlower(gName) == strlower(name) then return true
-            elseif strlower(gName) == strlower(fName) then return true end
-        end
-        return false
-    end
-    if isManual and isInMyGuild() then
+    if isManual and ns.code:isInMyGuild(fName) then
         ns.code:fOut(cName..' '..L['INVITE_IN_GUILD'])
         return
     end

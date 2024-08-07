@@ -18,8 +18,8 @@ function code:cText(color, text)
 end
 function code:cPlayer(name, class, color) -- Colorize player names
     if name == '' or ((not class or class == '') and (not color or color == '')) or not name then return end
+    local c = (not class or class == '') and color or select(4, GetClassColor(class))
 
-    local c = (not class or class ~= '') and color or select(4, GetClassColor(class))
     if c then return code:cText(c, name)
     else return end
 end
@@ -184,3 +184,28 @@ end
 
 --* Miscellaneous Routines
 function code:inc(data, count) return (data or 0) + (count or 1) end
+function code:getInviteMessage(name)
+    local tblGMMessages = ns.gmSettings.messageList and ns.gmSettings.messageList or {}
+    local tblPlayerMessages = ns.pSettings.messageList and ns.pSettings.messageList or {}
+    local tblMessages = {}
+
+    local msgInvite = nil
+    for _, v in pairs(tblGMMessages) do tinsert(tblMessages, v.message) end
+    for _, v in pairs(tblPlayerMessages) do tinsert(tblMessages, v.message) end
+    msgInvite = tblMessages[ns.pSettings.activeMessage] or nil
+    msgInvite = msgInvite and ns.code:variableReplacement(msgInvite, name) or nil
+
+    return msgInvite
+end
+function code:isInMyGuild(name)
+    local realmName = name:find('-') and name or name..'-'..GetRealmName()
+    local noRealmName = name:gsub('*-', '')
+
+    local totalMembers = GetNumGuildMembers()
+    for i = 1, totalMembers do
+        local gName = GetGuildRosterInfo(i)
+        if strlower(gName) == strlower(noRealmName) then return true
+        elseif strlower(gName) == strlower(realmName) then return true end
+    end
+    return false
+end

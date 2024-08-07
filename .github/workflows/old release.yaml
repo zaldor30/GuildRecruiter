@@ -1,3 +1,4 @@
+name: GR-Release
 on:
   push:
     branches:
@@ -18,13 +19,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Determine if Tag Push
-        id: tagcheck
-        run: echo "::set-output name=tag::$(if [ ${{ github.event.ref_type }} == 'tag' ]; then echo 'true'; else echo 'false'; fi)"
-
       - name: Package
-        if: steps.tagcheck.outputs.tag == 'true'
         uses: BigWigsMods/packager@master
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
           GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+          name: GR-Release

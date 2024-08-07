@@ -361,7 +361,9 @@ function scanner:ChangeCompactMode()
     self:SetShown(true)
 end
 function scanner:UpdateAnalytics()
-    if self.tblScanner.isCompact then return end
+    if not self.ctrlBase.frame
+        or self.tblScanner.isCompacts
+        or not self.ctrlAnalyics.lblPlayersScanned then return end
 
     local sessionStats = ns.analytics:getSessionStats('PlayersScanned')
     self.ctrlAnalyics.lblPlayersScanned:SetText(L['TOTAL_SCANNED']..': '..sessionStats)

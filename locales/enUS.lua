@@ -6,6 +6,7 @@ L["TITLE"] = "Guild Recruiter"
 -- * WoW System Message Translations
 --! MUST BE IN LOWERCASE!
 L['PLAYER_NOT_ONLINE'] = "is not online"
+L['PLAYER_NOT_PLAYING'] = "is currently playing"
 L['NO_PLAYER_NAMED'] = "no player named"
 L['PLAYER_NOT_FOUND'] = "no player named"
 L['PLAYER_IN_GUILD'] = "has already been invited to a guild"
@@ -15,8 +16,8 @@ L['PLAYER_DECLINED_INVITE'] = "declines your guild invitation"
 
 -- * GR Basic Command Messages
 L["INVITE"] = 'Invite'
-L['INVITE_MESSAGES_MENU'] = 'with Messages'
-L['INVITE_NO_MESSAGES_MENU'] = 'without Messages'
+L['INVITE_MESSAGES_MENU'] = 'Invite with Messages'
+L['INVITE_NO_MESSAGES_MENU'] = 'Invite without Messages'
 L["SCAN"] = 'Scan'
 L["ABOUT"] = 'About'
 L["CLOSE"] = 'Close'
