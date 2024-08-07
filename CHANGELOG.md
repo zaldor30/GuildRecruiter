@@ -9,6 +9,7 @@
 - Added back in about screen.
 - Added back in What's New screen.
 - Added back analytics screen.
+- Fixed issue with expired anti-spam.
 - Still Needed:
     - Double check all analytics.
     - Syncing with other players.

@@ -274,23 +274,3 @@ function base:CreateStatusBarFrame()
 end
 function base:SetShown(val) self.tblFrame.frame:SetShown(val) end
 base:Init()
-
---* Hook /ginvite command
-local OriginalGuildInvite = GuildInvite -- Original GuildInvite function reference
-local function HookedGuildInvite(playerName) -- Fires when /ginvite is called
-    if not playerName then return end
-
-    playerName = playerName:sub(1,1):upper()..playerName:sub(2):lower()
-    local cPlayer = ns.code:cPlayer(playerName, select(2, UnitClass(playerName)), 'FFFFFF00')
-    ns.code:fOut("You have sent a guild invite to: "..cPlayer, 'FFFFFF00')
-    ns.invite:SendManualInvite(playerName, (select(2, UnitClass(playerName) or nil)), false, false) -- Call the original GuildInvite function to actually send the invite
-end
-GuildInvite = HookedGuildInvite -- Hook the GuildInvite function
-local function HandleGInviteCommand(msg) -- Function to handle /ginvite command
-    local playerName = msg:match("^%s*(.-)%s*$")
-    if playerName and playerName ~= "" then HookedGuildInvite(playerName)
-    else ns.code:fOut("Usage: /ginvite <playername>", 'FFFFFF00') end
-end
--- Register the /ginvite slash command
-SLASH_GINVITE1 = "/ginvite"
-SlashCmdList["GINVITE"] = HandleGInviteCommand

@@ -13,9 +13,10 @@ function GR:OnInitialize()
 
     GR:RegisterChatCommand('rl', function() ReloadUI() end) -- Set the /rl slash command to reload the UI
 
-    local function checkIfInGuild(count)
-        local clubID = C_Club.GetGuildClubId() -- Get the guild club ID (Guild ID)
+    local function checkIfInGuild(count) -- Check if the player is in a guild
+        if not count then return end
 
+        local clubID = C_Club.GetGuildClubId() -- Get the guild club ID (Guild ID)
         if count >= 60 then -- If the player is not in a guild after 30 attempts, then return
             core.isEnabled = false
             ns.code:cOut(L['NO GUILD']..' '..L['NOT_LOADED'])
@@ -167,8 +168,6 @@ function core:StartDatabase(clubID)
     fixDB()
 end
 
---!Remove dOut after testing in StartGuildSetup
-
 function core:StartGuildSetup(clubID) -- Get Guild Info and prep database
     if not clubID then return end
 
@@ -176,7 +175,6 @@ function core:StartGuildSetup(clubID) -- Get Guild Info and prep database
         if IsGuildLeader() then
             ns.guildInfo.isGuildLeader = true
             ns.guildInfo.guildLeaderToon = GetUnitName('player', true)
-            ns.code:dOut('You are the Guild Leader')
         elseif not IsGuildLeader() then
             if ns.guildInfo.guildLeaderToon == GetUnitName('player', true) then
                 ns.guildInfo.isGuildLeader = false
@@ -219,12 +217,14 @@ function core:PerformRecordMaintenance() -- Perform Record Maintenance
         ns.tblAntiSpamList = {}
         ns.code:dOut('There was an issue decoding the Anti-Spam List (Record Maint)') end
 
-    -- Start Record Maintenance
-    local antiSpamRemoved, blackListRemoved = 0, 0
-    local antiSpamDays = (ns.gmSettings.antiSpam and ns.gmSettings.antiSpamDays) and ns.gmSettings.antiSpamDays or (ns.gSettings.antiSpamDays or 7)
-
     -- Anti-Spam List Maintenance
+    local antiSpamRemoved, blackListRemoved = 0, 0
+    local antiSpamDays = (ns.gmSettings.antiSpam and ns.gmSettings.antiSpamDays) and ns.gmSettings.antiSpamDays or nil
+    antiSpamDays = (not ns.gmSettings.antiSpam and (ns.gSettings.antiSpam and ns.gSettings.antiSpamDays)) and ns.gSettings.antiSpamDays or 7
+
     local antiSpamExpire = C_DateAndTime.GetServerTimeLocal() - (antiSpamDays * SECONDS_IN_A_DAY)
+    --! Remove after testing
+    if not antiSpamExpire then ns.code:fOut('Issue with anti-spam, notify the author.') end
     for k, r in pairs(ns.tblAntiSpamList or {}) do
         if r.date < antiSpamExpire then
             ns.tblAntiSpamList[k] = nil
@@ -357,23 +357,23 @@ core:Init()
 
 --* Hook /ginvite command
 local OriginalGuildInvite = GuildInvite -- Original GuildInvite function reference
-    local function HookedGuildInvite(playerName) -- Fires when /ginvite is called
-        if not playerName then return end
+local function HookedGuildInvite(playerName) -- Fires when /ginvite is called
+    if not playerName then return end
 
-        playerName = playerName:sub(1,1):upper()..playerName:sub(2):lower()
-        local cPlayer = ns.code:cPlayer(playerName, select(2, UnitClass(playerName)), 'FFFFFF00')
-        ns.code:fOut("You have sent a guild invite to: "..cPlayer, 'FFFFFF00')
-        ns.invite:SendManualInvite(playerName, (select(2, UnitClass(playerName) or nil)), false, false) -- Call the original GuildInvite function to actually send the invite
-    end
-    GuildInvite = HookedGuildInvite -- Hook the GuildInvite function
-    local function HandleGInviteCommand(msg) -- Function to handle /ginvite command
-        local playerName = msg:match("^%s*(.-)%s*$")
-        if playerName and playerName ~= "" then HookedGuildInvite(playerName)
-        else ns.code:fOut("Usage: /ginvite <playername>", 'FFFFFF00') end
-    end
-    -- Register the /ginvite slash command
-    SLASH_GINVITE1 = "/ginvite"
-    SlashCmdList["GINVITE"] = HandleGInviteCommand
+    playerName = playerName:sub(1,1):upper()..playerName:sub(2):lower()
+    local cPlayer = ns.code:cPlayer(playerName, select(2, UnitClass(playerName)), 'FFFFFF00')
+    ns.code:fOut("You have sent a guild invite to: "..cPlayer, 'FFFFFF00')
+    ns.invite:SendManualInvite(playerName, (select(2, UnitClass(playerName) or nil)), false, false) -- Call the original GuildInvite function to actually send the invite
+end
+GuildInvite = HookedGuildInvite -- Hook the GuildInvite function
+local function HandleGInviteCommand(msg) -- Function to handle /ginvite command
+    local playerName = msg:match("^%s*(.-)%s*$")
+    if playerName and playerName ~= "" then HookedGuildInvite(playerName)
+    else ns.code:fOut("Usage: /ginvite <playername>", 'FFFFFF00') end
+end
+-- Register the /ginvite slash command
+SLASH_GINVITE1 = "/ginvite"
+SlashCmdList["GINVITE"] = HandleGInviteCommand
 
 -- * Right Click Invite Routines
 -- Create a custom dropdown frame for the additional options
@@ -489,3 +489,5 @@ SetItemRef = function(link, text, button, chatFrame)
     end
     originalSetItemRef(link, text, button, chatFrame)
 end
+
+--! Remove test code in PerformRecordMaintenance
