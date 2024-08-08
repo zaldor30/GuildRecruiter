@@ -137,9 +137,7 @@ function core:StartDatabase(clubID)
     GR.debug = ns.pSettings.debugMode or false -- Set the debug mode
 end
 function core:PerformDatabaseMaintenance()
-    print(ns.global.dbVersion, ns.global.dbVersion, GR.dbVersion)
     if not ns.global.dbVersion or ns.global.dbVersion ~= GR.dbVersion then
-        print('Performing Database Maintenance')
         ns.global.dbVersion = GR.dbVersion
         -- Fix for old DB settings
         ns.gmSettings.sendGuildGreeting = ns.gmSettings.sendGuildGreeting or ns.gmSettings.sendWelcome

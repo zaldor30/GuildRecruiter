@@ -20,10 +20,12 @@ function ds:WhatsNew() -- What's new in the current version
                 (or click on the icon in the top left corner)|r
                 
     |CFFFFFF00v3.0 Notes|r
-        Alpha Fixes v3.0.15:
+        Alpha Fixes v3.0.16:
         - Changed how invite messages are handled.
         - Changed to reset active message if message is deleted.
         - Merged message lists into one table.
+        - Fixed issue with message only invites not working.
+        - Added the functionality to send message if declined invite.
 
         I have done pretty much a full rewrite of Guild Recruiter.
         I have added a lot of new features and fixed a lot of bugs.

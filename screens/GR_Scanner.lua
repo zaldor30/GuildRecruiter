@@ -427,7 +427,7 @@ function scanner:InvitePlayers()
     self.tblInvites[key] = nil
     self:DispalyInviteList()
 
-    ns.invite:SendAutoInvite(tbl.fullName, (select(2, UnitClass(tbl.fullName)) or nil), ((ns.pSettings.inviteFormat > 1) or false))
+ns.invite:SendAutoInvite(tbl.fullName, (select(2, UnitClass(tbl.fullName)) or nil), ((ns.pSettings.inviteFormat ~= 2) or false), ((ns.pSettings.inviteFormat ~= 1) or false))
 end
 function scanner:SetInviteButtonsState()
     local anyChecked, count = false, 0

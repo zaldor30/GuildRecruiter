@@ -28,13 +28,13 @@ function invite:whoInviteChecks(r)
     return nil -- Returns error is not ok to invite
 end
 
-function invite:SendAutoInvite(pName, class, sendInvMessage)
-    self:StartInvite(pName, class, sendInvMessage, true, true, false)
+function invite:SendAutoInvite(pName, class, sendInvMessage, sendInvite)
+    self:StartInvite(pName, class, sendInvMessage, true, true, false, sendInvite)
 end
 function invite:SendManualInvite(pName, class, sendWhisper, sendGreeting)
     self:StartInvite(pName, class, false, sendWhisper, sendGreeting, true)
 end
-function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreetingMsg, isManual)
+function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreetingMsg, isManual, sendInvite)
     if not pName then return end
 
     local fName = pName:find('-') and pName or pName..'-'..GetRealmName() -- Add realm name if not present
@@ -54,12 +54,12 @@ function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreeti
     end
 
     -- Message Prep
+    local invFormat = ns.pSettings.inviteFormat or 2
     local msgInvite = useInviteMsg and ns.gSettings.messageList[ns.pSettings.activeMessage].message or nil
     if msgInvite then msgInvite = ns.code:variableReplacement(msgInvite, name) end
 
     -- Verify if there is a invite message if not guild invite only.
-    local invFormat = ns.pSettings.inviteFormat or 2
-    if invFormat ~= 2 and not msgInvite and not isManual then
+    if useInviteMsg and not msgInvite and not isManual then
         ns.code:fOut(L['NO_INVITE_MESSAGE'])
         return
     end
@@ -70,22 +70,23 @@ function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreeti
         return
     end
 
-    if invFormat > 1 and pName then -- Guild Invite
+    if invFormat ~= 1 and pName and sendInvite then -- Guild Invite
         C_GuildInfo.Invite(pName)
         ns.code:fOut(L['GUILD_INVITE_SENT']..' '..cName, 'FFFFFF00')
         ns.analytics:saveStats('PlayersInvited') -- Save stats
     end
 
-    if invFormat ~= 2 and invFormat ~= 4 and msgInvite then -- Whisper Invite
-        if not ns.gSettings.showWhispers then
-            ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER', function(_, _, msg) return msg == msgInvite end, msgInvite)
-            ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER_INFORM', function(_, _, msg) return msg == msgInvite end, msgInvite)
-            ns.code:fOut(L['INVITE_MESSAGE_SENT']..' '..cName, 'FFFFFF00')
-        end
-        SendChatMessage(msgInvite, 'WHISPER', nil, pName)
-    end
+    if invFormat ~= 2 and invFormat ~= 4 and msgInvite then self:SendMessage(pName, name, msgInvite) end
 
     invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg)
+end
+function invite:SendMessage(pName, cName, msgInvite)
+    if not ns.gSettings.showWhispers then
+        ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER', function(_, _, msg) return msg == msgInvite end, msgInvite)
+        ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER_INFORM', function(_, _, msg) return msg == msgInvite end, msgInvite)
+        ns.code:fOut(L['INVITE_MESSAGE_SENT']..' '..cName, 'FFFFFF00')
+    end
+    SendChatMessage(msgInvite, 'WHISPER', nil, pName)
 end
 
 -- After Invite Routines
@@ -130,6 +131,13 @@ local function UpdateInvitePlayerStatus(_, ...)
             invite.tblSent[key] = nil
         end)
     elseif msg:find(L['PLAYER_DECLINED_INVITE']) then
+        if ns.pSettings.inviteFormat == 4 then
+            local name = invite.tblSent[key].name:gsub('-.*', '') -- Remove realm name
+            local invMsg = ns.code:variableReplacement(ns.gSettings.messageList[ns.pSettings.activeMessage].message, name)
+            invite:SendMessage(fName, name, invMsg)
+            invite.tblSent[key].sentAt = GetServerTime()
+        end
+    elseif invite.tblSent[key].sentAt + 60 < GetServerTime() then
         ns.analytics:saveStats('PlayersDeclined')
         invite.tblSent[key] = nil
     end
@@ -164,7 +172,10 @@ function invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg)
         cName = cName,
         whisper = msgWhisper and msgWhisper:gsub('<', ''):gsub('>', '') or nil,
         guild = msgGuild and msgGuild:gsub('<', ''):gsub('>', '') or nil,
+        sentMsg = false,
+        sentAt = GetServerTime(),
     }
+    ns.antiSpam:AddToAntiSpamList(fName)
 
     ns.observer:Register("CHAT_MSG_SYSTEM", UpdateInvitePlayerStatus)
 end
@@ -331,4 +342,3 @@ function antiSpam:AddToAntiSpamList(pName)
 
     return true
 end
-antiSpam:Init() -- Init antiSpam
