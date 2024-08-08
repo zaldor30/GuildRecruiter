@@ -180,6 +180,7 @@ L['INVITE_FORMAT'] = 'Recruit Invite Format:'
 L['MIN_LVL'] = 'Min Level:'
 L['MAX_LVL'] = 'Max Level:'
 L['MESSAGE_LIST'] = 'Invite Messages'
+L['INVITE_MESSAGE_ONLY'] = 'Send Invite Message Only'
 
 -- * GR Error Message
 L['INVALID_LEVEL'] = 'You must enter a number between 1 and'
@@ -253,6 +254,7 @@ L['INVITE_MESSAGES'] = 'Invite Messages'
 -- * BlackList Settings Window
 L['BLACK_LIST'] = 'Black List'
 L['BLACK_LIST_REMOVE'] = 'Remove Selected Black List Entries'
+L['ADD_TO_BLACK_LIST'] = 'Add player to black list.'
 
 -- * Invalid Settings Window
 L['INVALID_ZONE'] = 'Invalid Zones'

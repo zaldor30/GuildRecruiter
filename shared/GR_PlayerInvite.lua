@@ -31,8 +31,8 @@ end
 function invite:SendAutoInvite(pName, class, sendInvMessage, sendInvite)
     self:StartInvite(pName, class, sendInvMessage, true, true, false, sendInvite)
 end
-function invite:SendManualInvite(pName, class, sendWhisper, sendGreeting)
-    self:StartInvite(pName, class, false, sendWhisper, sendGreeting, true)
+function invite:SendManualInvite(pName, class, sendWhisper, sendGreeting, sendInvite)
+    self:StartInvite(pName, class, false, sendWhisper, sendGreeting, true, sendInvite)
 end
 function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreetingMsg, isManual, sendInvite)
     if not pName then return end
@@ -70,15 +70,17 @@ function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreeti
         return
     end
 
-    if invFormat ~= 1 and pName and sendInvite then -- Guild Invite
+    print(pName, sendInvite)
+    if pName and sendInvite then -- Guild Invite
+        print('Sending Invite')
         C_GuildInfo.Invite(pName)
         ns.code:fOut(L['GUILD_INVITE_SENT']..' '..cName, 'FFFFFF00')
         ns.analytics:saveStats('PlayersInvited') -- Save stats
     end
 
-    if invFormat ~= 2 and invFormat ~= 4 and msgInvite then self:SendMessage(pName, name, msgInvite) end
+    if invFormat ~= 2 and invFormat ~= 4 and useInviteMsg and msgInvite then self:SendMessage(pName, name, msgInvite) end
 
-    invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg)
+    invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg, isManual)
 end
 function invite:SendMessage(pName, cName, msgInvite)
     if not ns.gSettings.showWhispers then
@@ -123,19 +125,31 @@ local function UpdateInvitePlayerStatus(_, ...)
         ns.analytics:saveStats('PlayersInvited', -1)
         invite.tblSent[key] = nil
     elseif msg:find(L['PLAYER_JOINED_GUILD']) then
-        C_Timer.After(5, function()
-            if invite.tblSent[key].guild then SendChatMessage(invite.tblSent[key].guild, 'GUILD') end
-            if invite.tblSent[key].whisper then SendChatMessage(invite.tblSent[key].whisper, 'WHISPER', nil, key) end
+        local isGreetingOk = ns.gSettings.showGreeting and ns.gSettings.guildMessage
+        local isWhisperOk = ns.gSettings.showWhispers and ns.gSettings.whisperMessage
+
+        if isGreetingOk or isWhisperOk then
+            C_Timer.After(5, function()
+                if invite.tblSent[key].guild and invite.tblSent[key].guild ~= '' then SendChatMessage(invite.tblSent[key].guild, 'GUILD') end
+                if invite.tblSent[key].whisper and invite.tblSent[key].whisper ~= '' then SendChatMessage(invite.tblSent[key].whisper, 'WHISPER', nil, key) end
+                ns.analytics:saveStats('PlayersJoined')
+                ns.win.scanner:UpdateAnalytics()
+                invite.tblSent[key] = nil
+            end)
+        else
             ns.analytics:saveStats('PlayersJoined')
             ns.win.scanner:UpdateAnalytics()
             invite.tblSent[key] = nil
-        end)
+        end
     elseif msg:find(L['PLAYER_DECLINED_INVITE']) then
-        if ns.pSettings.inviteFormat == 4 then
+        if ns.pSettings.inviteFormat == 4 and not invite.tblSent[key].isManual then
             local name = invite.tblSent[key].name:gsub('-.*', '') -- Remove realm name
             local invMsg = ns.code:variableReplacement(ns.gSettings.messageList[ns.pSettings.activeMessage].message, name)
             invite:SendMessage(fName, name, invMsg)
             invite.tblSent[key].sentAt = GetServerTime()
+        else
+            ns.analytics:saveStats('PlayersDeclined')
+            invite.tblSent[key] = nil
         end
     elseif invite.tblSent[key].sentAt + 60 < GetServerTime() then
         ns.analytics:saveStats('PlayersDeclined')
@@ -147,7 +161,7 @@ local function UpdateInvitePlayerStatus(_, ...)
         ns.observer:Unregister('CHAT_MSG_SYSTEM', UpdateInvitePlayerStatus)
     end
 end
-function invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg)
+function invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg, isManual)
     if not pName then return end
     local fName = pName:find('-') and pName or pName..'-'..GetRealmName() -- Add realm name if not present
     pName = pName:gsub('*-', '') -- Remove realm name if present
@@ -174,6 +188,7 @@ function invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg)
         guild = msgGuild and msgGuild:gsub('<', ''):gsub('>', '') or nil,
         sentMsg = false,
         sentAt = GetServerTime(),
+        isManual = isManual,
     }
     ns.antiSpam:AddToAntiSpamList(fName)
 

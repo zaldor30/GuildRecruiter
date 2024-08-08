@@ -393,10 +393,10 @@ local function InitializeDropdownMenu(self, level)
     local cPlayerName = ns.code:cText(GRColor, self.chatPlayerName)
     if level == 1 then
         local info = UIDropDownMenu_CreateInfo()
-        info.text = L["INVITE"]..' '..cPlayerName..'\n'..ns.code:cText('FFFFFF00', L['INVITE_NO_MESSAGES_MENU'])
+        info.text = cPlayerName..'\n'..ns.code:cText('FFFFFF00', L['INVITE_NO_MESSAGES_MENU'])
         info.notCheckable = true
         info.func = function()
-            ns.invite:SendManualInvite(self.chatPlayerName, select(2, UnitClass(self.chatPlayerName)))
+            ns.invite:SendManualInvite(self.chatPlayerName, select(2, UnitClass(self.chatPlayerName)), false, false, true)
         end
         UIDropDownMenu_AddButton(info, level)
 
@@ -407,12 +407,30 @@ local function InitializeDropdownMenu(self, level)
         UIDropDownMenu_AddButton(info, level)
 
         info = UIDropDownMenu_CreateInfo()
-        info.text = L["INVITE"]..' '..cPlayerName..'\n'..ns.code:cText('FFFFFF00', L['INVITE_MESSAGES_MENU'])
+        info.text = cPlayerName..'\n'..ns.code:cText('FFFFFF00', L['INVITE_MESSAGES_MENU'])
         info.notCheckable = true
         info.func = function()
-            ns.invite:SendManualInvite(self.chatPlayerName, select(2, UnitClass(self.chatPlayerName)), true, true)
+            ns.invite:SendManualInvite(self.chatPlayerName, select(2, UnitClass(self.chatPlayerName)), true, true, true)
         end
         UIDropDownMenu_AddButton(info, level)
+
+        local activeMessage = ns.pSettings.activeMessage or nil
+        local msg = activeMessage and ns.gSettings.messageList[activeMessage] or nil
+        if msg then
+            -- Separator for spacing
+            info = UIDropDownMenu_CreateInfo()
+            info.disabled = true
+            info.notCheckable = true
+            UIDropDownMenu_AddButton(info, level)
+
+            info = UIDropDownMenu_CreateInfo()
+            info.text = cPlayerName..'\n'..ns.code:cText('FFFFFF00', L['INVITE_MESSAGE_ONLY'])
+            info.notCheckable = true
+            info.func = function()
+                ns.invite:SendMessage(self.chatPlayerName, self.chatPlayerName:gsub('-', ''), msg.message)
+            end
+            UIDropDownMenu_AddButton(info, level)
+        end
 
         local name = self.chatPlayerName:find('-') and self.chatPlayerName or self.chatPlayerName..'-'..GetRealmName() -- Add realm name if not present
         if not ns.blackList:IsOnBlackList(name) then
@@ -423,7 +441,7 @@ local function InitializeDropdownMenu(self, level)
             UIDropDownMenu_AddButton(info, level)
 
             info = UIDropDownMenu_CreateInfo()
-            info.text = L['BLACKLIST']..' '..cPlayerName
+            info.text = cPlayerName..'\n'..L['BLACKLIST']
             info.notCheckable = true
             info.func = function()
                 ns.blackList:BlackListReasonPrompt(self.chatPlayerName)

@@ -26,6 +26,8 @@ function ds:WhatsNew() -- What's new in the current version
         - Merged message lists into one table.
         - Fixed issue with message only invites not working.
         - Added the functionality to send message if declined invite.
+        - Fix right click invite.
+        - Fix no message but set to show greeting.
 
         I have done pretty much a full rewrite of Guild Recruiter.
         I have added a lot of new features and fixed a lot of bugs.
