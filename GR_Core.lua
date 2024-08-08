@@ -1,11 +1,11 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
 ns.core = {}
+local core = ns.core
 
 -- Application Initialization
 local L = LibStub("AceLocale-3.0"):GetLocale('GuildRecruiter')
 local AC, ACD = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0')
 local icon, DB = LibStub('LibDBIcon-1.0'), LibStub('AceDB-3.0')
-local core = ns.core
 
 -- *Blizzard Initialization Called Function
 function GR:OnInitialize()
@@ -126,12 +126,7 @@ function core:StartDatabase(clubID)
     ns.guildInfo = ns.g.guildInfo or {} -- Guild Info
     ns.gmSettings = ns.g.gmSettings or self.addonSettings.global.gmSettings -- GM Settings
 
-    -- Fix for old DB settings
-    ns.gmSettings.sendGuildGreeting = ns.gmSettings.sendGuildGreeting or ns.gmSettings.sendWelcome
-    ns.gmSettings.sendWhsiper = ns.gmSettings.sendWhsiper or ns.gmSettings.sendGreeting
-
-    ns.gSettings.sendGuildGreeting = ns.gSettings.sendGuildGreeting or ns.gSettings.sendWelcome
-    ns.gSettings.sendWhsiper = ns.gSettings.sendWhsiper or ns.gSettings.sendGreeting
+    self:PerformDatabaseMaintenance() -- Perform Database Maintenance
 
     -- Other Variables Declaration
     ns.gFilterList = ns.g.filterList or {} -- Global Filter List
@@ -140,8 +135,21 @@ function core:StartDatabase(clubID)
     ns.analytics:Start()
 
     GR.debug = ns.pSettings.debugMode or false -- Set the debug mode
+end
+function core:PerformDatabaseMaintenance()
+    print(ns.global.dbVersion, ns.global.dbVersion, GR.dbVersion)
+    if not ns.global.dbVersion or ns.global.dbVersion ~= GR.dbVersion then
+        print('Performing Database Maintenance')
+        ns.global.dbVersion = GR.dbVersion
+        -- Fix for old DB settings
+        ns.gmSettings.sendGuildGreeting = ns.gmSettings.sendGuildGreeting or ns.gmSettings.sendWelcome
+        ns.gmSettings.sendWhsiper = ns.gmSettings.sendWhsiper or ns.gmSettings.sendGreeting
+        ns.gmSettings.sendGreeting, ns.gmSettings.sendWelcome = nil, nil
 
-    local function fixDB() --? Fix variable Rename - v3.0 (8/6/2024)
+        ns.gSettings.sendGuildGreeting = ns.gSettings.sendGuildGreeting or ns.gSettings.sendWelcome
+        ns.gSettings.sendWhsiper = ns.gSettings.sendWhsiper or ns.gSettings.sendGreeting
+
+        -- Change Message Records
         if ns.gSettings.welcomeMessage and ns.gSettings.welcomeMessage ~= '' then
             ns.gSettings.guildMessage = ns.gSettings.welcomeMessage and ns.gSettings.welcomeMessage or ns.gSettings.guildMessage
             ns.gSettings.welcomeMessage = nil
@@ -164,8 +172,33 @@ function core:StartDatabase(clubID)
             ns.gSettings.sendWhisperGreeting = nil
             ns.gmSettings.sendWhisperGreeting = nil
         end
+
+        -- Combine Message Lists
+        local tblDescHold = {}
+        local tblMsgs, tblGM, tblPlayer = {}, ns.gmSettings.messageList or {}, ns.gSettings.messageList or {}
+        for _, v in pairs(tblGM) do
+            if not tblDescHold[v.desc] then
+                tinsert(tblMsgs, {
+                    desc = v.desc,
+                    message = v.message,
+                    type = 'GM',
+                })
+                tblDescHold[v.desc] = true
+            end
+        end
+        for _, v in pairs(tblPlayer) do
+            if not tblDescHold[v.desc] then
+                tinsert(tblMsgs, {
+                    desc = v.desc,
+                    message = v.message,
+                    type = 'PLAYER',
+                })
+                tblDescHold[v.desc] = true
+            end
+        end
+        ns.gSettings.messageList = tblMsgs or {}
+        ns.gmSettings.messageList, ns.pSettings.messageList = nil, nil
     end
-    fixDB()
 end
 function core:StartGuildSetup(clubID) -- Get Guild Info and prep database
     if not clubID then return end
@@ -333,7 +366,7 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     ns.win.base:SetShown(false) -- Hide the base window
     self.fullyStarted = true
 
-    ns.code:fOut(L['TITLE']..' ('..GR.version..(GR.isTest and ' Beta) ')..L['IS_ENABLED'], GRColor, true)
+    ns.code:fOut(L['TITLE']..' ('..GR.version..(GR.isTest and ' '..GR.testLevel..') ')..L['IS_ENABLED'], GRColor, true)
     if not ns.guildInfo.guildLink then ns.code:cOut(L['NO_GUILD_LINK'], GRColor) end
 
     if GR.isTest then

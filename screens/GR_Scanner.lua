@@ -100,10 +100,12 @@ function scanner:SetShown(isShown)
     self:DisplayWhoList() -- Display Who List
     self:DispalyInviteList() -- Display Invite List
 
-    if not self.tblFilters then
+    if not self.tblFilters or ns.win.home.resetFilters then
+        ns.win.home.resetFilters = false
         self.tblFilters = {}
         self:ResetFilters()
     end
+
     self:DisplayNextFilter() -- Display Next Filter
     self:UpdateAnalytics()
     self:SetInviteButtonsState()

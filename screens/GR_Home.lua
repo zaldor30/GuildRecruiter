@@ -15,6 +15,7 @@ end
 
 function home:Init()
     self.activeMessage = nil
+    self.resetFilters = false
 
     self.tblFrame = {}
     self.tblFilters = {}
@@ -129,6 +130,7 @@ function home:CreateInviteArea()
             ns.statusText:SetText('')
             self.minLevel = val:trim() or nil
             ns.pSettings.minLevel = self.minLevel
+            self.resetFilters = true
         end
     end)
     inline:AddChild(minLevelBox)
@@ -162,6 +164,7 @@ function home:CreateInviteArea()
             ns.statusText:SetText('')
             self.maxLevel = val:trim() or nil
             ns.pSettings.maxLevel = self.maxLevel
+            self.resetFilters = true
         end
     end)
     inline:AddChild(maxLevelBox)
@@ -271,22 +274,13 @@ end
 -- *Support Functions
 function home:GetInviteMessages()
     local tblWhispers = {}
-    local tblGMMessages = ns.gmSettings.messageList and ns.gmSettings.messageList or {}
-    local tblPlayerMessages = ns.gSettings.messageList and ns.gSettings.messageList or {}
+    local tblMessages = ns.gSettings.messageList and ns.gSettings.messageList or {}
 
     self.tblWhipsers = table.wipe(self.tblWhipsers or {})
-    local hasGuildLink = ns.guildInfo.guildLink ~= '' or false
-    for _, r in pairs(tblGMMessages) do
+    for k, r in pairs(tblMessages) do
         local msg = r.message
-        local desc = ns.code:cText(GM_DESC_COLOR, r.desc)
-        if hasGuildLink then msg = msg:gsub(L['GUILDLINK'], ns.guildInfo.guildLink) end
-        tblWhispers[#tblWhispers + 1] = { message = msg, desc = desc, type = 'GM' }
-    end
-
-    for _, r in pairs(tblPlayerMessages) do
-        local msg = r.message
-        if hasGuildLink then msg = msg:gsub(L['GUILDLINK'], ns.guildInfo.guildLink) end
-        tblWhispers[#tblWhispers + 1] = { message = msg, desc = r.desc, type = 'PLAYER' }
+        local desc = r.type == 'GM' and ns.code:cText(GM_DESC_COLOR, r.desc) or r.desc
+        tblWhispers[k] = { message = msg, desc = desc, type = r.type }
     end
 
     return tblWhispers
@@ -303,7 +297,6 @@ function home:MessageChanged(val)
 
     self:CreatePreview()
     self:SetButtonStates()
-    --! Set Button States
 end
 function home:CreatePreview()
     local invFormat, msg = ns.pSettings.inviteFormat, nil

@@ -26,10 +26,11 @@ local function MessageLength(msg)
     tMsg = msg:gsub('GUILDLINK', ''):gsub('GUILDNAME', ''):gsub('PLAYERNAME', '')
     return (playerNameFound or false), count + (strlen(tMsg) or 0), count, msg
 end
-local function newMsg()
+local function newMsg(type)
     return {
         desc = '',
         message = '',
+        type = type,
     }
 end
 local function newZone()
@@ -57,8 +58,7 @@ local function zoneOut()
 end
 
 local tblZone = newZone()
-local tblMessage = newMsg()
-local tblGMMessage = newMsg()
+local tblMessage, tblGMMessage = nil, nil
 
 local gmActiveMessage, invActiveMessage, activeZone = nil, nil, nil
 
@@ -389,12 +389,16 @@ ns.addonSettings = {
                     width = 2,
                     values = function()
                         local tbl = {}
-                        for k, r in pairs(ns.gmSettings.messageList or {}) do tbl[k] = ns.code:cText(GM_DESC_COLOR, r.desc) end
+                        for k, r in pairs(ns.gSettings.messageList or {}) do
+                            if r.type == 'GM' then
+                                tbl[k] = ns.code:cText(GM_DESC_COLOR, r.desc)
+                            end
+                        end
                         return tbl
                     end,
                     set = function(_, val) gmActiveMessage = val end,
                     get = function()
-                        local msg = ns.gmSettings.messageList or nil
+                        local msg = ns.gSettings.messageList or nil
                         local active = gmActiveMessage or nil
 
                         if active and msg then tblGMMessage = msg[active] or newMsg()
@@ -414,6 +418,7 @@ ns.addonSettings = {
                     func = function()
                         tblGMMessage = newMsg()
                         gmActiveMessage = nil
+                        type = 'GM'
                     end,
                 },
                 msgGMInviteDesc = {
@@ -424,8 +429,10 @@ ns.addonSettings = {
                     multiline = false,
                     width = 'full',
                     disabled = function() return not ns.core.iAmGM end,
-                    set = function(_, val) tblGMMessage.desc = val end,
-                    get = function() return tblGMMessage.desc or '' end,
+                    set = function(_, val)
+                        if not tblGMMessage then tblGMMessage = newMsg('GM') end
+                        tblGMMessage.desc = val end,
+                    get = function() return tblGMMessage and tblGMMessage.desc or '' end,
                 },
                 msgGMInviteMessage = {
                     order = 5,
@@ -434,18 +441,22 @@ ns.addonSettings = {
                     multiline = 7,
                     width = 'full',
                     disabled = function() return not ns.core.iAmGM end,
-                    set = function(_, val) tblGMMessage.message = ns.code:capitalKeyWord(val:trim()) end,
-                    get = function() return tblGMMessage.message or '' end,
+                    set = function(_, val)
+                        if not tblGMMessage then tblGMMessage = newMsg('GM') end
+                        tblGMMessage.message = ns.code:capitalKeyWord(val:trim()) end,
+                    get = function() return tblGMMessage and tblGMMessage.message or '' end,
                 },
                 msgGMHeader4 = {
                     order = 10,
                     name = 'Message Preview',
                     type = 'header',
-                    hidden = function() return tblGMMessage.message == '' end,
+                    hidden = function() return tblGMMessage and tblGMMessage.message == '' or true end,
                 },
                 msgGMPreview = {
                     order = 11,
                     name = function()
+                        if not tblGMMessage then return '' end
+
                         local preview = ns.code:variableReplacement(tblGMMessage.message, UnitName('player'))
                         if tblGMMessage.message == '' then return '' end
 
@@ -457,7 +468,7 @@ ns.addonSettings = {
                     type = 'description',
                     width = 'full',
                     fontSize = 'medium',
-                    hidden = function() return tblGMMessage.message == '' end,
+                    hidden = function() return (tblGMMessage and tblGMMessage.message) and tblGMMessage.message or '' end,
                 },
                 gmPreviewCount = {
                     order = 20,
@@ -486,13 +497,16 @@ ns.addonSettings = {
                     disabled = function() return not gmActiveMessage and true or false end,
                     hidden = function() return not ns.core.iAmGM end,
                     func = function()
-                        local msg = ns.gmSettings.messageList or nil
+                        local msg = ns.gSettings.messageList or nil
                         local active = gmActiveMessage or nil
                         if active and msg and msg[active] then
                             msg[active] = nil
                             gmActiveMessage = nil
                             tblGMMessage = newMsg()
                         end
+
+                        gmActiveMessage = nil
+                        if ns.pSettings.activeMessage then ns.pSettings.activeMessage = nil end
                     end,
                 },
                 msgGMInviteSave = {
@@ -505,14 +519,14 @@ ns.addonSettings = {
                         return not ((tblGMMessage.desc and strlen(tblGMMessage.desc) > 0) and (tblGMMessage.message and strlen(tblGMMessage.message) > 0)) end,
                     hidden = function() return not ns.core.iAmGM end,
                     func = function()
-                        local msg = ns.gmSettings.messageList or {}
+                        local msg = ns.gSettings.messageList or {}
                         local active = gmActiveMessage
 
                         if not active then
                             tinsert(msg, tblGMMessage)
                             active = #msg
                         else msg[active] = tblGMMessage end
-                        ns.gmSettings.messageList = msg
+                        ns.gSettings.messageList = msg
 
                         tblGMMessage = newMsg()
                         gmActiveMessage = nil
@@ -686,7 +700,9 @@ ns.addonSettings = {
                     width = 2,
                     values = function()
                         local tbl = {}
-                        for k, r in pairs(ns.gSettings.messageList or {}) do tbl[k] = ns.code:cText(GM_DESC_COLOR, r.desc) end
+                        for k, r in pairs(ns.gSettings.messageList or {}) do
+                            if r.type == 'PLAYER' then tbl[k] = r.desc end
+                        end
                         return tbl
                     end,
                     set = function(_, val) invActiveMessage = val end,
@@ -719,8 +735,11 @@ ns.addonSettings = {
                     type = 'input',
                     multiline = false,
                     width = 'full',
-                    set = function(_, val) tblMessage.desc = val end,
-                    get = function() return tblMessage.desc or '' end,
+                    set = function(_, val)
+                        if not tblMessage then tblMessage = newMsg('PLAYER') end
+                        tblMessage.desc = val
+                        end,
+                    get = function() return tblMessage and tblMessage.desc or '' end,
                 },
                 invInviteMessage = {
                     order = 8,
@@ -728,20 +747,25 @@ ns.addonSettings = {
                     type = 'input',
                     multiline = 7,
                     width = 'full',
-                    set = function(_, val) tblMessage.message = ns.code:capitalKeyWord(val:trim()) end,
-                    get = function() return tblMessage.message or '' end,
+                    set = function(_, val)
+                        if not tblMessage then tblMessage = newMsg('PLAYER') end
+                        tblMessage.message = ns.code:capitalKeyWord(val:trim())
+                    end,
+                    get = function() return tblMessage and tblMessage.message or '' end,
                 },
                 invHeader4 = {
                     order = 9,
                     name = 'Message Preview',
                     type = 'header',
-                    hidden = function() return tblMessage.message == '' end,
+                    hidden = function() return tblMessage and not tblMessage.message or true end,
                 },
                 invPreview = {
                     order = 9,
                     name = function()
+                        if not tblMessage then return '' end
+
                         local preview = ns.code:variableReplacement(tblMessage.message, UnitName('player'))
-                        if tblMessage.message == '' then return '' end
+                        if not tblMessage or tblMessage.message == '' then return '' end
 
                         local msg = (ns.code:cText('FFFF80FF', 'To [')..ns.code.fPlayerName..ns.code:cText('FFFF80FF', ']: '..(preview or ''))) or ''
                         msg = msg:gsub(L['GUILD_LINK_NOT_FOUND'], ns.code:cText('FFFF0000', L['GUILD_LINK_NOT_FOUND']))
@@ -751,7 +775,7 @@ ns.addonSettings = {
                     type = 'description',
                     width = 'full',
                     fontSize = 'medium',
-                    hidden = function() return tblMessage.message == '' end,
+                    hidden = function() return (tblMessage and tblMessage.message) and tblMessage.message or '' end,
                 },
                 invPreviewCount = {
                     order = 14,
@@ -786,6 +810,9 @@ ns.addonSettings = {
                             invActiveMessage = nil
                             tblMessage = newMsg()
                         end
+
+                        invActiveMessage = nil
+                        if ns.pSettings.activeMessage then ns.pSettings.activeMessage = nil end
                     end,
                 },
                 invInviteSave = {

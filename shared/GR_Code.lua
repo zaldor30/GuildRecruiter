@@ -188,19 +188,6 @@ function code:ConvertDateTime(val, showHours)
     local d = date("*t", val)
     return (d and showHours) and string.format("%02d/%02d/%04d %02d:%02d", d.month, d.day, d.year, d.hour, d.minute) or (string.format("%02d/%02d/%04d", d.month, d.day, d.year) or nil)
 end
-function code:getInviteMessage(name)
-    local tblGMMessages = ns.gmSettings.messageList and ns.gmSettings.messageList or {}
-    local tblPlayerMessages = ns.pSettings.messageList and ns.pSettings.messageList or {}
-    local tblMessages = {}
-
-    local msgInvite = nil
-    for _, v in pairs(tblGMMessages) do tinsert(tblMessages, v.message) end
-    for _, v in pairs(tblPlayerMessages) do tinsert(tblMessages, v.message) end
-    msgInvite = tblMessages[ns.pSettings.activeMessage] or nil
-    msgInvite = msgInvite and ns.code:variableReplacement(msgInvite, name) or nil
-
-    return msgInvite
-end
 function code:isInMyGuild(name)
     local realmName = name:find('-') and name or name..'-'..GetRealmName()
     local noRealmName = name:gsub('*-', '')
