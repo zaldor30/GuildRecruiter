@@ -1,28 +1,9 @@
---localization file for english/United States
+-- Localization file for English/United States
 local L = LibStub("AceLocale-3.0"):NewLocale("GuildRecruiter", "enUS", true)
 
+-- * General
 L["TITLE"] = "Guild Recruiter"
-
--- * WoW System Message Translations
---! MUST BE IN LOWERCASE!
-L['PLAYER_NOT_ONLINE'] = "is not online"
-L['PLAYER_NOT_PLAYING'] = "is currently playing"
-L['NO_PLAYER_NAMED'] = "no player named"
-L['PLAYER_NOT_FOUND'] = "no player named"
-L['PLAYER_IN_GUILD'] = "has already been invited to a guild"
-L['PLAYER_ALREADY_IN_GUILD'] = "is already in a guild"
-L['PLAYER_JOINED_GUILD'] = "has joined the guild"
-L['PLAYER_DECLINED_INVITE'] = "declines your guild invitation"
-
-L['DONATION_MESSAGE'] = [[
-I hope you find this addon useful.  I have put a lot oftime and effort into
-making this addon.  If you would like to donate, please use the link below.
-Thank you for your support!]]
-
--- * GR Basic Command Messages
 L["INVITE"] = 'Invite'
-L['INVITE_MESSAGES_MENU'] = 'Invite with Messages'
-L['INVITE_NO_MESSAGES_MENU'] = 'Invite without Messages'
 L["SCAN"] = 'Scan'
 L["ABOUT"] = 'About'
 L["CLOSE"] = 'Close'
@@ -34,16 +15,35 @@ L["OK"] = 'OK'
 L["ENABLE"] = 'Enable'
 L["DISABLE"] = 'Disable'
 L["REMOVE"] = 'Remove'
-L['NEW'] = 'New'
-L['SAVE'] = 'Save'
-L['DELETE'] = 'Delete'
+L["NEW"] = 'New'
+L["DELETE"] = 'Delete'
+
+-- * WoW System Message Translations
+--! MUST BE IN LOWERCASE!
+L['PLAYER_NOT_ONLINE'] = "is not online"
+L['PLAYER_NOT_PLAYING'] = "is currently playing"
+L['NO_PLAYER_NAMED'] = "no player named"
+L['PLAYER_NOT_FOUND'] = "no player named" -- Duplicate removed
+L['PLAYER_IN_GUILD'] = "has already been invited to a guild"
+L['PLAYER_ALREADY_IN_GUILD'] = "is already in a guild"
+L['PLAYER_JOINED_GUILD'] = "has joined the guild"
+L['PLAYER_DECLINED_INVITE'] = "declines your guild invitation"
+
+-- * Donation Message
+L['DONATION_MESSAGE'] = [[
+I hope you find this addon useful. I have put a lot of time and effort into
+making this addon. If you would like to donate, please use the link below.
+Thank you for your support!]]
+
+-- * GR Basic Command Messages
+L['INVITE_MESSAGES_MENU'] = 'Invite with Messages'
+L['INVITE_NO_MESSAGES_MENU'] = 'Invite without Messages'
 L['DELETE_CONFIRMATION'] = 'Are you sure you want to delete this record?'
-L['ABOUT'] = 'About'
 L['ABOUT_TOOLTIP'] = 'See What\'s New and support info.'
 L['PLEASE_WAIT'] = 'Please wait'
 L['ERROR_SCAN_WAIT'] = ' seconds before scanning again.'
 
--- *? Version 3.0 Changes
+-- * Version 3.0 Changes
 
 -- * GR Icon Bar
 L['LOCK'] = 'Lock'
@@ -69,39 +69,39 @@ L['FILTERS'] = 'Filters'
 
 -- * Icon Menu and Slash Commands
 L["HELP"] = 'help'
-L["CONFIG"] = 'cofig'
+L["CONFIG"] = 'config'
 L["RELOAD"] = 'reload'
 L["RECRUITER"] = 'recruiter'
-L["BLACKLIST"] = 'blacklist'
 L['HOME_BUTTON'] = 'Home'
 
 -- * GR General Messages
 L['IS_ENABLED'] = 'is enabled.'
 
 -- * Default Values
-L['DEFAULT_GUILD_WELCOME'] = 'Welcome PLAYERNAME to GUILDNAME!' -- Default Guild Welcome Message
-L['GUILDLINK'] = 'GUILDLINK' -- Guild Link Keyword
-L['GUILD_LINK_NOT_FOUND'] = 'No Guild Link' -- No Guild Link Message
-L['GUILDNAME'] = 'GUILDNAME' -- Guild Name Keyword
-L['NO_GUILD_NAME'] = 'No Guild Name' -- No Guild Name Message
-L['PLAYERNAME'] = 'PLAYERNAME' -- Player Name Keyword
-L['NO_PLAYER_NAME'] = 'player' -- No Player Name Message
-L['BLACK_LIST'] = 'Black List' -- Black List Keyword
-L['OK_INVITE'] = 'Do you want to invite anyway?' -- Invite Confirmation Message
-L['NO_INVITE_MESSAGE'] = 'No message selected. Please select a message in the home screen.' -- No Invite Message Selected
-L['INVITE_IN_GUILD'] = 'is already in the guild' -- Player is already in the guild
-L['IS_ON_SPAM_LIST'] = 'is on the Anti-Spam list' -- Player is on the Anti-Spam list
-L['GUILD_INVITE_SENT'] = 'Guild invite sent to' -- Guild Invite Sent
-L['INVITE_MESSAGE_SENT'] = 'Invite message sent to' -- Invite Message Sent
-L['INVITE_ALREADY_SENT'] = 'has already been invited' -- Player has already been invited
+L['DEFAULT_GUILD_WELCOME'] = 'Welcome PLAYERNAME to GUILDNAME!'
+L['GUILDLINK'] = 'GUILDLINK'
+L['GUILD_LINK_NOT_FOUND'] = 'No Guild Link'
+L['GUILDNAME'] = 'GUILDNAME'
+L['NO_GUILD_NAME'] = 'No Guild Name'
+L['PLAYERNAME'] = 'PLAYERNAME'
+L['NO_PLAYER_NAME'] = 'player'
+L['BLACK_LIST'] = 'Black List'
+L['OK_INVITE'] = 'Do you want to invite anyway?'
+L['NO_INVITE_MESSAGE'] = 'No message selected. Please select a message in the home screen.'
+L['INVITE_IN_GUILD'] = 'is already in the guild'
+L['IS_ON_SPAM_LIST'] = 'is on the Anti-Spam list'
+L['GUILD_INVITE_SENT'] = 'Guild invite sent to'
+L['INVITE_MESSAGE_SENT'] = 'Invite message sent to'
+L['INVITE_ALREADY_SENT'] = 'has already been invited'
+L['NO_GUILD_LINK'] = 'No guild link found. Sync with GM or log into a GM character.'
+L['SELECT_MESSAGE'] = 'Select a message from the list or create one in settings.'
 
--- * GR scanner Messages
-L['BL'] = 'BL' -- Button Abbreviation for Black List
-L['BLACK_LISTED'] = 'Black listed' -- Blacklisted Message
-L['IS_ON_BLACK_LIST'] = 'is on the Black List.' -- Is on the Black List Message
+-- * GR Scanner Messages
+L['BL'] = 'BL'
+L['BLACK_LISTED'] = 'Black listed'
+L['IS_ON_BLACK_LIST'] = 'is on the Black List.'
 L['BLACK_LIST_CONFIRM'] = 'Are you sure you want to add this player to the black list?'
-L['ANTI_SPAM'] = 'Anti-Spam' -- Button Abbreviation for Anti-Spam
-L['INVITE'] = 'Invite'
+L['ANTI_SPAM'] = 'Anti-Spam'
 L['READY_INVITE'] = 'Ready to invite'
 L['BL_ADD_PLAYER'] = 'Add Player to black list'
 L['SKIP'] = 'Skip'
@@ -113,19 +113,17 @@ L['RESETTING_FILTERS'] = 'Resetting filters on next scan.'
 L['NUMBER_PLAYERS_FOUND'] = 'Number of players found'
 L['INVITE_BUTTON_TOOLTIP'] = 'Invite player to the guild.'
 L['INVITE_BUTTON_BODY_TOOLTIP'] = [[Only unchecked players will be invited.
-
 Checked players are for black list and skip.]]
 L['BL_BUTTON_TOOLTIP'] = 'Add player to the blacklist.'
 L['BL_BUTTON_BODY_TOOLTIP'] = [[Add the player to the blacklist and skip to the next player.
-
 Can only invite if no players are checked.]]
 L['SKIP_BUTTON_TOOLTIP'] = 'Skip player and move to the next player.'
 L['SKIP_BUTTON_BODY_TOOLTIP'] = [[Skip the current player and move to the next player.
 This will add the player to already invited and will try to
 invite the player after the anti-spam expires.
-
 Can only invite if no players are checked.]]
--- Analytics
+
+-- * Analytics
 L['TOTAL_SCANNED'] = 'Players Scanned'
 L['TOTAL_INVITED'] = 'Players Invited'
 L['INVITES_PENDING'] = 'Invites Pending'
@@ -138,20 +136,18 @@ L['SESSION_STATS'] = 'Session Stats'
 -- * GR Core Messages
 L['FIRST_TIME_INFO'] = [[
 Welcome to Guild Recruiter!
-You can access by right clicking on the minimap icon or by typing /gr config.
-Left click on the minimap icon to open the recruitment window.
-
-If you have any issues, click on the About menu option to get our Discord link.
-]]
+You can access by right clicking on the minimap icon
+or by typing /gr config. Left click on the minimap
+icon to open the recruitment window.
+If you have any issues, click on the About menu
+option to get our Discord link.]]
 L['NEW_VERSION_INFO'] = [[
 Guild Recruiter has been updated!
-Please check the " What's New?" for what has changed.
-]]
-L['BETA_INFORMATION'] = [[
-This is a VER version of Guild Recruiter.
+Please check the "What's New?" for what has changed.]]
+L['BETA_INFORMATION'] = [[This is a VER version of Guild Recruiter.
 Please report any issues on our Discord server.]]
 
--- ? GR Error Messages
+-- * GR Error Messages
 L['NO GUILD'] = "You are not in a guild."
 L['NOT_LOADED'] = 'Guild Recruiter will not load.'
 L['CANNOT_INVITE'] = 'You do not have permission to invite to the guild.'
@@ -162,8 +158,7 @@ Guild Recruiter Slash Commands:
 /rl will reload the WoW UI (like /reload).
 /gr help - Displays this help message.
 /gr config - Opens the configuration window.
-/gr blacklist <player name> - Will add the player to the blacklist.
-]]
+/gr blacklist <player name> - Will add the player to the blacklist.]]
 
 -- * GR Minimap Icon Tooltip
 -- Keep %AntiSpam and %BlackList in the tooltip.
@@ -171,24 +166,20 @@ L['MINIMAP_TOOLTIP'] = [[
 Left Click: Open Guild Recruiter
 Shift+Left Click: Open Scanner
 Right Click: Open Config
-
 %AntiSpam in invited list.
 %BlackList in blacklisted list.]]
 
 -- * GR Home Screen
-L['SCAN'] = 'Scan'
-L['MESSAGE_ONLY'] = 'Message ONLY' -- Invite Message Only
-L['GUILD_INVITE_ONLY'] = 'Guild Invite ONLY' -- Guild Invite Only
-L['GUILD_INVITE_AND_MESSAGE'] = 'Guild Invite and Message' -- Guild Invite and Message
-L['MESSAGE_ONLY_IF_INVITE_DECLINED'] = 'Message Only if Invitation is declined' -- Message Only if Invitation is declined
-L['CLASS_FILTER'] = 'Default Class Filter' -- Default Class Filter
-L['RACE_FILTER'] = 'Default Race Filter' -- Default Race Filter
-L['INVITE_FORMAT'] = 'Recruit Invite Format:' -- Recruit Invite Format
-L['MIN_LVL'] = 'Min Level:' -- Minimum level
-L['MAX_LVL'] = 'Max Level:' -- Maximum level
-L['MESSAGE_LIST'] = 'Invite Messages' -- Invite Messages
-L['GUILD_INVITE_ONLY'] = 'No message will be sent. Only guild invite will be sent.'
-L['SELECT_MESSAGE'] = 'Select a message from the list or create one in settings.'
+L['MESSAGE_ONLY'] = 'Message ONLY'
+L['GUILD_INVITE_ONLY'] = 'Guild Invite ONLY'
+L['GUILD_INVITE_AND_MESSAGE'] = 'Guild Invite and Message'
+L['MESSAGE_ONLY_IF_INVITE_DECLINED'] = 'Message Only if Invitation is declined'
+L['CLASS_FILTER'] = 'Default Class Filter'
+L['RACE_FILTER'] = 'Default Race Filter'
+L['INVITE_FORMAT'] = 'Recruit Invite Format:'
+L['MIN_LVL'] = 'Min Level:'
+L['MAX_LVL'] = 'Max Level:'
+L['MESSAGE_LIST'] = 'Invite Messages'
 
 -- * GR Error Message
 L['INVALID_LEVEL'] = 'You must enter a number between 1 and'
@@ -197,27 +188,23 @@ L['MAX_LVL_LOWER_ERROR'] = 'The maximum level must be lower than the minimum lev
 
 -- * GR Config Window Messages
 L['General Settings'] = true
-
--- ? GR Config Window General Settings
 L['MESSAGE_REPLACEMENT_INSTRUCTIONS'] = [[
 GUILDLINK - Will create a clickable link to your guild.
 GUILDNAME - Will display your guild name.
 PLAYERNAME - Will display the invited player's name.]]
-
 L['INVITE_DESC'] = 'Description of the invite message:'
 L['INVITE_DESC_TOOLTIP'] = 'A description of the invite message.'
 L['INVITE_ACTIVE_MESSAGE'] = 'Invite Messages:'
-L['INVITE_ACTIVE_MESSAGE_DESC'] = [['The messges that will be sent to potential recruits.
-Note: You might need to /rl after a sync to see changes.']]
-L['NEW_MESSAGE'] = 'New'
+L['INVITE_ACTIVE_MESSAGE_DESC'] = 'The messages that will be sent to potential recruits. Note: You might need to /rl after a sync to see changes.'
 L['NEW_MESSAGE_DESC'] = 'Add a description of the message to the invite list.'
--- ? GR Config Window Tooltips
+
+-- * GR Config Window Tooltips
 L['GEN_TOOLTIPS'] = 'Show all tooltips'
 L['GEN_TOOLTIP_DESC'] = 'Show all tooltips in the Guild Recruiter addon'
 L['GEN_MINIMAP'] = 'Show Minimap Icon'
 L['GEN_MINIMAP_DESC'] = 'Show the Guild Recruiter minimap icon.'
 L['GEN_CONTEXT'] = 'Enable inviting from chat'
-L['GEN_CONTEXT_DESC'] = 'Show the Guild Recruiter context menu when right clicking a name in chat.'
+L['GEN_CONTEXT_DESC'] = 'Show the Guild Recruiter context menu when right-clicking a name in chat.'
 L['GEN_WHATS_NEW'] = 'Show What\'s New?'
 L['AUTO_SYNC'] = 'Auto sync at login'
 L['AUTO_SYNC_DESC'] = 'Automatically sync with guild members when logging in.'
@@ -233,20 +220,23 @@ L['KEYBINDING_INVITE'] = 'Invite Keybinding'
 L['KEYBINDING_INVITE_DESC'] = 'Keybinding to invite a player to the guild.'
 L['KEYBINDING_SCAN'] = 'Scan Keybinding'
 L['KEYBINDING_SCAN_DESC'] = 'Keybinding to scan for players looking for a guild.'
-L['KEY_BINDING_NOTE'] = 'Note: Keybinds will not effect WoW keybindings.'
+L['KEY_BINDING_NOTE'] = 'Note: Keybinds will not affect WoW keybindings.'
 L['GEN_ACCOUNT_WIDE'] = 'indicates effects all guild-wide characters'
--- ? GR GM Settings Window
+
+-- * GR GM Settings Window
 L['GM_SETTINGS'] = 'GM Settings'
 L['GM_SETTINGS_DESC'] = 'Note: Guild Masters have access to these settings on all their characters.'
-L['MAX_CHARS'] = '(<sub> characters per message)' -- Max Characters per message
+L['MAX_CHARS'] = '(<sub> characters per message)'
 L['LENGTH_INFO'] = 'Assumes 12 characters when using PLAYERNAME'
-L['MESSAGE_LENGTH'] = 'Message Length' -- Message Length Keyword
--- ? GR GM Invite Settings Window
+L['MESSAGE_LENGTH'] = 'Message Length'
+
+-- * GR GM Invite Settings Window
 L['GM_INVITE'] = 'GM Messages'
 L['ENABLED_NOTE'] = 'Note: Disabled items are controlled by GM.'
 L['OVERRIDE_GM_SETTINGS'] = 'Override GM Settings'
 L['OVERRIDE_GM_SETTINGS_DESC'] = 'Override the GM settings for this character.'
---? GR Not GM Invite Settings Window
+
+-- * GR Invite Settings Window
 L['INVITE_SETTINGS'] = 'Invite Settings'
 L['ENABLE_ANTI_SPAM'] = 'Enable Anti-Spam'
 L['ENABLE_ANTI_SPAM_DESC'] = 'Enable the Anti-Spam feature to prevent spamming players.'
@@ -256,28 +246,30 @@ L['GUILD_WELCOME_MSG'] = 'Guild Welcome Message'
 L['GUILD_WELCOME_MSG_DESC'] = 'The message to send to guild chat when a new player joins.'
 L['WHISPER_WELCOME_MSG'] = 'Whisper Welcome Message'
 L['WHISPER_WELCOME_MSG_DESC'] = 'Whispered message sent to a player when they join the guild.'
---? GR Invite Messages Window
+
+-- * GR Invite Messages Window
 L['INVITE_MESSAGES'] = 'Invite Messages'
---? BlackList Settings Window
+
+-- * BlackList Settings Window
 L['BLACK_LIST'] = 'Black List'
 L['BLACK_LIST_REMOVE'] = 'Remove Selected Black List Entries'
---? Invalid Settings Window
+
+-- * Invalid Settings Window
 L['INVALID_ZONE'] = 'Invalid Zones'
 L['ZONE_ID'] = 'Zone ID (Numeric ID)'
 L['ZONE_NAME'] = 'Name of the Zone:'
 L['ZONE_TYPE'] = 'Type of Zone:'
 L['ZONE_ID_DESC'] = [[
 The zone ID for the invalid zone.
-
 List of instances:
-    https://wowpedia.fandom.com/wiki/InstanceID
-
+https://wowpedia.fandom.com/wiki/InstanceID
 Best World Zone IDs I can Find:
-    https://wowpedia.fandom.com/wiki/UiMapID
-    
+https://wowpedia.fandom.com/wiki/UiMapID
 If you find a zone that should be added, please let me know.]]
 L['ZONE_NOTE'] = 'Zones with |cFF00FF00*|r are the only editable zones.'
 L['ZONE_LIST_NAME'] = 'The following zones will be ignored by the scanner:'
+
+-- * About
 L['ABOUT_LINE'] = 'Thank you for using Guild Recruiter, I hope you find this addon useful!'
 L['ABOUT_DOC_LINKS'] = 'Documentation and Links'
 L['GITHUB_LINK'] = 'GitHub (Support documentation)'

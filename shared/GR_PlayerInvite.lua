@@ -117,9 +117,6 @@ local function UpdateInvitePlayerStatus(_, ...)
     elseif msg:find(L['NO_PLAYER_NAMED']) then
         ns.analytics:saveStats('PlayersInvited', -1)
         invite.tblSent[key] = nil
-    elseif msg:find(L['PLAYER_NOT_FOUND']) then
-        ns.analytics:saveStats('PlayersInvited', -1)
-        invite.tblSent[key] = nil
     elseif msg:find(L['PLAYER_IN_GUILD']) or msg:find(L['PLAYER_ALREADY_IN_GUILD']) then
         ns.analytics:saveStats('PlayersInvited', -1)
         invite.tblSent[key] = nil

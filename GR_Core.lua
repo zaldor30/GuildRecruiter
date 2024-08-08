@@ -192,8 +192,6 @@ function core:StartGuildSetup(clubID) -- Get Guild Info and prep database
     local club = clubID and C_ClubFinder.GetRecruitingClubInfoFromClubID(clubID) or nil
     if not ns.guildInfo.guildLink and club then
         ns.guildInfo.guildLink = GetClubFinderLink(club.clubFinderGUID, club.name) or nil
-    elseif not ns.guildInfo.guildLink then
-        ns.code:cOut(L['NO_GUILD_LINK'])
     end
 
     checkIfGuildLeader()
@@ -222,7 +220,6 @@ function core:PerformRecordMaintenance() -- Perform Record Maintenance
     antiSpamDays = (not ns.gmSettings.antiSpam and (ns.gSettings.antiSpam and ns.gSettings.antiSpamDays)) and ns.gSettings.antiSpamDays or 7
 
     local antiSpamExpire = C_DateAndTime.GetServerTimeLocal() - (antiSpamDays * SECONDS_IN_A_DAY)
-    if not antiSpamExpire then ns.code:fOut('Issue with anti-spam, notify the author.') end
     for k, r in pairs(ns.tblAntiSpamList or {}) do
         if not r.date then
             ns.tblAntiSpamList[k] = nil
@@ -244,8 +241,8 @@ function core:StartSlashCommands() -- Start Slash Commands
         if not msg or msg == '' and not ns.win.home:IsShown() then return ns.win.home:SetShown(true)
         elseif msg == L['HELP'] then ns.code:fOut(L['SLASH_COMMANDS'], GRColor, true)
         elseif strlower(msg) == L['CONFIG'] then Settings.OpenToCategory('Guild Recruiter')
-        elseif strlower(msg):match(tostring(L['BLACKLIST'])) then
-            msg = strlower(msg):gsub(tostring(L['BLACKLIST']), ''):trim()
+        elseif strlower(msg):match(tostring(L['BLACKLIST_ICON'])) then
+            msg = strlower(msg):gsub(tostring(L['BLACKLIST_ICON']), ''):trim()
             local name = strupper(strsub(msg,1,1))..strlower(strsub(msg,2))
             ns:add(name)
         end
@@ -337,11 +334,14 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     self.fullyStarted = true
 
     ns.code:fOut(L['TITLE']..' ('..GR.version..(GR.isTest and ' Beta) ')..L['IS_ENABLED'], GRColor, true)
+    if not ns.guildInfo.guildLink then ns.code:cOut(L['NO_GUILD_LINK'], GRColor) end
+
     if GR.isTest then
-        ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.testLevel))), 'FFFFFF00')
+        ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.testLevel))), 'FFFFFF00', true)
      end
 
     if type(ns.global.showWhatsNew) ~= 'boolean' then
+        ns.global.showWhatsNew = true
         ns.win.whatsnew.startUpWhatsNew = true
         ns.code:fOut(L['FIRST_TIME_INFO'], GRColor, true) -- Show the first time info
         C_Timer.After(3, function() ns.win.whatsnew:SetShown(true) end) -- Show the what's new window
@@ -354,16 +354,6 @@ end
 core:Init()
 
 --* Hook /ginvite command
--- Function to send a guild invite to a player
-local function InviteToGuild(name)
-    if name then
-        GuildInvite(name)
-        print("Guild invite sent to:", name)
-    else
-        print("No player name detected.")
-    end
-end
-
 -- Create a custom dropdown frame for the additional options
 local customDropdown = CreateFrame("Frame", "CustomChatDropdown", UIParent, "UIDropDownMenuTemplate")
 
@@ -460,116 +450,3 @@ SetItemRef = function(link, text, button, chatFrame)
     end
     originalSetItemRef(link, text, button, chatFrame)
 end
-
--- Function to initialize the custom dropdown menu
-local function InitializeDropdownMenu(self, level)
-    if ns.code:isInMyGuild(self.chatPlayerName) then return end
-
-    local cPlayerName = ns.code:cText(GRColor, self.chatPlayerName)
-    if level == 1 then
-        local info = UIDropDownMenu_CreateInfo()
-        info.text = ns.code:cText('FFFFFF00', L['INVITE_NO_MESSAGES_MENU'])..'\n'..cPlayerName
-        info.notCheckable = true
-        info.func = function()
-            ns.invite:SendManualInvite(self.chatPlayerName, select(2, UnitClass(self.chatPlayerName)))
-        end
-        UIDropDownMenu_AddButton(info, level)
-
-        -- Separator for spacing
-        info = UIDropDownMenu_CreateInfo()
-        info.disabled = true
-        info.notCheckable = true
-        UIDropDownMenu_AddButton(info, level)
-
-        info = UIDropDownMenu_CreateInfo()
-        info.text = ns.code:cText('FFFFFF00', L['INVITE_MESSAGES_MENU'])..'\n'..cPlayerName
-        info.notCheckable = true
-        info.func = function()
-            ns.invite:SendManualInvite(self.chatPlayerName, select(2, UnitClass(self.chatPlayerName)), true, true)
-        end
-        UIDropDownMenu_AddButton(info, level)
-
-        local msg = ns.code:getInviteMessage(self.chatPlayerName:gsub('-.*', ''))
-        if msg then
-            -- Separator for spacing
-            info = UIDropDownMenu_CreateInfo()
-            info.disabled = true
-            info.notCheckable = true
-            UIDropDownMenu_AddButton(info, level)
-
-            info = UIDropDownMenu_CreateInfo()
-            info.text = 'Send invite message:'..'\n'..cPlayerName
-            info.notCheckable = true
-            info.func = function() SendChatMessage(msg, 'WHISPER', nil, self.chatPlayerName) end
-            UIDropDownMenu_AddButton(info, level)
-        end
-
-        local name = self.chatPlayerName:find('-') and self.chatPlayerName or self.chatPlayerName..'-'..GetRealmName() -- Add realm name if not present
-        if not ns.blackList:IsOnBlackList(name) then
-            -- Separator for spacing
-            info = UIDropDownMenu_CreateInfo()
-            info.disabled = true
-            info.notCheckable = true
-            UIDropDownMenu_AddButton(info, level)
-
-            info = UIDropDownMenu_CreateInfo()
-            info.text = L['BLACKLIST']..':\n'..cPlayerName
-            info.notCheckable = true
-            info.func = function()
-                ns.blackList:BlackListReasonPrompt(self.chatPlayerName)
-            end
-            UIDropDownMenu_AddButton(info, level)
-        end
-    end
-end
-
--- Function to position the custom dropdown menu
-local function PositionCustomDropdown()
-    local systemDropdown = DropDownList1
-    if not systemDropdown then
-        return 0, 0
-    end
-
-    local systemDropdownWidth = systemDropdown:GetWidth()
-    local systemDropdownX, systemDropdownY = systemDropdown:GetCenter()
-    local screenWidth = GetScreenWidth()
-
-    local xOffset = 0
-    local yOffset = 0
-
-    -- Calculate the new position, ensuring it stays within the screen bounds
-    if systemDropdownX and (systemDropdownX + systemDropdownWidth / 2 + customDropdown:GetWidth() > screenWidth) then
-        xOffset = -customDropdown:GetWidth() - 10
-    else
-        xOffset = systemDropdownWidth - 20
-    end
-
-    return xOffset, yOffset
-end
-
--- Original SetItemRef function
-local originalSetItemRef = SetItemRef
-
--- Override SetItemRef to capture right-clicks on player names
-SetItemRef = function(link, text, button, chatFrame)
-    if button == "RightButton" then
-        local type, name = strsplit(":", link)
-        if type == "player" then
-            -- Store the clicked player name in the dropdown frame
-            customDropdown.chatPlayerName = name
-            -- Show the system context menu
-            originalSetItemRef(link, text, button, chatFrame)
-            -- Calculate the position for the custom dropdown menu
-            C_Timer.After(0.1, function()
-                local xOffset, yOffset = PositionCustomDropdown()
-                -- Initialize and show the custom dropdown menu
-                UIDropDownMenu_Initialize(customDropdown, InitializeDropdownMenu, "MENU")
-                ToggleDropDownMenu(1, nil, customDropdown, "cursor", xOffset, yOffset)
-            end)
-            return
-        end
-    end
-    originalSetItemRef(link, text, button, chatFrame)
-end
-
---! Remove test code in PerformRecordMaintenance

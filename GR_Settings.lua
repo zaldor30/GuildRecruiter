@@ -405,7 +405,7 @@ ns.addonSettings = {
                 },
                 msgGMNewButton = {
                     order = 3,
-                    name = L['NEW_MESSAGE'],
+                    name = L['NEW'],
                     desc = L['NEW_MESSAGE_DESC'],
                     type = 'execute',
                     width = .5,
@@ -702,7 +702,7 @@ ns.addonSettings = {
                 },
                 invNewButton = {
                     order = 6,
-                    name = L['NEW_MESSAGE'],
+                    name = L['NEW'],
                     desc = L['NEW_MESSAGE_DESC'],
                     type = 'execute',
                     width = .5,

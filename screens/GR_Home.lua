@@ -77,6 +77,7 @@ function home:SetShown(val)
 
     self:MessageChanged(ns.pSettings.activeMessage)
     self.tblFrame.frame:SetShown(true)
+    self:SetButtonStates()
 end
 
 -- *Create Invite Area
@@ -178,7 +179,7 @@ function home:CreateInviteArea()
         local msgID = ns.pSettings.activeMessage
         local msg = (msgID and self.tblWhipsers[msgID]) and self.tblWhipsers[msgID].message or nil
         if ns.pSettings.inviteFormat ~= 2 and (not msgID or not msg) then
-            ns.statusText:SetText(ns.code:cText('FFFF0000', L['Select a message from the list or create one in settings.']))
+            self:SetButtonStates()
             return
         else ns.statusText:SetText('') end
 
@@ -271,7 +272,7 @@ end
 function home:GetInviteMessages()
     local tblWhispers = {}
     local tblGMMessages = ns.gmSettings.messageList and ns.gmSettings.messageList or {}
-    local tblPlayerMessages = ns.pSettings.messageList and ns.pSettings.messageList or {}
+    local tblPlayerMessages = ns.gSettings.messageList and ns.gSettings.messageList or {}
 
     self.tblWhipsers = table.wipe(self.tblWhipsers or {})
     local hasGuildLink = ns.guildInfo.guildLink ~= '' or false
@@ -300,14 +301,15 @@ function home:MessageChanged(val)
     self.activeMessage = self.tblWhipsers[val].message:gsub('|c', ''):gsub('|r', ''):gsub(GM_DESC_COLOR, '')
     --self.activeMessage = ns.code:variableReplacement(self.activeMessage)
 
-    home:CreatePreview()
+    self:CreatePreview()
+    self:SetButtonStates()
     --! Set Button States
 end
 function home:CreatePreview()
     local invFormat, msg = ns.pSettings.inviteFormat, nil
+    local activeMessage = ns.pSettings.activeMessage or nil
 
-    if invFormat == 2 then msg = L['GUILD_INVITE_ONLY']
-    elseif not self.activeMessage or self.activeMessage == '' then msg = L['SELECT_MESSAGE']
+    if invFormat == 2 or not activeMessage then msg = ''
     else
         msg = ns.code:cText('FFFF80FF', 'To [')..ns.code.fPlayerName
         msg = msg..ns.code:cText('FFFF80FF', ']: '..(ns.code:variableReplacement(self.activeMessage, UnitName('player')) or ''))
@@ -315,11 +317,12 @@ function home:CreatePreview()
     self.tblFrame.preview:SetText(msg or '')
 end
 function home:SetButtonStates()
-    local invFormat = ns.gSettings.inviteFormat or 2
+    local invFormat = ns.pSettings.inviteFormat or 2
     local activeMessage = ns.pSettings.activeMessage or nil
 
     self.tblFrame.scanButton:SetDisabled(true)
     if invFormat == 2 then self.tblFrame.scanButton:SetDisabled(false)
-    elseif activeMessage and self.tblWhipsers[activeMessage] then self.tblFrame.scanButton:SetDisabled(false) end
+    elseif invFormat ~= 2 and activeMessage then self.tblFrame.scanButton:SetDisabled(false)
+    else ns.statusText:SetText(ns.code:cText('FFFF0000', L['SELECT_MESSAGE'])) end
 end
 home:Init()
