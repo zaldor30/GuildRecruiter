@@ -387,7 +387,6 @@ core:Init()
 --* Hook /ginvite command
 -- Create a custom dropdown frame for the additional options
 local customDropdown = CreateFrame("Frame", "CustomChatDropdown", UIParent, "UIDropDownMenuTemplate")
-
 -- Function to initialize the custom dropdown menu
 local function InitializeDropdownMenu(self, level)
     local cPlayerName = ns.code:cText(GRColor, self.chatPlayerName)
@@ -450,7 +449,6 @@ local function InitializeDropdownMenu(self, level)
         end
     end
 end
-
 -- Function to position the custom dropdown menu
 local function PositionCustomDropdown()
     local systemDropdown = DropDownList1
@@ -474,10 +472,8 @@ local function PositionCustomDropdown()
 
     return xOffset, yOffset
 end
-
 -- Original SetItemRef function
 local originalSetItemRef = SetItemRef
-
 -- Override SetItemRef to capture right-clicks on player names
 SetItemRef = function(link, text, button, chatFrame)
     if button == "RightButton" then

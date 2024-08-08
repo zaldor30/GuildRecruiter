@@ -70,9 +70,7 @@ function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreeti
         return
     end
 
-    print(pName, sendInvite)
     if pName and sendInvite then -- Guild Invite
-        print('Sending Invite')
         C_GuildInfo.Invite(pName)
         ns.code:fOut(L['GUILD_INVITE_SENT']..' '..cName, 'FFFFFF00')
         ns.analytics:saveStats('PlayersInvited') -- Save stats

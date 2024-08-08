@@ -6,6 +6,8 @@ on:
       - '*'
     paths-ignore:
       - '.github/**'
+      - '.vscode/**'
+      - 'GuildRecruiter.code-workspace'
 
 jobs:
   standalone_release:
