@@ -34,27 +34,23 @@ end
 function invite:SendManualInvite(pName, class, sendWhisper, sendGreeting, sendInvite)
     self:StartInvite(pName, class, false, sendWhisper, sendGreeting, true, sendInvite)
 end
---! Remove Test Code
 function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreetingMsg, isManual, sendInvite)
     if not pName then return end
-
-    pName = 'Monkstrife' --! Remove Test Code
+    
     local fName = pName:find('-') and pName or pName..'-'..GetRealmName() -- Add realm name if not present
     local name = pName:gsub('*-', '') -- Remove realm name if present
     local cName = class and ns.code:cPlayerName(name, class) or name
 
     -- Make sure player is not on the black list or anti spam list
-    if pName ~= 'Monkstrife' then --! Remove Test Code
-        if self.tblSent[fName] then
-            ns.code:fOut(cName..' '..L['INVITE_ALREADY_SENT'])
-            return
-        elseif blackList:IsOnBlackList(fName) then
-            if not isManual then ns.code:fOut(fName..' '..L['IS_ON_BLACK_LIST'], 'FF0000') return
-            elseif not ns.code:confirmDialog('Player '..fName..L['IS_ON_BLACK_LIST']..'\n'..L['OK_INVITE'], function() return true end) then return end
-        elseif not isManual and antiSpam:isOnAntiSpamList(fName) then
-            ns.code:fOut(fName..' '..L['IS_ON_SPAM_LIST'], 'FF0000')
-            return
-        end
+    if self.tblSent[fName] then
+        ns.code:fOut(cName..' '..L['INVITE_ALREADY_SENT'])
+        return
+    elseif blackList:IsOnBlackList(fName) then
+        if not isManual then ns.code:fOut(fName..' '..L['IS_ON_BLACK_LIST'], 'FF0000') return
+        elseif not ns.code:confirmDialog('Player '..fName..L['IS_ON_BLACK_LIST']..'\n'..L['OK_INVITE'], function() return true end) then return end
+    elseif not isManual and antiSpam:isOnAntiSpamList(fName) then
+        ns.code:fOut(fName..' '..L['IS_ON_SPAM_LIST'], 'FF0000')
+        return
     end
 
     -- Message Prep
@@ -85,14 +81,12 @@ function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreeti
     invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg, isManual)
 end
 function invite:SendMessage(pName, cName, msgInvite, showMessage)
-    print('showWhispers', ns.pSettings.showWhispers, showMessage)
     if not ns.pSettings.showWhispers and not showMessage then
-        print('HIDE MESSAGES')
         msgInvite = ns.code:variableReplacement(msgInvite, pName:gsub('-.*', '')) -- Remove realm name
         ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER', function(_, _, msg) return msg == msgInvite end, msgInvite)
         ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER_INFORM', function(_, _, msg) return msg == msgInvite end, msgInvite)
         ns.code:fOut(L['INVITE_MESSAGE_SENT']..' '..cName, 'FFFFFF00')
-    else print('SHOW MESSAGES') ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER', msgInvite) end
+    else ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER', msgInvite) end
     SendChatMessage(msgInvite, 'WHISPER', nil, pName)
 end
 
