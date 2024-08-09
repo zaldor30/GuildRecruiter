@@ -2,6 +2,9 @@
     "folders": [
         {
             "path": "."
+        },
+        {
+            "path": "../../../../../../Users/zalro/Documents/GitHub/GuildRecruiter-old"
         }
     ],
     "settings": {
@@ -18,8 +21,10 @@
             "utf8": "disable"
         },
         "Lua.workspace.library": [
-            "$USERPROFILE\\.vscode\\extensions\\ketho.wow-api-0.15.7\\Annotations"
+            "$USERPROFILE\\.vscode\\extensions\\ketho.wow-api-0.15.9\\Annotations"
         ],
-        "Lua.diagnostics.globals": []
+        "Lua.diagnostics.globals": [
+            "ChatFrame_RemoveMessageEventFilter"
+        ]
     }
 }

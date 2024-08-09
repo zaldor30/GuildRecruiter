@@ -21,13 +21,9 @@ function ds:WhatsNew() -- What's new in the current version
                 
     |CFFFFFF00v3.0 Notes|r
         Alpha Fixes v3.0.16:
-        - Changed how invite messages are handled.
-        - Changed to reset active message if message is deleted.
-        - Merged message lists into one table.
-        - Fixed issue with message only invites not working.
-        - Added the functionality to send message if declined invite.
-        - Fix right click invite.
-        - Fix no message but set to show greeting.
+        - Fixed welcome message not showing.
+        - Fixed guild welcome message not showing.
+        - Fixed showing invite messages in chat.
 
         I have done pretty much a full rewrite of Guild Recruiter.
         I have added a lot of new features and fixed a lot of bugs.

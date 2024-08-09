@@ -55,7 +55,7 @@ function core:Init()
                 debugAutoSync = false, -- Debug Auto Sync (false = on)
                 showAppMsgs = true, -- Show Application Messages
                 disableAutoSync = false, -- Disable Auto Sync
-                showWhispers = false, -- Show Whispers
+                showWhispers = true, -- Show Whispers
             },
             analytics = {}
         },
@@ -127,6 +127,13 @@ function core:StartDatabase(clubID)
     ns.gmSettings = ns.g.gmSettings or self.addonSettings.global.gmSettings -- GM Settings
 
     self:PerformDatabaseMaintenance() -- Perform Database Maintenance
+
+    -- Check if the GM is in the profile list
+    if ns.guildInfo.guildLeaderToon then
+        for profileName, _ in pairs(db.profiles) do
+            if profileName:find(ns.guildInfo.guildLeaderToon) then self.hasGM = true break end
+        end
+    end
 
     -- Other Variables Declaration
     ns.gFilterList = ns.g.filterList or {} -- Global Filter List
@@ -205,6 +212,7 @@ function core:StartGuildSetup(clubID) -- Get Guild Info and prep database
         if IsGuildLeader() then
             ns.guildInfo.isGuildLeader = true
             ns.guildInfo.guildLeaderToon = GetUnitName('player', true)
+        elseif self.hasGM then ns.guildInfo.isGuildLeader = true
         elseif not IsGuildLeader() then
             if ns.guildInfo.guildLeaderToon == GetUnitName('player', true) then
                 ns.guildInfo.isGuildLeader = false
@@ -288,7 +296,7 @@ function core:StartMiniMapIcon() -- Start Mini Map Icon
         type = 'data source',
         icon = GR.icon,
         OnClick = function(_, button)
-            if button == 'LeftButton' and IsShiftKeyDown() then ns.win.scanner:SetShown(true)
+            if button == 'LeftButton' and IsShiftKeyDown() and not ns.win.home:IsShown() then ns.win.scanner:SetShown(true)
             elseif button == 'LeftButton' and not ns.win.home:IsShown() then ns.win.home:SetShown(true)
             elseif button == 'RightButton' then Settings.OpenToCategory('Guild Recruiter') end
         end,
@@ -351,7 +359,6 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
 
     AC:RegisterOptionsTable('GR_Options', ns.addonSettings) -- Register the options table
     ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter') -- Add the options to the Blizzard options
-    self.hasGM = (ns.guildInfo.isGuildLeader and ns.guildInfo.guildLeaderToon) or false
     self.iAmGM = (ns.guildInfo.isGuildLeader or ns.guildInfo.guildLeaderToon == GetUnitName('player', true)) or false
     ns.gSettings.overrideGM = self.iAmGM and ns.gSettings.overrideGM or false
 
@@ -389,6 +396,7 @@ core:Init()
 local customDropdown = CreateFrame("Frame", "CustomChatDropdown", UIParent, "UIDropDownMenuTemplate")
 -- Function to initialize the custom dropdown menu
 local function InitializeDropdownMenu(self, level)
+    if not self.chatPlayerName or not ns.pSettings.showContextMenu then return end
     local cPlayerName = ns.code:cText(GRColor, self.chatPlayerName)
     if level == 1 then
         local info = UIDropDownMenu_CreateInfo()
@@ -484,7 +492,7 @@ SetItemRef = function(link, text, button, chatFrame)
             -- Show the system context menu
             originalSetItemRef(link, text, button, chatFrame)
             -- Calculate the position for the custom dropdown menu
-            C_Timer.After(0.1, function()
+            C_Timer.After(0.2, function()
                 local xOffset, yOffset = PositionCustomDropdown()
                 -- Initialize and show the custom dropdown menu
                 UIDropDownMenu_Initialize(customDropdown, InitializeDropdownMenu, "MENU")

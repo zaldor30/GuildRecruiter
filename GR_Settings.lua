@@ -142,8 +142,8 @@ ns.addonSettings = {
                     desc = L['SHOW_WHISPERS_DESC'],
                     type = 'toggle',
                     width = 'full',
-                    set = function(_, val) ns.gSettings.sendWhsiper = val end,
-                    get = function() return ns.gSettings.sendWhsiper end,
+                    set = function(_, val) ns.pSettings.showWhispers = val end,
+                    get = function() return ns.pSettings.showWhispers end,
                 },
                 invScanInterval = {
                     order = 9,
