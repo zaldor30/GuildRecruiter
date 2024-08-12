@@ -32,4 +32,16 @@ I have done pretty much a full rewrite of Guild Recruiter.  I have added a lot o
         - Send your invite message to a player.
 - Scanner Changes:
     - Whispers will now show when show whispers is enabled.
-    - Invite list and Who will show after leaving the screen.
+    - Invite list and scan data will show after leaving the screen.
+- Sync Changes:
+    - Changed the detection of out of date versions.
+    The sync will look at the database version and not the
+    addon version.
+    
+    This means that the addons can be different versions and
+    so long as the database is the same, they will sync.
+Settings Changes:
+    - Added the ability for GM to override GM settings so they
+      can use personal invite settings.
+    - Added the ability to turn off auto sync.
+    - Added the ability to add zones to ignore.

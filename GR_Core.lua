@@ -52,9 +52,8 @@ function core:Init()
                 minimap = { hide = false, }, -- Mini Map Icon
                 showContextMenu = true, -- Show Context Menu
                 debugMode = false, -- Debug Mode
-                debugAutoSync = false, -- Debug Auto Sync (false = on)
                 showAppMsgs = true, -- Show Application Messages
-                disableAutoSync = false, -- Disable Auto Sync
+                enableAutoSync = true, -- Disable Auto Sync
                 showWhispers = true, -- Show Whispers
             },
             analytics = {}
@@ -217,6 +216,7 @@ function core:StartGuildSetup(clubID) -- Get Guild Info and prep database
             if ns.guildInfo.guildLeaderToon == GetUnitName('player', true) then
                 ns.guildInfo.isGuildLeader = false
                 ns.guildInfo.guildLeaderToon = nil
+                ns.gSettings.overrideGM = false
                 ns.code:dOut(GetUnitName('player', true)..' is no longer the Guild Leader')
             elseif not ns.guildInfo.guildLeaderToon then
                 ns.guildInfo.isGuildLeader = false
@@ -387,7 +387,12 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
         ns.win.whatsnew.startUpWhatsNew = true
         C_Timer.After(3, function() ns.win.whatsnew:SetShown(true) end) -- Show the what's new window
     elseif ns.global.currentVersion ~= GR.version then ns.code:fOut(L['NEW_VERSION_INFO'], GRColor, true) end
-    -- ToDo: Sync Timer Routine
+
+    --* Start Auto Sync
+    if type(ns.pSettings.enableAutoSync) ~= 'boolean' then ns.pSettings.enableAutoSync = true end
+    if ns.pSettings.enableAutoSync then
+        C_Timer.After(15, function() ns.sync:StartSyncRoutine(1) end)
+    end
 end
 core:Init()
 

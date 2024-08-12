@@ -132,6 +132,7 @@
         "missing-fields",
         "inject-field",
         "deprecated",
-        "unbalanced-assignments"
+        "unbalanced-assignments",
+        "invisible"
     ]
 }

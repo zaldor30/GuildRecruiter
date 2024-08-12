@@ -21,9 +21,11 @@ function ds:WhatsNew() -- What's new in the current version
                 
     |CFFFFFF00v3.0 Notes|r
         Alpha Fixes v3.0.16:
-        - Fixed welcome message not showing.
-        - Fixed guild welcome message not showing.
-        - Fixed showing invite messages in chat.
+        - Added sync back into the addon.
+        - Sync should no longer be so dependent on the addon
+            version.  I have changed it to the version of the
+            database.  This means that both clients do not need 
+            to be on the same version of the addon anymore.
 
         I have done pretty much a full rewrite of Guild Recruiter.
         I have added a lot of new features and fixed a lot of bugs.

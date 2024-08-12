@@ -168,25 +168,29 @@ function invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg, isMa
     local cName = class and ns.code:cPlayerName(pName, class) or pName
 
     local GMOverride = ns.gSettings.GMOverride or false
-    local guildMessage = false
-    if GMOverride and ns.gSettings.sendGuildGreeting and ns.gSettings.guildMessage ~= '' then
-        guildMessage = ns.gSettings.guildMessage
-    elseif ns.gmSettings.sendGuildGreeting and ns.gmSettings.guildMessage ~= '' then
-        guildMessage = ns.gmSettings.guildMessage
-    elseif ns.gSettings.sendGuildGreeting and ns.gSettings.guildMessage ~= '' then
-        guildMessage = ns.gSettings.guildMessage
-    end
-    guildMessage = ns.code:variableReplacement(ns.gSettings.guildMessage, pName) or false
+    local guildMessage, msgWhisper = false, false
 
-    local msgWhisper = false
-    if GMOverride and ns.gSettings.sendWhisper and ns.gSettings.whisperMessage ~= '' then
-        msgWhisper = ns.gSettings.whisperMessage
-    elseif ns.gmSettings.sendWhisper and ns.gmSettings.whisperMessage ~= '' then
-        msgWhisper = ns.gmSettings.whisperMessage
-    elseif ns.gSettings.sendWhisper and ns.gSettings.whisperMessage ~= '' then
-        msgWhisper = ns.gSettings.whisperMessage
+    if useGreetingMsg then
+        if GMOverride and ns.gSettings.sendGuildGreeting and ns.gSettings.guildMessage ~= '' then
+            guildMessage = ns.gSettings.guildMessage
+        elseif ns.gmSettings.sendGuildGreeting and ns.gmSettings.guildMessage ~= '' then
+            guildMessage = ns.gmSettings.guildMessage
+        elseif ns.gSettings.sendGuildGreeting and ns.gSettings.guildMessage ~= '' then
+            guildMessage = ns.gSettings.guildMessage
+        end
+
+        guildMessage = ns.code:variableReplacement(ns.gSettings.guildMessage, pName) or false
     end
-    msgWhisper = ns.code:variableReplacement(ns.gSettings.whisperMessage, pName) or false
+
+    if useWhisperMsg then
+        if not GMOverride and ns.gmSettings.sendWhisperGreeting and ns.gmSettings.whisperMessage ~= '' then
+            msgWhisper = ns.gmSettings.whisperMessage
+        elseif ns.gSettings.sendWhisperGreeting and ns.gSettings.whisperMessage ~= '' then
+            msgWhisper = ns.gSettings.whisperMessage
+        end
+
+        msgWhisper = ns.code:variableReplacement(ns.gSettings.whisperMessage, pName) or false
+    end
 
     self.tblSent[strlower(fName)] = {
         name = pName,
@@ -198,6 +202,7 @@ function invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg, isMa
         sentAt = GetServerTime(),
         isManual = isManual,
     }
+
     ns.analytics:saveStats('PlayersInvited')
     ns.win.scanner:UpdateAnalytics()
     ns.antiSpam:AddToAntiSpamList(fName)

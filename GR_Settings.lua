@@ -133,8 +133,8 @@ ns.addonSettings = {
                     desc = L['AUTO_SYNC_DESC'],
                     type = 'toggle',
                     width = 'full',
-                    set = function(_, val) ns.pSettings.debugAutoSync = val end,
-                    get = function() return ns.pSettings.debugAutoSync end,
+                    set = function(_, val) ns.pSettings.enableAutoSync = val end,
+                    get = function() return ns.pSettings.enableAutoSync end,
                 },
                 invShowInvite = {
                     order = 8,
@@ -142,8 +142,8 @@ ns.addonSettings = {
                     desc = L['SHOW_WHISPERS_DESC'],
                     type = 'toggle',
                     width = 'full',
-                    set = function(_, val) ns.pSettings.showWhispers = val end,
-                    get = function() return ns.pSettings.showWhispers end,
+                    set = function(_, val) ns.gSettings.sendWhisperGreeting = val end,
+                    get = function() return ns.gSettings.sendWhisperGreeting end,
                 },
                 invScanInterval = {
                     order = 9,
@@ -316,8 +316,8 @@ ns.addonSettings = {
                     type = 'toggle',
                     width = 'full',
                     disabled = function() return not ns.core.iAmGM end,
-                    set = function(_, val) ns.gmSettings.sendWhsiper = val end,
-                    get = function() return ns.gmSettings.sendWhsiper end,
+                    set = function(_, val) ns.gmSettings.sendWhisperGreeting = val end,
+                    get = function() return ns.gmSettings.sendWhisperGreeting end,
                 },
                 invGreetingMessage = {
                     order = 13,
@@ -539,14 +539,14 @@ ns.addonSettings = {
             order = 10,
             name = ' ',
             type = 'group',
-            hidden = function() return (hasGM and not iAmGM) and ns.gmSettings.sendWhsiper and ns.gmSettings.sendGuildGreeting and ns.gmSettings.antiSpam end,
+            hidden = function() return (hasGM and not iAmGM) and ns.gmSettings.sendWhisperGreeting and ns.gmSettings.sendGuildGreeting and ns.gmSettings.antiSpam end,
             args = {}
         },
         inviteSettings = {
             order = 11,
             name = L['INVITE_SETTINGS'],
             type = 'group',
-            hidden = function() return (hasGM and not iAmGM) and ns.gmSettings.sendWhsiper and ns.gmSettings.sendGuildGreeting and ns.gmSettings.antiSpam end,
+            hidden = function() return (hasGM and not iAmGM) and ns.gmSettings.sendWhisperGreeting and ns.gmSettings.sendGuildGreeting and ns.gmSettings.antiSpam end,
             args = {
                 invHeader1 = {
                     name = L['INVITE_SETTINGS'],
@@ -632,9 +632,9 @@ ns.addonSettings = {
                     desc = L['WHISPER_WELCOME_MSG_DESC'],
                     type = 'toggle',
                     width = 'full',
-                    disabled = function() return hasGM and ns.gmSettings.sendWhsiper end,
-                    set = function(_, val) ns.gSettings.sendWhsiper = val end,
-                    get = function() return ns.gSettings.sendWhsiper end,
+                    disabled = function() return hasGM and ns.gmSettings.sendWhisperGreeting end,
+                    set = function(_, val) ns.gSettings.sendWhisperGreeting = val end,
+                    get = function() return ns.gSettings.sendWhisperGreeting end,
                 },
                 invGreetingMessage = {
                     order = 13,
@@ -643,7 +643,7 @@ ns.addonSettings = {
                     type = 'input',
                     multiline = 3,
                     width = 'full',
-                    disabled = function() return hasGM and ns.gmSettings.sendWhsiper end,
+                    disabled = function() return hasGM and ns.gmSettings.sendWhisperGreeting end,
                     set = function(_, val) ns.gSettings.whisperMessage = ns.code:capitalKeyWord(val:trim()) end,
                     get = function() return ns.gSettings.whisperMessage end,
                 },
@@ -684,7 +684,7 @@ ns.addonSettings = {
             order = 12,
             name = L['INVITE_MESSAGES'],
             type = 'group',
-            hidden = function() return (hasGM and not iAmGM) and ns.gmSettings.sendWhsiper end,
+            hidden = function() return (hasGM and not iAmGM) and ns.gmSettings.sendWhisperGreeting end,
             args = {
                 invMessageListHeading = {
                     order = 0,
