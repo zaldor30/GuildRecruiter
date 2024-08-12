@@ -4,9 +4,8 @@ local AceTimer = LibStub("AceTimer-3.0")
 
 ns.sync = {}
 local sync = ns.sync
-local DEFAULT_TEXT_COLOR = GRColor
 
-local COMM_PREFIX = 'GSync'
+local COMM_PREFIX = 'GRSync'
 local REQUEST_WAIT_TIMEOUT = 5
 local SYNC_FAIL_TIMER, DATA_WAIT_TIMEOUT = 120, 60
 
@@ -185,46 +184,69 @@ end
 --* Sync Data Processing Routines
 function sync:ProcessClientSyncData()
     local realGMUpdated = false
+
+    local function findRevision(ver)
+        local firstDecimal = ver:find('.')
+        local secondDecimal = ver:find('.', firstDecimal + 1)
+
+        local clientRev = tonumber(ver:sub(secondDecimal + 1))
+        firstDecimal = GR.version:find('.')
+        secondDecimal = GR.version:find('.', firstDecimal + 1)
+        local myRev = tonumber(GR.version:sub(secondDecimal + 1))
+
+        return myRev, clientRev
+    end
     for k, r in pairs(self.tblClients) do
-        if r.dbVersion ~= GR.dbVersion then
-            ns.code:fOut(k:gsub('-', '')..' using and older version ('..r.dbVersion..').', 'FFFF0000')
+        local skipRecord = false
+        local rev, clientRev = findRevision(r.grVersion)
+        if rev > clientRev then ns.code:fOut(k:gsub('-', '')..' using an older version ('..r.grVersion..').', 'FFFFAE00')
+        elseif rev < clientRev then ns.code:fOut(k:gsub('-', '')..' using a newer version ('..r.grVersion..').', 'FFFFAE00') end
+
+        local dbRev, dbClientRev = findRevision(r.dbVersion)
+        if r.dbVersion ~= dbClientRev then
+            if dbRev > dbClientRev then ns.code:fOut(k:gsub('-', '')..' using an older version ('..r.dbVersion..').', 'FFFFAE00')
+            else ns.code:fOut(k:gsub('-', '')..' using a newer version ('..r.dbVersion..').', 'FFFFAE00') end
             self.tblClients[k] = nil
+            skipRecord = true
         end
 
-        if (not realGMUpdated and not ns.guildInfo.isGuildLeader) or r.isGuildLeader then
-            ns.guildInfo.guildLink = r.guildInfo.guildLink or r.guildInfo.guildLink or ''
-            realGMUpdated = r.isGuildLeader or false
-            if realGMUpdated then ns.guildInfo.guildLeaderToon = r.guildLeaderToon end
-            ns.gmSettings.sendGuildGreeting = r.guildInfo.sendGuildGreeting or false
-            ns.gmSettings.guildMessage = r.guildInfo.guildMessage or nil
-            ns.gmSettings.sendWhisperGreeting = r.guildInfo.sendWhisperGreeting or false
-            ns.gmSettings.whisperMessage = r.guildInfo.whisperMessage or nil
+        if not skipRecord then
+            --* Sync GM Data
+            if (not realGMUpdated and not ns.guildInfo.isGuildLeader) or r.isGuildLeader then
+                ns.guildInfo.guildLink = r.guildInfo.guildLink or r.guildInfo.guildLink or ''
+                realGMUpdated = r.isGuildLeader or false
+                if realGMUpdated then ns.guildInfo.guildLeaderToon = r.guildLeaderToon end
+                ns.gmSettings.sendGuildGreeting = r.guildInfo.sendGuildGreeting or false
+                ns.gmSettings.guildMessage = r.guildInfo.guildMessage or nil
+                ns.gmSettings.sendWhisperGreeting = r.guildInfo.sendWhisperGreeting or false
+                ns.gmSettings.whisperMessage = r.guildInfo.whisperMessage or nil
 
-            -- Update GM messages
-            for key, v in pairs(ns.gSettings.messageList or {}) do -- Remove all GM messages
-                if v.type == 'GM' then
-                    ns.gSettings.messageList[key] = nil
+                -- Update GM messages
+                for key, v in pairs(ns.gSettings.messageList or {}) do -- Remove all GM messages
+                    if v.type == 'GM' then
+                        ns.gSettings.messageList[key] = nil
+                    end
+                end
+                for _, v in pairs(r.messageList) do -- Add all GM messages
+                    if v.type == 'GM' then
+                        tinsert(ns.gSettings.messageList, v)
+                    end
                 end
             end
-            for _, v in pairs(r.messageList) do -- Add all GM messages
-                if v.type == 'GM' then
-                    tinsert(ns.gSettings.messageList, v)
+
+            --* Sync Black List
+            for key, v in pairs(r.blackList) do
+                if not ns.tblBlackList[key] then
+                    ns.tblBlackList[key] = v
+                    self.blackList = self.blackList + 1
                 end
             end
-        end
-
-        --* Sync Black List
-        for key, v in pairs(r.blackList) do
-            if not ns.tblBlackList[key] then
-                ns.tblBlackList[key] = v
-                self.blackList = self.blackList + 1
-            end
-        end
-        --* Sync Anti Spam List
-        for key, v in pairs(r.antiSpamList) do
-            if not ns.tblAntiSpamList[key] then
-                ns.tblAntiSpamList[key] = v
-                self.antiSpamList = self.antiSpamList + 1
+            --* Sync Anti Spam List
+            for key, v in pairs(r.antiSpamList) do
+                if not ns.tblAntiSpamList[key] then
+                    ns.tblAntiSpamList[key] = v
+                    self.antiSpamList = self.antiSpamList + 1
+                end
             end
         end
     end
