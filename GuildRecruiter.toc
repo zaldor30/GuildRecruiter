@@ -1,7 +1,7 @@
 ## X-Curse-Project-ID: 882061
 
 ## Interface: 110000
-## Version: 3.0.24
+## Version: 3.0.25
 ## Title: Guild Recruiter
 ## Notes: Facilitates guild officers to recruite new members
 ## Author: Moonfury

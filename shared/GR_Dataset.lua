@@ -20,7 +20,8 @@ function ds:WhatsNew() -- What's new in the current version
                 (or click on the icon in the top left corner)|r
                 
     |CFFFFFF00v3.0 Notes|r
-        Alpha Fixes v3.0.16:
+        Beta Fixes v3.0.16:
+        - Added manual Black List entry.
         - Added sync back into the addon.
         - Sync should no longer be so dependent on the addon
             version.  I have changed it to the version of the

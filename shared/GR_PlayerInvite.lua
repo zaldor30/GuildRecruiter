@@ -250,8 +250,8 @@ function blackList:AddToBlackList(pName, reason)
     return true
 end
 function blackList:ManualBlackListPrompt(blMsg, blName, POPUP_NAME)
-    local name = blName:find('-') and blName or blName..'-'..GetRealmName() -- Add realm name if not present
-    if blackList:IsOnBlackList(name) then
+    local name = (blName and blName:find('-')) and blName or (blName and blName..'-'..GetRealmName() or nil) -- Add realm name if not present
+    if blName and blackList:IsOnBlackList(name) then
         ns.code:fOut(blName..' '..L['IS_ON_BLACK_LIST'], 'FFFFFF00')
         return
     end
