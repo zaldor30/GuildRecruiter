@@ -371,7 +371,7 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     ns.win.base:SetShown(false) -- Hide the base window
     self.fullyStarted = true
 
-    ns.code:fOut(L['TITLE']..' ('..GR.version..(GR.isTest and ' '..GR.testLevel..') ')..L['IS_ENABLED'], GRColor, true)
+    ns.code:fOut(L['TITLE']..' ('..GR.version..(GR.isTest and ' '..GR.testLevel or '')..') '..L['IS_ENABLED'], GRColor, true)
     if not ns.guildInfo.guildLink then ns.code:cOut(L['NO_GUILD_LINK'], GRColor) end
 
     if GR.isTest then
