@@ -1,56 +1,45 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
 ns.core = {}
+local core = ns.core
 
 -- Application Initialization
 local L = LibStub("AceLocale-3.0"):GetLocale('GuildRecruiter')
 local AC, ACD = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0')
 local icon, DB = LibStub('LibDBIcon-1.0'), LibStub('AceDB-3.0')
-local core = ns.core
 
-local SYNC_WAIT_TIME = 60 -- Seconds to wait before syncing
-
--- Application Startup Default Function
+-- *Blizzard Initialization Called Function
 function GR:OnInitialize()
-    if core.isEnabled then return end
+    if core.isEnabled then return end -- Prevents double initialization
 
-    local function checkGuildInfo(count)
-        local clubID = C_Club.GetGuildClubId()
+    GR:RegisterChatCommand('rl', function() ReloadUI() end) -- Set the /rl slash command to reload the UI
 
-        count = count or 0
-        if count > 30 then ns.code:cOut(L['GUILD_NOT_FOUND']) return
-        elseif not IsInGuild() or not clubID then C_Timer.After(1, function() checkGuildInfo(count + 1) end)
-        else
-            core:StartGuildRecruiter(clubID)
-            if not core.isEnabled then return end
-            core:PerformRecordMaintenance()
+    local function checkIfInGuild(count) -- Check if the player is in a guild
+        if not count then return end
 
-            ns.tblRacesByName = ns.code:sortTableByField(ns.ds.tblRaces, 'name')
-            ns.tblClassesByName = ns.code:sortTableByField(ns.ds.tblClasses, 'name')
-            ns.code.fPlayerName = ns.code:cPlayer('player')
-
-            ns.invite:StartUp()
-            core:SlashCommands()
-            core:CreateMiniMapIcon()
-            core:FinishStartup()
-
-            ns.events:RegisterEvent('PLAYER_LOGOUT', function() ns.code:saveTables() end)
-
-            SYNC_WAIT_TIME = ns.settings.debugMode and 1 or SYNC_WAIT_TIME
-            if core.ignoreAutoSync or not core.isEnabled or ns.settings.debugAutoSync then return end -- CHECK IF SYNCING
-            C_Timer.After(SYNC_WAIT_TIME, function() ns.sync:StartSync(true, UnitName('player'), true) end)
-        end
+        local clubID = C_Club.GetGuildClubId() -- Get the guild club ID (Guild ID)
+        if count >= 60 then -- If the player is not in a guild after 30 attempts, then return
+            core.isEnabled = false
+            ns.code:cOut(L['NO GUILD']..' '..L['NOT_LOADED'])
+            return
+        elseif IsInGuild() and not CanGuildInvite() then -- If the player is in a guild but cannot invite, then return
+            core.isEnabled = false
+            ns.code:dOut(L['CANNOT_INVITE'])
+            ns.code:dOut(L['NOT_LOADED'])
+            return
+        elseif not IsInGuild() or not clubID or not select(1, GetGuildInfo('player')) then -- If the player is not in a guild, then check again in 1 second
+            C_Timer.After(1, function() checkIfInGuild(count + 1) end)
+        elseif clubID then core:StartGuildRecruiter(clubID) end
     end
 
-    GR:RegisterChatCommand('rl', function() ReloadUI() end)
-    checkGuildInfo()
+    checkIfInGuild(0)
 end
 
 function core:Init()
+    self.hasGM = false
+    self.iAmGM = false
     self.isEnabled = false
     self.fullyStarted = false
     self.ignoreAutoSync = false
-
-    self.isGuildLeader = false
 
     self.addonSettings = {
         profile = {
@@ -63,356 +52,459 @@ function core:Init()
                 minimap = { hide = false, }, -- Mini Map Icon
                 showContextMenu = true, -- Show Context Menu
                 debugMode = false, -- Debug Mode
-                debugAutoSync = false, -- Debug Auto Sync (false = on)
                 showAppMsgs = true, -- Show Application Messages
+                enableAutoSync = true, -- Disable Auto Sync
+                showWhispers = true, -- Show Whispers
             },
             analytics = {}
         },
         global = {
+            showWhatsNew = true,
             guildInfo = {},
             gmSettings = {
                 -- GM Settings
                 antiSpam = false,
                 antiSpamDays = 7,
-                sendWelcome = false,
-                welcomeMessage = L['DEFAULT_GUILD_WELCOME'],
-                sendGreeting = false,
-                greetingMessage = '',
+                sendGuildGreeting = false,
+                guildMessage = L['DEFAULT_GUILD_WELCOME'],
+                sendWhsiper = false,
+                whisperMessage = '',
                 messageList = {},
                 isGuildLeader = false,
+                guildLeaderToon = nil,
             },
             settings = {
                 -- General Settings
                 showToolTips = true, -- Show Tool Tips
                 showConsoleMessages = false, -- Show Console Messages
                 -- Invite Settings
-                showWhispers = false, -- Show Whispers
                 antiSpam = true,
                 antiSpamDays = 7,
-                sendWelcome = true,
-                welcomeMessage = L['DEFAULT_GUILD_WELCOME'],
-                sendGreeting = false,
-                greetingMessage = '',
+                sendGuildGreeting = false,
+                guildMessage = L['DEFAULT_GUILD_WELCOME'],
+                sendWhsiper = false,
+                whisperMessage = '',
                 scanWaitTime = 6,
                 -- Messages
                 messageList = {},
+                overrideGM = false,
             },
             keybindings = {
                 scan = 'CTRL-SHIFT-S',
                 invite = 'CTRL-SHIFT-I',
             },
+            blackList = {},
+            blackListRemoved = {},
+            antiSpamList = {},
+            zoneList = {},
             filterList = {},
             analytics = {},
         }
     }
 end
--- Database Routines
-function core:StartGuildRecruiter(clubID)
-    self.isEnabled = (CanGuildInvite() and clubID and IsInGuild()) and true or false
-    if not self.isEnabled then
-        ns.code:dOut(L['TITLE']..' '..GR.version..' '..L['DISABLED']..'.', 'FF3EB9D8', 'NO_PREFIX')
-        ns.code:dOut('You are not in a guild or cannot invite players.', 'FF3EB9D8', 'NO_PREFIX')
-        return
-    end
-    -- Start Databases
-    local db = DB:New('GuildRecruiterDB', nil, PLAYER_PROFILE)
+-- * Guild Recruiter Startup Routines
+function core:StartDatabase(clubID)
+    if not clubID then return end
 
-    db.global = db.global or { showWhatsNew = true }
+    local db = DB:New('GuildRecruiterDB') -- Initialize the database
+
+    -- Initialize the database        
+    db.global[clubID] = db.global[clubID] or self.addonSettings.global
+    ns.code:dOut('Current Profile: ', db:GetCurrentProfile())
+
     db.profile.settings = db.profile.settings or self.addonSettings.profile.settings
     db.profile.analytics = db.profile.analytics or self.addonSettings.profile.analytics
 
-    db.global[clubID] = db.global[clubID] or self.addonSettings.global
-    db.global[clubID].blackList = db.global[clubID].blackList or ''
-    db.global[clubID].antiSpamList = db.global[clubID].antiSpamList or ''
+    -- General Settings Variables 
+    ns.g = db.global[clubID] -- Global Settings
+    ns.p = db.profile -- Profile Settings
+    ns.global = db.global -- Global Settings
 
+    ns.gSettings, ns.pSettings = ns.g.settings, ns.p.settings -- General Settings
+    -- Guild Settings Variables Declaration
+    ns.guildInfo = ns.g.guildInfo or {} -- Guild Info
+    ns.gmSettings = ns.g.gmSettings or self.addonSettings.global.gmSettings -- GM Settings
 
-    ns.db, ns.dbProfile, ns.dbGlobal = db, db.profile, db.global[clubID]
-    ns.dbAP, ns.dbAG = ns.dbProfile.analytics, ns.dbGlobal.analytics
-    ns.settings, ns.gSettings, ns.gmSettings = db.profile.settings, db.global[clubID].settings, db.global[clubID].gmSettings
+    self:PerformDatabaseMaintenance() -- Perform Database Maintenance
 
-    ns.dbAP = ns.dbAP or {}
-    ns.dbAG = ns.dbAG or {}
-
-    GR.debug = ns.settings.debugMode
-
-    -- Setup Guild Info
-    local club = clubID and C_ClubFinder.GetRecruitingClubInfoFromClubID(clubID) or nil
-    ns.sync.clubID = clubID
-
-    ns.code:fOut(L['TITLE']..' ('..GR.version..') '..L['ENABLED']..'.', 'FF3EB9D8', 'NO_PREFIX')
-    ns.settings.firstRunComplete = ns.settings.firstRunComplete or false
-    if not ns.settings.firstRunComplete then
-        ns.code:fOut(L['FIRST_RUN'], 'FF3EB9D8', 'NO_PREFIX')
-        ns.settings.firstRunComplete = true
+    -- Check if the GM is in the profile list
+    if ns.guildInfo.guildLeaderToon then
+        for profileName, _ in pairs(db.profiles) do
+            if profileName:find(ns.guildInfo.guildLeaderToon) then self.hasGM = true break end
+        end
     end
 
-    ns.dbGlobal.guildInfo.clubID = ns.dbGlobal.guildInfo.clubID or clubID
-    ns.dbGlobal.guildInfo.guildName = GetGuildInfo('player')
-    if not (ns.dbGlobal.guildInfo.guildLink or ns.dbGlobal.guildInfo.guildLink == '') then
-        ns.dbGlobal.guildInfo.guildLink = club and GetClubFinderLink(club.clubFinderGUID, club.name) or nil
-    end
-    ns.dbGlobal.guildInfo.isGuildLeader = IsGuildLeader() and true or (ns.dbGlobal.guildInfo.isGuildLeader or false)
+    -- Other Variables Declaration
+    ns.gFilterList = ns.g.filterList or {} -- Global Filter List
+    ns.gAnalytics = ns.g.analytics or {} -- Global Analytics
+    ns.pAnalytics = ns.p.analytics or {} -- Profile Analytics
+    ns.analytics:Start()
 
-    if IsGuildLeader() and not ns.dbGlobal.guildInfo.guildLink then
-        ns.code:fOut(L['GUILD_LINK_INSTRUCTIONS'], 'FFAF640C')
-    end
+    GR.debug = ns.pSettings.debugMode or false -- Set the debug mode
+end
+function core:PerformDatabaseMaintenance()
+    if not ns.global.dbVersion or ns.global.dbVersion ~= GR.dbVersion then
+        ns.global.dbVersion = GR.dbVersion
+        -- Fix for old DB settings
+        ns.gmSettings.sendGuildGreeting = ns.gmSettings.sendGuildGreeting or ns.gmSettings.sendWelcome
+        ns.gmSettings.sendWhsiper = ns.gmSettings.sendWhsiper or ns.gmSettings.sendGreeting
+        ns.gmSettings.sendGreeting, ns.gmSettings.sendWelcome = nil, nil
 
-    ns.dbGlobal.guildInfo.isGuildLeader = false
-    if ns.dbGlobal.guildInfo.guildLeaderName then
-        local tbl = db:GetProfiles()
-        for _, r in pairs(tbl) do
-            if r:match(ns.dbGlobal.guildInfo.guildLeaderName) then
-                ns.dbGlobal.guildInfo.isGuildLeader = true
-                break
+        ns.gSettings.sendGuildGreeting = ns.gSettings.sendGuildGreeting or ns.gSettings.sendWelcome
+        ns.gSettings.sendWhsiper = ns.gSettings.sendWhsiper or ns.gSettings.sendGreeting
+
+        -- Change Message Records
+        if ns.gSettings.welcomeMessage and ns.gSettings.welcomeMessage ~= '' then
+            ns.gSettings.guildMessage = ns.gSettings.welcomeMessage and ns.gSettings.welcomeMessage or ns.gSettings.guildMessage
+            ns.gSettings.welcomeMessage = nil
+        end
+        if ns.gmSettings.welcomeMessage and ns.gmSettings.welcomeMessage ~= '' then
+            ns.gmSettings.guildMessage = ns.gmSettings.welcomeMessage and ns.gmSettings.welcomeMessage or ns.gmSettings.guildMessage
+            ns.gmSettings.welcomeMessage = nil
+        end
+        if ns.gSettings.greetingMessage and ns.gSettings.greetingMessage ~= '' then
+            ns.gSettings.whisperMessage = ns.gSettings.greetingMessage or nil
+            ns.gSettings.greetingMessage = nil
+        end
+        if ns.gmSettings.greetingMessage and ns.gmSettings.greetingMessage ~= '' then
+            ns.gmSettings.whisperMessage = ns.gmSettings.greetingMessage or nil
+            ns.gmSettings.greetingMessage = nil
+        end
+        if ns.gSettings.sendWhisperGreeting or ns.gmSettings.sendWhisperGreeting then
+            ns.gSettings.sendWhsiper = ns.gSettings.sendWhisperGreeting or ns.gSettings.sendWhsiper
+            ns.gmSettings.sendWhsiper = ns.gmSettings.sendWhisperGreeting or ns.gmSettings.sendWhsiper
+            ns.gSettings.sendWhisperGreeting = nil
+            ns.gmSettings.sendWhisperGreeting = nil
+        end
+
+        -- Combine Message Lists
+        local tblDescHold = {}
+        local tblMsgs, tblGM, tblPlayer = {}, ns.gmSettings.messageList or {}, ns.gSettings.messageList or {}
+        for _, v in pairs(tblGM) do
+            if not tblDescHold[v.desc] then
+                tinsert(tblMsgs, {
+                    desc = v.desc,
+                    message = v.message,
+                    type = 'GM',
+                })
+                tblDescHold[v.desc] = true
             end
         end
+        for _, v in pairs(tblPlayer) do
+            if not tblDescHold[v.desc] then
+                tinsert(tblMsgs, {
+                    desc = v.desc,
+                    message = v.message,
+                    type = 'PLAYER',
+                })
+                tblDescHold[v.desc] = true
+            end
+        end
+        ns.gSettings.messageList = tblMsgs or {}
+        ns.gmSettings.messageList, ns.pSettings.messageList = nil, nil
     end
-
-    if IsGuildLeader() then
-        ns.dbGlobal.guildInfo.isGuildLeader = true
-        ns.dbGlobal.guildInfo.gmMemberID = C_Club.GetMemberInfoForSelf(clubID).memberId
-        ns.dbGlobal.guildInfo.guildLeaderName = UnitName('player')
-    end
-
-    ns.isGuildLeader = ns.dbGlobal.guildInfo.isGuildLeader -- Set Guild Leader Flag
-
-    ns.tblConnectedRealms = ns.ds:GetConnectedRealms() -- Servers connected to player's realm
 end
-function core:PerformRecordMaintenance()
-    local gmSettings, gSettings = ns.gmSettings, ns.gSettings
-    local invitedRemoved, blackListRemoved = 0, 0
-    local antiSpamDays = (gmSettings.antiSpam and gmSettings.antiSpamDays) and gmSettings.antiSpamDays or (gSettings.antiSpamDays or 7)
+function core:StartGuildSetup(clubID) -- Get Guild Info and prep database
+    if not clubID then return end
+
+    local function checkIfGuildLeader()
+        if IsGuildLeader() then
+            ns.guildInfo.isGuildLeader = true
+            ns.guildInfo.guildLeaderToon = GetUnitName('player', true)
+        elseif self.hasGM then ns.guildInfo.isGuildLeader = true
+        elseif not IsGuildLeader() then
+            if ns.guildInfo.guildLeaderToon == GetUnitName('player', true) then
+                ns.guildInfo.isGuildLeader = false
+                ns.guildInfo.guildLeaderToon = nil
+                ns.gSettings.overrideGM = false
+                ns.code:dOut(GetUnitName('player', true)..' is no longer the Guild Leader')
+            elseif not ns.guildInfo.guildLeaderToon then
+                ns.guildInfo.isGuildLeader = false
+                ns.code:dOut('You are not the Guild Leader')
+            else ns.code:dOut('Current Guild Leader: '..(ns.guildInfo.guildLeaderToon or 'No One')) end
+        end
+    end
+
+    ns.guildInfo.clubID = clubID
+    ns.guildInfo.guildName = GetGuildInfo('player')
+
+    local club = clubID and C_ClubFinder.GetRecruitingClubInfoFromClubID(clubID) or nil
+    if not ns.guildInfo.guildLink and club then
+        ns.guildInfo.guildLink = GetClubFinderLink(club.clubFinderGUID, club.name) or nil
+    end
+
+    checkIfGuildLeader()
+end
+function core:PerformRecordMaintenance() -- Perform Record Maintenance
+    core:CreateBLandAntiSpamTables() -- Create the black list and anti-spam tables
+
+    -- ToDo: Remove old deleted black list records
+    -- Decode Black List
+    local blSuccess, tblBL = ns.code:decompressData(ns.g.blackList or {})
+    if blSuccess then ns.tblBlackList = tblBL or {}
+    else
+        ns.tblBlackList = {}
+        ns.code:dOut('There was an issue decoding the Black List (Record Maint)') end
+
+    -- Decode Anti-Spam List
+    local asSuccess, tblAS = ns.code:decompressData(ns.g.antiSpamList or {})
+    if asSuccess then ns.tblAntiSpamList = tblAS or {}
+    else
+        ns.tblAntiSpamList = {}
+        ns.code:dOut('There was an issue decoding the Anti-Spam List (Record Maint)') end
+
+    -- Anti-Spam List Maintenance
+    local antiSpamRemoved, blackListRemoved = 0, 0
+    local antiSpamDays = (ns.gmSettings.antiSpam and ns.gmSettings.antiSpamDays) and ns.gmSettings.antiSpamDays or nil
+    antiSpamDays = (not ns.gmSettings.antiSpam and (ns.gSettings.antiSpam and ns.gSettings.antiSpamDays)) and ns.gSettings.antiSpamDays or 7
+
     local antiSpamExpire = C_DateAndTime.GetServerTimeLocal() - (antiSpamDays * SECONDS_IN_A_DAY)
-
-    -- Setup Tables for Black List and Invited Players
-    ns.tblBlackList, ns.tblInvited = {}, {}
-    local blSuccess, tblBL = ns.code:decompressData(ns.dbGlobal.blackList)
-    if blSuccess and tblBL then ns.tblBlackList = tblBL
-    elseif ns.dbBL then ns.code:fOut('There was an issue loading the Black List.', 'FFAF640C') end
-
-    local invSuccess, tblInv = ns.code:decompressData(ns.dbGlobal.antiSpamList and ns.dbGlobal.antiSpamList or '')
-    if invSuccess and tblInv then ns.tblInvited = tblInv
-    elseif ns.dbInv then ns.code:fOut('There was an issue loading the Invited Players.', 'FFAF640C') end
-
-    local sessionSuccess, tblSession = ns.code:decompressData(ns.dbGlobal.sessionData)
-    if sessionSuccess and tblSession then ns.ds.tblSavedSessions = tblSession
-    else ns.ds.tblSavedSessions = date('%m%d%Y') end
-
-
-    -- Remove Invited Players
-    for k, r in pairs(ns.tblInvited) do
-        if r.invitedOn < antiSpamExpire then
-            ns.tblInvited[k] = nil
-            invitedRemoved = invitedRemoved + 1
+    for k, r in pairs(ns.tblAntiSpamList or {}) do
+        if not r.date then
+            ns.tblAntiSpamList[k] = nil
+            antiSpamRemoved = antiSpamRemoved + 1
+        elseif r.date < antiSpamExpire then
+            ns.tblAntiSpamList[k] = nil
+            antiSpamRemoved = antiSpamRemoved + 1
         end
     end
 
-    -- Remove Black List
-    local blExpire = C_DateAndTime.GetServerTimeLocal()
-    for k, r in pairs(ns.tblBlackList) do
-        if r.markedForDelete and r.dateBlackList <= blExpire then
-            ns.tblBlackList[k] = nil
-            blackListRemoved = blackListRemoved + 1
-        end
-    end
-
-    if invitedRemoved > 0 then ns.code:saveTables('INVITED')
-        ns.code:fOut(string.format(L['ANTI_SPAM_REMOVAL'], invitedRemoved), 'FFFFFFFF', true)
-    end
-    if blackListRemoved > 0 then ns.code:saveTables('BLACK_LIST')
-        ns.code:cOut(blackListRemoved..L['BL_REMOVAL'], 'FFFFFFFF', true)
-    end
+    -- Report to console
+    ns.code:fOut('Anti-Spam Records Removed: '..antiSpamRemoved, GRColor)
+    ns.code:fOut('Black List Records Removed: '..blackListRemoved, GRColor)
 end
--- Support Routines
-function core:CreateMiniMapIcon()
-    local code = ns.code
-    local iconData = LibStub("LibDataBroker-1.1"):NewDataObject("GuildRecruiter", { -- Minimap Icon Settings
-        type = 'data source',
-        icon = GR.icon,
-        OnClick = function(_, button)
-            if button == 'LeftButton' then ns.screens.home:StartUp()
-            elseif button == 'RightButton' then Settings.OpenToCategory('Guild Recruiter')(ns.addonOptions) end
-        end,
-        OnTooltipShow = function(GameTooltip)
-            local title = code:cText('FFFFFF00', L['TITLE'])
-            local body = code:cText('FFFFFFFF', L['LEFT_MOUSE_BUTTON']..'\n')
-            body = body..code:cText('FFFFFFFF', L['RIGHT_MOUSE_BUTTON'])
-
-            ns.code:createTooltip(title, body, 'FORCE_TOOLTIP')
-        end,
-        OnLeave = function()
-            GameTooltip:Hide() -- Hide the tooltip when the mouse leaves the icon
-        end,
-    })
-
-    icon:Register('GR_Icon', iconData, ns.settings.minimap)
-end
-function core:SlashCommands()
+function core:StartSlashCommands() -- Start Slash Commands
     local function slashCommand(msg)
         msg = strlower(msg:trim())
 
-        if not msg or msg == '' then ns.screens.home:StartUp()
-        elseif msg == L['help'] then
-            ns.code:fOut(string.format(tostring(L['SLASH_HELP1']), tostring(GR.version)))
-            ns.code:fOut(L['SLASH_HELP2'])
-            ns.code:fOut(L['SLASH_HELP3'])
-            ns.code:fOut(L['SLASH_HELP4'])
-            ns.code:fOut(L['SLASH_HELP5'])
-        elseif strlower(msg) == L['config'] then Settings.OpenToCategory('Guild Recruiter')(ns.addonOptions)
-        elseif strlower(msg):match(tostring(L['blacklist'])) then
-            msg = strlower(msg):gsub(tostring(L['blacklist']), ''):trim()
+        if not msg or msg == '' and not ns.win.home:IsShown() then return ns.win.home:SetShown(true)
+        elseif msg == L['HELP'] then ns.code:fOut(L['SLASH_COMMANDS'], GRColor, true)
+        elseif strlower(msg) == L['CONFIG'] then Settings.OpenToCategory('Guild Recruiter')
+        elseif strlower(msg):match(tostring(L['BLACKLIST_ICON'])) then
+            msg = strlower(msg):gsub(tostring(L['BLACKLIST_ICON']), ''):trim()
             local name = strupper(strsub(msg,1,1))..strlower(strsub(msg,2))
             ns:add(name)
         end
     end
 
     GR:RegisterChatCommand('gr', slashCommand)
-    GR:RegisterChatCommand(L['recruiter'], slashCommand)
+    GR:RegisterChatCommand(L["RECRUITER"], slashCommand)
 end
-function core:FinishStartup()
+function core:StartMiniMapIcon() -- Start Mini Map Icon
+    local code = ns.code
+    local iconData = LibStub("LibDataBroker-1.1"):NewDataObject("GR_Icon", { -- Minimap Icon Settings
+        type = 'data source',
+        icon = GR.icon,
+        OnClick = function(_, button)
+            if button == 'LeftButton' and IsShiftKeyDown() and not ns.win.home:IsShown() then ns.win.scanner:SetShown(true)
+            elseif button == 'LeftButton' and not ns.win.home:IsShown() then ns.win.home:SetShown(true)
+            elseif button == 'RightButton' then Settings.OpenToCategory('Guild Recruiter') end
+        end,
+        OnTooltipShow = function(GameTooltip)
+            local title = code:cText('FFFFFF00', L['TITLE']..' (v'..GR.version..'):')
+            local body = code:cText('FFFFFFFF', L['MINIMAP_TOOLTIP'])
+
+            local count = 0
+            for _ in pairs(ns.tblAntiSpamList) do count = count + 1 end
+            local antiSpam = ' |cFFFF0000'..count..'|r'
+
+            count = 0
+            for _ in pairs(ns.tblBlackList) do count = count + 1 end
+            local blackList = ' |cFFFF0000'..count..'|r'
+
+            body = body:gsub('%%AntiSpam', antiSpam):gsub('%%BlackList', blackList)
+
+            ns.code:createTooltip(title, body, 'FORCE_TOOLTIP')
+        end,
+        OnLeave = function() GameTooltip:Hide() end,
+    })
+
+    icon:Register('GR_Icon', iconData, ns.pSettings.minimap)
+end
+function core:StartBaseEvents()
     -- Chat Message Response Routine
     local function CHAT_MSG_SYSTEM(...) ns.observer:Notify('CHAT_MSG_SYSTEM', ...) end
     ns.events:RegisterEvent('CHAT_MSG_SYSTEM', CHAT_MSG_SYSTEM)
 
-    AC:RegisterOptionsTable('GR_Options', ns.addonSettings)
-    ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter')
+    -- Saves the ns.tblBlackList and ns.antiSpamList tables on logout
+    ns.events:RegisterEvent('PLAYER_LOGOUT', function() ns.code:saveTables() end)
+end
+function core:CreateBLandAntiSpamTables()
+    ns.tblBlackList, ns.antiSpamList = {}, {}
 
-    ns.screens.base:StartUp()
-    local showWhatsNew = type(ns.db.global.showWhatsNew) == 'boolean' and ns.db.global.showWhatsNew or true
-    if showWhatsNew and ns.db.global.version ~= ns.ds.grVersion then
-        ns.screens.whatsnew:StartUp()
-    else
-        self.fullyStarted = true
-        ns.screens.base.tblFrame.frame:SetShown(false)
+    local blSuccess, tblBL = ns.code:decompressData(ns.g.blackList or {})
+    ns.tblBlackList = blSuccess and tblBL or {}
+
+    local asSuccess, tblAS = ns.code:decompressData(ns.g.antiSpamList or {})
+    ns.tblAntiSpamList = asSuccess and tblAS or {}
+end
+function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
+    self.isEnabled = true
+    ns.code:dOut('Starting Guild Recruiter')
+
+    ns.code.fPlayerName = ns.code:cPlayer(GetUnitName('player', false), select(2, UnitClass("player"))) -- Set the player name
+
+    self:StartDatabase(clubID) -- Start the database
+    self:StartGuildSetup(clubID) -- Start the guild setup
+    if not self.isEnabled then return end -- If the guild is not enabled, then return
+
+    -- Setup Tables
+    ns.tblRaces, ns.tblClasses = ns.ds:races(), ns.ds:classes()
+
+    --* Setup Tables
+    ns.tblInvalidZones = ns.ds:invalidZones()
+    ns.tblInvalidZonesByName = ns.ds:convertZoneKeyToName()
+    ns.tblRacesSortedByName = ns.code:sortTableByField(ns.tblRaces, 'name')
+    ns.tblClassesSortedByName = ns.code:sortTableByField(ns.tblClasses, 'name')
+
+    AC:RegisterOptionsTable('GR_Options', ns.addonSettings) -- Register the options table
+    ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter') -- Add the options to the Blizzard options
+    self.iAmGM = (ns.guildInfo.isGuildLeader or ns.guildInfo.guildLeaderToon == GetUnitName('player', true)) or false
+    ns.gSettings.overrideGM = self.iAmGM and ns.gSettings.overrideGM or false
+
+    core:PerformRecordMaintenance() -- Perform record maintenance
+    core:StartSlashCommands() -- Start the slash commands
+    core:StartMiniMapIcon() -- Start the mini map icon
+
+    core:StartBaseEvents() -- Start the base events
+    ns.win.base:StartUp() -- Show the base window
+    ns.win.base:SetShown(false) -- Hide the base window
+    self.fullyStarted = true
+
+    ns.code:fOut(L['TITLE']..' ('..GR.version..(GR.isTest and ' '..GR.testLevel..') ')..L['IS_ENABLED'], GRColor, true)
+    if not ns.guildInfo.guildLink then ns.code:cOut(L['NO_GUILD_LINK'], GRColor) end
+
+    if GR.isTest then
+        ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.testLevel))), 'FFFFFF00', true)
+     end
+
+    if type(ns.global.showWhatsNew) ~= 'boolean' then
+        ns.global.showWhatsNew = true
+        ns.win.whatsnew.startUpWhatsNew = true
+        ns.code:fOut(L['FIRST_TIME_INFO'], GRColor, true) -- Show the first time info
+        C_Timer.After(3, function() ns.win.whatsnew:SetShown(true) end) -- Show the what's new window
+    elseif ns.global.showWhatsNew and ns.global.currentVersion ~= GR.version then
+        ns.win.whatsnew.startUpWhatsNew = true
+        C_Timer.After(3, function() ns.win.whatsnew:SetShown(true) end) -- Show the what's new window
+    elseif ns.global.currentVersion ~= GR.version then ns.code:fOut(L['NEW_VERSION_INFO'], GRColor, true) end
+
+    --* Start Auto Sync
+    if type(ns.pSettings.enableAutoSync) ~= 'boolean' then ns.pSettings.enableAutoSync = true end
+    if ns.pSettings.enableAutoSync then
+        C_Timer.After(15, function() ns.sync:StartSyncRoutine(1) end)
     end
 end
 core:Init()
 
--- Context Menu Routine
-local function HandlesGlobalMouseEvent(self, button, event)
-	if event == 'GLOBAL_MOUSE_DOWN' and (button == 'LeftButton' or button == 'RightButton')then
-        if not ns.settings.showContextMenu then return false end
-		return true
-	end
-	return false
+--* Hook /ginvite command
+-- Create a custom dropdown frame for the additional options
+local customDropdown = CreateFrame("Frame", "CustomChatDropdown", UIParent, "UIDropDownMenuTemplate")
+-- Function to initialize the custom dropdown menu
+local function InitializeDropdownMenu(self, level)
+    if not self.chatPlayerName or not ns.pSettings.showContextMenu then return end
+    local cPlayerName = ns.code:cText(GRColor, self.chatPlayerName)
+    if level == 1 then
+        local info = UIDropDownMenu_CreateInfo()
+        info.text = cPlayerName..'\n'..ns.code:cText('FFFFFF00', L['INVITE_NO_MESSAGES_MENU'])
+        info.notCheckable = true
+        info.func = function()
+            ns.invite:SendManualInvite(self.chatPlayerName, select(2, UnitClass(self.chatPlayerName)), false, false, true)
+        end
+        UIDropDownMenu_AddButton(info, level)
+
+        -- Separator for spacing
+        info = UIDropDownMenu_CreateInfo()
+        info.disabled = true
+        info.notCheckable = true
+        UIDropDownMenu_AddButton(info, level)
+
+        info = UIDropDownMenu_CreateInfo()
+        info.text = cPlayerName..'\n'..ns.code:cText('FFFFFF00', L['INVITE_MESSAGES_MENU'])
+        info.notCheckable = true
+        info.func = function()
+            ns.invite:SendManualInvite(self.chatPlayerName, select(2, UnitClass(self.chatPlayerName)), true, true, true)
+        end
+        UIDropDownMenu_AddButton(info, level)
+
+        local activeMessage = ns.pSettings.activeMessage or nil
+        local msg = activeMessage and ns.gSettings.messageList[activeMessage] or nil
+        if msg then
+            -- Separator for spacing
+            info = UIDropDownMenu_CreateInfo()
+            info.disabled = true
+            info.notCheckable = true
+            UIDropDownMenu_AddButton(info, level)
+
+            info = UIDropDownMenu_CreateInfo()
+            info.text = cPlayerName..'\n'..ns.code:cText('FFFFFF00', L['INVITE_MESSAGE_ONLY'])
+            info.notCheckable = true
+            info.func = function()
+                ns.invite:SendMessage(self.chatPlayerName, self.chatPlayerName:gsub('-', ''), msg.message)
+            end
+            UIDropDownMenu_AddButton(info, level)
+        end
+
+        local name = self.chatPlayerName:find('-') and self.chatPlayerName or self.chatPlayerName..'-'..GetRealmName() -- Add realm name if not present
+        if not ns.blackList:IsOnBlackList(name) then
+            -- Separator for spacing
+            info = UIDropDownMenu_CreateInfo()
+            info.disabled = true
+            info.notCheckable = true
+            UIDropDownMenu_AddButton(info, level)
+
+            info = UIDropDownMenu_CreateInfo()
+            info.text = cPlayerName..'\n'..L['BLACKLIST']
+            info.notCheckable = true
+            info.func = function()
+                ns.blackList:BlackListReasonPrompt(self.chatPlayerName)
+            end
+            UIDropDownMenu_AddButton(info, level)
+        end
+    end
 end
-
-local tblFrame, rows, rowHeight = {}, 3, 40
-local function DropDownOnShow(self)
-    if not core.isEnabled or not CanGuildInvite() then return
-    elseif not ns.settings.showContextMenu then return
-    elseif not ns.db or not ns.settings or not ns.settings.showContextMenu then return end
-
-    local dropdown = self.dropdown
-    if not dropdown or not dropdown.which then return end
-
-    local name = dropdown.name
-    local server = dropdown.server or GetRealmName()
-    local fullName = name and name..'-'..server or nil
-    if not name then return
-    elseif not ns.code:verifyRealm(server, 'REALM_ONLY') then
-        ns.code:fOut('Player is not connected to your realm.', 'FFFF0000')
-        return
+-- Function to position the custom dropdown menu
+local function PositionCustomDropdown()
+    local systemDropdown = DropDownList1
+    if not systemDropdown then
+        return 0, 0
     end
 
-    -- Create the Box
-    local f = tblFrame.frame or CreateFrame("Frame", "GR_DropDownFrame", UIParent, "BackdropTemplate")
-    f:SetFrameStrata('TOOLTIP')
-    f:SetSize(165, rowHeight * rows - 15)
-    f:SetBackdrop(BackdropTemplate(BLANK_BACKGROUND))
-    f:SetBackdropColor(0,0,0,1)
-    f:SetBackdropBorderColor(1,1,1,1)
-    f:IsClampedToScreen(true)
-    f:EnableMouse(true)
-    f:SetShown(true)
-    tblFrame.frame = f
+    local systemDropdownWidth = systemDropdown:GetWidth()
+    local systemDropdownX, systemDropdownY = systemDropdown:GetCenter()
+    local screenWidth = GetScreenWidth()
 
-    f:ClearAllPoints()
-    if self:GetLeft() >= self:GetWidth() then f:SetPoint('RIGHT', self, 'LEFT',0,0)
-    else f:SetPoint('LEFT', self, 'RIGHT',0,0) end
+    local xOffset = 0
+    local yOffset = 0
 
-    -- Invite with Messages
-    local fInviteMsg = tblFrame.inviteMsg or CreateFrame('Button', nil, tblFrame.frame)
-    fInviteMsg:SetSize(tblFrame.frame:GetWidth(), rowHeight)
-    fInviteMsg:SetPoint('TOP', f, 'TOP', 0, 0)
-    fInviteMsg.HandlesGlobalMouseEvent = HandlesGlobalMouseEvent
-    fInviteMsg:SetShown(true)
-    tblFrame.inviteMsg = fInviteMsg
+    -- Calculate the new position, ensuring it stays within the screen bounds
+    if systemDropdownX and (systemDropdownX + systemDropdownWidth / 2 + customDropdown:GetWidth() > screenWidth) then
+        xOffset = -customDropdown:GetWidth() - 10
+    else
+        xOffset = systemDropdownWidth - 20
+    end
 
-    local fInviteMsgHighlight = tblFrame.InviteMSGhighlight or fInviteMsg:CreateTexture(nil, 'OVERLAY')
-    fInviteMsgHighlight:SetSize(tblFrame.frame:GetWidth() -8, rowHeight -5)
-    fInviteMsgHighlight:SetPoint('CENTER', fInviteMsg, 'CENTER', 0, -1)
-    fInviteMsgHighlight:SetAtlas(BLUE_LONG_HIGHLIGHT)
-    fInviteMsgHighlight:SetShown(false)
-    tblFrame.InviteMSGhighlight = fInviteMsgHighlight
-
-    local fInviteMsgText = tblFrame.inviteMSGText or fInviteMsg:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
-    fInviteMsgText:SetFont(DEFAULT_FONT, DEFAULT_FONT_SIZE, 'OUTLINE')
-    fInviteMsgText:SetPoint('CENTER', fInviteMsg, 'CENTER', 0, 0)
-    fInviteMsgText:SetText('Invite '..(ns.code:cPlayer(name, nil, 'FF00FF00'))..'\nWith Greeting/Welcome')
-    tblFrame.inviteMSGText = fInviteMsgText
-
-    fInviteMsg:SetScript('OnEnter', function() tblFrame.InviteMSGhighlight:SetShown(true) end)
-    fInviteMsg:SetScript('OnLeave', function() tblFrame.InviteMSGhighlight:SetShown(false) end)
-    fInviteMsg:SetScript('OnClick', function()
-        if fullName then ns.invite:InvitePlayer(fullName, true, false, false, true) end
-        CloseDropDownMenus()
-    end)
-
-    -- Add to Black List
-    local fBlackList = tblFrame.blackList or CreateFrame('Button', nil, tblFrame.frame)
-    fBlackList:SetSize(tblFrame.frame:GetWidth(), rowHeight)
-    fBlackList:SetPoint('TOP', fInviteMsg, 'BOTTOM', 0, 8)
-    fBlackList.HandlesGlobalMouseEvent = HandlesGlobalMouseEvent
-    tblFrame.blackList = fBlackList
-
-    local fBlackListHighlight = tblFrame.blackListHighlight or fBlackList:CreateTexture(nil, 'OVERLAY')
-    fBlackListHighlight:SetSize(fBlackList:GetWidth() -8, fBlackList:GetHeight() -5)
-    fBlackListHighlight:SetPoint('CENTER', fBlackList, 'CENTER', 0, -1)
-    fBlackListHighlight:SetAtlas(BLUE_LONG_HIGHLIGHT)
-    fBlackListHighlight:SetShown(false)
-    tblFrame.blackListHighlight = fBlackListHighlight
-
-    local fBlackListText = tblFrame.fBlackListText or fBlackList:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
-    fBlackListText:SetFont(DEFAULT_FONT, DEFAULT_FONT_SIZE, 'OUTLINE')
-    fBlackListText:SetPoint('CENTER', fBlackList, 'CENTER', 0, 0)
-    fBlackListText:SetText('Add '..(ns.code:cPlayer(name, nil, 'FF00FF00'))..'\nTo Black List')
-    tblFrame.fBlackListText = fBlackListText
-
-    fBlackList:SetScript('OnEnter', function() tblFrame.blackListHighlight:SetShown(true) end)
-    fBlackList:SetScript('OnLeave', function() tblFrame.blackListHighlight:SetShown(false) end)
-    fBlackList:SetScript('OnClick', function()
-        if fullName then ns.blackList:AddToBlackList(fullName) end
-        CloseDropDownMenus()
-    end)
-
-    -- Invite without Greeting
-    local fInvite = tblFrame.invite or CreateFrame('Button', nil, tblFrame.frame)
-    fInvite:SetSize(tblFrame.frame:GetWidth(), rowHeight)
-    fInvite:SetPoint('TOP', fBlackList, 'BOTTOM', 0, 8)
-    fInvite.HandlesGlobalMouseEvent = HandlesGlobalMouseEvent
-    tblFrame.invite = fInvite
-
-    local fInviteHighlight = tblFrame.inviteHighlight or fInvite:CreateTexture(nil, 'OVERLAY')
-    fInviteHighlight:SetSize(fInvite:GetWidth() -8, fInvite:GetHeight() -5)
-    fInviteHighlight:SetPoint('CENTER', fInvite, 'CENTER', 0, -1)
-    fInviteHighlight:SetAtlas(BLUE_LONG_HIGHLIGHT)
-    fInviteHighlight:SetShown(false)
-    tblFrame.inviteHighlight = fInviteHighlight
-
-    local fInviteText = tblFrame.fInviteText or fInvite:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
-    fInviteText:SetFont(DEFAULT_FONT, DEFAULT_FONT_SIZE, 'OUTLINE')
-    fInviteText:SetPoint('CENTER', fInvite, 'CENTER', 0, 0)
-    fInviteText:SetText('Invite '..(ns.code:cPlayer(name, nil, 'FF00FF00'))..'\nNo Greeting/Welcome')
-    tblFrame.fInviteText = fInviteText
-
-    fInvite:SetScript('OnEnter', function() tblFrame.inviteHighlight:SetShown(true) end)
-    fInvite:SetScript('OnLeave', function() tblFrame.inviteHighlight:SetShown(false) end)
-    fInvite:SetScript('OnClick', function()
-        if fullName then ns.invite:InvitePlayer(fullName, true, false, true, true) end
-        CloseDropDownMenus()
-    end)
+    return xOffset, yOffset
 end
-local function DropDownOnHide() if tblFrame.frame then tblFrame.frame:SetShown(false) end end
-DropDownList1:HookScript('OnShow', DropDownOnShow)
-DropDownList1:HookScript('OnHide', DropDownOnHide)
+-- Original SetItemRef function
+local originalSetItemRef = SetItemRef
+-- Override SetItemRef to capture right-clicks on player names
+SetItemRef = function(link, text, button, chatFrame)
+    if button == "RightButton" then
+        local type, name = strsplit(":", link)
+        if type == "player" then
+            -- Store the clicked player name in the dropdown frame
+            customDropdown.chatPlayerName = name
+            -- Show the system context menu
+            originalSetItemRef(link, text, button, chatFrame)
+            -- Calculate the position for the custom dropdown menu
+            C_Timer.After(0.2, function()
+                local xOffset, yOffset = PositionCustomDropdown()
+                -- Initialize and show the custom dropdown menu
+                UIDropDownMenu_Initialize(customDropdown, InitializeDropdownMenu, "MENU")
+                ToggleDropDownMenu(1, nil, customDropdown, "cursor", xOffset, yOffset)
+            end)
+            return
+        end
+    end
+    originalSetItemRef(link, text, button, chatFrame)
+end

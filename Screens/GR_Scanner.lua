@@ -2,385 +2,625 @@ local _, ns = ... -- Namespace (myaddon, namespace)
 local aceGUI = LibStub("AceGUI-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale('GuildRecruiter')
 
-ns.screens.scanner = {}
+ns.win.scanner = {}
+local scanner = ns.win.scanner
 
-local function obsCLOSE_SCREENS_SCANNER()
-    ns.observer:Unregister('CLOSE_SCREENS', obsCLOSE_SCREENS_SCANNER)
-
-    local tblBase, tblFrame = ns.screens.base.tblFrame, ns.screens.scanner.tblFrame
-    if not tblBase.frame then return end
-
-    tblBase.backButton:SetShown(false)
-    tblBase.resetButton:SetShown(false)
-    tblBase.compactButton:SetShown(false)
-    tblBase.statusText:SetText('')
-
-    if not tblFrame.frame then return end
-    tblFrame.frame:SetShown(false)
-    tblFrame.inline.frame:Hide()
+local function obsCLOSE_SCANNER()
+    ns.observer:Unregister('CLOSE_SCREENS', obsCLOSE_SCANNER)
+    scanner:SetShown(false)
 end
 local function CallBackWhoListUpdate()
-    local scanner = ns.screens.scanner
-    local tblConnected, tblFrame = ns.tblConnectedRealms, scanner.tblFrame.inline.controls
-    local tblWho, tblInvites = scanner.tblWho, scanner.tblInvites
     ns.events:Unregister('WHO_LIST_UPDATE', CallBackWhoListUpdate)
 
-    tblInvites = tblInvites or {}
-    tblWho = table.wipe(tblWho) or {}
+    ns.analytics:saveStats('PlayersScanned', C_FriendList.GetNumWhoResults())
 
-    if not scanner.isCompact then
-        tblFrame.lblWho:SetText(L['WHO_NUMBER_FOUND_DESC']..': '..C_FriendList.GetNumWhoResults())
-    end
+    local sessionStats = ns.analytics:getSessionStats('PlayersScanned')
+    scanner:UpdateAnalytics()
 
-    for i=1, C_FriendList.GetNumWhoResults() do
-        local info = C_FriendList.GetWhoInfo(i)
-        local pName = tblConnected and info.fullName or info.fullName:gsub('-.*', '')
-        local rec = {fullName = info.fullName, name = pName, class = info.filename, level = info.level, guild = (info.fullGuildName or ''), zone = info.area}
-        tinsert(tblWho, rec)
-    end
-
-    ns.analytics:saveStats('PlayersScanned', C_FriendList.GetNumWhoResults(), true)
-    scanner:UpdateAnalyticsSection()
-    scanner:ShowResults('BOTH')
+    scanner:ProcessWhoList(C_FriendList.GetNumWhoResults())
 end
 
-local SCAN_WAIT_TIME = 6
-local scanner = ns.screens.scanner
 function scanner:Init()
-    self.tblFrame = {}
+    self.tblScanner = {} -- Defaults Table
+    self.invMessage = nil -- Invite Message
 
-    self.isCompact = false
+    self.ctrlBase = {} -- Base frame/controls table
+    self.ctrlInvite = {} -- Invite frame/controls table
+    self.ctrlWho = {} -- Who frame/controls table
+    self.ctrlSearch = {} -- Search frame/controls table
+    self.ctrlAnalyics = {} -- Analytics frame/controls table
 
-    self.tblWho = {}
-    self.tblInvites = {}
-
-    self.tblFilter = nil
-    self.totalFilters = 0 -- Used for progress
-
-    self.whisperMessage = nil
-
-    self.isNewLevels = false
-    self.minLevel, self.maxLevel = 1, MAX_CHARACTER_LEVEL
-
-    self.scanWaitTime = 0
+    --* Data Tables
+    self.tblWho = {} -- Who Results Table
+    self.tblInvites = {} -- Players Ready for Invite
+    self.tblFilters = nil -- Filter TableZ
 end
-function scanner:StartUp(whisperMessage)
-    local minLevel = ns.settings.minLevel or 1
-    local maxLevel = ns.settings.maxLevel or MAX_CHARACTER_LEVEL
+function scanner:IsShown() return self.ctrlBase.frame and self.ctrlBase.frame:IsShown() end
+function scanner:SetShown(isShown)
+    local tblBase = ns.win.base.tblFrame
 
-    local tblBase, tblFrame = ns.screens.base.tblFrame, self.tblFrame
+    if not isShown then
+        tblBase.backButton:SetShown(false)
+        tblBase.resetButton:SetShown(false)
+        tblBase.compactButton:SetShown(false)
+        ns.statusText:SetText('')
 
+        if self.ctrlBase.inline then
+            self.ctrlBase.inline:ReleaseChildren()
+            self.ctrlBase.inline.frame:Hide()
+
+            self.ctrlInvite = table.wipe(self.ctrlInvite or {})
+            self.ctrlWho = table.wipe(self.ctrlWho or {})
+            self.ctrlSearch = table.wipe(self.ctrlSearch or {})
+            self.ctrlAnalyics = table.wipe(self.ctrlAnalyics or {})
+        end
+
+        return
+    end
+
+    --* Event Routines
     ns.observer:Notify('CLOSE_SCREENS')
-    ns.observer:Register('CLOSE_SCREENS', obsCLOSE_SCREENS_SCANNER)
+    ns.observer:Register('CLOSE_SCREENS', obsCLOSE_SCANNER)
 
-    self.isCompact = ns.settings.isCompact or false
-    self.activeFilter = ns.settings.activeFilter or 1
-    self.whisperMessage = whisperMessage or nil
+    --* Set Scanner Defaults
+    self.tblScanner = {
+        minLevel = ns.pSettings.minLevel or MAX_CHARACTER_LEVEL - 5, -- Default to 5 levels below max
+        maxLevel = ns.pSettings.maxLevel or MAX_CHARACTER_LEVEL, -- Default to max level
+        isCompact = ns.pSettings.isCompact or false,
+        scanWaitTime = ns.gSettings.scanWaitTime or ns.core.addonSettings.global.settings.scanWaitTime or 6,
+        -- Send Invite Message and Post Join Messages
+        greetingMessage = ns.pSettings.greetingMessage or '', -- Greeting Message (guild chat) for new guild members
+        whisperMessage = ns.pSettings.whisperMessage or '', -- Whisper Message (whisper) for new guild members
+        inviteMessage = ns.pSettings.activeMessage or ns.win.home.activeMessage or '',
+        -- Filter Settings
+        activeFilter = ns.pSettings.activeFilter or 1,
+        activeQuery = self.tblScanner.activeQuery or '',
+        filterCount = self.tblScanner.filterCount or 0,
+        totalFilters = self.tblScanner.totalFilters or 0,
+    }
 
-    self.isNewLevels = (self.minLevel ~= minLevel or self.maxLevel ~= maxLevel) or false
-    self.minLevel, self.maxLevel = (tonumber(minLevel) or 1), (tonumber(maxLevel) or MAX_CHARACTER_LEVEL)
-
+    --* Setup Base Frame
     tblBase.backButton:SetShown(true)
     tblBase.resetButton:SetShown(true)
     tblBase.compactButton:SetShown(true)
+    ns.statusText:SetText('')
 
-    scanner:SwitchCompactMode()
+    local x, y = (self.tblScanner.isCompact and 215 or 600), (self.tblScanner.isCompact and 470 or 475)
+    ns.win.base:SetShown(true)
+    ns.win.base.tblFrame.frame:SetSize(x, y)
+
+    --* Create Frames
+    self:CreateBaseFrame() -- Uses ctrlBase
+    self:CreateInviteFrame() -- Uses ctrlInvite
+    self:CreateWhoFrame() -- Uses ctrlWho
+    self:CreateStartSearchFrame() -- Uses ctrlSearch
+    self:CreateAnalyticsFrame() -- Uses ctrlAnalytics
+
+    --* Populate Data
+    self:DisplayWhoList() -- Display Who List
+    self:DispalyInviteList() -- Display Invite List
+
+    if not self.tblFilters or ns.win.home.resetFilters then
+        ns.win.home.resetFilters = false
+        self.tblFilters = {}
+        self:ResetFilters()
+    end
+
+    self:DisplayNextFilter() -- Display Next Filter
+    self:UpdateAnalytics()
+    self:SetInviteButtonsState()
 end
-function scanner:BuildScannerScreen()
-    local tblBase, tblFrame = ns.screens.base.tblFrame, self.tblFrame
+function scanner:CreateBaseFrame()
+    --? Uses ctrlBase for controls/frame
+    local tblHome = ns.win.base.tblFrame -- Home Frame or main screen
 
     -- Base Regular Frame (With Scan Keybind)
-    local f = tblFrame.frame or CreateFrame('Frame', 'GR_SCANNER_FRAME', tblBase.frame, 'BackdropTemplate')
+    local f = self.ctrlBase.frame or CreateFrame('Frame', 'GR_SCANNER_FRAME', tblHome.frame, 'BackdropTemplate')
     f:SetBackdrop(BackdropTemplate())
     f:SetFrameStrata(DEFAULT_STRATA)
     f:SetBackdropColor(0, 0, 0, 0)
     f:SetBackdropBorderColor(1, 1, 1, 0)
     f:EnableMouse(false)
     f:SetPropagateKeyboardInput(true)
+    f:SetPoint('TOPLEFT', tblHome.topFrame, 'BOTTOMLEFT', -5, 20)
+    f:SetPoint('BOTTOMRIGHT', tblHome.statusBar, 'TOPRIGHT', 0, -5)
     f:SetScript('OnKeyDown', function(_, key)
-        if ns.db.global.keybindScan and key == ns.db.global.keybindScan then
+        if ns.global.keybindScan and key == ns.global.keybindScan then
             if self.scanWaitTime > 0 then
-                ns.code:fOut(L['Please wait']..' '..self.scanWaitTime..' '..L['ERROR_SCAN_WAIT'])
-            elseif self.tblFrame.inline.controls.btnSearch.disabled then ns.code:fOut(L['ERROR_CANNOT_SCAN'])
+                ns.code:fOut(L['PLEASE_WAIT']..' '..self.scanWaitTime..' '..L['ERROR_SCAN_WAIT'])
+            elseif self.ctrlSearch.btnSearch.disabled then ns.code:fOut(L['ERROR_CANNOT_SCAN'])
             else self:GetNextFilterRecord() end
-        elseif ns.db.global.keybindInvite and key == ns.db.global.keybindInvite then self:InvitePlayers() end
+        elseif ns.global.keybindInvite and key == ns.global.keybindInvite then self:InvitePlayers() end
     end)
     f:SetShown(true)
-    tblFrame.frame = f
+    self.ctrlBase.frame = f
 
     -- Ace GUI Frame for Ace Controls
-    local inline = tblFrame.inline or aceGUI:Create('InlineGroup')
+    local inline = self.ctrlBase.inline or aceGUI:Create('InlineGroup')
     inline:SetLayout('Flow')
     inline:SetPoint('TOPLEFT', f, 'TOPLEFT', 5, -5)
     inline:SetPoint('BOTTOMRIGHT', f, 'BOTTOMRIGHT', 0, 5)
     inline.frame:Show()
-    tblFrame.inline = inline
+    self.ctrlBase.inline = inline
 end
-function scanner:BuildInviteAndWho()
-    local inline = self.tblFrame.inline
-    local tblControls = inline.controls or {}
-
-    -- Invite Control
-    local inlineInvite = aceGUI:Create('InlineGroup')
+function scanner:CreateInviteFrame()
+    --? Uses ctrlInvite for contrls/frame
+    -- Base Inline Group for Invite Controls
+    local inlineInvite = self.ctrlInvite.inline or aceGUI:Create('InlineGroup')
     inlineInvite:SetLayout('Flow')
-    inlineInvite:SetTitle(L['Invites:'])
-    inlineInvite:SetRelativeWidth(self.isCompact and 1 or .4)
+    inlineInvite:SetRelativeWidth(self.tblScanner.isCompact and 1 or .4)
+    inlineInvite.frame:SetFrameStrata(DEFAULT_STRATA)
     inlineInvite:SetHeight(200)
-    inline:AddChild(inlineInvite)
-    tblControls.inlineInvite = inlineInvite
+    self.ctrlBase.inline:AddChild(inlineInvite)
+    self.ctrlInvite.inline = inlineInvite
 
-    local scrollInvite = aceGUI:Create('ScrollFrame')
+    -- Invite ScrollBox
+    local scrollInvite = self.ctrlInvite.scrollInvite or aceGUI:Create('ScrollFrame')
     scrollInvite:SetLayout('Flow')
     scrollInvite:SetFullWidth(true)
     scrollInvite:SetHeight(160)
     inlineInvite:AddChild(scrollInvite)
-    tblControls.scrollInvite = scrollInvite
+    self.ctrlInvite.scrollInvite = scrollInvite
 
-    local btnInvite = aceGUI:Create('Button')
-    btnInvite:SetText('Invite')
+    -- Invite Button
+    local btnInvite = self.ctrlInvite.btnInvite or aceGUI:Create('Button')
+    btnInvite:SetText(L['INVITE'])
     btnInvite:SetRelativeWidth(.5)
     btnInvite:SetDisabled(true)
     btnInvite:SetCallback('OnEnter', function()
-        local title = L['Invite players to guild']
-        local body = L['Checked players are for adding to black list.']
+        local title = L['INVITE_BUTTON_TOOLTIP']
+        local body = L['INVITE_BUTTON_BODY_TOOLTIP']
         ns.code:createTooltip(title, body)
     end)
     btnInvite:SetCallback('OnLeave', function() GameTooltip:Hide() end)
-    btnInvite:SetCallback('OnClick', function(_, button, key) self:InvitePlayers() end)
+    btnInvite:SetCallback('OnClick', function() self:InvitePlayers() end)
     inlineInvite:AddChild(btnInvite)
-    tblControls.btnInvite = btnInvite
+    self.ctrlInvite.btnInvite = btnInvite
 
-    local btnRemove = tblControls.btnRemove or aceGUI:Create('Button')
+    -- Black List Player Button
+    local btnRemove = self.ctrlInvite.btnRemove or aceGUI:Create('Button')
     btnRemove:SetText(L['BL'])
     btnRemove:SetRelativeWidth(.5)
     btnRemove:SetDisabled(true)
     btnRemove:SetCallback('OnEnter', function()
-        local title = L['Black List Players']
-        local body = L['Selected players will be added to the black list.']
+        local title = L['BL_BUTTON_TOOLTIP']
+        local body = L['SKIP_BUTTON_BODY_TOOLTIP']
         ns.code:createTooltip(title, body)
     end)
     btnRemove:SetCallback('OnLeave', function() GameTooltip:Hide() end)
-    btnRemove:SetCallback('OnClick', function()
-        local msg = L['ADD_TO_BL_PROMPT']
-        local func = function()
-            for k, r in pairs(self.tblInvites) do
-                if r.isChecked then
-                    ns.blackList:AddToBlackList(k, 'BULK_ADD_BLACKLIST')
-                    self.tblInvites[k] = nil
-                end
-            end
-
-            self:ShowResults('INVITE', true)
-            self:SetButtonStates()
-        end
-        ns.code:Confirmation(msg, func)
-    end)
+    btnRemove:SetCallback('OnClick', function(...) scanner:BlackListPlayer() end)
     inlineInvite:AddChild(btnRemove)
-    tblControls.btnRemove = btnRemove
+    self.ctrlInvite.btnRemove = btnRemove
 
-    local lblFound = tblControls.lblFound or aceGUI:Create("Label")
-    lblFound:SetText(L['Ready for invite']..': '..#self.tblInvites)
-    lblFound:SetRelativeWidth(.5)
-    inlineInvite:AddChild(lblFound)
-    tblControls.lblFound = lblFound
-
-    local btnSkip = tblControls.btnSkip or aceGUI:Create('Button')
-    btnSkip:SetText('Skip')
+    -- Skip Button
+    local btnSkip = self.ctrlInvite.btnSkip or aceGUI:Create('Button')
+    btnSkip:SetText(L['SKIP'])
     btnSkip:SetRelativeWidth(.5)
     btnSkip:SetDisabled(true)
-    btnSkip:SetCallback('OnClick', function()
-        for k, r in pairs(self.tblInvites) do
-            if r.isChecked and ns.invite:AddToInvitedList(k, (r.class or nil)) then
-                self.tblInvites[k] = nil end
-        end
-
-        self:ShowResults('INVITE', true)
-        self:SetButtonStates()
-    end)
     btnSkip:SetCallback('OnEnter', function()
-        local title = L['Skip players']
-        local body = ns.code:wordWrap(L['SKIP_DESC'])
+        local title = L['SKIP_BUTTON_TOOLTIP']
+        local body = L['SKIP_BUTTON_BODY_TOOLTIP']
         ns.code:createTooltip(title, body)
     end)
     btnSkip:SetCallback('OnLeave', function() GameTooltip:Hide() end)
+    btnSkip:SetCallback('OnClick', function() self:SkipPlayerInvite() end)
     inlineInvite:AddChild(btnSkip)
-    tblControls.btnSkip = btnSkip
+    self.ctrlInvite.btnSkip = btnSkip
 
-    -- Who Control
-    if not self.isCompact then
-        local inlineWho = tblControls.inlineWho or nil
-        if not inlineWho then
-            inlineWho = aceGUI:Create('InlineGroup')
-            inlineWho:SetTitle(L['Who Results']..':')
-            inlineWho:SetLayout('Flow')
-            inlineWho:SetRelativeWidth(.6)
-            inline:AddChild(inlineWho)
-            tblControls.whoInline = inlineWho
-        end
-
-        local whoScroll = aceGUI:Create('ScrollFrame')
-        whoScroll:SetLayout("Flow")
-        whoScroll:SetFullWidth(true)
-        whoScroll:SetHeight(200)
-        inlineWho:AddChild(whoScroll)
-        tblControls.whoScroll = whoScroll
-
-        local lblWho = aceGUI:Create("Label")
-        lblWho:SetText(L['Number of players found']..': '..#self.tblWho)
-        lblWho:SetFullWidth(true)
-        inlineWho:AddChild(lblWho)
-        tblControls.lblWho = lblWho
-    end
-
-    inline.controls = tblControls
+    -- Players found using the /who command
+    local lblFound = self.ctrlInvite.lblFound or aceGUI:Create("Label")
+    lblFound:SetText(L['READY_INVITE']..': '..#self.tblInvites)
+    lblFound:SetRelativeWidth(.5)
+    inlineInvite:AddChild(lblFound)
+    self.ctrlInvite.lblFound = lblFound
 end
-function scanner:BuildScanSection()
-    local inline = self.tblFrame.inline
-    local tblControls = inline.controls or {}
-    local tblFrame = ns.screens.base.tblFrame
-    local scrollHeight = 55
+function scanner:CreateWhoFrame()
+    if self.tblScanner.isCompact then return end
 
-    local inlineBottomLeft = tblControls.inlineScanner or aceGUI:Create('InlineGroup')
-    inlineBottomLeft:SetTitle(L['Recruit Scanning']..':')
-    inlineBottomLeft:SetLayout('Flow')
-    inlineBottomLeft:SetRelativeWidth(self.isCompact and 1 or .4)
-    inlineBottomLeft:SetHeight(120)
-    inline:AddChild(inlineBottomLeft)
-    tblControls.inlineScanner = inlineBottomLeft
+    --? Uses ctrlWho for controls/frame
+    --? Uses tblWho for data
+    -- Base Inline Group for Who Controls
+    local inlineWho = self.ctrlWho.inline or aceGUI:Create('InlineGroup')
+    inlineWho:SetLayout('Flow')
+    inlineWho:SetRelativeWidth(.6)
+    self.ctrlBase.inline:AddChild(inlineWho)
+    self.ctrlWho.inline = inlineWho
 
-    local spacer = aceGUI:Create("ScrollFrame")
-    spacer:SetLayout("Flow")
-    spacer:SetRelativeWidth(1)
-    spacer:SetHeight(scrollHeight)
-    inlineBottomLeft:AddChild(spacer)
+    -- Who ScrollBox
+    local scrollWho = self.ctrlWho.scrollWho or aceGUI:Create('ScrollFrame')
+    scrollWho:SetLayout('Flow')
+    scrollWho:SetFullWidth(true)
+    scrollWho:SetHeight(200)
+    inlineWho:AddChild(scrollWho)
+    self.ctrlWho.scrollWho = scrollWho
 
+    -- Who Results Text
+    local lblWho = aceGUI:Create("Label")
+    lblWho:SetText(L['NUMBER_PLAYERS_FOUND']..': '..(#self.tblWho or 0))
+    lblWho:SetFullWidth(true)
+    lblWho:SetRelativeWidth(.5)
+    inlineWho:AddChild(lblWho)
+    self.ctrlWho.lblWhoFound = lblWho
+
+    -- Who Current Query Text
+    local lblWhoQuery = aceGUI:Create("Label")
+    lblWhoQuery:SetText(self.tblScanner.activeQuery or '')
+    lblWhoQuery:SetFullWidth(true)
+    lblWhoQuery:SetRelativeWidth(.5)
+    inlineWho:AddChild(lblWhoQuery)
+    self.ctrlWho.lblWhoQuery = lblWhoQuery
+end
+function scanner:CreateStartSearchFrame()
+    --? Uses ctrlSearch for controls/frame
+    --? Uses tblInvites for data
+
+    -- Base Inline Group for Scan Controls
+    local inlineScan = aceGUI:Create('InlineGroup')
+    inlineScan:SetLayout('Flow')
+    inlineScan:SetHeight(150)
+    inlineScan:SetRelativeWidth(self.tblScanner.isCompact and 1 or .4)
+    inlineScan.frame:SetFrameStrata(DEFAULT_STRATA)
+    self.ctrlBase.inline:AddChild(inlineScan)
+
+    -- Scan Button
     local btnSearch = aceGUI:Create('Button')
     btnSearch:SetText('Start Search')
     btnSearch:SetFullWidth(true)
     btnSearch:SetCallback('OnClick', function() self:GetNextFilterRecord() end)
-    spacer:AddChild(btnSearch)
-    tblControls.btnSearch = btnSearch
+    inlineScan:AddChild(btnSearch)
+    self.ctrlSearch.btnSearch = btnSearch
 
+    -- Next Filter Title
     local lblNextTitle = aceGUI:Create("Label")
-    lblNextTitle:SetText(L['Next filter']..': ')
+    lblNextTitle:SetText(L['NEXT_FILTER']..': ')
     lblNextTitle:SetFont(DEFAULT_FONT, 10, 'OUTLINE')
     lblNextTitle:SetFullWidth(true)
-    spacer:AddChild(lblNextTitle)
+    inlineScan:AddChild(lblNextTitle)
 
-    local lblNextFilter = tblFrame.lblNextFilter or aceGUI:Create("Label")
-    lblNextFilter:SetText('')
+    -- Next Filter Text
+    local lblNextFilter = aceGUI:Create("Label")
+    lblNextFilter:SetText(' ')
     lblNextFilter:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
     lblNextFilter:SetFullWidth(true)
-    spacer:AddChild(lblNextFilter)
-    tblControls.lblNextFilter = lblNextFilter
-
-    inline.controls = tblControls
+    inlineScan:AddChild(lblNextFilter)
+    self.ctrlSearch.lblNextFilter = lblNextFilter
 end
-function scanner:BuildAnalytics()
-    local inline = self.tblFrame.inline
-    local tblControls = inline.controls or {}
+function scanner:CreateAnalyticsFrame()
+    if self.tblScanner.isCompact then return end
+    --? Uses ctrlAnalytics for controls/frame
+    --? Uses tblAnalytics for data
 
-    if self.isCompact then return end
-    local inlineBottomRight = aceGUI:Create('InlineGroup')
-    inlineBottomRight:SetTitle(L['Session Stats']..':')
-    inlineBottomRight:SetLayout('Flow')
-    inlineBottomRight:SetRelativeWidth(.6)
-    inlineBottomRight:SetHeight(100)
-    inline:AddChild(inlineBottomRight)
+    -- Base Inline Group for Analytics Controls
+    local inlineAnalytics = aceGUI:Create('InlineGroup')
+    inlineAnalytics:SetLayout('Flow')
+    inlineAnalytics:SetRelativeWidth(.6)
+    inlineAnalytics:SetTitle('Session Analytics:')
+    inlineAnalytics:SetHeight(95)
+    self.ctrlBase.inline:AddChild(inlineAnalytics)
 
-    local leftScroll = aceGUI:Create("ScrollFrame")
-    leftScroll:SetLayout("Flow")
-    leftScroll:SetRelativeWidth(.5)
-    leftScroll:SetHeight(55)
-    inlineBottomRight:AddChild(leftScroll)
+    -- Left Analytic ScrollBox
+    local scrollLeftAnalytic = aceGUI:Create('ScrollFrame')
+    scrollLeftAnalytic:SetLayout('Flow')
+    scrollLeftAnalytic:SetRelativeWidth(.5)
+    scrollLeftAnalytic:SetHeight(55)
+    inlineAnalytics:AddChild(scrollLeftAnalytic)
 
-    local rightScroll = aceGUI:Create("ScrollFrame")
-    rightScroll:SetLayout("Flow")
-    rightScroll:SetRelativeWidth(.5)
-    rightScroll:SetHeight(55)
-    inlineBottomRight:AddChild(rightScroll)
+    -- Right Analytic ScrollBox
+    local scrollRightAnalytic = aceGUI:Create('ScrollFrame')
+    scrollRightAnalytic:SetLayout('Flow')
+    scrollRightAnalytic:SetRelativeWidth(.5)
+    scrollRightAnalytic:SetHeight(55)
+    inlineAnalytics:AddChild(scrollRightAnalytic)
 
+    -- Left Analytic Controls
     local lblScanned = aceGUI:Create("Label")
-    lblScanned:SetText(L['Players Scanned']..': ')
     lblScanned:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+    lblScanned:SetText(' ')
     lblScanned:SetFullWidth(true)
-    leftScroll:AddChild(lblScanned)
-    tblControls.lblPlayersScanned = lblScanned
+    scrollLeftAnalytic:AddChild(lblScanned)
+    self.ctrlAnalyics.lblPlayersScanned = lblScanned
 
     local lblInvited = aceGUI:Create("Label")
-    lblInvited:SetText(L['Total Invites']..': ')
     lblInvited:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+    lblInvited:SetText(' ')
     lblInvited:SetFullWidth(true)
-    leftScroll:AddChild(lblInvited)
-    tblControls.lblTotalInvites = lblInvited
+    scrollLeftAnalytic:AddChild(lblInvited)
+    self.ctrlAnalyics.lblTotalInvites = lblInvited
 
     local lblWaitingOn = aceGUI:Create("Label")
-    lblWaitingOn:SetText(L['Pending']..': ')
     lblWaitingOn:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+    lblWaitingOn:SetText(' ')
     lblWaitingOn:SetFullWidth(true)
-    leftScroll:AddChild(lblWaitingOn)
-    tblControls.lblWaitingOn = lblWaitingOn
+    scrollLeftAnalytic:AddChild(lblWaitingOn)
+    self.ctrlAnalyics.lblWaitingOn = lblWaitingOn
 
+    -- Right Analytic Controls
     local lblDeclined = aceGUI:Create("Label")
-    lblDeclined:SetText(L['Total Declined']..': ')
     lblDeclined:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+    lblDeclined:SetText(' ')
     lblDeclined:SetFullWidth(true)
-    rightScroll:AddChild(lblDeclined)
-    tblControls.lblDeclined = lblDeclined
+    scrollRightAnalytic:AddChild(lblDeclined)
+    self.ctrlAnalyics.lblDeclined = lblDeclined
 
     local lblTotalAccepted = aceGUI:Create("Label")
-    lblTotalAccepted:SetText(L['Total Accepted']..': ')
     lblTotalAccepted:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+    lblTotalAccepted:SetText(' ')
     lblTotalAccepted:SetFullWidth(true)
-    rightScroll:AddChild(lblTotalAccepted)
-    tblControls.lblAccepted = lblTotalAccepted
+    scrollRightAnalytic:AddChild(lblTotalAccepted)
+    self.ctrlAnalyics.lblAccepted = lblTotalAccepted
 
     local lblBlackList = aceGUI:Create("Label")
-    lblBlackList:SetText(L['Total Black List']..': ')
     lblBlackList:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+    lblBlackList:SetText(' ')
     lblBlackList:SetFullWidth(true)
-    rightScroll:AddChild(lblBlackList)
-    tblControls.lblTotalBlackList = lblBlackList
-
-    inline.controls = tblControls
+    scrollRightAnalytic:AddChild(lblBlackList)
+    self.ctrlAnalyics.lblTotalBlackList = lblBlackList
 end
-function scanner:UpdateAnalyticsSection()
-    if self.isCompact or not self.tblFrame.inline or not self.tblFrame.inline.controls then return end
+function scanner:ChangeCompactMode()
+    self.tblScanner.isCompact = not self.tblScanner.isCompact
+    ns.pSettings.isCompact = self.tblScanner.isCompact
 
-    local tblSession = ns.analytics.tblSession
-    local tblControls = self.tblFrame.inline.controls
+    self:SetShown(true)
+end
+function scanner:UpdateAnalytics()
+    if not self.ctrlBase.frame
+        or self.tblScanner.isCompacts
+        or not self.ctrlAnalyics.lblPlayersScanned then return end
 
-    local waitingOn = tblSession['WaitingOnPlayer'] or 0
-    local pendingOut = waitingOn == 0 and ns.code:cText('FF00FF00', waitingOn) or ns.code:cText('FFFF0000', waitingOn)
+    local sessionStats = ns.analytics:getSessionStats('PlayersScanned')
+    self.ctrlAnalyics.lblPlayersScanned:SetText(L['TOTAL_SCANNED']..': '..sessionStats)
 
-    tblControls.lblPlayersScanned:SetText(L['Players Scanned']..': '..(tblSession['PlayersScanned'] or 0))
-    tblControls.lblTotalInvites:SetText(L['Total Invites']..': '..(tblSession['PlayersInvited'] or 0))
-    tblControls.lblWaitingOn:SetText(L['Pending']..': '..pendingOut)
-    tblControls.lblDeclined:SetText(L['Total Declined']..': '..(tblSession['PlayersDeclined'] or 0))
-    tblControls.lblAccepted:SetText(L['Total Accepted']..': '..(tblSession['PlayersJoined'] or 0))
-    tblControls.lblTotalBlackList:SetText(L['Total Black List']..': '..(tblSession['PlayersBlackListed'] or 0))
+    sessionStats = ns.analytics:getSessionStats('PlayersInvited')
+    self.ctrlAnalyics.lblTotalInvites:SetText(L['TOTAL_INVITED']..': '..sessionStats)
 
-    if ns.settings.inviteFormat == 1 then
-        tblControls.lblWaitingOn:SetText(L['Pending']..': <'..L['Disabled']..'>')
+    sessionStats = ns.analytics:getSessionStats('WaitingOnInvite')
+    self.ctrlAnalyics.lblWaitingOn:SetText(L['INVITES_PENDING']..': '..sessionStats)
+
+    sessionStats = ns.analytics:getSessionStats('PlayersDeclined')
+    self.ctrlAnalyics.lblDeclined:SetText(L['TOTAL_DECLINED']..': '..sessionStats)
+
+    sessionStats = ns.analytics:getSessionStats('PlayersJoined')
+    self.ctrlAnalyics.lblAccepted:SetText(L['TOTAL_ACCEPTED']..': '..sessionStats)
+
+    sessionStats = ns.analytics:getSessionStats('PlayersBlackListed')
+    self.ctrlAnalyics.lblTotalBlackList:SetText(L['TOTAL_BLACKLISTED']..': '..sessionStats)
+end
+
+--* Invite Routines
+-- Button Routines
+function scanner:SkipPlayerInvite()
+    local tbl = {}
+    for k, v in pairs(self.tblInvites) do
+        if v.isChecked then
+            if ns.antiSpam:AddToAntiSpamList(v.fullName) then
+                tbl[k] = true end
+        end
+    end
+    for k in pairs(tbl) do self.tblInvites[k] = nil end
+    ns.code:saveTables('ANTI_SPAM_LIST')
+
+    -- Update Data and Button State
+    self:DisplayWhoList()
+    self:DispalyInviteList()
+    self:SetInviteButtonsState()
+end
+function scanner:BlackListPlayer()
+    local tbl = {}
+    for k, v in pairs(self.tblInvites) do
+        if v.isChecked then
+            if ns.blackList:AddToBlackList(v.fullName, 'Black listed by Scanner') then
+                tbl[k] = true end
+        end
+    end
+    for k in pairs(tbl) do self.tblInvites[k] = nil end
+    ns.code:saveTables('BLACK_LIST')
+
+    -- Update Data and Button State
+    self:DisplayWhoList()
+    self:DispalyInviteList()
+    self:SetInviteButtonsState()
+end
+function scanner:InvitePlayers()
+    local key, tbl = next(self.tblInvites)
+    if not tbl then return end
+
+    self.tblInvites[key] = nil
+    self:DispalyInviteList()
+
+ns.invite:SendAutoInvite(tbl.fullName, (select(2, UnitClass(tbl.fullName)) or nil), ((ns.pSettings.inviteFormat ~= 2) or false), ((ns.pSettings.inviteFormat ~= 1) or false))
+end
+function scanner:SetInviteButtonsState()
+    local anyChecked, count = false, 0
+    for _, v in pairs(self.tblInvites) do
+        if v.isChecked then anyChecked = true break
+        else count = count + 1 end
+    end
+
+    if anyChecked then
+        self.ctrlInvite.btnInvite:SetDisabled(true)
+        self.ctrlInvite.btnRemove:SetDisabled(false)
+        self.ctrlInvite.btnSkip:SetDisabled(false)
+    elseif count > 0 then
+        self.ctrlInvite.btnInvite:SetDisabled(false)
+        self.ctrlInvite.btnRemove:SetDisabled(true)
+        self.ctrlInvite.btnSkip:SetDisabled(true)
+    else
+        self.ctrlInvite.btnInvite:SetDisabled(true)
+        self.ctrlInvite.btnRemove:SetDisabled(true)
+        self.ctrlInvite.btnSkip:SetDisabled(true)
     end
 end
+-- Parsing Invite Routines
+function scanner:DispalyInviteList()
+    local tblInvites, invControls = self.tblInvites, self.ctrlInvite
 
--- Filter Routines
-function scanner:BuildFilter(skipNext, isReset)
-    self.tblFilter = {}
+    -- Create Checkboxes for each player
+    local function createCheckBox(fullName, pName, pClass, pLevel, isChecked)
+        pLevel = tonumber(pLevel)
+        local maxLevel = tonumber(scanner.tblScanner.maxLevel)
+        local levelOut = pLevel < maxLevel and ns.code:cText('FFFFFF00', pLevel) or ns.code:cText('FF00FF00', pLevel)
 
-    local filter = ns.dbGlobal.filter
-    local recordCounter = 0
+        local cb = aceGUI:Create('CheckBox')
+        cb:SetLabel(ns.code:cPlayer(pName, pClass))
+        cb:SetRelativeWidth(.85)
+        cb:SetValue(isChecked)
+        cb:SetCallback('OnValueChanged', function(_, _, value)
+            if not tblInvites[fullName] then return end
+
+            tblInvites[fullName].isChecked = value
+            scanner:SetInviteButtonsState()
+        end)
+        invControls.scrollInvite:AddChild(cb)
+
+        local lb = aceGUI:Create('Label')
+        lb:SetText(levelOut)
+        lb:SetRelativeWidth(.15)
+        lb:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+        invControls.scrollInvite:AddChild(lb)
+    end
+
+    -- Display CheckBoxes
+    invControls.scrollInvite:ReleaseChildren()
+    local tbl = ns.code:sortTableByField(tblInvites, 'fullName') or {}
+
+    for _, v in pairs(tbl) do
+        createCheckBox(v.fullName, v.name, v.class, v.level, v.isChecked)
+    end
+
+    invControls.lblFound:SetText(L['READY_INVITE']..': '..#tbl)
+    scanner:SetInviteButtonsState()
+end
+function scanner:ParsePlayersToInvite()
+    local tblWho = self.tblWho
+    local tblInvites = self.tblInvites
+
+    for _, v in ipairs(tblWho) do
+        if not tblInvites[v.fullName] and v.guild == '' then
+            tblInvites[v.fullName] = v end
+    end
+
+    self:DispalyInviteList()
+end
+
+--* Who Routines
+function scanner:DisplayWhoList()
+    if self.tblScanner.isCompact then return end
+
+    local tblWho = self.tblWho
+    local whoControls = self.ctrlWho
+
+    local function createWhoEntry(r)
+        local lblLevel = aceGUI:Create("Label")
+        lblLevel:SetText(r.level)
+        lblLevel:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+        lblLevel:SetRelativeWidth(.1)
+        whoControls.scrollWho:AddChild(lblLevel)
+
+        local lblName = aceGUI:Create("Label")
+        lblName:SetText(ns.code:cPlayer(r.name, r.class) or 'No Name')
+        lblName:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+        lblName:SetRelativeWidth(.35)
+        whoControls.scrollWho:AddChild(lblName)
+
+        local lblGuild = aceGUI:Create("Label")
+        lblGuild:SetText(r.guild or '')
+        lblGuild:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
+        lblGuild:SetRelativeWidth(.52)
+        whoControls.scrollWho:AddChild(lblGuild)
+
+        return lblLevel
+    end
+
+    whoControls.lblWhoFound:SetText(L['NUMBER_PLAYERS_FOUND']..': '..#tblWho)
+    whoControls.scrollWho:ReleaseChildren()
+    for k, v in ipairs(tblWho) do
+        local lblLevel = nil
+        if not self.tblInvites[k] and v.guild == '' then
+            local inviteOkResult = ns.invite:whoInviteChecks(v)
+            if inviteOkResult then v.guild = ns.code:cText('FFFF0000', '('..inviteOkResult..')') end
+
+            lblLevel = createWhoEntry(v)
+            lblLevel:SetText(ns.code:cText((not inviteOkResult and 'FF00FF00' or 'FFFFFFFF'), v.level))
+        else lblLevel = createWhoEntry(v) end
+    end
+end
+function scanner:ProcessWhoList(whoResults)
+    self.tblWho = table.wipe(self.tblWho) or {}
+
+    for i = 1, whoResults do
+        local info = C_FriendList.GetWhoInfo(i)
+        local pName = strmatch(info.fullName, GetRealmName()) and info.fullName:gsub('-.*', '') or info.fullName
+        local rec = {
+            fullName = info.fullName,
+            name = pName,
+            class = info.filename,
+            level = info.level,
+            guild = info.fullGuildName or '',
+            zone = info.area,
+            isChecked = false,
+        }
+
+        tinsert(self.tblWho, rec)
+    end
+
+    -- ToDo: Analytics
+    self:DisplayWhoList()
+    self:ParsePlayersToInvite()
+end
+
+--* Filter Routines
+function scanner:ResetFilters() self:CreateFilters() end
+function scanner:DisplayNextFilter() self:CreateFilters(true) end
+function scanner:GetNextFilterRecord() self:CreateFilters(false, true) end
+function scanner:CreateFilters(displayOnly, nextRecord)
+    --? Uses tblFilters for data
+    if displayOnly and self.tblFilters then
+        local desc = (self.tblFilters and self.tblFilters[1]) and self.tblFilters[1].desc or nil
+        self.ctrlSearch.lblNextFilter:SetText(desc or '')
+        return
+    elseif nextRecord and self.tblFilters then
+        local tbl = tremove(self.tblFilters, 1)
+        if not tbl then self:ResetFilters() return end
+        self:DisplayNextFilter()
+
+        -- Update Progress
+        self.tblScanner.filterCount = self.tblScanner.filterCount + 1
+        ns.statusText:SetText(L['FILTER_PROGRESS']..': '..FormatPercentage(self.tblScanner.filterCount/self.tblScanner.totalFilters, 2))
+
+        -- Start Who Query
+        FriendsFrame:UnregisterEvent("WHO_LIST_UPDATE")
+        ns.events:RegisterEvent('WHO_LIST_UPDATE', CallBackWhoListUpdate)
+
+        C_FriendList.SetWhoToUi(true)
+        C_FriendList.SendWho(tbl.who)
+
+        local function waitTimer(remain)
+            if not self.ctrlSearch.btnSearch then return
+            elseif remain > 0 then
+                self.ctrlSearch.btnSearch:SetDisabled(true)
+                self.ctrlSearch.btnSearch:SetText('Wait '..remain..'s')
+                C_Timer.After(1, function() waitTimer(remain - 1) end)
+            else
+                self.ctrlSearch.btnSearch:SetDisabled(false)
+                self.ctrlSearch.btnSearch:SetText('Start Search')
+            end
+        end
+        waitTimer(self.tblScanner.scanWaitTime or 6)
+
+        return
+    end
 
     local function createClassFilter()
-        for _,c in pairs(ns.tblClassesByName) do
-            local query = 'c-"'..c.name..'"'
-            local min, max = self.minLevel, self.maxLevel
+        for _, v in pairs(ns.tblClassesSortedByName) do
+            local query = 'c-"'..v.name..'"'
+            local min, max = tonumber(self.tblScanner.minLevel), tonumber(self.tblScanner.maxLevel)
 
-            while (min <= max) do
-                recordCounter = recordCounter + 1
+            while min <= max do
                 local rangeEnd = min + 5 > max and max or min + 5
-                self.tblFilter[recordCounter] = { name = c.name, query = query..' '..min..'-'..rangeEnd }
+                self.tblFilters[#self.tblFilters + 1] = {
+                    desc = v.name..' ('..min..'-'..rangeEnd..')',
+                    who = query..' '..min..'-'..rangeEnd,
+                }
 
                 min = (rangeEnd < max and (rangeEnd - min > 0)) and rangeEnd or max + 1
                 if max - min > 0 then min = min + 1 end
@@ -388,309 +628,40 @@ function scanner:BuildFilter(skipNext, isReset)
         end
     end
     local function createRaceFilter()
-        for _,r in pairs(ns.tblRacesByName) do
-            local query = 'r-"'..r.name..'"'
-            local min, max = self.minLevel, self.maxLevel
+        for _, v in pairs(ns.tblRacesSortedByName) do
+            local query = 'r-"'..v.name..'"'
+            local min, max = tonumber(self.tblScanner.minLevel), tonumber(self.tblScanner.maxLevel)
 
-            while (min <= max) do
-                recordCounter = recordCounter + 1
+            while min <= max do
                 local rangeEnd = min + 5 > max and max or min + 5
-                self.tblFilter[recordCounter] = { name = r.name, query = query..' '..min..'-'..rangeEnd }
+                self.tblFilters[#self.tblFilters + 1] = {
+                    desc = v.name..' ('..min..'-'..rangeEnd..')',
+                    who = query..' '..min..'-'..rangeEnd,
+                }
 
                 min = (rangeEnd < max and (rangeEnd - min > 0)) and rangeEnd or max + 1
                 if max - min > 0 then min = min + 1 end
             end
         end
     end
-    local function createCustomFilter(filterList)
-        if not filterList then return end
-            local tblAllClasses = ns.tblClassesByName or {}
-
-            local raceKey = next(filterList.race)
-            local classKey = next(filterList.class)
-
-            local raceType = raceKey:match('ALL') and 'ALL_RACES' or nil
-            local classType = classKey:match('ALL') and strlower(classKey:gsub('ALL_', '')) or nil
-            local tblClass = classType and tblAllClasses or filterList.class
-
-            local tbl = {}
-            local function buildLevelFilter(filterOut)
-                local min, max = self.minLevel, self.maxLevel
-                for i=min, max, 5 do
-                    local rangeStart, rangeEnd = i, i + 4
-                    if rangeEnd > max then rangeEnd = max end
-                    tinsert(tbl, filterOut..' '..rangeStart..'-'..rangeEnd)
-                end
-            end
-
-            for cKey in pairs(tblClass or {}) do
-                local key = strupper(cKey:gsub(' ',''))
-                if not classType or classType == 'classes' or (classType and tblClass[key] and tblClass[key][classType]) then
-                local classOut = 'c-"'..cKey..'"'
-                local filterOut = classOut
-                if raceType ~= 'ALL_RACES' then
-                    for rKey in pairs(filterList.race or {}) do
-                        local raceOut = ' r-"'..rKey..'"'
-                        filterOut = classOut..raceOut
-                        buildLevelFilter(filterOut)
-                    end
-                else buildLevelFilter(filterOut) end
-            end
-        end
-
-        return tbl
+    local function createCustomFilter()
     end
 
-    local fID = ns.settings.activeFilter or 1
-    if fID == 1 then createClassFilter()
-    elseif fID == 2 then createRaceFilter()
-    elseif fID >= 100 then
-        fID = fID - 100
-        local tblFilter = filter.filterList[fID] or nil
-        if self.tblFilter then self.tblFilter = createCustomFilter(tblFilter) end
-    end
+    self.tblFilters = table.wipe(self.tblFilters or {})
+    local activeFilter = self.tblScanner.activeFilter
+    if activeFilter == 1 then createClassFilter()
+    elseif activeFilter == 2 then createRaceFilter()
+    elseif activeFilter >= 3 then createCustomFilter() end
 
-    self.totalFilters = #self.tblFilter or 0 -- Used for progress
-
-    if isReset then ns.screens.base.tblFrame.statusText:SetText('') end
-    if not skipNext and #self.tblFilter > 0 then
-        self:GetNextFilterRecord('DISPLAY_ONLY') end
-end
-function scanner:GetNextFilterRecord(onlyDisplay)
-    local tblControls = self.tblFrame.inline.controls
-
-    local filter = (self.tblFilter and self.tblFilter[1]) and self.tblFilter[1].query or nil
-    if not onlyDisplay then
-        if #self.tblFilter <= 0 and not filter then self:BuildFilter(true, true) return end
-
-        filter = table.remove(self.tblFilter, 1)
-        if not filter then return end
-
-        local function startWhoQuery()
-            if ns.settings.showWho and FriendsFrame:IsShown() then
-                FriendsFrame:RegisterEvent('WHO_LIST_UPDATE')
-            else FriendsFrame:UnregisterEvent("WHO_LIST_UPDATE") end
-
-            ns.events:RegisterEvent('WHO_LIST_UPDATE', CallBackWhoListUpdate)
-
-            C_FriendList.SetWhoToUi(true)
-            C_FriendList.SendWho(filter.query)
-        end
-        local function waitTimer(remain, nextFilter)
-            tblControls = self.tblFrame.inline.controls
-
-            self.scanWaitTime = remain
-            if remain > 0 or self.scanWaitTime > 0 then
-                tblControls.btnSearch:SetDisabled(true)
-                tblControls.btnSearch:SetText('Next Search: '..remain)
-                C_Timer.After(1, function() waitTimer(remain - 1, nextFilter) end)
-            else
-                tblControls.btnSearch:SetDisabled(false)
-                tblControls.btnSearch:SetText('Start Search')
-            end
-        end
-
-        startWhoQuery()
-        self:ProgressPercent()
-
-        if not self.tblFilter or #self.tblFilter == 0 then self:BuildFilter(true) end
-        waitTimer((ns.settings.scanWaitTime or SCAN_WAIT_TIME), filter)
-    end
-
-    self:ProgressPercent()
-    tblControls.lblNextFilter:SetText(ns.code:cText('FF00FF00', (#self.tblFilter > 0 and self.tblFilter[1].query or 'Restarting Query')))
-end
-function scanner:ProgressPercent()
-    local percent = (self.totalFilters - (self.tblFilter and #self.tblFilter or 0)) / self.totalFilters
-    local statusMsg = 'Filter progress: '..FormatPercentage(percent, 2)
-    ns.screens.base.tblFrame.statusText:SetText(statusMsg)
-end
-
--- Invite and /who Routines
-function scanner:ShowResults(whichResult, refreshInvite)
-    local tblFrame = self.tblFrame.inline.controls
-
-    local function showWhoResults()
-        if self.isCompact then return end
-
-        local function createWhoEntry(r)
-            local lblLevel = aceGUI:Create("Label")
-            lblLevel:SetText(r.level)
-            lblLevel:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
-            lblLevel:SetRelativeWidth(.1)
-            tblFrame.whoScroll:AddChild(lblLevel)
-
-            local lblName = aceGUI:Create("Label")
-            lblName:SetText(ns.code:cPlayer(r.name, r.class) or 'No Name')
-            lblName:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
-            lblName:SetRelativeWidth(.35)
-            tblFrame.whoScroll:AddChild(lblName)
-
-            local lblGuild = aceGUI:Create("Label")
-            lblGuild:SetText(r.guild or '')
-            lblGuild:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
-            lblGuild:SetRelativeWidth(.52)
-            tblFrame.whoScroll:AddChild(lblGuild)
-
-            return lblGuild
-        end
-
-        local noGuildCount = 0
-        tblFrame.whoScroll:ReleaseChildren()
-        for i=1,#self.tblWho do
-            local r = self.tblWho[i]
-            local lblGuild = createWhoEntry(r)
-            if r.guild == '' then
-                noGuildCount = noGuildCount + 1
-                lblGuild:SetText(ns.code:cText('FFFF0000', ns.invite:ReturnReason(r.fullName, r.zone)))
-            end
-        end
-
-        local msg = L['WHO_NUMBER_FOUND_DESC']..': '..#self.tblWho
-        msg = msg..' - '..L['Unguilded']..': '..noGuildCount
-        tblFrame.lblWho:SetText(msg)
-    end
-    local function showInviteResults()
-        local function createCheckbox(pName, pClass, pLevel)
-            local level = pLevel == MAX_CHARACTER_LEVEL and ns.code:cText('FF00FF00', pLevel) or (pLevel >= MAX_CHARACTER_LEVEL - 10 and ns.code:cText('FFFFFF00', pLevel) or pLevel)
-
-            local checkBox = aceGUI:Create('CheckBox')
-            checkBox:SetLabel(ns.code:cPlayer(pName, pClass))
-            checkBox:SetRelativeWidth(.85)
-            checkBox:SetValue(false)
-            checkBox:SetCallback('OnValueChanged', function(_,_, value)
-                local name = (not scanner.tblInvites[pName] and not pName:match('-')) and pName..'-'..GetRealmName() or pName
-                if not scanner.tblInvites[name] then return end
-
-                scanner.tblInvites[name].isChecked = value
-                scanner:SetButtonStates()
-            end)
-            tblFrame.scrollInvite:AddChild(checkBox)
-
-            local lblLevel = aceGUI:Create("Label")
-            lblLevel:SetText(level)
-            lblLevel:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
-            lblLevel:SetRelativeWidth(.15)
-            tblFrame.scrollInvite:AddChild(lblLevel)
-        end
-
-        local foundCount = 0
-        if not refreshInvite then
-            for _, r in pairs(self.tblWho) do
-                local name = ns.tblConnectedRealms and r.fullName or (r.fullName:match('-') or r.fullName..'-'..GetRealmName())
-                if (not r.guild or r.guild == '') and ns.invite:CheckIfCanBeInvited(r) then
-                    self.tblInvites[name] = {
-                        fullName = r.fullName,
-                        zone = r.zone,
-                        guild = r.guild,
-                        class = r.class,
-                        level = r.level,
-                        isChecked = false
-                    }
-                end
-            end
-        end
-
-        tblFrame.scrollInvite:ReleaseChildren()
-        local tbl = ns.code:sortTableByField(self.tblInvites, 'fullName') or {}
-        for _, r in pairs(tbl) do
-            foundCount = foundCount + 1
-            local name = r.key:match(GetRealmName()) and r.key:gsub('-'..GetRealmName(), '') or r.key
-            createCheckbox(name, r.class, r.level)
-        end
-
-        tblFrame.lblFound:SetText('Ready for invite: '..foundCount)
-    end
-
-    if strupper(whichResult) == 'WHO' then showWhoResults()
-    elseif strupper(whichResult) == 'INVITE' then showInviteResults()
-    else showWhoResults() showInviteResults() end
-
-    self:SetButtonStates()
-end
-function scanner:InvitePlayers()
-    if not self.tblInvites then return
-    elseif self.tblFrame.inline.controls.btnInvite.disabled then
-        ns.code:fOut(L['CANNOT_INVITE'])
-        return
-    end
-
-    local tbl = ns.code:sortTableByField(self.tblInvites, 'fullName') or {}
-    local name = tbl[1].key
-    if not name then return end
-
-    self.tblInvites[name] = nil
-    ns.invite:InvitePlayer(name, ns.settings.inviteFormat ~= 1, self.whisperMessage)
-
-    self:ShowResults('INVITE', true)
-    self:SetButtonStates()
-end
-
--- Other Routines
-function scanner:SwitchCompactMode()
-    ns.screens.scanner.isCompact = ns.settings.compactMode or false
-    local tblBase, tblFrame = ns.screens.base.tblFrame, self.tblFrame
-
-    if tblFrame.inline then
-        tblFrame.inline:ReleaseChildren()
-        tblFrame.inline.controls = nil
-    end
-
-    self:BuildScannerScreen()
-    self:BuildInviteAndWho()
-    self:BuildScanSection()
-    self:BuildAnalytics()
-    self:UpdateAnalyticsSection()
-
-    if not self.tblFilter then self:BuildFilter()
-    elseif self.isNewLevels then self:BuildFilter(true, true)
-    else scanner:GetNextFilterRecord('onlyDisplay') end
-
-    tblBase.frame:SetSize(600, 470)
-    if self.isCompact then
-        tblBase.frame:SetSize(215, 465)
-        tblBase.compactButton:GetNormalTexture():SetVertexColor(0, 1, 0, 1)
-        self:ShowResults('INVITE', true)
-    else
-        tblBase.compactButton:GetNormalTexture():SetVertexColor(1, 1, 1, 1)
-        self:ShowResults('BOTH', true)
-    end
-
-    if tblFrame.frame then
-        tblFrame.frame:ClearAllPoints()
-        tblFrame.frame:SetPoint('TOPLEFT', tblBase.topFrame, 'BOTTOMLEFT', -5, 20)
-        tblFrame.frame:SetPoint('BOTTOMRIGHT', tblBase.statusBar, 'TOPRIGHT', 0, -5)
-    end
-
-    scanner:SetButtonStates()
-    self:UpdateAnalyticsSection()
-end
-function scanner:SetButtonStates()
-    local tblControls = self.tblFrame.inline.controls
-    local foundCount, checkCount = 0, 0
-    for _, r in pairs(self.tblInvites) do
-        foundCount = foundCount + 1
-        if r.isChecked then checkCount = checkCount + 1 end
-    end
-
-    tblControls.lblFound:SetText('Ready for invite: '..foundCount)
-    if foundCount == 0 then
-        tblControls.btnInvite:SetDisabled(true)
-        tblControls.btnRemove:SetDisabled(true)
-        tblControls.btnSkip:SetDisabled(true)
-    elseif checkCount == 0 then
-        tblControls.btnInvite:SetDisabled(false)
-        tblControls.btnRemove:SetDisabled(true)
-        tblControls.btnSkip:SetDisabled(true)
-    else
-        tblControls.btnInvite:SetDisabled(true)
-        tblControls.btnRemove:SetDisabled(false)
-        tblControls.btnSkip:SetDisabled(false)
-    end
-
-    if self.scanWaitTime > 0 then
-        tblControls.btnSearch:SetDisabled(true)
-        tblControls.btnSearch:SetText('Next Search: '..self.scanWaitTime)
-    end
+    ns.statusText:SetText('')
+    self.tblScanner.activeQuery = ''
+    self.tblScanner.filterCount = 0
+    self.tblScanner.totalFilters = self.tblFilters and #self.tblFilters or 0
+    self:DisplayNextFilter()
 end
 scanner:Init()
+
+-- ToDo: Check Keybinds (Add to scanner:CreateBaseFrame)
+-- ToDo: Create Analytics (Add to scanner:CreateAnalyticsFrame)
+-- ToDo: Create Analytics (Add to scanner:ProcessWhoList)
+-- ToDo: Create Custom Filters (Add to scanner:CreateFilters)

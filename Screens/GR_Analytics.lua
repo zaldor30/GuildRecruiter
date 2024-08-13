@@ -1,60 +1,55 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
 local L = LibStub('AceLocale-3.0'):GetLocale('GuildRecruiter')
-
 local aceGUI = LibStub("AceGUI-3.0")
 
-ns.screens.analytics = {}
-local analytics = ns.screens.analytics
+ns.win.analytics = {}
+local analytics = ns.win.analytics
 
 local function obsCLOSE_SCREENS()
-    analytics.isActive = false
-
-    local tblFrame = analytics.tblFrame
-    local tblScreen = ns.screens.base.tblFrame
     ns.observer:Unregister('CLOSE_SCREENS', obsCLOSE_SCREENS)
-
-    tblScreen.backButton:SetShown(false)
-    tblScreen.statsButton:GetNormalTexture():SetVertexColor(1, 1, 1, 1)
-
-    if tblFrame.frame and tblFrame then
-        tblFrame.frame:SetShown(false)
-        tblFrame.inline.frame:SetShown(false)
-    end
+    analytics:SetShown(false)
 end
 
 function analytics:Init()
     self.isActive = false
-
     self.tblFrame = {}
 end
-function analytics:StartStatsScreen()
-    if self.isActive then return end
+function analytics:SetShown(val)
+    local tblBase = ns.win.base.tblFrame
 
-    self.isActive = true
+    if not val then
+        tblBase.backButton:SetShown(false)
+        if self.tblFrame.inline then
+            self.tblFrame.inline:ReleaseChildren()
+            self.tblFrame.inline.frame:Hide()
+        end
+        self.tblFrame.frame:Hide()
+        ns.statusText:SetText('')
+        ns.win.base.tblFrame.statsButton:GetNormalTexture():SetVertexColor(1, 1, 1, 1)
+        return
+    end
+
     ns.observer:Notify('CLOSE_SCREENS')
     ns.observer:Register('CLOSE_SCREENS', obsCLOSE_SCREENS)
 
-    self.tblFrame.controls = self.tblFrame.controls or {}
-    local tblScreen = ns.screens.base.tblFrame
+    tblBase.frame:SetSize(500, 415)
+    tblBase.backButton:SetShown(true)
+    ns.win.base.tblFrame.frame:SetShown(true)
+    ns.win.base.tblFrame.statsButton:GetNormalTexture():SetVertexColor(0, 1, 0, 1)
 
-    tblScreen.frame:SetSize(500, 415)
-    tblScreen.backButton:SetShown(true)
-    tblScreen.statsButton:GetNormalTexture():SetVertexColor(0, 1, 0, 1)
-
-    self:BuildBaseFrame()
-    self:BuildProfileStats()
-    self:BuildGlobalStats()
-    self:BuildOverallStats()
-    self:BuildSessionStats()
+    self:CreateBaseFrame()
+    self:CreateProfileStats()
+    self:CreateGlobalStats()
+    self:CreateOverallStats()
+    self:CreateSessionStats()
 end
-function analytics:BuildBaseFrame()
-    local tblScreen = ns.screens.base.tblFrame
+function analytics:CreateBaseFrame()
+    local tblBase = ns.win.base.tblFrame
 
-    -- Base Frame for ACE3
-    local f = self.tblFrame.frame or CreateFrame('Frame', 'GR_STATS_FRAME', tblScreen.frame, 'BackdropTemplate')
+    local f = self.tblFrame.frame or CreateFrame('Frame', 'GR_STATS_FRAME', tblBase.frame, 'BackdropTemplate')
     f:ClearAllPoints()
-    f:SetPoint('TOPLEFT', tblScreen.topFrame, 'BOTTOMLEFT', -5, 20)
-    f:SetPoint('BOTTOMRIGHT', tblScreen.statusBar, 'TOPRIGHT', 0, -5)
+    f:SetPoint('TOPLEFT', tblBase.topFrame, 'BOTTOMLEFT', -5, 20)
+    f:SetPoint('BOTTOMRIGHT', tblBase.statusBar, 'TOPRIGHT', 0, -5)
     f:SetBackdrop(BackdropTemplate())
     f:SetFrameStrata(DEFAULT_STRATA)
     f:SetBackdropColor(0, 0, 0, 0)
@@ -62,10 +57,6 @@ function analytics:BuildBaseFrame()
     f:EnableMouse(false)
     f:SetShown(true)
     self.tblFrame.frame = f
-
-    if self.tblFrame.inline then
-        self.tblFrame.inline:ReleaseChildren()
-    end
 
     -- Inline Group for Player Stats
     local inline = self.tblFrame.inline or aceGUI:Create('InlineGroup')
@@ -75,16 +66,13 @@ function analytics:BuildBaseFrame()
     inline.frame:SetShown(true)
     self.tblFrame.inline = inline
 end
-function analytics:BuildProfileStats()
-    ns.dbAP.startDate = ns.dbAP.startDate or C_DateAndTime.GetServerTimeLocal()
-
+function analytics:CreateProfileStats()
     local inlinePlayer = aceGUI:Create('InlineGroup')
-    inlinePlayer:SetTitle('Start Date: '..(ns.dbAP.startDate and ns.code:ConvertDateTime(ns.dbAP.startDate, false) or 'unknown'))
+    inlinePlayer:SetTitle('Start Date: '..(ns.code:ConvertDateTime(ns.analytics:getStats('startDate'), false) or 'unknown'))
     inlinePlayer:SetLayout('Flow')
     inlinePlayer:SetRelativeWidth(.5)
     inlinePlayer:SetHeight(100)
     self.tblFrame.inline:AddChild(inlinePlayer)
-    self.tblFrame.controls.inlinePlayer = inlinePlayer
 
     local scrollPlayer = aceGUI:Create('ScrollFrame')
     scrollPlayer:SetLayout('Flow')
@@ -98,17 +86,15 @@ function analytics:BuildProfileStats()
     lblPlayerHeader:SetFullWidth(true)
     scrollPlayer:AddChild(lblPlayerHeader)
 
-    self:CreateStatsLabel(L['Players Scanned']..':', ns.analytics:getStats('PlayersScanned'), scrollPlayer)
-    self:CreateStatsLabel(L['Total Invites']..':', ns.analytics:getStats('PlayersInvited'), scrollPlayer)
-    self:CreateStatsLabel(L['Total Accepted']..':', ns.analytics:getStats('PlayersJoined'), scrollPlayer)
-    self:CreateStatsLabel(L['Total Declined']..':', ns.analytics:getStats('PlayersDeclined'), scrollPlayer)
-    self:CreateStatsLabel(L['Total Black List']..':', ns.analytics:getStats('PlayersBlackListed'), scrollPlayer)
+    self:CreateStatsLabel(L['TOTAL_SCANNED']..':', ns.analytics:getStats('PlayersScanned'), scrollPlayer)
+    self:CreateStatsLabel(L['TOTAL_INVITED']..':', ns.analytics:getStats('PlayersInvited'), scrollPlayer)
+    self:CreateStatsLabel(L['TOTAL_ACCEPTED']..':', ns.analytics:getStats('PlayersJoined'), scrollPlayer)
+    self:CreateStatsLabel(L['TOTAL_DECLINED']..':', ns.analytics:getStats('PlayersDeclined'), scrollPlayer)
+    self:CreateStatsLabel(L['TOTAL_BLACKLISTED']..':', ns.analytics:getStats('PlayersBlackListed'), scrollPlayer)
 end
-function analytics:BuildGlobalStats()
-    ns.dbAG.startDate = ns.dbAG.startDate or C_DateAndTime.GetServerTimeLocal()
-
+function analytics:CreateGlobalStats()
     local inlineAccount = aceGUI:Create('InlineGroup')
-    inlineAccount:SetTitle('Start Date: '..(ns.dbAG.startDate and ns.code:ConvertDateTime(ns.dbAG.startDate, false) or 'unknown'))
+    inlineAccount:SetTitle('Start Date: '..(ns.code:ConvertDateTime(ns.analytics:getStats('startDate'), true) or 'unknown'))
     inlineAccount:SetLayout('Flow')
     inlineAccount:SetRelativeWidth(.5)
     inlineAccount:SetHeight(100)
@@ -126,13 +112,13 @@ function analytics:BuildGlobalStats()
     lblAccountHeader:SetFullWidth(true)
     scrollAccount:AddChild(lblAccountHeader)
 
-    self:CreateStatsLabel(L['Players Scanned']..':', ns.analytics:getStats('PlayersScanned'), scrollAccount, false, true)
-    self:CreateStatsLabel(L['Total Invites']..':', ns.analytics:getStats('PlayersInvited'), scrollAccount, false, true)
-    self:CreateStatsLabel(L['Total Accepted']..':', ns.analytics:getStats('PlayersJoined'), scrollAccount, false, true)
-    self:CreateStatsLabel(L['Total Declined']..':', ns.analytics:getStats('PlayersDeclined'), scrollAccount, false, true)
-    self:CreateStatsLabel(L['Total Black List']..':', ns.analytics:getStats('PlayersBlackListed'), scrollAccount, false, true)
+    self:CreateStatsLabel(L['TOTAL_SCANNED']..':', ns.analytics:getStats('PlayersScanned'), scrollAccount, false, true)
+    self:CreateStatsLabel(L['TOTAL_INVITED']..':', ns.analytics:getStats('PlayersInvited'), scrollAccount, false, true)
+    self:CreateStatsLabel(L['TOTAL_ACCEPTED']..':', ns.analytics:getStats('PlayersJoined'), scrollAccount, false, true)
+    self:CreateStatsLabel(L['TOTAL_DECLINED']..':', ns.analytics:getStats('PlayersDeclined'), scrollAccount, false, true)
+    self:CreateStatsLabel(L['TOTAL_BLACKLISTED']..':', ns.analytics:getStats('PlayersBlackListed'), scrollAccount, false, true)
 end
-function analytics:BuildOverallStats()
+function analytics:CreateOverallStats()
     self.statsOverall = aceGUI:Create('InlineGroup')
     local inlineMiddle = self.statsOverall
     inlineMiddle:SetTitle('Stored Stats:')
@@ -148,8 +134,8 @@ function analytics:BuildOverallStats()
     inlineMiddle:AddChild(statsScrollOverall)
 
     local iCount = 0
-    for _ in pairs(ns.tblInvited) do iCount = iCount + 1 end
-    self:CreateStatsLabel(L['Players on Anti-Spam']..':', tostring(iCount):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", ""), statsScrollOverall)
+    for _ in pairs(ns.tblAntiSpamList) do iCount = iCount + 1 end
+    self:CreateStatsLabel(L['TOTAL_ANTI_SPAM']..':', tostring(iCount):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", ""), statsScrollOverall)
 
     local statsScrollBLOverall = aceGUI:Create("ScrollFrame")
     statsScrollBLOverall:SetLayout("Flow")
@@ -159,12 +145,12 @@ function analytics:BuildOverallStats()
 
     local blCount = 0
     for _ in pairs(ns.tblBlackList) do blCount = blCount + 1 end
-    self:CreateStatsLabel(L['Total Black List']..':', tostring(blCount):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", ""), statsScrollBLOverall)
+    self:CreateStatsLabel(L['TOTAL_BLACKLISTED']..':', tostring(blCount):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", ""), statsScrollBLOverall)
 end
-function analytics:BuildSessionStats()
+function analytics:CreateSessionStats()
     self.statsInline = aceGUI:Create('InlineGroup')
     local inlineBottomRight = self.statsInline
-    inlineBottomRight:SetTitle(L['Session Stats']..':')
+    inlineBottomRight:SetTitle(L['SESSION_STATS']..':')
     inlineBottomRight:SetLayout('Flow')
     inlineBottomRight:SetFullWidth(true)
     inlineBottomRight:SetHeight(100)
@@ -176,15 +162,21 @@ function analytics:BuildSessionStats()
     statsScroll1:SetHeight(55)
     inlineBottomRight:AddChild(statsScroll1)
 
-    self:CreateStatsLabel(L['Players Scanned']..':', ns.analytics:getStats('PlayersScanned', true), statsScroll1)
-    self:CreateStatsLabel(L['Total Invites']..':', ns.analytics:getStats('PlayersInvited', true), statsScroll1)
+    self:CreateStatsLabel(L['TOTAL_SCANNED']..':', ns.analytics:getSessionStats('PlayersScanned'), statsScroll1)
+    self:CreateStatsLabel(L['TOTAL_INVITED']..':', ns.analytics:getSessionStats('PlayersInvited'), statsScroll1)
 
     local pending = ns.analytics:getStats('WaitingOnPlayer', true) or 0
     local lblUnknown = aceGUI:Create("Label")
-    lblUnknown:SetText('Waiting On: '..ns.code:cText(pending > 0 and 'FFFF0000' or 'FF00FF00', pending))
-    lblUnknown:SetFont(DEFAULT_FONT, 12, 'OUTLINE')
-    lblUnknown:SetFullWidth(true)
+    lblUnknown:SetText(L['INVITES_PENDING']..':')
+    lblUnknown:SetFontObject('GameFontHighlight')
+    lblUnknown:SetRelativeWidth(.6)
     statsScroll1:AddChild(lblUnknown)
+
+    local lblUnknown2 = aceGUI:Create("Label")
+    lblUnknown2:SetText(ns.code:cText(pending > 0 and 'FFFF0000' or 'FF00FF00', pending))
+    lblUnknown2:SetFontObject('GameFontHighlight')
+    lblUnknown2:SetRelativeWidth(.4)
+    statsScroll1:AddChild(lblUnknown2)
 
     local statsScroll2 = aceGUI:Create("ScrollFrame")
     statsScroll2:SetLayout("Flow")
@@ -192,21 +184,21 @@ function analytics:BuildSessionStats()
     statsScroll2:SetHeight(55)
     inlineBottomRight:AddChild(statsScroll2)
 
-    self:CreateStatsLabel(L['Total Declined']..':', ns.analytics:getStats('PlayersDeclined', true), statsScroll2)
-    self:CreateStatsLabel(L['Total Accepted']..':', ns.analytics:getStats('PlayersJoined', true), statsScroll2)
-    self:CreateStatsLabel(L['Total Black List']..':', ns.analytics:getStats('PlayersBlackListed', true), statsScroll2)
+    self:CreateStatsLabel(L['TOTAL_DECLINED']..':', ns.analytics:getSessionStats('PlayersDeclined'), statsScroll2)
+    self:CreateStatsLabel(L['TOTAL_ACCEPTED']..':', ns.analytics:getSessionStats('PlayersJoined'), statsScroll2)
+    self:CreateStatsLabel(L['TOTAL_BLACKLISTED']..':', ns.analytics:getSessionStats('PlayersBlackListed'), statsScroll2)
 
     local function refreshTimer()
-        pending = ns.analytics:getStats('WaitingOnPlayer', true)
+        pending = ns.analytics:getSessionStats('WaitingOnPlayer')
 
         if not self.statsShown then return end
-        lblUnknown:SetText(L['Pending']..': '..ns.code:cText(pending > 0 and 'FFFF0000' or 'FFFFFFFF', pending))
+        lblUnknown2:SetText(ns.code:cText(pending > 0 and 'FFFF0000' or 'FFFFFFFF', pending))
         C_Timer.After(3, refreshTimer)
     end
     refreshTimer()
 end
 
--- Other Functions
+--* Create Stats Label
 function analytics:CreateStatsLabel(text, value, parent)
     local lbl = aceGUI:Create('Label')
     lbl:SetText(text)

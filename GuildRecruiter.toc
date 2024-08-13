@@ -1,7 +1,7 @@
 ## X-Curse-Project-ID: 882061
 
-## Interface: 110000
-## Version: 2.2.54
+## Interface: 110002
+## Version: 3.0.26
 ## Title: Guild Recruiter
 ## Notes: Facilitates guild officers to recruite new members
 ## Author: Moonfury
@@ -32,21 +32,20 @@ locales\Locales.xml
 
 GR_Init.lua
 
-GR_Code.lua
-GR_Sync.lua
-GR_Events.lua
-GR_Dataset.lua
-GR_Invites.lua
-GR_BlackList.lua
-GR_Analytics.lua
+shared\GR_Code.lua
+shared\GR_Events.lua
+shared\GR_Dataset.lua
+shared\GR_PlayerInvite.lua
+shared\GR_Analytics.lua
 
+GR_Sync.lua
 GR_Core.lua
 GR_Settings.lua
 
 Screens\GR_Base.lua
 Screens\GR_Home.lua
 Screens\GR_About.lua
-Screens\GR_Filter.lua
+Screens\GR_Filters.lua
 Screens\GR_Scanner.lua
 Screens\GR_WhatsNew.lua
 Screens\GR_Analytics.lua

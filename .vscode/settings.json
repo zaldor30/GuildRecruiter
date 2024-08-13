@@ -118,7 +118,11 @@
         "DEFAULT",
         "GetMaxPlayerLevel",
         "GetNumClasses",
-        "SendChatMessage"
+        "SendChatMessage",
+        "UIDropDownMenu_Initialize",
+        "ToggleDropDownMenu",
+        "UIDropDownMenu_CreateInfo",
+        "ChatFrame_RemoveMessageEventFilter"
     ],
     "Lua.diagnostics.disable": [
         "undefined-field",
@@ -128,6 +132,7 @@
         "missing-fields",
         "inject-field",
         "deprecated",
-        "unbalanced-assignments"
+        "unbalanced-assignments",
+        "invisible"
     ]
 }

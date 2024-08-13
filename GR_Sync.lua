@@ -1,320 +1,289 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
 local L = LibStub('AceLocale-3.0'):GetLocale('GuildRecruiter')
-
 local AceTimer = LibStub("AceTimer-3.0")
 
 ns.sync = {}
 local sync = ns.sync
 
-local COMM_PREFIX = 'GuildRecruiter'
-local REQUEST_TIMEOUT = 5
-local DATA_WAIT_TIMEOUT, SYNC_FAIL_TIMER = 120, 240
-
-local function newClient(name, hasReceivedData)
-    return {
-        name = name,
-        isActive = true,
-        dataSent = false,
-        hasReceivedData = hasReceivedData or false,
-        addedAntiSpam = 0,
-        addedBlackList = 0,
-        removedBlackList = 0,
-    }
-end
-
--- Timer Callbacks
-function AceTimer:timerEvent(message, sender) sync:FailRoutines(message, sender) end
+local COMM_PREFIX = 'GRSync'
+local REQUEST_WAIT_TIMEOUT = 5
+local SYNC_FAIL_TIMER, DATA_WAIT_TIMEOUT = 120, 60
 
 function sync:Init()
-    self.clubID = nil -- Passed from ns.core
+    self.blackList = 0
+    self.antiSpamList = 0
 
-    self.isSyncing = false
-    self.isAutoSync = false
+    self.syncType = nil -- 1 = Auto, 2 = Manual, 3 = Request
+    self.isSyncServer = false -- Is this the server?
+    self.whoSyncingWith = nil -- Who are we syncing with? (server player name)
 
-    -- Master Sync Variables
-    self.masterSync = nil
-    self.isMasterSync = false
+    self.tblMyData = nil -- My Data Table
+    self.tblClients = nil -- List of Clients Table (server only)
+    self.tblIncomingData = {} -- Incoming Data Table
 
-    -- Sync Timer Variables
-    self.syncStartTime = GetTime()
+    self.tblTimer = {} -- Timer table
+    self.syncStart = nil -- Sync start time
+    self.wrongVersionShown = false -- Wrong version message shown?
 
-    -- Client Variables
-    self.tblClient = {}
-    self.clientFound = false
-
-    -- Timer Variables
-    self.tblTimer = {}
+    self.tblSynctype = {
+        [1] = 'Auto',
+        [2] = 'Manual',
+        [3] = 'Request',
+    }
 end
--- Start/Stop Sync
-function sync:StartSync(isMaster, sender, autoSync)
-    local tblScreen = ns.screens.base.tblFrame
-    if self.isSyncing or not ns.core.fullyStarted then return end
+--* Sync Start/Stop Routines
+ -- Includes gathering my data
+function sync:StartSyncRoutine(syncType, sender)
+    self.syncType = syncType or nil
+    if not syncType then return
+    elseif self.syncType and self.syncStart then
+        ns.code:fOut('Sync already in progress', 'FFFF0000')
+        return
+        end -- Sync already in progress
 
-    self.masterSync = isMaster and UnitName('player')..'-'..GetRealmName() or (sender or nil)
-    self.isMasterSync = isMaster or false
-    if not self.isMasterSync then return end
+    ns.win.base.tblFrame.syncIcon:GetNormalTexture():SetVertexColor(0, 1, 0, 1)
 
-    ns.core.ignoreAutoSync = true
+    self.syncStart = GetServerTime()
+    self:AddTimer('syncTimeOut', SYNC_FAIL_TIMER, function()
+        ns.code:fOut('Sync timed out', 'FFFF0000')
+        ns.sync:ShutdownSync('IS_FAIL')
+    end) -- Sync Timeout Timer (2 minutes)
 
-    self.isSyncing = true
-    self.tblTimer = self.tblTimer and table.wipe(self.tblTimer) or {}
-    self.syncStartTime = GetTime()
+    local syncMessage = syncType == 3 and 'Sync with '..sender or self.tblSynctype[self.syncType]..' Sync'
+    ns.code:cOut('Starting '..syncMessage, GRColor)
 
-    ns.screens.base.isSyncing = true
-    if tblScreen.syncIcon then
-        tblScreen.syncIcon:GetNormalTexture():SetVertexColor(0, 1, 0, 1)
+    local function masterSync() --* Start Master Sync Routine
+        ns.code:cOut('Requesting Sync from Clients', GRColor)
+        self:SendCommMessage('SYNC_REQUEST', 'GUILD')
+        self:AddTimer('MASTER_WAIT_FOR_CLIENT_RESPONSE', REQUEST_WAIT_TIMEOUT, function()
+            local count = 0
+            for _ in pairs(self.tblClients and self.tblClients or {}) do count = count + 1 end
+            if count == 0 then
+                ns.code:fOut('No clients to sync with.', GRColor)
+                ns.sync:ShutdownSync('IS_FAIL')
+                return
+            else
+                self:CancelTimer('syncWait')
+                ns.code:cOut('Found '..count..' guild member to sync with.', GRColor)
+                self:SendCommMessage('SEND_YOUR_SYNC_DATA', 'GUILD')
+                self:AddTimer('WAIT_FOR_DATA', DATA_WAIT_TIMEOUT, function()
+                    ns.code:fOut('Sync request with clients timed out.', 'FFFF0000')
+                    ns.sync:ShutdownSync('IS_FAIL')
+                end)
+            end
+        end)
+    end
+    local function clientSync() --* Start Client Sync Routine
+        self:GetMyData()
+        self:AddTimer('WAIT_FOR_DATA', DATA_WAIT_TIMEOUT, function()
+            ns.code:fOut('Sync request with '..sender..' timed out.', 'FFFF0000')
+            ns.sync:ShutdownSync('IS_FAIL')
+        end)
     end
 
-    local function masterSyncStartUp()
-        if autoSync then ns.sync:cOut(L['Auto-sync']..' '..L['started']..'...', true)
-        else ns.sync:cOut(L['Master sync']..' '..L['started']..'...', true) end
+    if syncType == 3 then clientSync()
+    else masterSync() end
+end
+function sync:ShutdownSync(isFail)
+    if not isFail then
+        ns.code:fOut('Black List: '..self.blackList..' added.', GRColor)
+        ns.code:fOut('Anti Spam List: '..self.antiSpamList..' added.', GRColor)
+    end
 
-        function AceTimer:masterSyncStart()
-            if ns.sync.clientFound then
-                ns.sync:cOut(L['Sending data requests to client']..' '..ns.sync.masterSync)
-                for k in pairs(ns.sync.tblClient) do
-                    if not ns.sync.tblClient[k].hasReceivedData then
-                        ns.sync:SendCommMessage('DATA_REQUEST', 'WHISPER', k)
-                        ns.sync.tblTimer[k] = AceTimer:ScheduleTimer('timerEvent', DATA_WAIT_TIMEOUT, 'DATA_REQUEST_TIMEOUT', k)
-                    end
-                end
+    self:CancelTimer('ALL')
 
-                sync:CancelTimer('SYNC_REQUEST_TIMEOUT')
-            else
-                ns.sync:cOut(L['No clients found to sync with.'])
-                ns.sync:StopSync()
+    ns.win.base.tblFrame.syncIcon:GetNormalTexture():SetVertexColor(1, 1, 1, 1)
+
+    local syncMessage = self.syncType == 3 and 'Client Sync' or self.tblSynctype[self.syncType]
+    ns.code:fOut(syncMessage..' Sync Complete', GRColor)
+
+    self:Init() -- Reset init variables
+end
+--* Sync Support Routines
+-- Timer Routines
+function sync:AddTimer(timerName, length, func)
+    if not timerName or not length then
+        ns.code:dOut('Add Timer issue: name: '..timerName..' length: '..length)
+        return end
+    if self.tblTimer[timerName] then return end
+
+    self.tblTimer[timerName] = AceTimer:ScheduleTimer(func, length)
+end
+function sync:CancelTimer(key)
+    if not key then return
+    elseif key ~= 'ALL' and not self.tblTimer[key] then return end
+
+    if key == 'ALL' then AceTimer:CancelAllTimers()
+    else
+        AceTimer:CancelTimer(self.tblTimer[key])
+        self.tblTimer[key] = nil
+    end
+end
+
+--* Comm Routines
+function sync:CommReceived(message, sender)
+    self.tblClients = self.tblClients or {}
+
+    if not message or not sender or sender == UnitName('player') then return end
+
+    local success, tblData = ns.code:decompressData(message, 'DECODE_DATA')
+    if success and tblData and self.tblClients[sender] then -- or (self.syncType == 3 and sender == self.whoSyncingWith) then
+        ns.code:dOut('Received sync data from '..sender)
+        self.tblClients[sender] = tblData
+        if self.syncType == 3 then
+            self:ProcessClientSyncData()
+            self:ShutdownSync()
+            return
+        end
+        self.tblClients[sender].receivedData = true
+
+        local dataReady = true
+        if self.syncType <= 2 then
+            for key, v in pairs(self.tblClients) do
+                if not v.receivedData then print(key..' not ready.') dataReady = false return end
             end
         end
 
-        ns.sync.tblClient = table.wipe(ns.sync.tblClient or {})
-        ns.sync.clientFound = false
-
-        ns.sync:SendCommMessage('SYNC_REQUESTED', 'GUILD')
-        ns.sync.tblTimer['FULL_SYNC_FAILED'] = AceTimer:ScheduleTimer('timerEvent', SYNC_FAIL_TIMER, 'FULL_SYNC_FAILED')
-        ns.sync.tblTimer['SYNC_REQUEST_TIMEOUT'] = AceTimer:ScheduleTimer('masterSyncStart', REQUEST_TIMEOUT)
-    end
-    local function clientSyncStartUp()
-        sync:SendCommMessage('SYNC_REQUEST_HEARD', 'WHISPER', sender)
-        self.tblTimer['CLIENT_SYNC_FAIL'] = AceTimer:Scheduletimer('timerEvent', SYNC_FAIL_TIMER, 'CLIENT_SYNC_FAIL')
-    end
-
-    self.isAutoSync = autoSync or false
-    if isMaster or autoSync then masterSyncStartUp()
-    elseif not isMaster then clientSyncStartUp() end
-end
-function sync:StopSync(as, bl, rem)
-    self.isSyncing = false
-    self.clientFound = false
-
-    for k in pairs(self.tblTimer) do sync:CancelTimer(k) end
-    self.tblTimer = table.wipe(self.tblTimer or {})
-
-    as, bl, rem = (as or 0), (bl or 0), (rem or 0)
-    if self.masterSync then
-        for _, r in pairs(self.tblClient) do
-            as = r.addedAntiSpam or 0
-            bl = r.addedBlackList or 0
-            rem = r.removedBlackList or 0
+        if dataReady then
+            self:ProcessClientSyncData()
+            ns.code:dOut('Sending server data to clients.')
+            self:SendCommMessage(self.tblMyData, 'GUILD')
+            self:ShutdownSync()
         end
+    elseif not self.syncType and message == 'SYNC_REQUEST' then -- Start clicnet sync
+        ns.code:dOut('Sync request received from '..sender)
+
+        self.whoSyncingWith = sender
+        self:StartSyncRoutine(3, sender)
+        self.tblClients[sender] = {}
+
+        self:SendCommMessage('SYNC_REQUEST_HEARD', 'WHISPER', sender)
+        self:AddTimer('WAIT_FOR_DATA', DATA_WAIT_TIMEOUT, function()
+            self:ProcessClientSyncData() -- Process data if all clients have not responded
+        end)
+    elseif self.syncType <= 2 and message == 'SYNC_REQUEST_HEARD' then -- Client response
+        ns.code:dOut('Sync request heard from '..sender)
+
+        -- Got my data in start sync routine
+        self.tblClients[sender] = {}
+    elseif self.syncType == 3 and self.whoSyncingWith == sender and message == 'SEND_YOUR_SYNC_DATA' then
+        ns.code:dOut('Received sync data request from '..sender)
+        self:SendCommMessage(self.tblMyData, 'WHISPER', sender)
+        self:AddTimer('WAIT_FOR_DATA', DATA_WAIT_TIMEOUT, function()
+            ns.code:fOut('Sync request with '..sender..' timed out.', 'FFFF0000')
+            ns.sync:ShutdownSync('IS_FAIL')
+        end)
     end
-
-    ns.screens.base.isSyncing = false
-    local tblScreen = ns.screens.base.tblFrame
-    if tblScreen.syncIcon then
-        tblScreen.syncIcon:GetNormalTexture():SetVertexColor(1, 1, 1, 1)
-    end
-
-    if as > 0 then self:cOut(string.format(L['Added %s anti-spam records'], as), 'FF00FF00') end
-    if bl > 0 then self:cOut(string.format(L['Added %s black list records'], bl), 'FF00FF00') end
-    if rem > 0 then self:cOut(string.format(L['MARKED_FOR_DELETE'], rem), 'FF00FF00') end
-
-    if self.isAutoSync then self:cOut(L['Auto-sync']..' '..L['complete'], true)
-    elseif self.isMasterSync then self:cOut(L['Master sync']..' '..L['complete'], true)
-    else sync:cOut(L['Sync']..' '..L['complete'], true) end
-
-    self.isAutoSync = false
-    self.masterSync = nil
-    self.isMasterSync = false
 end
-
--- Comm Routines
 function sync:SendCommMessage(msg, chatType, target)
     if not msg then return end
     chatType = chatType or 'GUILD'
     GR:SendCommMessage(COMM_PREFIX, msg, chatType, (target or nil), 'ALERT')
 end
-function sync:CommReceived(message, sender)
-    if not sender or sender == '' or sender == UnitName('player') then return
-    elseif not message then return end
 
-    local function prepIncommingData()
-        local msg = L['Sync data received from']..' '..sender
-        local success, tbl = ns.code:decompressData(message, 'DECODE_FOR_WOW')
-        if success and tbl then
-            if self.isMasterSync then self:CancelTimer(sender)
-            else self:CancelTimer('CLIENT_SYNC_FAIL') end
+--* Sync Data Processing Routines
+function sync:ProcessClientSyncData()
+    local realGMUpdated = false
 
-            self:cOut(msg, 'FF00FF00')
-            self:ProcessIncommingData(sender, tbl)
-        else
-            self:cOut(msg..' '..L['is invalid'], 'FFFF0000', true)
-            self:StopSync()
-            return
+    local function findRevision(ver)
+        local firstDecimal = ver:find('.')
+        local secondDecimal = ver:find('.', firstDecimal + 1)
+
+        local clientRev = tonumber(ver:sub(secondDecimal + 1))
+        firstDecimal = GR.version:find('.')
+        secondDecimal = GR.version:find('.', firstDecimal + 1)
+        local myRev = tonumber(GR.version:sub(secondDecimal + 1))
+
+        return myRev, clientRev
+    end
+    for k, r in pairs(self.tblClients) do
+        local skipRecord = false
+        local rev, clientRev = findRevision(r.grVersion)
+        if rev > clientRev then ns.code:fOut(k:gsub('-', '')..' using an older version ('..r.grVersion..').', 'FFFFAE00')
+        elseif rev < clientRev then ns.code:fOut(k:gsub('-', '')..' using a newer version ('..r.grVersion..').', 'FFFFAE00') end
+
+        local dbRev, dbClientRev = findRevision(r.dbVersion)
+        if r.dbVersion ~= dbClientRev then
+            if dbRev > dbClientRev then ns.code:fOut(k:gsub('-', '')..' using an older version ('..r.dbVersion..').', 'FFFFAE00')
+            else ns.code:fOut(k:gsub('-', '')..' using a newer version ('..r.dbVersion..').', 'FFFFAE00') end
+            self.tblClients[k] = nil
+            skipRecord = true
         end
-    end
 
-    if self.isMasterSync then
-        if message:match('SYNC_REQUEST_HEARD') then
-            if not self.isSyncing then return end
+        if not skipRecord then
+            --* Sync GM Data
+            if (not realGMUpdated and not ns.guildInfo.isGuildLeader) or r.isGuildLeader then
+                ns.guildInfo.guildLink = r.guildInfo.guildLink or r.guildInfo.guildLink or ''
+                realGMUpdated = r.isGuildLeader or false
+                if realGMUpdated then ns.guildInfo.guildLeaderToon = r.guildLeaderToon end
+                ns.gmSettings.sendGuildGreeting = r.guildInfo.sendGuildGreeting or false
+                ns.gmSettings.guildMessage = r.guildInfo.guildMessage or nil
+                ns.gmSettings.sendWhisperGreeting = r.guildInfo.sendWhisperGreeting or false
+                ns.gmSettings.whisperMessage = r.guildInfo.whisperMessage or nil
 
-            ns.code:dOut('Sync request heard from '..sender, 'FFFFFF00')
-            self.clientFound = true
-            self.tblClient[sender] = newClient(sender)
-        else prepIncommingData() end
-    elseif not self.isMasterSync then
-        if message:match('SYNC_REQUESTED') then
-            if self.isSyncing then return end
+                -- Update GM messages
+                for key, v in pairs(ns.gSettings.messageList or {}) do -- Remove all GM messages
+                    if v.type == 'GM' then
+                        ns.gSettings.messageList[key] = nil
+                    end
+                end
+                for _, v in pairs(r.messageList) do -- Add all GM messages
+                    if v.type == 'GM' then
+                        tinsert(ns.gSettings.messageList, v)
+                    end
+                end
+            end
 
-            self:cOut('Client sync started...', true)
-            self:cOut('Sync requested for '..sender, 'FF00FF00', true)
-            self:StartSync(false, sender)
-            sync:SendCommMessage('SYNC_REQUEST_HEARD', 'WHISPER', sender)
-        elseif sender == self.masterSync and message:match('DATA_REQUEST') then
-            self:cOut('Data requested from '..sender, 'FF00FF00')
-            self:PrepareAndSendData()
-        else prepIncommingData() end
-    end
-end
-
--- Data Routines
-function sync:CheckIfAllDataReceived()
-    local allData = true
-    for _, r in pairs(self.tblClient) do
-        if not r.hasReceivedData then allData = false end
-    end
-    if not allData then self:PrepareAndSendData() end
-
-    return allData
-end
-function sync:PrepareAndSendData()
-    for _, r in pairs(ns.tblBlackList) do r.sent = true end
-    local tblData = {
-        version = GR.version,
-        guildInfo = ns.dbGlobal.guildInfo,
-        gmSettings = ns.gmSettings,
-        antiSpamList = ns.tblInvited,
-        blackList = ns.tblBlackList,
-    }
-    tblData.guildInfo.isGuildLeader = ns.isGuildLeader
-
-    local dataOutput = ns.code:compressData(tblData, 'ENCODE_FOR_WOW')
-
-    if self.isMasterSync then
-        for k, r in pairs(self.tblClient) do
-            if r.isActive and not r.dataSent then
-                self:SendCommMessage(dataOutput, 'WHISPER', k)
-                self.tblClient[k].dataSent = true
+            --* Sync Black List
+            for key, v in pairs(r.blackList) do
+                if not ns.tblBlackList[key] then
+                    ns.tblBlackList[key] = v
+                    self.blackList = self.blackList + 1
+                end
+            end
+            --* Sync Anti Spam List
+            for key, v in pairs(r.antiSpamList) do
+                if not ns.tblAntiSpamList[key] then
+                    ns.tblAntiSpamList[key] = v
+                    self.antiSpamList = self.antiSpamList + 1
+                end
             end
         end
+    end
 
-        self:StopSync()
-    else self:SendCommMessage(dataOutput, 'WHISPER', self.masterSync) end
+    self:GetMyData(realGMUpdated)
 end
-function sync:ProcessIncommingData(sender, tblData)
-    if not sender or sender == '' or not tblData then return end
+function sync:GetMyData(realGMUpdated) --* Gather Data for Sync
+    local tblGMMessages = {}
 
-    if sync:IncorrectVersionOutput(tblData.version, sender) then
-        if sync:CheckIfAllDataReceived() then sync:PrepareAndSendData() end
+    for k, r in pairs(ns.gSettings.messageList) do
+        if r.type == 'GM' then tblGMMessages[k] = r end
+    end
+
+    local tbl = {
+        ['grVersion'] = GR.version,
+        ['dbVersion'] = GR.dbVersion,
+        ['guildInfo'] = {
+            ['guildLink'] = ns.guildInfo.guildLink or nil,
+            ['isGuildLeader'] = (realGMUpdated or ns.guildInfo.isGuildLeader) or false,
+            ['guildLeaderToon'] = ns.guildInfo.guildLeaderToon or nil,
+            ['sendGuildGreeting'] = ns.gmSettings.sendGuildGreeting or false,
+            ['guildMessage'] = ns.gmSettings.guildMessage or nil,
+            ['sendWhisperGreeting'] = ns.gmSettings.sendWhisperGreeting or false,
+            ['whisperMessage'] = ns.gmSettings.whisperMessage or nil,
+        },
+        ['blackList'] = ns.tblBlackList,
+        ['messageList'] = tblGMMessages,
+        ['antiSpamList'] = ns.tblAntiSpamList,
+        ['sentData'] = true,
+        ['receivedData'] = false,
+    }
+
+    self.tblMyData = ns.code:compressData(tbl, 'ENCODE_DATA')
+    if not self.tblMyData then
+        ns.code:fOut('Error compressing my data for sync', 'FFFF0000')
+        self:ShutdownSync('IS_FAIL')
         return
-    end
-
-    local gmName = ns.dbGlobal.guildInfo and (ns.dbGlobal.guildInfo.guildLeaderName or nil) or nil
-    local gmNameData = tblData.guildInfo.guildLeaderName or nil
-    if not ns.isGuildLeader and tblData.guildInfo.isGuildLeader then
-        ns.db.global[C_Club.GetGuildClubId()].guildInfo = tblData.guildInfo
-        ns.db.global[C_Club.GetGuildClubId()].gmSettings = tblData.gmSettings
-
-        ns.dbGlobal.guildInfo.isGuildLeader = false
-    end
-
-    local antiSpamCount = 0
-    for k, r in pairs(tblData.antiSpamList) do
-        if not ns.tblInvited[k] then
-            ns.tblInvited[k] = r
-            ns.tblInvited[k].addedBy = sender
-            antiSpamCount = antiSpamCount + 1
-        end
-    end
-
-    local blackListCount, removedCount = 0, 0
-    for k, r in pairs(tblData.blackList) do
-        if not ns.tblBlackList[k] then
-            ns.tblBlackList[k] = r
-            blackListCount = blackListCount + 1
-        end
-
-        if ns.tblBlackList[k] and not ns.tblBlackList[k].markedForDelete and r.markedForDelete then
-            ns.tblBlackList[k].markedForDelete = r.markedForDelete
-            ns.tblBlackList[k].expirationDate = r.expirationDate
-            removedCount = removedCount + 1
-        end
-    end
-
-    if self.tblClient[sender] then
-        self.tblClient[sender].hasReceivedData = true
-        self.tblClient[sender].addedAntiSpam = antiSpamCount
-        self.tblClient[sender].addedBlackList = blackListCount
-        self.tblClient[sender].removedBlackList = removedCount
-
-        sync:CancelTimer(sender)
-    else sync:CancelTimer('DATA_REQUEST_TIMEOUT') end
-
-    if self.isMasterSync and self:CheckIfAllDataReceived() then sync:PrepareAndSendData()
-    else sync:StopSync(antiSpamCount, blackListCount, removedCount) end
-end
-
--- Support Routines
-function sync:cOut(msg, color, force)
-    if not msg then return end
-    color = type(color) == 'string' and color or 'FF3EB9D8'
-    force = type(color) == 'boolean' and color or (force or false)
-
-    if force then ns.code:fOut(msg, color)
-    else ns.code:cOut(msg, color) end
-end
-function sync:CancelTimer(key)
-    if not self.tblTimer[key] then return end
-
-    AceTimer:CancelTimer(self.tblTimer[key])
-    self.tblTimer[key] = nil
-end
-function sync:IncorrectVersionOutput(version, sender)
-    sender = (sender and sender ~= '') and sender or 'unknown sender'
-    if not version or not sender then
-        ns.code:dOut('IncorrectVersionOutput: Missing version or sender ('..version..'/'..sender..')', true)
-        return true
-    end
-    if not version or GR.version ~= version then
-        self:cOut('Addon version mismatch with '..(sender or 'unknown sender'), 'FFFFFF00', true)
-        self:cOut('Your version: '..GR.version, 'FF00FF00', true)
-        self:cOut('Their version: '..(version or 'Unknown'), 'FFFF0000', true)
-        return true
-    end
-
-    return false
-end
-function sync:FailRoutines(message, sender)
-    sync:CancelTimer((sender or message))
-    if message:match('FULL_SYNC_FAILED') then
-        self:cOut('Sync failed', 'FFFF0000', true)
-        self:StopSync()
-    elseif message:match('DATA_REQUEST_TIMEOUT') then
-        self:cOut('Data request timed out for '..sender, 'FFFF0000', true)
-        if self.isMasterSync then
-            self.tblClient[sender].isActive = false
-            self.tblClient[sender].hasReceivedData = true
-            if self:CheckIfAllDataReceived() then sync:PrepareAndSendData() end
-        else self:StopSync() end
     end
 end
 sync:Init()

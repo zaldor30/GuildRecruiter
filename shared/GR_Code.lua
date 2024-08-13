@@ -8,28 +8,44 @@ ns.code = {}
 local code = ns.code
 function code:Init()
     self.fPlayerName = nil
-    self.originalClickSound = GetCVar("Sound_EnableSFX")
 end
-function code:realMessageID(msgID)
-    if not msgID then return end
-    return msgID < 100 and msgID or msgID - 100
-end
--- Text Colors
+-- *Console Text Output Routines
 function code:cText(color, text)
-    if type(color) ~= 'string' or not text then return end
+    if text == '' then return end
+
+    color = color == '' and 'FFFFFFFF' or color
     return '|c'..color..text..'|r'
 end
-function code:cPlayer(uName, class, color)
-    if ns.dbGlobal and ns.dbGlobal.guildData and uName == ns.dbGlobal.guildData.guildName then return
-    elseif strmatch(uName, 'raid') or strmatch(uName, 'party') or uName  == 'player' then
-        uName = UnitName(uName) end
+function code:cPlayer(name, class, color) -- Colorize player names
+    if name == '' or ((not class or class == '') and (not color or color == '')) or not name then return end
+    local c = (not class or class == '') and color or select(4, GetClassColor(class))
 
-    local cClass = (class or select(2, UnitClass(uName))) and ns.tblClasses[(class or select(2, UnitClass(uName)))].color or (color or nil)
-
-    if not cClass then return uName
-    else return code:cText(cClass, uName) end
+    if c then return code:cText(c, name)
+    else return end
 end
--- Compress and decompress data
+function code:consolePrint(msg, color, noPrefix) -- Console print routine
+    if msg == '' or not msg then return end
+
+    local prefix = not noPrefix and self:cText(GRColor, 'GR: ') or ''
+    color = strlen(color) == 6 and 'FF'..color or color
+    DEFAULT_CHAT_FRAME:AddMessage(prefix..code:cText(color or 'FFFFFFFF', msg))
+end
+function code:cOut(msg, color, noPrefix) -- Console print routine
+    if msg == '' or not msg then return end
+
+    --!Check to show console messages
+    code:consolePrint(msg, (color or '97FFFFFF'), noPrefix)
+end
+function code:dOut(msg, color, noPrefix) -- Debug print routine
+    if msg == '' or not GR.debug then return end
+    code:consolePrint(msg, (color or 'FFD845D8'), noPrefix)
+end
+function code:fOut(msg, color, noPrefix) -- Force console print routine)
+    if msg == '' then return
+    else code:consolePrint(msg, (color or '97FFFFFF'), noPrefix) end
+end
+
+-- * Data Compression Routines
 function code:compressData(data, encode)
     if not data then return end
 
@@ -45,16 +61,18 @@ function code:decompressData(data, decode)
     if decompressedData then return aceSerializer:Deserialize(decompressedData)
     else return false, nil end -- Decompression failed
 end
+
+-- * Tables and Data Sorting Routines
 function code:saveTables(whichOne)
-    if whichOne == 'BLACK_LIST' then ns.dbBL = ns.code:compressData(ns.tblBlackList)
-    elseif whichOne == 'INVITED' then ns.dbInv = ns.code:compressData(ns.tblInvited)
+    if whichOne == 'BLACK_LIST' then ns.g.blackList = ns.code:compressData(ns.tblBlackList)
+    elseif whichOne == 'ANTI_SPAM_LIST' then ns.g.antiSpamList = ns.code:compressData(ns.tblAntiSpamList)
     else
-        ns.dbGlobal.blackList = ns.code:compressData(ns.tblBlackList) or ''
-        ns.dbGlobal.antiSpamList = ns.code:compressData(ns.tblInvited) or ''
-        ns.dbGlobal.sessionData = ns.code:compressData(ns.ds.tblSavedSessions) or ''
+        ns.g.blackList = ns.code:compressData(ns.tblBlackList) or ''
+        ns.g.antiSpamList = ns.code:compressData(ns.tblAntiSpamList) or ''
+        if ns.guildSession then ns.gAnalytics.session = ns.code:compressData(ns.guildSession) end
     end
 end
-function code:sortTableByField(tbl, sortField, reverse)
+function code:sortTableByField(tbl, sortField, reverse, showit)
     if not tbl or not sortField then return end
 
     local keyArray = {}
@@ -76,19 +94,8 @@ function code:sortTableByField(tbl, sortField, reverse)
     table.sort(keyArray, sortFunc)
     return keyArray
 end
--- Console Output
-function code:cOut(msg, color, noPrefix, showConsole)
-    if not msg or msg == '' then return end
-    local prefix = not noPrefix and 'GR: ' or ''
 
-    if showConsole or (ns.settings and ns.settings.showAppMsgs) then
-        print('|c'..(color and color or 'FF3EB9D8')..prefix..(msg or 'Error: No message')..'|r') end
-end
-function code:fOut(msg, color, noPrefix) code:cOut(msg, color, noPrefix, true) end
-function code:dOut(msg, color, noPrefix)
-    if GR.debug then code:cOut(msg, color, noPrefix, true) end
-end
--- Tooltip Routine
+-- *Tooltip Routine
 function code:createTooltip(text, body, force, frame)
     if not force and not ns.gSettings.showToolTips then return end
     local uiScale, x, y = UIParent:GetEffectiveScale(), GetCursorPosition()
@@ -101,7 +108,8 @@ function code:createTooltip(text, body, force, frame)
     if body then GameTooltip:AddLine(body,1,1,1) end
     GameTooltip:Show()
 end
--- Guild Message Modication Routines
+
+-- *Keyword Replacement Routines
 function code:capitalKeyWord(input)
     if not input or input == '' then return end
 
@@ -120,10 +128,10 @@ function code:capitalKeyWord(input)
     return input
 end
 function code:variableReplacement(msg, playerName, removeGT)
-    local gi = ns.dbGlobal.guildInfo
+    local gi = ns.guildInfo
     if not gi or not msg or msg == '' then return end
 
-    playerName = strsplit('-', playerName)
+    playerName = (playerName and playerName ~= '') and strsplit('-', playerName) or ''
 
     msg = code:capitalKeyWord(msg)
     if not msg then return end
@@ -136,27 +144,14 @@ function code:variableReplacement(msg, playerName, removeGT)
 
     return msg
 end
--- Interface Routines
+
+-- *Frame Routines
 function code:createPadding(frame, rWidth)
     local widget = LibStub("AceGUI-3.0"):Create('Label')
     if rWidth <=2 then widget:SetRelativeWidth(rWidth)
     else widget:SetWidth(rWidth) end
     frame:AddChild(widget)
 end
-function code:Confirmation(msg, func)
-    StaticPopupDialogs["MY_YES_NO_DIALOG"] = {
-        text = msg,
-        button1 = "Yes",
-        button2 = "No",
-        OnAccept = func,
-        timeout = 0,
-        whileDead = true,
-        hideOnEscape = false,
-    }
-    StaticPopup_Show("MY_YES_NO_DIALOG")
-end
--- Other Shared Code
-function code:inc(data, count) return (data or 0) + (count or 1) end
 function code:wordWrap(inputString, maxLineLength)
     local lines = {}
     local currentLine = ""
@@ -174,22 +169,34 @@ function code:wordWrap(inputString, maxLineLength)
     table.insert(lines, currentLine)
     return table.concat(lines, "\n")
 end
+function code:Confirmation(msg, func)
+    StaticPopupDialogs["MY_YES_NO_DIALOG"] = {
+        text = msg,
+        button1 = "Yes",
+        button2 = "No",
+        OnAccept = func,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = false,
+    }
+    StaticPopup_Show("MY_YES_NO_DIALOG")
+end
+
+--* Miscellaneous Routines
+function code:inc(data, count) return (data or 0) + (count or 1) end
 function code:ConvertDateTime(val, showHours)
     local d = date("*t", val)
     return (d and showHours) and string.format("%02d/%02d/%04d %02d:%02d", d.month, d.day, d.year, d.hour, d.minute) or (string.format("%02d/%02d/%04d", d.month, d.day, d.year) or nil)
 end
-function code:verifyRealm(realm, realmOnly)
-    if not realm then return end
+function code:isInMyGuild(name)
+    local realmName = name:find('-') and name or name..'-'..GetRealmName()
+    local noRealmName = name:gsub('*-', '')
 
-    if not realmOnly and not realm:match('-') then return true
-    elseif realm:match(GetRealmName()) then return true end
-
-    ns.ds.tblConnected = ns.ds.tblConnected or ns.ds:GetConnectedRealms() or {}
-
-    for k in pairs(ns.ds.tblConnected) do
-        if realm:match(k) then return true end
+    local totalMembers = GetNumGuildMembers()
+    for i = 1, totalMembers do
+        local gName = GetGuildRosterInfo(i)
+        if strlower(gName) == strlower(noRealmName) then return true
+        elseif strlower(gName) == strlower(realmName) then return true end
     end
-
     return false
 end
-code:Init()

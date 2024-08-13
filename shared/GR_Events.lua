@@ -1,7 +1,10 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
+local L = LibStub("AceLocale-3.0"):GetLocale('GuildRecruiter')
 
-ns.observer = {}
-local observer = ns.observer
+ns.events, ns.observer = {}, {}
+local events, observer = ns.events, ns.observer
+
+-- * Observer Routines
 function observer:Init()
     self.tblObservers = {}
 end
@@ -37,9 +40,7 @@ function observer:Notify(event, ...)
 end
 observer:Init()
 
-ns.events = {}
-local events = ns.events
-
+-- * Event Routines
 local function observerSendMessageNotify(event, ...) observer:Notify(event, ...) end
 function events:Init()
     self.tblEvents = {}
