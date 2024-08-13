@@ -207,7 +207,7 @@ function base:CreateBaseIconFrame()
         filterIconButton:SetPoint('LEFT', blacklistIconButton, 'RIGHT', 5, 0)
         filterIconButton:SetNormalTexture(ICON_PATH..'GR_Filter')
         filterIconButton:SetHighlightTexture(BLUE_HIGHLIGHT)
-        filterIconButton:SetScript('OnClick', function() ns.screens.filter:StartUp() end)
+        filterIconButton:SetScript('OnClick', function() ns.win.filter:SetShown(true) end)
         filterIconButton:SetScript('OnEnter', function() ns.code:createTooltip(L['FILTER_EDITOR'], L['FILTER_EDITOR_TOOLTIP']) end)
         filterIconButton:SetScript('OnLeave', function() GameTooltip:Hide() end)
     end

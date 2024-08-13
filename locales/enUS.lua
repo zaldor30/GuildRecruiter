@@ -96,6 +96,15 @@ L['INVITE_ALREADY_SENT'] = 'has already been invited'
 L['NO_GUILD_LINK'] = 'No guild link found. Sync with GM or log into a GM character.'
 L['SELECT_MESSAGE'] = 'Select a message from the list or create one in settings.'
 
+--* GR Filter Messages
+L['FILTERS'] = 'Filters'
+L['DELETE_FILTER'] = 'Delete Filter'
+L['DELETE_FILTER_CONFIRM'] = 'Are you sure you want to delete this filter?'
+L['FILTER_DESC'] = 'Description of the filter'
+L['WHO_COMMAND'] = 'Who Command'
+L['CLASSES'] = 'Classes'
+L['RACES'] = 'Races'
+
 -- * GR Scanner Messages
 L['BL'] = 'BL'
 L['BLACK_LISTED'] = 'Black listed'

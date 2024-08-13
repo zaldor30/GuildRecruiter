@@ -49,7 +49,7 @@ function sync:StartSyncRoutine(syncType, sender)
         ns.sync:ShutdownSync('IS_FAIL')
     end) -- Sync Timeout Timer (2 minutes)
 
-    local syncMessage = syncType == 3 and 'Sync with '..sender or self.tblSynctype[self.syncType]
+    local syncMessage = syncType == 3 and 'Sync with '..sender or self.tblSynctype[self.syncType]..' Sync'
     ns.code:cOut('Starting '..syncMessage, GRColor)
 
     local function masterSync() --* Start Master Sync Routine
@@ -59,7 +59,7 @@ function sync:StartSyncRoutine(syncType, sender)
             local count = 0
             for _ in pairs(self.tblClients and self.tblClients or {}) do count = count + 1 end
             if count == 0 then
-                ns.code:fOut('No clients to sync with.', 'FFFF0000')
+                ns.code:fOut('No clients to sync with.', GRColor)
                 ns.sync:ShutdownSync('IS_FAIL')
                 return
             else

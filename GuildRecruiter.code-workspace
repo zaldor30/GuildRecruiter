@@ -24,7 +24,8 @@
             "~\\.vscode\\extensions\\ketho.wow-api-0.16.5\\Annotations"
         ],
         "Lua.diagnostics.globals": [
-            "ChatFrame_RemoveMessageEventFilter"
+            "ChatFrame_RemoveMessageEventFilter",
+            "ALL"
         ]
     }
 }

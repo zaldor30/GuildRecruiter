@@ -5,8 +5,8 @@ local L = LibStub("AceLocale-3.0"):GetLocale('GuildRecruiter')
 ns.win.scanner = {}
 local scanner = ns.win.scanner
 
-local function obsCLOSE_SCREENS_SCANNER()
-    ns.observer:Unregister('CLOSE_SCREENS', obsCLOSE_SCREENS_SCANNER)
+local function obsCLOSE_SCANNER()
+    ns.observer:Unregister('CLOSE_SCREENS', obsCLOSE_SCANNER)
     scanner:SetShown(false)
 end
 local function CallBackWhoListUpdate()
@@ -60,7 +60,7 @@ function scanner:SetShown(isShown)
 
     --* Event Routines
     ns.observer:Notify('CLOSE_SCREENS')
-    ns.observer:Register('CLOSE_SCREENS', obsCLOSE_SCREENS_SCANNER)
+    ns.observer:Register('CLOSE_SCREENS', obsCLOSE_SCANNER)
 
     --* Set Scanner Defaults
     self.tblScanner = {

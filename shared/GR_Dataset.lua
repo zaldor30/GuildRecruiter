@@ -19,35 +19,36 @@ function ds:WhatsNew() -- What's new in the current version
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
                 
-    |CFFFFFF00v3.0 Notes|r
-        Beta Fixes v3.0.16:
-        - Added manual Black List entry.
-        - Added sync back into the addon.
-        - Sync should no longer be so dependent on the addon
-            version.  I have changed it to the version of the
-            database.  This means that both clients do not need 
-            to be on the same version of the addon anymore.
-
+    |CFFFFFF00v3.0.26 Notes|r
         I have done pretty much a full rewrite of Guild Recruiter.
         I have added a lot of new features and fixed a lot of bugs.
 
-            ** CHANGES WERE MADE TO THE DATABASE. **
-        ** PLEASE BACKUP YOUR SAVE FILES BEFORE UPDATING. **
-
-        Features:
+    - Features:
         - Minimap icon:
-            - Added shift+click to directly open the scanner.
-            - Added anti-spam and black list counts to the tooltip.
-        - Invite Player Changes:
-            - Analytics now tracks /ginvite.
-            - Right Click Invite Menu:
-                - Invite to guild now works.
-                - Hides the option to black list if on the list.
-                - Ask if you try to invite someone on the black list.
-                - Send your invite message to a player.
-        - Scanner Changes:
-            - Whispers will now show when show whispers is enabled.
-            - Invite list and Who will show after leaving the screen.
+        - Added shift+click to directly open the scanner.
+        - Added anti-spam and black list counts to the tooltip.
+    - Invite Player Changes:
+        - Analytics now tracks /ginvite.
+        - Right Click Invite Menu:
+            - Invite to guild now works.
+            - Hides the option to black list if on the list.
+            - Ask if you try to invite someone on the black list.
+            - Send your invite message to a player.
+    - Scanner Changes:
+        - Whispers will now show when show whispers is enabled.
+        - Invite list and scan data will show after leaving the screen.
+    - Sync Changes:
+        - Changed the detection of out of date versions.
+        The sync will look at the database version and not the
+        addon version.
+        
+        This means that the addons can be different versions and
+        so long as the database is the same, they will sync.
+    - Settings Changes:
+        - Added the ability for GM to override GM settings so they
+        can use personal invite settings.
+        - Added the ability to turn off auto sync.
+        - Added the ability to add zones to ignore.
     ]]
 
     return title, msg, height
@@ -170,7 +171,7 @@ function ds:classes() -- Class data
     return tbl
 end
 function ds:races() -- Race data
-    local tbl, raceID, faction = {}, 1, UnitFactionGroup('player')
+    local tbl, raceID = {}, 1
     while C_CreatureInfo.GetRaceInfo(raceID) do
         local raceFactions = {
             [1] = "Alliance",    -- Human
@@ -198,12 +199,13 @@ function ds:races() -- Race data
             [37] = "Alliance",   -- Mechagnome
         }
 
-        if raceFactions[raceID] == faction or raceFactions[raceID] == 'Neutral' then
-            local raceInfo = C_CreatureInfo.GetRaceInfo(raceID)
-            if raceInfo then
+        local raceInfo = C_CreatureInfo.GetRaceInfo(raceID)
+        if raceInfo then
+            if raceFactions[raceInfo.raceID] then
                 tbl[raceInfo.raceName] = {
                     ['id'] = raceInfo.raceID,
                     ['name'] = raceInfo.raceName,
+                    ['faction'] = raceFactions[raceInfo.raceID],
                     ['raceFile'] = strupper(raceInfo.clientFileString),
                 }
             end
