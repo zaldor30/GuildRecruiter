@@ -1,18 +1,10 @@
 # Guild Recruiter
 ## 3.0 - War Within Release (Alpha)
-### Alpha Fixes v3.0:
-- Fixed preview showing '|c2'
-- Fixed issue with lblPlayersScanned error.
-- Right Click Invite Menu:
-    - Added option to send invite message.
-    - Now checks if player is in the guild.
-- Added back in about screen.
-- Added back in What's New screen.
-- Added back analytics screen.
-- Fixed issue with expired anti-spam.
-- Still Needed:
-    - Double check all analytics.
-    - Syncing with other players.
+###v3.0.29 Notes
+    - Trying to fix position of right click invite menu.
+    - Fix to replacing GUILDNAME, etc when sending invite message only
+        from the right click menu.
+    - Fixed issue with scanning using the keybindings.
 
 I have done pretty much a full rewrite of Guild Recruiter.  I have added a lot of new features and fixed a lot of bugs.
 
