@@ -34,6 +34,8 @@ function scanner:Init()
     self.tblWho = {} -- Who Results Table
     self.tblInvites = {} -- Players Ready for Invite
     self.tblFilters = nil -- Filter TableZ
+
+    self.waitTimer = 0 -- Wait time remaining for next scan
 end
 function scanner:IsShown() return self.ctrlBase.frame and self.ctrlBase.frame:IsShown() end
 function scanner:SetShown(isShown)
@@ -126,8 +128,8 @@ function scanner:CreateBaseFrame()
     f:SetPoint('BOTTOMRIGHT', tblHome.statusBar, 'TOPRIGHT', 0, -5)
     f:SetScript('OnKeyDown', function(_, key)
         if ns.global.keybindScan and key == ns.global.keybindScan then
-            if self.scanWaitTime > 0 then
-                ns.code:fOut(L['PLEASE_WAIT']..' '..self.scanWaitTime..' '..L['ERROR_SCAN_WAIT'])
+            if self.waitTimer and self.waitTimer > 0 then
+                ns.code:fOut(L['PLEASE_WAIT']..' '..self.waitTimer..' '..L['ERROR_SCAN_WAIT'])
             elseif self.ctrlSearch.btnSearch.disabled then ns.code:fOut(L['ERROR_CANNOT_SCAN'])
             else self:GetNextFilterRecord() end
         elseif ns.global.keybindInvite and key == ns.global.keybindInvite then self:InvitePlayers() end
@@ -597,10 +599,12 @@ function scanner:CreateFilters(displayOnly, nextRecord)
         local function waitTimer(remain)
             if not self.ctrlSearch.btnSearch then return
             elseif remain > 0 then
+                self.waitTimer = remain
                 self.ctrlSearch.btnSearch:SetDisabled(true)
                 self.ctrlSearch.btnSearch:SetText('Wait '..remain..'s')
                 C_Timer.After(1, function() waitTimer(remain - 1) end)
             else
+                self.waitTimer = 0
                 self.ctrlSearch.btnSearch:SetDisabled(false)
                 self.ctrlSearch.btnSearch:SetText('Start Search')
             end

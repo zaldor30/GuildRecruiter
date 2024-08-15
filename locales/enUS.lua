@@ -41,7 +41,7 @@ L['INVITE_NO_MESSAGES_MENU'] = 'Invite without Messages'
 L['DELETE_CONFIRMATION'] = 'Are you sure you want to delete this record?'
 L['ABOUT_TOOLTIP'] = 'See What\'s New and support info.'
 L['PLEASE_WAIT'] = 'Please wait'
-L['ERROR_SCAN_WAIT'] = ' seconds before scanning again.'
+L['ERROR_SCAN_WAIT'] = 'seconds before scanning again.'
 
 -- * Version 3.0 Changes
 

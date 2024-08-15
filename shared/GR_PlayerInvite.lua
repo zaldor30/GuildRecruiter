@@ -81,8 +81,8 @@ function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreeti
     invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg, isManual)
 end
 function invite:SendMessage(pName, cName, msgInvite, showMessage)
+    msgInvite = ns.code:variableReplacement(msgInvite, pName:gsub('-.*', '')) -- Remove realm name
     if not ns.pSettings.showWhispers and not showMessage then
-        msgInvite = ns.code:variableReplacement(msgInvite, pName:gsub('-.*', '')) -- Remove realm name
         ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER', function(_, _, msg) return msg == msgInvite end, msgInvite)
         ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER_INFORM', function(_, _, msg) return msg == msgInvite end, msgInvite)
         ns.code:fOut(L['INVITE_MESSAGE_SENT']..' '..cName, 'FFFFFF00')
@@ -92,16 +92,21 @@ end
 
 -- After Invite Routines
 local function UpdateInvitePlayerStatus(_, ...)
-    if not invite.tblSent then
-        ns.observer:Unregister('CHAT_MSG_SYSTEM', UpdateInvitePlayerStatus)
-        return
-    end
-
     local msg = ...
     if not msg then return end
 
     msg = strlower(msg)
     local fName, key = nil, nil
+    if msg and msg:find('Invited By:') and msg:find(UnitName('player')) then
+        print('you did the invite')
+        return
+    elseif msg and msg:find('REINVITED') then print('You reinvited') return
+    elseif not invite.tblSent then
+        ns.observer:Unregister('CHAT_MSG_SYSTEM', UpdateInvitePlayerStatus)
+        return
+    end
+
+
     for _, v in pairs(invite.tblSent) do
         local nHold = strlower(v.name)
         local noRealm = nHold:gsub('-.*', '') -- Remove realm name
@@ -158,7 +163,7 @@ local function UpdateInvitePlayerStatus(_, ...)
 
     ns.win.scanner:UpdateAnalytics()
     if not next(invite.tblSent) then -- Close out event handler if not more invites
-        ns.observer:Unregister('CHAT_MSG_SYSTEM', UpdateInvitePlayerStatus)
+        --ns.observer:Unregister('CHAT_MSG_SYSTEM', UpdateInvitePlayerStatus)
     end
 end
 function invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg, isManual)
@@ -167,37 +172,14 @@ function invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg, isMa
     pName = pName:gsub('*-', '') -- Remove realm name if present
     local cName = class and ns.code:cPlayerName(pName, class) or pName
 
-    local GMOverride = ns.gSettings.GMOverride or false
-    local guildMessage, msgWhisper = false, false
-
-    if useGreetingMsg then
-        if GMOverride and ns.gSettings.sendGuildGreeting and ns.gSettings.guildMessage ~= '' then
-            guildMessage = ns.gSettings.guildMessage
-        elseif ns.gmSettings.sendGuildGreeting and ns.gmSettings.guildMessage ~= '' then
-            guildMessage = ns.gmSettings.guildMessage
-        elseif ns.gSettings.sendGuildGreeting and ns.gSettings.guildMessage ~= '' then
-            guildMessage = ns.gSettings.guildMessage
-        end
-
-        guildMessage = ns.code:variableReplacement(ns.gSettings.guildMessage, pName) or false
-    end
-
-    if useWhisperMsg then
-        if not GMOverride and ns.gmSettings.sendWhisperGreeting and ns.gmSettings.whisperMessage ~= '' then
-            msgWhisper = ns.gmSettings.whisperMessage
-        elseif ns.gSettings.sendWhisperGreeting and ns.gSettings.whisperMessage ~= '' then
-            msgWhisper = ns.gSettings.whisperMessage
-        end
-
-        msgWhisper = ns.code:variableReplacement(ns.gSettings.whisperMessage, pName) or false
-    end
+    local guildMessage, msgWhisper = self:GetWelcomeMessages(pName)
 
     self.tblSent[strlower(fName)] = {
         name = pName,
         fName = fName,
         cName = cName,
-        whisper = msgWhisper and msgWhisper:gsub('<', ''):gsub('>', '') or nil,
-        guild = guildMessage and guildMessage:gsub('<', ''):gsub('>', '') or nil,
+        whisper = (useWhisperMsg and msgWhisper) and msgWhisper:gsub('<', ''):gsub('>', '') or nil,
+        guild = (useGreetingMsg and guildMessage) and guildMessage:gsub('<', ''):gsub('>', '') or nil,
         sentMsg = false,
         sentAt = GetServerTime(),
         isManual = isManual,
@@ -206,8 +188,30 @@ function invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg, isMa
     ns.analytics:saveStats('PlayersInvited')
     ns.win.scanner:UpdateAnalytics()
     ns.antiSpam:AddToAntiSpamList(fName)
+end
+function invite:GetWelcomeMessages(pName)
+    local GMOverride = ns.gSettings.GMOverride or false
+    local guildMessage, msgWhisper = false, false
 
-    ns.observer:Register("CHAT_MSG_SYSTEM", UpdateInvitePlayerStatus)
+    if GMOverride and ns.gSettings.sendGuildGreeting and ns.gSettings.guildMessage ~= '' then
+        guildMessage = ns.gSettings.guildMessage
+    elseif ns.gmSettings.sendGuildGreeting and ns.gmSettings.guildMessage ~= '' then
+        guildMessage = ns.gmSettings.guildMessage
+    elseif ns.gSettings.sendGuildGreeting and ns.gSettings.guildMessage ~= '' then
+        guildMessage = ns.gSettings.guildMessage
+    end
+
+    guildMessage = ns.code:variableReplacement(ns.gSettings.guildMessage, pName) or false
+
+    if not GMOverride and ns.gmSettings.sendWhisperGreeting and ns.gmSettings.whisperMessage ~= '' then
+        msgWhisper = ns.gmSettings.whisperMessage
+    elseif ns.gSettings.sendWhisperGreeting and ns.gSettings.whisperMessage ~= '' then
+        msgWhisper = ns.gSettings.whisperMessage
+    end
+
+    msgWhisper = ns.code:variableReplacement(ns.gSettings.whisperMessage, pName) or false
+
+    return guildMessage, msgWhisper
 end
 invite:Init() -- Init invite
 
@@ -372,3 +376,5 @@ function antiSpam:AddToAntiSpamList(pName)
 
     return true
 end
+
+ns.observer:Register("CHAT_MSG_SYSTEM", UpdateInvitePlayerStatus)

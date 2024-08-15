@@ -313,6 +313,7 @@ function home:SetButtonStates()
     local invFormat = ns.pSettings.inviteFormat or 2
     local activeMessage = ns.pSettings.activeMessage or nil
 
+    ns.statusText:SetText('')
     self.tblFrame.scanButton:SetDisabled(true)
     if invFormat == 2 then self.tblFrame.scanButton:SetDisabled(false)
     elseif invFormat ~= 2 and activeMessage then self.tblFrame.scanButton:SetDisabled(false)

@@ -362,6 +362,7 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     self.iAmGM = (ns.guildInfo.isGuildLeader or ns.guildInfo.guildLeaderToon == GetUnitName('player', true)) or false
     ns.gSettings.overrideGM = self.iAmGM and ns.gSettings.overrideGM or false
 
+    if not self.isEnabled then return end
     core:PerformRecordMaintenance() -- Perform record maintenance
     core:StartSlashCommands() -- Start the slash commands
     core:StartMiniMapIcon() -- Start the mini map icon
@@ -404,9 +405,11 @@ local function InitializeDropdownMenu(self, level)
     if not self.chatPlayerName or not ns.pSettings.showContextMenu then return end
     local cPlayerName = ns.code:cText(GRColor, self.chatPlayerName)
     if level == 1 then
+        local name = self.chatPlayerName:find('-') and self.chatPlayerName or self.chatPlayerName..'-'..GetRealmName() -- Add realm name if not present
         local info = UIDropDownMenu_CreateInfo()
         info.text = cPlayerName..'\n'..ns.code:cText('FFFFFF00', L['INVITE_NO_MESSAGES_MENU'])
         info.notCheckable = true
+        info.fontObject = GameFontNormalOutline
         info.func = function()
             ns.invite:SendManualInvite(self.chatPlayerName, select(2, UnitClass(self.chatPlayerName)), false, false, true)
         end
@@ -421,6 +424,7 @@ local function InitializeDropdownMenu(self, level)
         info = UIDropDownMenu_CreateInfo()
         info.text = cPlayerName..'\n'..ns.code:cText('FFFFFF00', L['INVITE_MESSAGES_MENU'])
         info.notCheckable = true
+        info.fontObject = GameFontNormalOutline
         info.func = function()
             ns.invite:SendManualInvite(self.chatPlayerName, select(2, UnitClass(self.chatPlayerName)), true, true, true)
         end
@@ -433,28 +437,31 @@ local function InitializeDropdownMenu(self, level)
             info = UIDropDownMenu_CreateInfo()
             info.disabled = true
             info.notCheckable = true
+            info.fontObject = GameFontNormalOutline
             UIDropDownMenu_AddButton(info, level)
 
             info = UIDropDownMenu_CreateInfo()
             info.text = cPlayerName..'\n'..ns.code:cText('FFFFFF00', L['INVITE_MESSAGE_ONLY'])
             info.notCheckable = true
+            info.fontObject = GameFontNormalOutline
             info.func = function()
                 ns.invite:SendMessage(self.chatPlayerName, self.chatPlayerName:gsub('-', ''), msg.message)
             end
             UIDropDownMenu_AddButton(info, level)
         end
 
-        local name = self.chatPlayerName:find('-') and self.chatPlayerName or self.chatPlayerName..'-'..GetRealmName() -- Add realm name if not present
         if not ns.blackList:IsOnBlackList(name) then
             -- Separator for spacing
             info = UIDropDownMenu_CreateInfo()
             info.disabled = true
             info.notCheckable = true
+            info.fontObject = GameFontNormalOutline
             UIDropDownMenu_AddButton(info, level)
 
             info = UIDropDownMenu_CreateInfo()
             info.text = cPlayerName..'\n'..L['BLACKLIST']
             info.notCheckable = true
+            info.fontObject = GameFontNormalOutline
             info.func = function()
                 ns.blackList:BlackListReasonPrompt(self.chatPlayerName)
             end
@@ -466,27 +473,35 @@ end
 local function PositionCustomDropdown()
     local systemDropdown = DropDownList1
     if not systemDropdown then
-        return 0, 0
+        return 40, 0
     end
 
     local systemDropdownWidth = systemDropdown:GetWidth()
+    local customDropdownWidth = customDropdown:GetWidth()
     local systemDropdownX, systemDropdownY = systemDropdown:GetCenter()
     local screenWidth = GetScreenWidth()
+
+    -- Ensure systemDropdownX and systemDropdownY have valid values
+    if not systemDropdownX or not systemDropdownY then
+        return 200, 0
+    end
 
     local xOffset = 0
     local yOffset = 0
 
     -- Calculate the new position, ensuring it stays within the screen bounds
-    if systemDropdownX and (systemDropdownX + systemDropdownWidth / 2 + customDropdown:GetWidth() > screenWidth) then
-        xOffset = -customDropdown:GetWidth() - 10
+    if (systemDropdownX + systemDropdownWidth / 2 + customDropdownWidth > screenWidth) then
+        xOffset = -customDropdownWidth - 10
     else
         xOffset = systemDropdownWidth - 20
     end
 
-    return xOffset, yOffset
+    return xOffset, 0 -- Keep yOffset as 0 since we want the menus aligned vertically
 end
+
 -- Original SetItemRef function
 local originalSetItemRef = SetItemRef
+
 -- Override SetItemRef to capture right-clicks on player names
 SetItemRef = function(link, text, button, chatFrame)
     if button == "RightButton" then
@@ -497,12 +512,10 @@ SetItemRef = function(link, text, button, chatFrame)
             -- Show the system context menu
             originalSetItemRef(link, text, button, chatFrame)
             -- Calculate the position for the custom dropdown menu
-            C_Timer.After(0.2, function()
-                local xOffset, yOffset = PositionCustomDropdown()
+            local xOffset, yOffset = PositionCustomDropdown()
                 -- Initialize and show the custom dropdown menu
-                UIDropDownMenu_Initialize(customDropdown, InitializeDropdownMenu, "MENU")
-                ToggleDropDownMenu(1, nil, customDropdown, "cursor", xOffset, yOffset)
-            end)
+            UIDropDownMenu_Initialize(customDropdown, InitializeDropdownMenu, "MENU")
+            ToggleDropDownMenu(1, nil, customDropdown, "cursor", 180, 100)
             return
         end
     end

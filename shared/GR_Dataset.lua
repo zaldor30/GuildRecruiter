@@ -19,6 +19,12 @@ function ds:WhatsNew() -- What's new in the current version
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
                 
+    |CFFFFFF00v3.0.29 Notes|r
+        - Trying to fix position of right click invite menu.
+        - Fix to replacing GUILDNAME, etc when sending invite message only
+          from the right click menu.
+        - Fixed issue with scanning using the keybindings.
+
     |CFFFFFF00v3.0.26 Notes|r
         I have done pretty much a full rewrite of Guild Recruiter.
         I have added a lot of new features and fixed a lot of bugs.
