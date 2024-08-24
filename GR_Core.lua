@@ -6,6 +6,7 @@ local core = ns.core
 local L = LibStub("AceLocale-3.0"):GetLocale('GuildRecruiter')
 local AC, ACD = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0')
 local icon, DB = LibStub('LibDBIcon-1.0'), LibStub('AceDB-3.0')
+local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 
 -- *Blizzard Initialization Called Function
 function GR:OnInitialize()
@@ -40,6 +41,7 @@ function core:Init()
     self.isEnabled = false
     self.fullyStarted = false
     self.ignoreAutoSync = false
+    self.obeyBlockInvites = true
 
     self.addonSettings = {
         profile = {
@@ -63,18 +65,25 @@ function core:Init()
             guildInfo = {},
             gmSettings = {
                 -- GM Settings
+                forceObey = true,
+                obeyBlockInvites = true, -- Obey Block Invites
+                forceAntiSpam = true,
                 antiSpam = false,
                 antiSpamDays = 7,
+                forceSendGuildGreeting = false,
                 sendGuildGreeting = false,
+                forceGuildMessage = true,
                 guildMessage = L['DEFAULT_GUILD_WELCOME'],
+                forceSendWhisper = false,
                 sendWhsiper = false,
+                forceWhisperMessage = true,
                 whisperMessage = '',
                 messageList = {},
-                isGuildLeader = false,
                 guildLeaderToon = nil,
             },
             settings = {
                 -- General Settings
+                obeyBlockInvites = true, -- Obey Block Invites
                 showToolTips = true, -- Show Tool Tips
                 showConsoleMessages = false, -- Show Console Messages
                 -- Invite Settings
@@ -127,13 +136,6 @@ function core:StartDatabase(clubID)
 
     self:PerformDatabaseMaintenance() -- Perform Database Maintenance
 
-    -- Check if the GM is in the profile list
-    if ns.guildInfo.guildLeaderToon then
-        for profileName, _ in pairs(db.profiles) do
-            if profileName:find(ns.guildInfo.guildLeaderToon) then self.hasGM = true break end
-        end
-    end
-
     -- Other Variables Declaration
     ns.gFilterList = ns.g.filterList or {} -- Global Filter List
     ns.gAnalytics = ns.g.analytics or {} -- Global Analytics
@@ -141,10 +143,41 @@ function core:StartDatabase(clubID)
     ns.analytics:Start()
 
     GR.debug = ns.pSettings.debugMode or false -- Set the debug mode
+
+    local profiles, _ = db:GetProfiles()
+    if not IsGuildLeader() then
+        ns.guildInfo.isGuildLeader = false
+        for _, profile in pairs(profiles) do
+            if profile:find(GetUnitName('player', true)) then
+                if IsGuildLeader() then
+                    ns.guildInfo.isGuildLeader = true
+                    ns.guildInfo.guildLeaderToon = GetUnitName('player', true)
+                elseif not IsGuildLeader() and ns.guildInfo.guildLeaderToon == GetUnitName('player', true) then
+                    ns.guildInfo.isGuildLeader = false
+                    ns.guildInfo.guildLeaderToon = nil
+                    ns.gSettings.overrideGM = false
+                    ns.code:dOut(GetUnitName('player', true)..' is no longer the Guild Leader')
+                elseif ns.guildInfo.guildLeaderToon ~= GetUnitName('player', true) then
+                    ns.guildInfo.isGuildLeader = ns.guildInfo.isGuildLeader
+                end
+                break
+            end
+        end
+    else
+        ns.guildInfo.isGuildLeader = true
+        ns.guildInfo.guildLeaderToon = GetUnitName('player', true)
+    end
+
+    self.hasGM = ns.guildInfo.isGuildLeader
+    if self.hasGM and ns.gmSettings.forceObey then self.obeyBlockInvites = ns.gmSettings.obeyBlockInvites or false
+    elseif ns.pSettings.obeyBlockInvites then self.obeyBlockInvites = ns.pSettings.obeyBlockInvites or false end
 end
 function core:PerformDatabaseMaintenance()
     if not ns.global.dbVersion or ns.global.dbVersion ~= GR.dbVersion then
         ns.global.dbVersion = GR.dbVersion
+        if ns.gmSettings.obeyBlockInvites == nil then ns.gmSettings.obeyBlockInvites = true end
+        if ns.gSettings.obeyBlockInvites == nil then ns.gSettings.obeyBlockInvites = true end
+        
         -- Fix for old DB settings
         ns.gmSettings.sendGuildGreeting = ns.gmSettings.sendGuildGreeting or ns.gmSettings.sendWelcome
         ns.gmSettings.sendWhsiper = ns.gmSettings.sendWhsiper or ns.gmSettings.sendGreeting
@@ -208,7 +241,7 @@ function core:StartGuildSetup(clubID) -- Get Guild Info and prep database
     if not clubID then return end
 
     local function checkIfGuildLeader()
-        if IsGuildLeader() then
+        --[[if IsGuildLeader() then
             ns.guildInfo.isGuildLeader = true
             ns.guildInfo.guildLeaderToon = GetUnitName('player', true)
         elseif self.hasGM then ns.guildInfo.isGuildLeader = true
@@ -222,7 +255,8 @@ function core:StartGuildSetup(clubID) -- Get Guild Info and prep database
                 ns.guildInfo.isGuildLeader = false
                 ns.code:dOut('You are not the Guild Leader')
             else ns.code:dOut('Current Guild Leader: '..(ns.guildInfo.guildLeaderToon or 'No One')) end
-        end
+        end--]]
+        
     end
 
     ns.guildInfo.clubID = clubID
@@ -357,8 +391,8 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     ns.tblRacesSortedByName = ns.code:sortTableByField(ns.tblRaces, 'name')
     ns.tblClassesSortedByName = ns.code:sortTableByField(ns.tblClasses, 'name')
 
-    AC:RegisterOptionsTable('GR_Options', ns.addonSettings) -- Register the options table
-    ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter') -- Add the options to the Blizzard options
+    AC:RegisterOptionsTable('GuildRecruiter', ns.addonSettings) -- Register the options table
+    ns.addonOptions = ACD:AddToBlizOptions('GuildRecruiter', 'Guild Recruiter') -- Add the options to the Blizzard options
     self.iAmGM = (ns.guildInfo.isGuildLeader or ns.guildInfo.guildLeaderToon == GetUnitName('player', true)) or false
     ns.gSettings.overrideGM = self.iAmGM and ns.gSettings.overrideGM or false
 
@@ -397,6 +431,10 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     if ns.pSettings.enableAutoSync then
         C_Timer.After(15, function() ns.sync:StartSyncRoutine(1) end)
     end
+end
+
+function core:NotifySettingsUpdate()
+    AceConfigRegistry:NotifyChange("GuildRecruiter")
 end
 core:Init()
 

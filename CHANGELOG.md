@@ -2,8 +2,12 @@
 ## 3.0 - War Within Release
 
 ### v3.0.31 Notes
-    - Changed the 6 months to 180 days.
-    (NOTE: If you were using the 6 months, you will need to update your settings.)
+    - Changed the 6 months to 180 days.  Also change 3 months to 120 days.
+    (NOTE: If you were using the 6 or 3 months, you will need to update your settings.)
+    - Added force checkbox to GM settings.
+    - Added auto detect of Block Guild Invites from players before sending a message.
+    - Updated sync so everyone in the guild will need to upgrade.
+    - Invites should match up with the order on the screen.
 ###v3.0.30 Notes
     - Fixed issue with missing no guild link localization.
     - Updated alert to missing guild link on login.

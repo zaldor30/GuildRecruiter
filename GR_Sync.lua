@@ -97,7 +97,7 @@ function sync:ShutdownSync(isFail)
     ns.win.base.tblFrame.syncIcon:GetNormalTexture():SetVertexColor(1, 1, 1, 1)
 
     local syncMessage = self.syncType == 3 and 'Client Sync' or self.tblSynctype[self.syncType]
-    ns.code:fOut(syncMessage..' Sync Complete', GRColor)
+    ns.code:fOut((syncMessage..' Sync Complete'):gsub('Sync Sync', 'Sync'), GRColor)
 
     self:Init() -- Reset init variables
 end
@@ -204,9 +204,8 @@ function sync:ProcessClientSyncData()
         if rev > clientRev then ns.code:fOut(k:gsub('-', '')..' using an older version ('..r.grVersion..').', 'FFFFAE00')
         elseif rev < clientRev then ns.code:fOut(k:gsub('-', '')..' using a newer version ('..r.grVersion..').', 'FFFFAE00') end
 
-        local dbRev, dbClientRev = findRevision(r.dbVersion)
-        if r.dbVersion ~= dbClientRev then
-            if dbRev > dbClientRev then ns.code:fOut(k:gsub('-', '')..' using an older version ('..r.dbVersion..').', 'FFFFAE00')
+        if rev ~= clientRev then
+            if rev > clientRev then ns.code:fOut(k:gsub('-', '')..' using an older version ('..r.dbVersion..').', 'FFFFAE00')
             else ns.code:fOut(k:gsub('-', '')..' using a newer version ('..r.dbVersion..').', 'FFFFAE00') end
             self.tblClients[k] = nil
             skipRecord = true
@@ -218,22 +217,15 @@ function sync:ProcessClientSyncData()
                 ns.guildInfo.guildLink = r.guildInfo.guildLink or r.guildInfo.guildLink or ''
                 realGMUpdated = r.isGuildLeader or false
                 if realGMUpdated then ns.guildInfo.guildLeaderToon = r.guildLeaderToon end
-                ns.gmSettings.sendGuildGreeting = r.guildInfo.sendGuildGreeting or false
-                ns.gmSettings.guildMessage = r.guildInfo.guildMessage or nil
-                ns.gmSettings.sendWhisperGreeting = r.guildInfo.sendWhisperGreeting or false
-                ns.gmSettings.whisperMessage = r.guildInfo.whisperMessage or nil
+            end
 
-                -- Update GM messages
-                for key, v in pairs(ns.gSettings.messageList or {}) do -- Remove all GM messages
-                    if v.type == 'GM' then
-                        ns.gSettings.messageList[key] = nil
-                    end
-                end
-                for _, v in pairs(r.messageList) do -- Add all GM messages
-                    if v.type == 'GM' then
-                        tinsert(ns.gSettings.messageList, v)
-                    end
-                end
+            if not ns.guildInfo.isGuildLeader and (not realGMUpdated or r.isGuildLeader) then
+                local isGuildLeader = ns.guildInfo.isGuildLeader
+                for key, v in pairs(r.guildInfo) do ns.guildInfo[key] = v end
+                for key, v in pairs(r.gmSettings) do ns.gmSettings[key] = v end
+                ns.gmSettings.isGuildLeader = isGuildLeader
+                ns.guildInfo.isGuildLeader = isGuildLeader
+                ns.core:NotifySettingsUpdate()
             end
 
             --* Sync Black List
@@ -265,15 +257,8 @@ function sync:GetMyData(realGMUpdated) --* Gather Data for Sync
     local tbl = {
         ['grVersion'] = GR.version,
         ['dbVersion'] = GR.dbVersion,
-        ['guildInfo'] = {
-            ['guildLink'] = ns.guildInfo.guildLink or nil,
-            ['isGuildLeader'] = (realGMUpdated or ns.guildInfo.isGuildLeader) or false,
-            ['guildLeaderToon'] = ns.guildInfo.guildLeaderToon or nil,
-            ['sendGuildGreeting'] = ns.gmSettings.sendGuildGreeting or false,
-            ['guildMessage'] = ns.gmSettings.guildMessage or nil,
-            ['sendWhisperGreeting'] = ns.gmSettings.sendWhisperGreeting or false,
-            ['whisperMessage'] = ns.gmSettings.whisperMessage or nil,
-        },
+        ['guildInfo'] = ns.guildInfo,
+        ['gmSettings'] = ns.gmSettings,
         ['blackList'] = ns.tblBlackList,
         ['messageList'] = tblGMMessages,
         ['antiSpamList'] = ns.tblAntiSpamList,

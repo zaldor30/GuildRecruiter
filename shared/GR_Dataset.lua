@@ -22,6 +22,10 @@ function ds:WhatsNew() -- What's new in the current version
     |CFFFFFF00v3.0.31 Notes|r
         - Changed the 6 months to 180 days.
         (NOTE: If you were using the 6 months, you will need to update your settings.)
+        - Added force checkbox to GM settings.
+        - Added auto detect of Block Guild Invites from players before sending a message.
+        - Updated sync so everyone in the guild will need to upgrade.
+        - Invites should match up with the order on the screen.
     |CFFFFFF00v3.0.30 Notes|r
         - Fixed issue with missing no guild link localization.
         - Updated alert to missing guild link on login.

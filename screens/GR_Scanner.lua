@@ -423,13 +423,14 @@ function scanner:BlackListPlayer()
     self:SetInviteButtonsState()
 end
 function scanner:InvitePlayers()
-    local key, tbl = next(self.tblInvites)
+    local tblInv = table.sortByField(self.tblInvites, 'fullName') or {}
+    local key, tbl = next(tblInv)
     if not tbl then return end
 
     self.tblInvites[key] = nil
     self:DispalyInviteList()
 
-ns.invite:SendAutoInvite(tbl.fullName, (select(2, UnitClass(tbl.fullName)) or nil), ((ns.pSettings.inviteFormat ~= 2) or false), ((ns.pSettings.inviteFormat ~= 1) or false))
+    ns.invite:SendAutoInvite(tbl.fullName, (select(2, UnitClass(tbl.fullName)) or nil), ((ns.pSettings.inviteFormat ~= 2) or false), ((ns.pSettings.inviteFormat ~= 1) or false))
 end
 function scanner:SetInviteButtonsState()
     local anyChecked, count = false, 0
