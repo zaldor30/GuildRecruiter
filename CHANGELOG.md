@@ -1,6 +1,9 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
+### v3.0.31 Notes
+    - Changed the 6 months to 180 days.
+    (NOTE: If you were using the 6 months, you will need to update your settings.)
 ###v3.0.30 Notes
     - Fixed issue with missing no guild link localization.
     - Updated alert to missing guild link on login.

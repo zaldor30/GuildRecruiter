@@ -75,10 +75,21 @@ function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreeti
         ns.code:fOut(L['GUILD_INVITE_SENT']..' '..cName, 'FFFFFF00')
     end
 
-    if invFormat ~= 2 and invFormat ~= 4 and useInviteMsg and msgInvite then
-        self:SendMessage(pName, name, msgInvite) end
-
     invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg, isManual)
+
+    if invFormat ~= 2 and invFormat ~= 4 and useInviteMsg and msgInvite then
+        if isManual then self:SendMessage(pName, name, msgInvite)
+        else
+            C_Timer.After(.5, function()
+                if invite.tblSent[strlower(fName)] then
+                    self:SendMessage(pName, name, msgInvite)
+                    invite.tblSent[strlower(fName)].sentAt = GetServerTime()
+                else
+                    ns.code:fOut(L['INVITE_REJECTED']..' '..cName, 'FFFFFF00')
+                end
+            end)
+        end
+    end
 end
 function invite:SendMessage(pName, cName, msgInvite, showMessage)
     msgInvite = ns.code:variableReplacement(msgInvite, pName:gsub('-.*', '')) -- Remove realm name
@@ -97,7 +108,7 @@ local function UpdateInvitePlayerStatus(_, ...)
 
     msg = strlower(msg)
     local fName, key = nil, nil
-    if msg and msg:find('Invited By:') and msg:find(UnitName('player')) then
+    if msg and msg:find('Invited By:') and msg:find(UnitName('player')) then -- GRM
         print('you did the invite')
         return
     elseif msg and msg:find('REINVITED') then print('You reinvited') return
