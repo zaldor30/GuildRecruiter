@@ -373,7 +373,10 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     self.fullyStarted = true
 
     ns.code:fOut(L['TITLE']..' ('..GR.version..(GR.isTest and ' '..GR.testLevel or '')..') '..L['IS_ENABLED'], GRColor, true)
-    if not ns.guildInfo.guildLink then ns.code:cOut(L['NO_GUILD_LINK'], GRColor) end
+    if not ns.guildInfo.guildLink then
+        ns.code:fOut(L['NO_GUILD_LINK'], GRColor)
+        ns.code:fOut(ns.cText('FFFF0000', L['NO_GUILD_LINK'], GRColor))
+    end
 
     if GR.isTest then
         ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.testLevel))), 'FFFFFF00', true)
@@ -402,7 +405,8 @@ core:Init()
 local customDropdown = CreateFrame("Frame", "CustomChatDropdown", UIParent, "UIDropDownMenuTemplate")
 -- Function to initialize the custom dropdown menu
 local function InitializeDropdownMenu(self, level)
-    if not self.chatPlayerName or not ns.pSettings.showContextMenu then return end
+    if not core.isEnabled then return
+    elseif not self.chatPlayerName or not ns.pSettings.showContextMenu then return end
     local cPlayerName = ns.code:cText(GRColor, self.chatPlayerName)
     if level == 1 then
         local name = self.chatPlayerName:find('-') and self.chatPlayerName or self.chatPlayerName..'-'..GetRealmName() -- Add realm name if not present

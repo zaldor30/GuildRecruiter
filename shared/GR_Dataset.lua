@@ -18,7 +18,15 @@ function ds:WhatsNew() -- What's new in the current version
             |CFF55D0FF** Please report any bugs or issues in Discord **
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
-                
+
+    |CFFFFFF00v3.0.30 Notes|r
+        - Fixed issue with missing no guild link localization.
+        - Updated alert to missing guild link on login.
+              
+    |CFFFFFF00v3.0.29 Notes|r
+        - Fix error when not in guild and right click a name.
+        - Fix error when not in guild and a sync is attempted.
+    
     |CFFFFFF00v3.0.29 Notes|r
         - Trying to fix position of right click invite menu.
         - Fix to replacing GUILDNAME, etc when sending invite message only

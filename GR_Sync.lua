@@ -34,6 +34,8 @@ end
 --* Sync Start/Stop Routines
  -- Includes gathering my data
 function sync:StartSyncRoutine(syncType, sender)
+    if not ns.core.isEnabled then return end
+
     self.syncType = syncType or nil
     if not syncType then return
     elseif self.syncType and self.syncStart then
@@ -289,7 +291,8 @@ end
 sync:Init()
 
 local function OnCommReceived(prefix, message, distribution, sender)
-    if prefix ~= COMM_PREFIX then return
+    if not ns.core.isEnabled then return
+    elseif prefix ~= COMM_PREFIX then return
     elseif distribution ~= 'GUILD' and distribution ~= 'WHISPER' then return end
 
     sync:CommReceived(message, sender)

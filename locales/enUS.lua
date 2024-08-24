@@ -94,6 +94,7 @@ L['GUILD_INVITE_SENT'] = 'Guild invite sent to'
 L['INVITE_MESSAGE_SENT'] = 'Invite message sent to'
 L['INVITE_ALREADY_SENT'] = 'has already been invited'
 L['NO_GUILD_LINK'] = 'No guild link found. Sync with GM or log into a GM character.'
+L['NO_GUILD_LINK2'] = 'Try reloading your UI (/rl) and see if you get the message again.'
 L['SELECT_MESSAGE'] = 'Select a message from the list or create one in settings.'
 
 --* GR Filter Messages
