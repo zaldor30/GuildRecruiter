@@ -142,7 +142,7 @@ function sync:CommReceived(message, sender)
         local dataReady = true
         if self.syncType <= 2 then
             for key, v in pairs(self.tblClients) do
-                if not v.receivedData then print(key..' not ready.') dataReady = false return end
+                if not v.receivedData then dataReady = false return end
             end
         end
 

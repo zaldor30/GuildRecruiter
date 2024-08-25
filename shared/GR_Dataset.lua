@@ -19,7 +19,7 @@ function ds:WhatsNew() -- What's new in the current version
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
 
-    |CFFFFFF00v3.0.34 Notes|r
+    |CFFFFFF00v3.0.34 Notes|r  -- Joined forces with FGI to bring recruiting to the next level.
         - Changed the 6 months to 180 days.
         (NOTE: If you were using the 6 months, you will need to update your settings.)
         - Added force checkbox to GM settings.
@@ -29,6 +29,7 @@ function ds:WhatsNew() -- What's new in the current version
         - Added season 1 raid to invalid zones.
         - Added TWW dungeons to invalid zones.
         - Added Delves to invalid zones.
+        - Working on issue with wrong welcome messages being sent.
     |CFFFFFF00v3.0.30 Notes|r
         - Fixed issue with missing no guild link localization.
         - Updated alert to missing guild link on login.

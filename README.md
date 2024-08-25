@@ -6,7 +6,7 @@
 
 </div>
 
-Guild Recruiter is a powerful tool for getting new guild members to join.
+Guild Recruiter is now, the official replacement for FGI.  It is a guild recruitment addon that allows you to send messages to players that are not in a guild.  It also has a scanner that will scan the area around you for players that are not in a guild.  You can then invite them to your guild.
 
 ## Warning: Utilization of a guild recruitment addon can lead to a player being flagged for spamming.  Please use this addon responsibly.
 <div align="center">This goes for any guild recruitment addon, not just Guild Recruiter.</div>

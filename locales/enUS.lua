@@ -55,6 +55,7 @@ L['SYNC_TOOLTIP'] = 'Manual sync with guild members.'
 L['ANALYTICS'] = 'Analytics'
 L['ANALYTICS_TOOLTIP'] = 'View the analytics window.'
 L['BLACKLIST'] = 'Black List'
+L['NO_REASON'] = 'No reason given.'
 L['BLACKLIST_TOOLTIP'] = 'Add a player to the blacklist.'
 L['BLACK_LIST_REASON_INPUT'] = 'Why do you want to black list?'
 L['BL_NAME_NOT_ADDED'] = 'Black list name not added.'
@@ -273,7 +274,7 @@ L['ENABLE_BLOCK_INVITE_CHECK_DESC'] = 'Attempts to ignore players that have Bloc
 
 -- * GR Invite Messages Window
 L['INVITE_MESSAGES'] = 'Invite Messages'
-L['INVITE_MESSAGES_DESC'] = [[These are messages seperate from the GM synced messages.
+L['INVITE_MESSAGES_DESC'] = [[These messages are separate from the GM synced messages.
 They are tied only to your guild characters.]]
 
 -- * BlackList Settings Window

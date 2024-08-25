@@ -365,7 +365,6 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     ns.tblRaces, ns.tblClasses = ns.ds:races(), ns.ds:classes()
 
     --* Setup Tables
-    print(GetInstanceInfo())
     ns.tblInvalidZones = ns.ds:invalidZones()
     ns.tblRacesSortedByName = ns.code:sortTableByField(ns.tblRaces, 'name')
     ns.tblClassesSortedByName = ns.code:sortTableByField(ns.tblClasses, 'name')
