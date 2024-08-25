@@ -397,6 +397,10 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
         ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.testLevel))), 'FFFFFF00', true)
      end
 
+     --print('hasGM:'..ns.core.hasGM)
+    --print('Guild Greeting:',ns.gmSettings.sendGuildGreeting, 'Guild Message:', ns.gmSettings.guildMessage)
+    ns.raiderIO:Start()
+
     if type(ns.global.showWhatsNew) ~= 'boolean' then
         ns.global.showWhatsNew = true
         ns.win.whatsnew.startUpWhatsNew = true

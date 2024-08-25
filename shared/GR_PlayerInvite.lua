@@ -202,7 +202,6 @@ function invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg, isMa
     ns.antiSpam:AddToAntiSpamList(fName)
 end
 function invite:GetWelcomeMessages(pName)
-    local GMOverride = ns.gSettings.GMOverride or false
     local guildMessage, msgWhisper = false, false
 
     if ns.core.hasGM or (ns.gmSettings.sendGuildGreeting and ns.gmSettings.guildMessage ~= '') then
