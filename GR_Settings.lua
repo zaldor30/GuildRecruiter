@@ -241,7 +241,7 @@ ns.addonSettings = {
             name = L['GM_SETTINGS'],
             type = 'group',
             order = 6,
-            hidden = function() return not ns.core.iAmGM end,
+            hidden = function() return not ns.core.hasGM end,
             args = {
                 invHeader1 = {
                     name = L['GM_SETTINGS'],
@@ -265,7 +265,6 @@ ns.addonSettings = {
                     desc = L['ENABLE_BLOCK_INVITE_CHECK_DESC'],
                     type = 'toggle',
                     width = 'full',
-                    disabled = function() return not ns.core.iAmGM end,
                     set = function(_, val) ns.gmSettings.obeyBlockInvites = val end,
                     get = function() return ns.gmSettings.obeyBlockInvites end,
                 },
@@ -284,7 +283,6 @@ ns.addonSettings = {
                     desc = L['ENABLE_ANTI_SPAM_DESC'],
                     type = 'toggle',
                     width = 1,
-                    disabled = function() return not ns.core.iAmGM end,
                     set = function(_, val) ns.gmSettings.antiSpam = val end,
                     get = function() return ns.gmSettings.antiSpam end,
                 },
@@ -295,7 +293,6 @@ ns.addonSettings = {
                     type = 'select',
                     style = 'dropdown',
                     width = 1,
-                    disabled = function() return not ns.core.iAmGM end,
                     values = function()
                         return {
                             [7] = '7 days',
@@ -328,7 +325,6 @@ ns.addonSettings = {
                     desc = L['GUILD_WELCOME_MSG_DESC'],
                     type = 'toggle',
                     width = 2.5,
-                    disabled = function() return not ns.core.iAmGM end,
                     set = function(_, val) ns.gmSettings.sendGuildGreeting = val end,
                     get = function() return ns.gmSettings.sendGuildGreeting end,
                 },
@@ -347,7 +343,6 @@ ns.addonSettings = {
                     desc = L['GUILD_WELCOME_MSG_DESC'],
                     type = 'input',
                     width = 2.5,
-                    disabled = function() return not ns.core.iAmGM end,
                     set = function(_, val) ns.gmSettings.guildMessage = val end,
                     get = function() return ns.gmSettings.guildMessage end,
                 },
@@ -366,7 +361,6 @@ ns.addonSettings = {
                     desc = L['WHISPER_WELCOME_MSG_DESC'],
                     type = 'toggle',
                     width = 2.5,
-                    disabled = function() return not ns.core.iAmGM end,
                     set = function(_, val) ns.gmSettings.sendWhisperGreeting = val end,
                     get = function() return ns.gmSettings.sendWhisperGreeting end,
                 },
@@ -386,7 +380,6 @@ ns.addonSettings = {
                     type = 'input',
                     multiline = 3,
                     width = 'full',
-                    disabled = function() return not ns.core.iAmGM end,
                     set = function(_, val) ns.gmSettings.whisperMessage = ns.code:capitalKeyWord(val:trim()) end,
                     get = function() return ns.gmSettings.whisperMessage end,
                 },
@@ -599,36 +592,19 @@ ns.addonSettings = {
             order = 10,
             name = ' ',
             type = 'group',
-            hidden = function() return (hasGM and not iAmGM) and ns.gmSettings.sendWhisperGreeting and ns.gmSettings.sendGuildGreeting and ns.gmSettings.antiSpam end,
+            hidden = function() return ns.core.hasGM end,
             args = {}
         },
         inviteSettings = {
             order = 11,
             name = L['INVITE_SETTINGS'],
             type = 'group',
-            hidden = function() return (hasGM and not iAmGM) and ns.gmSettings.sendWhisperGreeting and ns.gmSettings.sendGuildGreeting and ns.gmSettings.antiSpam end,
+            hidden = function() return ns.core.hasGM end,
             args = {
                 invHeader1 = {
                     name = L['INVITE_SETTINGS'],
                     type = 'header',
                     order = 0,
-                },
-                invNote = {
-                    order = 2,
-                    name = ns.code:cText('FF00FF00', L['ENABLED_NOTE']),
-                    type = 'description',
-                    fontSize = 'medium',
-                    hidden = function() return iAmGM end,
-                },
-                invOverrideGMSettings = {
-                    order = 1,
-                    name = L['OVERRIDE_GM_SETTINGS'],
-                    desc = L['OVERRIDE_GM_SETTINGS_DESC'],
-                    type = 'toggle',
-                    width = 'full',
-                    hidden = function() return not iAmGM end,
-                    set = function(_, val) ns.gSettings.overrideGM = val end,
-                    get = function() return ns.gSettings.overrideGM end,
                 },
                 invObeyBlock = {
                     order = 3,
@@ -714,7 +690,7 @@ ns.addonSettings = {
                     set = function(_, val) ns.gSettings.guildMessage = val end,
                     get = function()
                         local out = ns.gSettings.guildMessage
-                        if not ns.gSettings.overrideGM and ns.gmSettings.forceGuildMessage then
+                        if not ns.gSettings.overrideGM and ns.gmSettings.forceSendGuildGreeting and ns.gmSettings.forceGuildMessage then
                             out = ns.gmSettings.guildMessage
                         end
 
@@ -749,7 +725,7 @@ ns.addonSettings = {
                     set = function(_, val) ns.gSettings.whisperMessage = ns.code:capitalKeyWord(val:trim()) end,
                     get = function()
                         local out = ns.gSettings.whisperMessage
-                        if not ns.gSettings.overrideGM and ns.gmSettings.whisperMessage then
+                        if not ns.gSettings.overrideGM and ns.gmSettings.forceWhisperMessage and ns.gmSettings.whisperMessage then
                             out = ns.gmSettings.whisperMessage
                         end
 
@@ -793,12 +769,25 @@ ns.addonSettings = {
             order = 12,
             name = L['INVITE_MESSAGES'],
             type = 'group',
-            hidden = function() return (hasGM and not iAmGM) and ns.gmSettings.sendWhisperGreeting end,
+            --hidden = function() return ns.core.hasGM end,
             args = {
                 invMessageListHeading = {
                     order = 0,
                     name = L['INVITE_MESSAGES'],
                     type = 'header',
+                },
+                invMessageInfo = {
+                    order = 1,
+                    name = function()
+                        local msg = L['INVITE_MESSAGES_DESC']
+                        msg = msg:gsub('GUILDLINK', ns.code:cText('FFFFFF00', L['GUILDLINK']))
+                        msg = msg:gsub('GUILDNAME', ns.code:cText('FFFFFF00', L['GUILDNAME']))
+                        msg = msg:gsub('PLAYERNAME', ns.code:cText('FFFFFF00', L['PLAYERNAME']))
+
+                        return msg
+                    end,
+                    type = 'description',
+                    fontSize = 'medium',
                 },
                 invActive = {
                     order = 5,

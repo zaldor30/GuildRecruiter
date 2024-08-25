@@ -153,7 +153,8 @@ You can access by right clicking on the minimap icon
 or by typing /gr config. Left click on the minimap
 icon to open the recruitment window.
 If you have any issues, click on the About menu
-option to get our Discord link.]]
+option to get our Discord link.
+IMPORTANT: Please type /rl to reload your UI, just the one time.]]
 L['NEW_VERSION_INFO'] = [[
 Guild Recruiter has been updated!
 Please check the "What's New?" for what has changed.]]
@@ -272,6 +273,8 @@ L['ENABLE_BLOCK_INVITE_CHECK_DESC'] = 'Attempts to ignore players that have Bloc
 
 -- * GR Invite Messages Window
 L['INVITE_MESSAGES'] = 'Invite Messages'
+L['INVITE_MESSAGES_DESC'] = [[These are messages seperate from the GM synced messages.
+They are tied only to your guild characters.]]
 
 -- * BlackList Settings Window
 L['BLACK_LIST'] = 'Black List'

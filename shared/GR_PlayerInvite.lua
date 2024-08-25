@@ -10,10 +10,10 @@ function invite:Init()
     self.sentCount = 0
 end
 function invite:IsInvalidZone(zone)
-    if ns.tblInvalidZonesByName[zone] then return true
+    if ns.tblInvalidZones[zone] then return true
     else
         for _, r in pairs(ns.tblInvalidZones) do
-            if strlower(r.name) == strlower(zone) then return true end
+            if strlower(r.name):find(strlower(zone)) then return true end
         end
     end
 
@@ -205,22 +205,22 @@ function invite:GetWelcomeMessages(pName)
     local GMOverride = ns.gSettings.GMOverride or false
     local guildMessage, msgWhisper = false, false
 
-    if GMOverride and ns.gSettings.sendGuildGreeting and ns.gSettings.guildMessage ~= '' then
-        guildMessage = ns.gSettings.guildMessage
-    elseif ns.gmSettings.sendGuildGreeting and ns.gmSettings.guildMessage ~= '' then
+    if ns.core.hasGM or (ns.gmSettings.sendGuildGreeting and ns.gmSettings.guildMessage ~= '') then
         guildMessage = ns.gmSettings.guildMessage
-    elseif ns.gSettings.sendGuildGreeting and ns.gSettings.guildMessage ~= '' then
+    elseif not ns.core.hasGM and ns.gmSettings.forceSendGuildGreeting and ns.gmSettings.guildMessage ~= '' then
+        guildMessage = ns.gmSettings.guildMessage
+    elseif not ns.core.hasGM and ns.gSettings.sendGuildGreeting and ns.gSettings.guildMessage ~= '' then
         guildMessage = ns.gSettings.guildMessage
     end
-
     guildMessage = ns.code:variableReplacement(ns.gSettings.guildMessage, pName) or false
 
-    if not GMOverride and ns.gmSettings.sendWhisperGreeting and ns.gmSettings.whisperMessage ~= '' then
+    if ns.core.hasGM or (ns.gmSettings.sendWhisperGreeting and ns.gmSettings.whisperMessage ~= '') then
         msgWhisper = ns.gmSettings.whisperMessage
-    elseif ns.gSettings.sendWhisperGreeting and ns.gSettings.whisperMessage ~= '' then
+    elseif not ns.core.hasGM and ns.gmSettings.forceSendWhisper and ns.gmSettings.whisperMessage ~= '' then
+        msgWhisper = ns.gmSettings.whisperMessage
+    elseif not ns.core.hasGM and ns.gSettings.sendWhisperGreeting and ns.gSettings.whisperMessage ~= '' then
         msgWhisper = ns.gSettings.whisperMessage
     end
-
     msgWhisper = ns.code:variableReplacement(ns.gSettings.whisperMessage, pName) or false
 
     return guildMessage, msgWhisper

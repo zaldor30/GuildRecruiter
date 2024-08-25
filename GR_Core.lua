@@ -177,7 +177,7 @@ function core:PerformDatabaseMaintenance()
         ns.global.dbVersion = GR.dbVersion
         if ns.gmSettings.obeyBlockInvites == nil then ns.gmSettings.obeyBlockInvites = true end
         if ns.gSettings.obeyBlockInvites == nil then ns.gSettings.obeyBlockInvites = true end
-        
+
         -- Fix for old DB settings
         ns.gmSettings.sendGuildGreeting = ns.gmSettings.sendGuildGreeting or ns.gmSettings.sendWelcome
         ns.gmSettings.sendWhsiper = ns.gmSettings.sendWhsiper or ns.gmSettings.sendGreeting
@@ -240,25 +240,6 @@ end
 function core:StartGuildSetup(clubID) -- Get Guild Info and prep database
     if not clubID then return end
 
-    local function checkIfGuildLeader()
-        --[[if IsGuildLeader() then
-            ns.guildInfo.isGuildLeader = true
-            ns.guildInfo.guildLeaderToon = GetUnitName('player', true)
-        elseif self.hasGM then ns.guildInfo.isGuildLeader = true
-        elseif not IsGuildLeader() then
-            if ns.guildInfo.guildLeaderToon == GetUnitName('player', true) then
-                ns.guildInfo.isGuildLeader = false
-                ns.guildInfo.guildLeaderToon = nil
-                ns.gSettings.overrideGM = false
-                ns.code:dOut(GetUnitName('player', true)..' is no longer the Guild Leader')
-            elseif not ns.guildInfo.guildLeaderToon then
-                ns.guildInfo.isGuildLeader = false
-                ns.code:dOut('You are not the Guild Leader')
-            else ns.code:dOut('Current Guild Leader: '..(ns.guildInfo.guildLeaderToon or 'No One')) end
-        end--]]
-        
-    end
-
     ns.guildInfo.clubID = clubID
     ns.guildInfo.guildName = GetGuildInfo('player')
 
@@ -266,8 +247,6 @@ function core:StartGuildSetup(clubID) -- Get Guild Info and prep database
     if not ns.guildInfo.guildLink and club then
         ns.guildInfo.guildLink = GetClubFinderLink(club.clubFinderGUID, club.name) or nil
     end
-
-    checkIfGuildLeader()
 end
 function core:PerformRecordMaintenance() -- Perform Record Maintenance
     core:CreateBLandAntiSpamTables() -- Create the black list and anti-spam tables
@@ -386,8 +365,8 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     ns.tblRaces, ns.tblClasses = ns.ds:races(), ns.ds:classes()
 
     --* Setup Tables
+    print(GetInstanceInfo())
     ns.tblInvalidZones = ns.ds:invalidZones()
-    ns.tblInvalidZonesByName = ns.ds:convertZoneKeyToName()
     ns.tblRacesSortedByName = ns.code:sortTableByField(ns.tblRaces, 'name')
     ns.tblClassesSortedByName = ns.code:sortTableByField(ns.tblClasses, 'name')
 
