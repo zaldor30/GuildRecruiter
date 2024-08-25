@@ -28,7 +28,10 @@
             "ALL",
             "DropDownList1",
             "UIDropDownMenu_Initialize",
-            "ToggleDropDownMenu"
+            "ToggleDropDownMenu",
+            "GameFontNormalOutline",
+            "GetUnitName",
+            "FormatPercentage"
         ]
     }
 }

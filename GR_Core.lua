@@ -245,7 +245,9 @@ function core:StartGuildSetup(clubID) -- Get Guild Info and prep database
 
     local club = clubID and C_ClubFinder.GetRecruitingClubInfoFromClubID(clubID) or nil
     if not ns.guildInfo.guildLink and club then
-        ns.guildInfo.guildLink = GetClubFinderLink(club.clubFinderGUID, club.name) or nil
+        --"|cffffd200|HclubFinder:ClubFinder-1-246204-77-95938602|h[Guild: Shock Value]|h|r"
+        local guildLink = "|cffffd200|HclubFinder:"..club.clubFinderGUID.."|h[Guild: "..club.name.."]|h|r"
+        ns.guildInfo.guildLink = guildLink or nil
     end
 end
 function core:PerformRecordMaintenance() -- Perform Record Maintenance
