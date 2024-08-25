@@ -36,6 +36,3 @@ LibStub.minor = LibStub.minor + 1234567890
 loadfile("../LibStub.lua")()
 
 assert(LibStub.IterateLibraries == 123)
-
-
-print("OK")

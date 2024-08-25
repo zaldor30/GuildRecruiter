@@ -18,7 +18,32 @@ function ds:WhatsNew() -- What's new in the current version
             |CFF55D0FF** Please report any bugs or issues in Discord **
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
-                
+
+    |CFFFFFF00v3.0.34 Notes|r  -- Joined forces with FGI to bring recruiting to the next level.
+        - Changed the 6 months to 180 days.
+        (NOTE: If you were using the 6 months, you will need to update your settings.)
+        - Added force checkbox to GM settings.
+        - Added auto detect of Block Guild Invites from players before sending a message.
+        - Updated sync so everyone in the guild will need to upgrade.
+        - Invites should match up with the order on the screen.
+        - Added season 1 raid to invalid zones.
+        - Added TWW dungeons to invalid zones.
+        - Added Delves to invalid zones.
+        - Working on issue with wrong welcome messages being sent.
+    |CFFFFFF00v3.0.30 Notes|r
+        - Fixed issue with missing no guild link localization.
+        - Updated alert to missing guild link on login.
+              
+    |CFFFFFF00v3.0.29 Notes|r
+        - Fix error when not in guild and right click a name.
+        - Fix error when not in guild and a sync is attempted.
+    
+    |CFFFFFF00v3.0.29 Notes|r
+        - Trying to fix position of right click invite menu.
+        - Fix to replacing GUILDNAME, etc when sending invite message only
+          from the right click menu.
+        - Fixed issue with scanning using the keybindings.
+
     |CFFFFFF00v3.0.26 Notes|r
         I have done pretty much a full rewrite of Guild Recruiter.
         I have added a lot of new features and fixed a lot of bugs.
@@ -55,75 +80,44 @@ function ds:WhatsNew() -- What's new in the current version
 end
 function ds:invalidZones() -- Invalid zones for recruitment
     local tbl = {
-        --battlegrounds
-        [30] = { id = 30, name = "Alterac Valley", reason = 'Battlegrounds' },
-        [489] = { id = 489, name = "Warsong Gulch", reason = 'Battlegrounds' },
-        [529] = { id = 529, name = "Arathi Basin (Classic)", reason = 'Battlegrounds' },
-        [566] = { id = 566, name = "Eye of the Storm", reason = 'Battlegrounds' },
-        [607] = { id = 607, name = "Strand of the Ancients", reason = 'Battlegrounds' },
-        [628] = { id = 628, name = "Isle of Conquest", reason = 'Battlegrounds' },
-        [726] = { id = 726, name = "Twin Peaks", reason = 'Battlegrounds' },
-        [727] = { id = 727, name = "Silvershard Mines", reason = 'Battlegrounds' },
-        [761] = { id = 761, name = "The Battle for Gilneas", reason = 'Battlegrounds' },
-        [968] = { id = 968, name = "Eye of the Storm (Rated)", reason = 'Battlegrounds' },
-        [998] = { id = 998, name = "Temple of Kotmogu", reason = 'Battlegrounds' },
-        [1105] = { id = 1105, name = "Deepwind Gorge", reason = 'Battlegrounds' },
-        [1681] = { id = 1681, name = "Arathi Basin (Winter)", reason = 'Battlegrounds' },
-        [1803] = { id = 1803, name = "Seething Shore", reason = 'Battlegrounds' },
-        [2107] = { id = 2107, name = "Arathi Basin", reason = 'Battlegrounds' },
-        [2177] = { id = 2177, name = "Arathi Basin Comp Stomp", reason = 'Battlegrounds' },
+        --*battlegrounds
+        ["Alterac Valley"] = { id = 30, name = "Alterac Valley", reason = 'Battlegrounds' },
+        ["Warsong Gulch"] = { id = 489, name = "Warsong Gulch", reason = 'Battlegrounds' },
+        ["Arathi Basin"] = { id = 529, name = "Arathi Basin (Classic)", reason = 'Battlegrounds' },
+        ["Eye of the Storm"] = { id = 566, name = "Eye of the Storm", reason = 'Battlegrounds' },
+        ["Strand of the Ancients"] = { id = 607, name = "Strand of the Ancients", reason = 'Battlegrounds' },
+        ["Isle of Conquest"] = { id = 628, name = "Isle of Conquest", reason = 'Battlegrounds' },
+        ["Twin Peaks"] = { id = 726, name = "Twin Peaks", reason = 'Battlegrounds' },
+        ["Silvershard Mines"] = { id = 727, name = "Silvershard Mines", reason = 'Battlegrounds' },
+        ["The Battle for Gilneas"] = { id = 761, name = "The Battle for Gilneas", reason = 'Battlegrounds' },
+        ["Temple of Kotmogu"] = { id = 998, name = "Temple of Kotmogu", reason = 'Battlegrounds' },
+        ["Deepwind Gorge"] = { id = 1105, name = "Deepwind Gorge", reason = 'Battlegrounds' },
+        ["Seething Shore"] = { id = 1803, name = "Seething Shore", reason = 'Battlegrounds' },
         --arenas
-        [572] = { id = 572, name = "Ruins of Lordaeron", reason = 'Arena' },
-        [617] = { id = 617, name = "Dalaran Arena", reason = 'Arena' },
-        [618] = { id = 618, name = "The Ring of Valor", reason = 'Arena' },
-        [980] = { id = 980, name = "Tol'Viron Arena", reason = 'Arena' },
-        [1134] = { id = 1134, name = "Tiger's Peak", reason = 'Arena' },
-        [1505] = { id = 1505, name = "Nagrand Arena", reason = 'Arena' },
-        [1672] = { id = 1672, name = "Blade's Edge Arena", reason = 'Arena' },
-        [2167] = { id = 2167, name = "The Robodrome", reason = 'Arena' },
+        ["Ruins of Lordaeron"] = { id = 572, name = "Ruins of Lordaeron", reason = 'Arena' },
+        ["Dalaran Arena"] = { id = 617, name = "Dalaran Arena", reason = 'Arena' },
+        ["The Ring of Valor"] = { id = 618, name = "The Ring of Valor", reason = 'Arena' },
+        ["Tol'Viron Arena"] = { id = 980, name = "Tol'Viron Arena", reason = 'Arena' },
+        ["Tiger's Peak"] = { id = 1134, name = "Tiger's Peak", reason = 'Arena' },
+        ["Nagrand Arena"] = { id = 1505, name = "Nagrand Arena", reason = 'Arena' },
+        ["Blade's Edge Arena"] = { id = 1672, name = "Blade's Edge Arena", reason = 'Arena' },
+        ["The Robodrome"] = { id = 2167, name = "The Robodrome", reason = 'Arena' },
 
             --@version-retail@
-        --raids
-        [0] = { id = 0, name = "Amirdrassil, the Dream's Hope", reason = 'Season 3 Raid' },
-        [2569] = {  id = 2569, name = "Aberrus, the Shadowed Crucible", reason = 'Season 2 Raid' },
-        [2522] = { id = 2522, name = "Vault of the Incarnates", reason = 'Season 1 Raid' },
-        --dungeons
-        [2451] = { id = 2451, name = "Uldaman: Legacy of Tyr", reason = 'DF Dungeon' },
-        [2515] = { id = 2515, name = "The Azure Vault", reason = 'DF Dungeon' },
-        [2516] = { id = 2516, name = "The Nokhud Offensive", reason = 'DF Dungeon' },
-        [2519] = { id = 2519, name = "Neltharus", reason = 'DF Dungeon' },
-        [2520] = { id = 2520, name = "Brackenhide Hollow", reason = 'DF Dungeon' },
-        [2521] = { id = 2521, name = "Ruby Life Pools", reason = 'DF Dungeon' },
-        [2526] = { id = 2526, name = "Algeth'ar Academy", reason = 'DF Dungeon' },
-        [2527] = { id = 2527, name = "Halls of Infusion", reason = 'DF Dungeon' },
-            --M+ rotating
-        --["Freehold"] = { id = 1754, name = "Freehold", reason = 'Season 2 Dungeon' },
-        --["The Underrot"] = { id = 1841, name = "The Underrot", reason = 'Season 2 Dungeon' },
-        --["Neltharion's Lair"] = { id = 1458, name = "Neltharion's Lair", reason = 'Season 2 Dungeon' },
-        --["The Vortex Pinnacle"] = { id = 657, name = "The Vortex Pinnacle", reason = 'Season 2 Dungeon' },
-        --["Darkheart Thicket"] = { id = 1466, name = "Darkheart Thicket", reason = 'Season 3 Dungeon' },
-        --['Black Rook Hold'] = { id = 1501, name = 'Black Rook Hold', reason = 'Season 3 Dungeon' },
-        --['Waycrest Manor'] = { id = 1862, name = 'Waycrest Manor', reason = 'Season 3 Dungeon' },
-        --["Atal'Dazar"] = { id = 1763, name = "Atal'Dazar", reason = 'Season 3 Dungeon' },
-        --['The Everbloom'] = { id = 1279, name = 'The Everbloom', reason = 'Season 3 Dungeon' },
-        --['Throne of Tides'] = { id = 643, name = 'Throne of Tides', reason = 'Season 3 Dungeon' },
-        --["Dawn of the Infinite: Galakrond's Fall"] = { id = 0, name = "Dawn of the Infinite: Galakrond's Fall", reason = 'Season 3 Dungeon' },
-        --["Dawn of the Infinite Murozond's Rise"] = { id = 0, name = "Dawn of the Infinite Murozond's Rise", reason = 'Season 3 Dungeon' },
+        --*raids
+        ["Nerub’ar Palace"] = { id = 0, name = "Nerub’ar Palace", reason = 'TWW Season 1 Raid' },
+
+        --*dungeons
+        ["Ara-Kara, City of Echoes"] = { id = 0, name = "Ara-Kara, City of Echoes", reason = 'TWW Dungeon' },
+        ["Priory of the Sacred Flame"] = { id = 0, name = "Priory of the Sacred Flame", reason = 'TWW Dungeon' },
+        ["The Stonevault"] = { id = 0, name = "The Stonevault", reason = 'TWW Dungeon' },
+        ["Cinderbrew Meadery"] = { id = 0, name = "Cinderbrew Meadery", reason = 'TWW Dungeon' },
+        ["City of Threads"] = { id = 0, name = "City of Threads", reason = 'TWW Dungeon' },
+        ["Darkflame Cleft"] = { id = 0, name = "Darkflame Cleft", reason = 'TWW Dungeon' },
+        ["The Dawnbreaker"] = { id = 0, name = "The Dawnbreaker", reason = 'TWW Dungeon' },
 
         --* Delves
-        [1] = { id = 1, name = 'Earthcrawl Mines', reason = 'Delves' },
-        [2] = { id = 1, name = 'Fungal Folly', reason = 'Delves' },
-        [3] = { id = 1, name = "Kriegval’s Rest", reason = 'Delves' },
-        [4] = { id = 1, name = 'The Waterworks', reason = 'Delves' },
-        [5] = { id = 1, name = 'The Dread Pit', reason = 'Delves' },
-        [6] = { id = 1, name = 'Nightfall Sanctum', reason = 'Delves' },
-        [7] = { id = 1, name = 'The Sinkhole', reason = 'Delves' },
-        [8] = { id = 1, name = 'Skittering Breach', reason = 'Delves' },
-        [9] = { id = 1, name = 'Mycomancer Cavern', reason = 'Delves' },
-        [10] = { id = 1, name = 'The Spiral Weave', reason = 'Delves' },
-        [11] = { id = 1, name = 'Tak-Rethan Abyss', reason = 'Delves' },
-        [12] = { id = 1, name = 'Underkeep', reason = 'Delves' },
-        [13] = { id = 1, name = "Zekvir’s Lair", reason = 'Delves' },
+        ["Delves"] = { id = 0, name = "Delves", reason = 'Delves' },
     }
 
     ns.global.zoneList = ns.global.zoneList or {}

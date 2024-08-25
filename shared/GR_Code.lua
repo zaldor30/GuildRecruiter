@@ -138,8 +138,8 @@ function code:variableReplacement(msg, playerName, removeGT)
 
     local gLink, gName = gi.guildLink or nil, gi.guildName or nil
 
-    msg = msg:gsub(L['GUILDLINK'], (gLink or L['No Guild Link']))
-    msg = msg:gsub(L['GUILDNAME'], (gName and (removeGT and gName or '<'..gName..'>') or L['No Guild Name']))
+    msg = msg:gsub(L['GUILDLINK'], ((gLink and gi.guildLink) and gLink or L['GUILD_LINK_NOT_FOUND']))
+    msg = msg:gsub(L['GUILDNAME'], (gName and (removeGT and gName or '<'..gName..'>') or L['NO_GUILD_NAME']))
     msg = msg:gsub(L['PLAYERNAME'], (playerName or 'player'))
 
     return msg

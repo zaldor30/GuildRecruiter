@@ -41,7 +41,7 @@ L['INVITE_NO_MESSAGES_MENU'] = 'Invite without Messages'
 L['DELETE_CONFIRMATION'] = 'Are you sure you want to delete this record?'
 L['ABOUT_TOOLTIP'] = 'See What\'s New and support info.'
 L['PLEASE_WAIT'] = 'Please wait'
-L['ERROR_SCAN_WAIT'] = ' seconds before scanning again.'
+L['ERROR_SCAN_WAIT'] = 'seconds before scanning again.'
 
 -- * Version 3.0 Changes
 
@@ -55,6 +55,7 @@ L['SYNC_TOOLTIP'] = 'Manual sync with guild members.'
 L['ANALYTICS'] = 'Analytics'
 L['ANALYTICS_TOOLTIP'] = 'View the analytics window.'
 L['BLACKLIST'] = 'Black List'
+L['NO_REASON'] = 'No reason given.'
 L['BLACKLIST_TOOLTIP'] = 'Add a player to the blacklist.'
 L['BLACK_LIST_REASON_INPUT'] = 'Why do you want to black list?'
 L['BL_NAME_NOT_ADDED'] = 'Black list name not added.'
@@ -87,6 +88,7 @@ L['PLAYERNAME'] = 'PLAYERNAME'
 L['NO_PLAYER_NAME'] = 'player'
 L['BLACK_LIST'] = 'Black List'
 L['OK_INVITE'] = 'Do you want to invite anyway?'
+L['INVITE_REJECTED'] = 'Message not sent, appears player has Block Guild Invites on.'
 L['NO_INVITE_MESSAGE'] = 'No message selected. Please select a message in the home screen.'
 L['INVITE_IN_GUILD'] = 'is already in the guild'
 L['IS_ON_SPAM_LIST'] = 'is on the Anti-Spam list'
@@ -94,7 +96,10 @@ L['GUILD_INVITE_SENT'] = 'Guild invite sent to'
 L['INVITE_MESSAGE_SENT'] = 'Invite message sent to'
 L['INVITE_ALREADY_SENT'] = 'has already been invited'
 L['NO_GUILD_LINK'] = 'No guild link found. Sync with GM or log into a GM character.'
+L['NO_GUILD_LINK2'] = 'Try reloading your UI (/rl) and see if you get the message again.'
 L['SELECT_MESSAGE'] = 'Select a message from the list or create one in settings.'
+L['FORCE_ANTI_SPAM'] = 'Force Anti-Spam'
+L['FORCE_ANTI_SPAM_DESC'] = 'Force the Anti-Spam feature to prevent spamming players.'
 
 --* GR Filter Messages
 L['FILTERS'] = 'Filters'
@@ -149,7 +154,8 @@ You can access by right clicking on the minimap icon
 or by typing /gr config. Left click on the minimap
 icon to open the recruitment window.
 If you have any issues, click on the About menu
-option to get our Discord link.]]
+option to get our Discord link.
+IMPORTANT: Please type /rl to reload your UI, just the one time.]]
 L['NEW_VERSION_INFO'] = [[
 Guild Recruiter has been updated!
 Please check the "What's New?" for what has changed.]]
@@ -256,9 +262,20 @@ L['GUILD_WELCOME_MSG'] = 'Guild Welcome Message'
 L['GUILD_WELCOME_MSG_DESC'] = 'The message to send to guild chat when a new player joins.'
 L['WHISPER_WELCOME_MSG'] = 'Whisper Welcome Message'
 L['WHISPER_WELCOME_MSG_DESC'] = 'Whispered message sent to a player when they join the guild.'
+L['FORCE_WHISPER_MESSAGE'] = 'Force Whisper Message'
+L['FORCE_WHISPER_MESSAGE_DESC'] = 'Force the following whisper message to be sent to the player.'
+L['FORCE_WHISPER_WELCOME_MSG_DESC'] = 'Force the whisper message to be sent to the player.'
+L['FORCE_GUILD_GREETING'] = 'Force Guild Greeting'
+L['FORCE_GUILD_GREETING_DESC'] = 'Force the guild greeting message to be sent to the guild chat.'
+L['FORCE_GUILD_MESSAGE'] = 'Force Guild Message'
+L['FORCE_GUILD_MESSAGE_DESC'] = 'Force the following message to be sent to the guild chat.'
+L['ENABLE_BLOCK_INVITE_CHECK'] = 'Enable Block Invite Check'
+L['ENABLE_BLOCK_INVITE_CHECK_DESC'] = 'Attempts to ignore players that have Block Guild Invites turned on.'
 
 -- * GR Invite Messages Window
 L['INVITE_MESSAGES'] = 'Invite Messages'
+L['INVITE_MESSAGES_DESC'] = [[These messages are separate from the GM synced messages.
+They are tied only to your guild characters.]]
 
 -- * BlackList Settings Window
 L['BLACK_LIST'] = 'Black List'

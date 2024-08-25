@@ -9,7 +9,7 @@ GR.isTest = false
 GR.testLevel = 'Beta'
 GR.author  = C_AddOns.GetAddOnMetadata('GuildRecruiter', 'Author')
 GR.version = C_AddOns.GetAddOnMetadata('GuildRecruiter', 'Version')
-GR.dbVersion = '3.0'
+GR.dbVersion = '3.1'
 
 -- Icons
 GR.icon = ICON_PATH..'GR_Icon.tga'

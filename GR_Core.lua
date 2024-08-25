@@ -6,6 +6,7 @@ local core = ns.core
 local L = LibStub("AceLocale-3.0"):GetLocale('GuildRecruiter')
 local AC, ACD = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0')
 local icon, DB = LibStub('LibDBIcon-1.0'), LibStub('AceDB-3.0')
+local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 
 -- *Blizzard Initialization Called Function
 function GR:OnInitialize()
@@ -40,6 +41,7 @@ function core:Init()
     self.isEnabled = false
     self.fullyStarted = false
     self.ignoreAutoSync = false
+    self.obeyBlockInvites = true
 
     self.addonSettings = {
         profile = {
@@ -63,18 +65,25 @@ function core:Init()
             guildInfo = {},
             gmSettings = {
                 -- GM Settings
+                forceObey = true,
+                obeyBlockInvites = true, -- Obey Block Invites
+                forceAntiSpam = true,
                 antiSpam = false,
                 antiSpamDays = 7,
+                forceSendGuildGreeting = false,
                 sendGuildGreeting = false,
+                forceGuildMessage = true,
                 guildMessage = L['DEFAULT_GUILD_WELCOME'],
+                forceSendWhisper = false,
                 sendWhsiper = false,
+                forceWhisperMessage = true,
                 whisperMessage = '',
                 messageList = {},
-                isGuildLeader = false,
                 guildLeaderToon = nil,
             },
             settings = {
                 -- General Settings
+                obeyBlockInvites = true, -- Obey Block Invites
                 showToolTips = true, -- Show Tool Tips
                 showConsoleMessages = false, -- Show Console Messages
                 -- Invite Settings
@@ -127,13 +136,6 @@ function core:StartDatabase(clubID)
 
     self:PerformDatabaseMaintenance() -- Perform Database Maintenance
 
-    -- Check if the GM is in the profile list
-    if ns.guildInfo.guildLeaderToon then
-        for profileName, _ in pairs(db.profiles) do
-            if profileName:find(ns.guildInfo.guildLeaderToon) then self.hasGM = true break end
-        end
-    end
-
     -- Other Variables Declaration
     ns.gFilterList = ns.g.filterList or {} -- Global Filter List
     ns.gAnalytics = ns.g.analytics or {} -- Global Analytics
@@ -141,10 +143,41 @@ function core:StartDatabase(clubID)
     ns.analytics:Start()
 
     GR.debug = ns.pSettings.debugMode or false -- Set the debug mode
+
+    local profiles, _ = db:GetProfiles()
+    if not IsGuildLeader() then
+        ns.guildInfo.isGuildLeader = false
+        for _, profile in pairs(profiles) do
+            if profile:find(GetUnitName('player', true)) then
+                if IsGuildLeader() then
+                    ns.guildInfo.isGuildLeader = true
+                    ns.guildInfo.guildLeaderToon = GetUnitName('player', true)
+                elseif not IsGuildLeader() and ns.guildInfo.guildLeaderToon == GetUnitName('player', true) then
+                    ns.guildInfo.isGuildLeader = false
+                    ns.guildInfo.guildLeaderToon = nil
+                    ns.gSettings.overrideGM = false
+                    ns.code:dOut(GetUnitName('player', true)..' is no longer the Guild Leader')
+                elseif ns.guildInfo.guildLeaderToon ~= GetUnitName('player', true) then
+                    ns.guildInfo.isGuildLeader = ns.guildInfo.isGuildLeader
+                end
+                break
+            end
+        end
+    else
+        ns.guildInfo.isGuildLeader = true
+        ns.guildInfo.guildLeaderToon = GetUnitName('player', true)
+    end
+
+    self.hasGM = ns.guildInfo.isGuildLeader
+    if self.hasGM and ns.gmSettings.forceObey then self.obeyBlockInvites = ns.gmSettings.obeyBlockInvites or false
+    elseif ns.pSettings.obeyBlockInvites then self.obeyBlockInvites = ns.pSettings.obeyBlockInvites or false end
 end
 function core:PerformDatabaseMaintenance()
     if not ns.global.dbVersion or ns.global.dbVersion ~= GR.dbVersion then
         ns.global.dbVersion = GR.dbVersion
+        if ns.gmSettings.obeyBlockInvites == nil then ns.gmSettings.obeyBlockInvites = true end
+        if ns.gSettings.obeyBlockInvites == nil then ns.gSettings.obeyBlockInvites = true end
+
         -- Fix for old DB settings
         ns.gmSettings.sendGuildGreeting = ns.gmSettings.sendGuildGreeting or ns.gmSettings.sendWelcome
         ns.gmSettings.sendWhsiper = ns.gmSettings.sendWhsiper or ns.gmSettings.sendGreeting
@@ -207,24 +240,6 @@ end
 function core:StartGuildSetup(clubID) -- Get Guild Info and prep database
     if not clubID then return end
 
-    local function checkIfGuildLeader()
-        if IsGuildLeader() then
-            ns.guildInfo.isGuildLeader = true
-            ns.guildInfo.guildLeaderToon = GetUnitName('player', true)
-        elseif self.hasGM then ns.guildInfo.isGuildLeader = true
-        elseif not IsGuildLeader() then
-            if ns.guildInfo.guildLeaderToon == GetUnitName('player', true) then
-                ns.guildInfo.isGuildLeader = false
-                ns.guildInfo.guildLeaderToon = nil
-                ns.gSettings.overrideGM = false
-                ns.code:dOut(GetUnitName('player', true)..' is no longer the Guild Leader')
-            elseif not ns.guildInfo.guildLeaderToon then
-                ns.guildInfo.isGuildLeader = false
-                ns.code:dOut('You are not the Guild Leader')
-            else ns.code:dOut('Current Guild Leader: '..(ns.guildInfo.guildLeaderToon or 'No One')) end
-        end
-    end
-
     ns.guildInfo.clubID = clubID
     ns.guildInfo.guildName = GetGuildInfo('player')
 
@@ -232,8 +247,6 @@ function core:StartGuildSetup(clubID) -- Get Guild Info and prep database
     if not ns.guildInfo.guildLink and club then
         ns.guildInfo.guildLink = GetClubFinderLink(club.clubFinderGUID, club.name) or nil
     end
-
-    checkIfGuildLeader()
 end
 function core:PerformRecordMaintenance() -- Perform Record Maintenance
     core:CreateBLandAntiSpamTables() -- Create the black list and anti-spam tables
@@ -353,15 +366,15 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
 
     --* Setup Tables
     ns.tblInvalidZones = ns.ds:invalidZones()
-    ns.tblInvalidZonesByName = ns.ds:convertZoneKeyToName()
     ns.tblRacesSortedByName = ns.code:sortTableByField(ns.tblRaces, 'name')
     ns.tblClassesSortedByName = ns.code:sortTableByField(ns.tblClasses, 'name')
 
-    AC:RegisterOptionsTable('GR_Options', ns.addonSettings) -- Register the options table
-    ns.addonOptions = ACD:AddToBlizOptions('GR_Options', 'Guild Recruiter') -- Add the options to the Blizzard options
+    AC:RegisterOptionsTable('GuildRecruiter', ns.addonSettings) -- Register the options table
+    ns.addonOptions = ACD:AddToBlizOptions('GuildRecruiter', 'Guild Recruiter') -- Add the options to the Blizzard options
     self.iAmGM = (ns.guildInfo.isGuildLeader or ns.guildInfo.guildLeaderToon == GetUnitName('player', true)) or false
     ns.gSettings.overrideGM = self.iAmGM and ns.gSettings.overrideGM or false
 
+    if not self.isEnabled then return end
     core:PerformRecordMaintenance() -- Perform record maintenance
     core:StartSlashCommands() -- Start the slash commands
     core:StartMiniMapIcon() -- Start the mini map icon
@@ -371,8 +384,11 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     ns.win.base:SetShown(false) -- Hide the base window
     self.fullyStarted = true
 
-    ns.code:fOut(L['TITLE']..' ('..GR.version..(GR.isTest and ' '..GR.testLevel..') ')..L['IS_ENABLED'], GRColor, true)
-    if not ns.guildInfo.guildLink then ns.code:cOut(L['NO_GUILD_LINK'], GRColor) end
+    ns.code:fOut(L['TITLE']..' ('..GR.version..(GR.isTest and ' '..GR.testLevel or '')..') '..L['IS_ENABLED'], GRColor, true)
+    if not ns.guildInfo.guildLink then
+        ns.code:fOut(L['NO_GUILD_LINK'], GRColor)
+        ns.code:fOut(ns.cText('FFFF0000', L['NO_GUILD_LINK'], GRColor))
+    end
 
     if GR.isTest then
         ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.testLevel))), 'FFFFFF00', true)
@@ -394,6 +410,10 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
         C_Timer.After(15, function() ns.sync:StartSyncRoutine(1) end)
     end
 end
+
+function core:NotifySettingsUpdate()
+    AceConfigRegistry:NotifyChange("GuildRecruiter")
+end
 core:Init()
 
 --* Hook /ginvite command
@@ -401,12 +421,15 @@ core:Init()
 local customDropdown = CreateFrame("Frame", "CustomChatDropdown", UIParent, "UIDropDownMenuTemplate")
 -- Function to initialize the custom dropdown menu
 local function InitializeDropdownMenu(self, level)
-    if not self.chatPlayerName or not ns.pSettings.showContextMenu then return end
+    if not core.isEnabled then return
+    elseif not self.chatPlayerName or not ns.pSettings.showContextMenu then return end
     local cPlayerName = ns.code:cText(GRColor, self.chatPlayerName)
     if level == 1 then
+        local name = self.chatPlayerName:find('-') and self.chatPlayerName or self.chatPlayerName..'-'..GetRealmName() -- Add realm name if not present
         local info = UIDropDownMenu_CreateInfo()
         info.text = cPlayerName..'\n'..ns.code:cText('FFFFFF00', L['INVITE_NO_MESSAGES_MENU'])
         info.notCheckable = true
+        info.fontObject = GameFontNormalOutline
         info.func = function()
             ns.invite:SendManualInvite(self.chatPlayerName, select(2, UnitClass(self.chatPlayerName)), false, false, true)
         end
@@ -421,6 +444,7 @@ local function InitializeDropdownMenu(self, level)
         info = UIDropDownMenu_CreateInfo()
         info.text = cPlayerName..'\n'..ns.code:cText('FFFFFF00', L['INVITE_MESSAGES_MENU'])
         info.notCheckable = true
+        info.fontObject = GameFontNormalOutline
         info.func = function()
             ns.invite:SendManualInvite(self.chatPlayerName, select(2, UnitClass(self.chatPlayerName)), true, true, true)
         end
@@ -433,28 +457,31 @@ local function InitializeDropdownMenu(self, level)
             info = UIDropDownMenu_CreateInfo()
             info.disabled = true
             info.notCheckable = true
+            info.fontObject = GameFontNormalOutline
             UIDropDownMenu_AddButton(info, level)
 
             info = UIDropDownMenu_CreateInfo()
             info.text = cPlayerName..'\n'..ns.code:cText('FFFFFF00', L['INVITE_MESSAGE_ONLY'])
             info.notCheckable = true
+            info.fontObject = GameFontNormalOutline
             info.func = function()
                 ns.invite:SendMessage(self.chatPlayerName, self.chatPlayerName:gsub('-', ''), msg.message)
             end
             UIDropDownMenu_AddButton(info, level)
         end
 
-        local name = self.chatPlayerName:find('-') and self.chatPlayerName or self.chatPlayerName..'-'..GetRealmName() -- Add realm name if not present
         if not ns.blackList:IsOnBlackList(name) then
             -- Separator for spacing
             info = UIDropDownMenu_CreateInfo()
             info.disabled = true
             info.notCheckable = true
+            info.fontObject = GameFontNormalOutline
             UIDropDownMenu_AddButton(info, level)
 
             info = UIDropDownMenu_CreateInfo()
             info.text = cPlayerName..'\n'..L['BLACKLIST']
             info.notCheckable = true
+            info.fontObject = GameFontNormalOutline
             info.func = function()
                 ns.blackList:BlackListReasonPrompt(self.chatPlayerName)
             end
@@ -466,27 +493,35 @@ end
 local function PositionCustomDropdown()
     local systemDropdown = DropDownList1
     if not systemDropdown then
-        return 0, 0
+        return 40, 0
     end
 
     local systemDropdownWidth = systemDropdown:GetWidth()
+    local customDropdownWidth = customDropdown:GetWidth()
     local systemDropdownX, systemDropdownY = systemDropdown:GetCenter()
     local screenWidth = GetScreenWidth()
+
+    -- Ensure systemDropdownX and systemDropdownY have valid values
+    if not systemDropdownX or not systemDropdownY then
+        return 200, 0
+    end
 
     local xOffset = 0
     local yOffset = 0
 
     -- Calculate the new position, ensuring it stays within the screen bounds
-    if systemDropdownX and (systemDropdownX + systemDropdownWidth / 2 + customDropdown:GetWidth() > screenWidth) then
-        xOffset = -customDropdown:GetWidth() - 10
+    if (systemDropdownX + systemDropdownWidth / 2 + customDropdownWidth > screenWidth) then
+        xOffset = -customDropdownWidth - 10
     else
         xOffset = systemDropdownWidth - 20
     end
 
-    return xOffset, yOffset
+    return xOffset, 0 -- Keep yOffset as 0 since we want the menus aligned vertically
 end
+
 -- Original SetItemRef function
 local originalSetItemRef = SetItemRef
+
 -- Override SetItemRef to capture right-clicks on player names
 SetItemRef = function(link, text, button, chatFrame)
     if button == "RightButton" then
@@ -497,12 +532,10 @@ SetItemRef = function(link, text, button, chatFrame)
             -- Show the system context menu
             originalSetItemRef(link, text, button, chatFrame)
             -- Calculate the position for the custom dropdown menu
-            C_Timer.After(0.2, function()
-                local xOffset, yOffset = PositionCustomDropdown()
+            local xOffset, yOffset = PositionCustomDropdown()
                 -- Initialize and show the custom dropdown menu
-                UIDropDownMenu_Initialize(customDropdown, InitializeDropdownMenu, "MENU")
-                ToggleDropDownMenu(1, nil, customDropdown, "cursor", xOffset, yOffset)
-            end)
+            UIDropDownMenu_Initialize(customDropdown, InitializeDropdownMenu, "MENU")
+            ToggleDropDownMenu(1, nil, customDropdown, "cursor", 180, 100)
             return
         end
     end
