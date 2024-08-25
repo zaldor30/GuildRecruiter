@@ -160,7 +160,16 @@ ns.addonSettings = {
                 genHeader3 = {
                     name = L['KEYBINDING_HEADER'],
                     type = 'header',
-                    order = 20
+                    order = 19
+                },
+                genIgnoreESC = {
+                    order = 20,
+                    name = bulletAccountWide..L['KEEP_ADDON_OPEN'],
+                    desc = L['KEEP_ADDON_OPEN_DESC'],
+                    type = 'toggle',
+                    width = 'full',
+                    set = function(_, val) ns.gSettings.keepOpen = val end,
+                    get = function() return not ns.gSettings.keepOpen or false end,
                 },
                 genKeybindingInvite = {
                     order = 21,
