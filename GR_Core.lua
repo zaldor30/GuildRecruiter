@@ -97,6 +97,7 @@ function core:Init()
                 -- Messages
                 messageList = {},
                 overrideGM = false,
+                keepOpen = false,
             },
             keybindings = {
                 scan = 'CTRL-SHIFT-S',

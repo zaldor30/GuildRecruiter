@@ -1,6 +1,8 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
+### v3.0.37 Notes
+    - Added option to keep addon running and ignore certain ways to close it.
 ### v3.0.36 Notes -- Joined forces with FGI to bring recruiting to the next level.
     - Changed the 6 months to 180 days.  Also change 3 months to 120 days.
     (NOTE: If you were using the 6 or 3 months, you will need to update your settings.)
@@ -13,7 +15,7 @@
     - Added Delves to invalid zones.
     - Working on issue with wrong welcome messages being sent.
     - Fixed issue with not creating a guild link.
-###v3.0.30 Notes
+### v3.0.30 Notes
     - Fixed issue with missing no guild link localization.
     - Updated alert to missing guild link on login.
 

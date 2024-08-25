@@ -303,3 +303,7 @@ L['ABOUT_DOC_LINKS'] = 'Documentation and Links'
 L['GITHUB_LINK'] = 'GitHub (Support documentation)'
 L['ABOUT_DISCORD_LINK'] = 'Discord Link'
 L['SUPPORT_LINKS'] = 'Support Guild Recruiter Links'
+
+--* 3.0.37+
+L['KEEP_ADDON_OPEN'] = 'Keep the addon open - do /rl after changing'
+L['KEEP_ADDON_OPEN_DESC'] = 'Keep the addon open and ignore ESC and other things that could close it.'
