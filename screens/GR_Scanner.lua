@@ -423,7 +423,7 @@ function scanner:BlackListPlayer()
     self:SetInviteButtonsState()
 end
 function scanner:InvitePlayers()
-    local tblInv = table.sortByField(self.tblInvites, 'fullName') or {}
+    local tblInv = ns.code:sortTableByField(self.tblInvites, 'fullName') or {}
     local key, tbl = next(tblInv)
     if not tbl then return end
 

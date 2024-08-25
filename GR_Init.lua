@@ -5,8 +5,8 @@ ICON_PATH = 'Interface\\AddOns\\GuildRecruiter\\Images\\'
 
 GR = LibStub('AceAddon-3.0'):NewAddon('GuildRecruiter', 'AceConsole-3.0', 'AceEvent-3.0', 'AceHook-3.0', 'AceComm-3.0')
 GR.debug = false
-GR.isTest = false
-GR.testLevel = nil
+GR.isTest = true
+GR.testLevel = 'Beta'
 GR.author  = C_AddOns.GetAddOnMetadata('GuildRecruiter', 'Author')
 GR.version = C_AddOns.GetAddOnMetadata('GuildRecruiter', 'Version')
 GR.dbVersion = '3.1'
