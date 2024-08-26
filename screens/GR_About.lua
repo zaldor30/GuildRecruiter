@@ -70,7 +70,7 @@ function about:CreateTitleFrame()
     self.tblFrame.inline:AddChild(icon)
 
     local lblTitle = aceGUI:Create('Label')
-    lblTitle:SetText(L['TITLE']..(GR.isTest and ' ('..GR.testLevel..')'..'\n' or '\n')..ns.code:cText('FFFFFFFF', 'Version: '..GR.version..' by '..GR.author..' (Dalaran-US)'))
+    lblTitle:SetText(L['TITLE']..' '..GR.versionOut..'\n'..ns.code:cText('FFFFFFFF', 'Version: '..GR.version..' by '..GR.author..' (Dalaran-US)'))
     lblTitle:SetRelativeWidth(.9)
     lblTitle:SetFontObject('GameFontNormalLarge')
     lblTitle:SetColor(1, .82, 0, 1)

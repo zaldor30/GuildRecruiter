@@ -3,17 +3,47 @@ local _, ns = ... -- Namespace (myaddon, namespace)
 ns.ds = {}
 local ds = ns.ds
 
+-- List of common PvP zones
+local pvpMapIDs = {
+    92,    -- Warsong Gulch
+    93,    -- Arathi Basin
+    1459,  -- Alterac Valley
+    112,   -- Eye of the Storm
+    169,   -- Strand of the Ancients
+    169,   -- Isle of Conquest
+    206,   -- Twin Peaks
+    275,   -- Battle for Gilneas
+    417,   -- Silvershard Mines
+    423,   -- Temple of Kotmogu
+    519,   -- Deepwind Gorge
+    907,   -- Seething Shore
+    123,   -- Wintergrasp
+    244,   -- Tol Barad
+    978,   -- Ashran
+    559,   -- Nagrand Arena
+    562,   -- Blade's Edge Arena
+    617,   -- Dalaran Sewers
+    572,   -- Ruins of Lordaeron
+    1134,  -- The Tiger's Peak
+    1504,  -- Mugambala
+    1505,  -- Hook Point
+}
+
 function ds:Init()
     self.dbVersion = GR.dbVersion -- From GR_Init
     self.tblRaces = self:races()
     self.tblClasses = self:classes()
     self.tblClassesByName = nil
-    self.tblZones = self:invalidZones()
+
+    self.zoneIDs = {}
+    self.zoneNames = {}
+
+    self.instanceList = {}
 end
 function ds:WhatsNew() -- What's new in the current version
     local height = 410 -- Adjust size of what's new window
     local title, msg = '', ''
-    title = ns.code:cText('FFFFFF00', "What's new in v"..GR.version..(GR.isTest and ' ('..GR.testLevel..')' or '').."?")
+    title = ns.code:cText('FFFFFF00', "What's new in v"..GR.versionOut.."?")
     msg = [[
             |CFF55D0FF** Please report any bugs or issues in Discord **
                     Discord: https://discord.gg/ZtS6Q2sKRH
@@ -85,51 +115,52 @@ function ds:WhatsNew() -- What's new in the current version
     return title, msg, height
 end
 function ds:invalidZones() -- Invalid zones for recruitment
-    local tbl = {
-        --*battlegrounds
-        ["Alterac Valley"] = { id = 30, name = "Alterac Valley", reason = 'Battlegrounds' },
-        ["Warsong Gulch"] = { id = 489, name = "Warsong Gulch", reason = 'Battlegrounds' },
-        ["Arathi Basin"] = { id = 529, name = "Arathi Basin (Classic)", reason = 'Battlegrounds' },
-        ["Eye of the Storm"] = { id = 566, name = "Eye of the Storm", reason = 'Battlegrounds' },
-        ["Strand of the Ancients"] = { id = 607, name = "Strand of the Ancients", reason = 'Battlegrounds' },
-        ["Isle of Conquest"] = { id = 628, name = "Isle of Conquest", reason = 'Battlegrounds' },
-        ["Twin Peaks"] = { id = 726, name = "Twin Peaks", reason = 'Battlegrounds' },
-        ["Silvershard Mines"] = { id = 727, name = "Silvershard Mines", reason = 'Battlegrounds' },
-        ["The Battle for Gilneas"] = { id = 761, name = "The Battle for Gilneas", reason = 'Battlegrounds' },
-        ["Temple of Kotmogu"] = { id = 998, name = "Temple of Kotmogu", reason = 'Battlegrounds' },
-        ["Deepwind Gorge"] = { id = 1105, name = "Deepwind Gorge", reason = 'Battlegrounds' },
-        ["Seething Shore"] = { id = 1803, name = "Seething Shore", reason = 'Battlegrounds' },
-        --arenas
-        ["Ruins of Lordaeron"] = { id = 572, name = "Ruins of Lordaeron", reason = 'Arena' },
-        ["Dalaran Arena"] = { id = 617, name = "Dalaran Arena", reason = 'Arena' },
-        ["The Ring of Valor"] = { id = 618, name = "The Ring of Valor", reason = 'Arena' },
-        ["Tol'Viron Arena"] = { id = 980, name = "Tol'Viron Arena", reason = 'Arena' },
-        ["Tiger's Peak"] = { id = 1134, name = "Tiger's Peak", reason = 'Arena' },
-        ["Nagrand Arena"] = { id = 1505, name = "Nagrand Arena", reason = 'Arena' },
-        ["Blade's Edge Arena"] = { id = 1672, name = "Blade's Edge Arena", reason = 'Arena' },
-        ["The Robodrome"] = { id = 2167, name = "The Robodrome", reason = 'Arena' },
+    self.instanceList = self.instanceList or {} -- Instance list
+    EncounterJournal_LoadUI() -- Load the Encounter Journal
 
-            --@version-retail@
-        --*raids
-        ["Nerub’ar Palace"] = { id = 0, name = "Nerub’ar Palace", reason = 'TWW Season 1 Raid' },
+    --* Zone Lookup Routines
+    for mapID = 1, 3000 do -- This range can be adjusted based on known map IDs in the game
+        local mapInfo = C_Map.GetMapInfo(mapID)
 
-        --*dungeons
-        ["Ara-Kara, City of Echoes"] = { id = 0, name = "Ara-Kara, City of Echoes", reason = 'TWW Dungeon' },
-        ["Priory of the Sacred Flame"] = { id = 0, name = "Priory of the Sacred Flame", reason = 'TWW Dungeon' },
-        ["The Stonevault"] = { id = 0, name = "The Stonevault", reason = 'TWW Dungeon' },
-        ["Cinderbrew Meadery"] = { id = 0, name = "Cinderbrew Meadery", reason = 'TWW Dungeon' },
-        ["City of Threads"] = { id = 0, name = "City of Threads", reason = 'TWW Dungeon' },
-        ["Darkflame Cleft"] = { id = 0, name = "Darkflame Cleft", reason = 'TWW Dungeon' },
-        ["The Dawnbreaker"] = { id = 0, name = "The Dawnbreaker", reason = 'TWW Dungeon' },
+        if mapInfo then
+            self.zoneIDs[strlower(mapInfo.name)] = { mapID = mapInfo.mapID, mapName = mapInfo.name }
+            self.zoneNames[mapInfo.mapID] = { mapID = mapInfo.mapID, mapName = mapInfo.name }
+        end
+    end
 
-        --* Delves
-        ["Delves"] = { id = 0, name = "Delves", reason = 'Delves' },
-    }
+    local function ListAllInstances(isRaid)
+        local index, name, instanceID = 0, nil, 1
 
-    ns.global.zoneList = ns.global.zoneList or {}
-    for k, r in pairs(ns.global.zoneList and ns.global.zoneList or {}) do tbl[k] = r end
+        -- Loop through all instances in the Dungeon Journal
+        while instanceID do
+            index = index + 1
+            instanceID, name = EJ_GetInstanceByIndex(index, isRaid or false)
+            if name and instanceID then
+                print('Adding instance: '..name)
+                self.instanceList[strlower(name)] = { name = name, instanceID = instanceID, reason = isRaid and 'Seasonal Raid' or 'Seasonal Dungeon' }
+            end
+        end
+    end
+    ListAllInstances()
+    ListAllInstances(true)
 
-    return tbl
+    local function GetZoneInfo(tblIDs)
+        if not tblIDs then return end
+        for i=1,#tblIDs do
+            local mapInfo = C_Map.GetMapInfo(tblIDs[i])
+            if mapInfo then
+                self.instanceList[strlower(mapInfo.name)] = { name = mapInfo.name, instanceID = tblIDs[i], reason = 'PVP Area' }
+            end
+        end
+    end
+
+    -- Call the function with Nagrand Arena's map ID
+    GetZoneInfo(pvpMapIDs)
+
+    ns.global.zoneList = ns.global.zoneList and ns.global.zoneList or {}
+    for k, r in pairs(ns.global.zoneList and ns.global.zoneList or {}) do self.instanceList[k] = r end
+
+    return self.instanceList, self.instanceListIDs
 end
 function ds:convertZoneKeyToName()
     local tbl = {}
@@ -215,3 +246,4 @@ function ds:races() -- Race data
 
     return tbl
 end
+ds:Init()

@@ -200,3 +200,7 @@ function code:isInMyGuild(name)
     end
     return false
 end
+function code:GetZoneIDByName(zoneName)
+    return code.zoneIDs[zoneName]
+end
+code:Init()

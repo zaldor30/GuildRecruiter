@@ -115,9 +115,9 @@ local function UpdateInvitePlayerStatus(_, ...)
     msg = strlower(msg)
     local fName, key = nil, nil
     if msg and msg:find('Invited By:') and msg:find(UnitName('player')) then -- GRM
-        if GR.isTest then print('you did the invite') end
+        if GR.isPreRelease then print('you did the invite') end
         return
-    elseif msg and msg:find('REINVITED') and GR.isTest then print('You reinvited') return
+    elseif msg and msg:find('REINVITED') and GR.isPreRelease then print('You reinvited') return
     elseif not invite.tblSent then
         ns.observer:Unregister('CHAT_MSG_SYSTEM', UpdateInvitePlayerStatus)
         return

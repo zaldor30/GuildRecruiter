@@ -5,9 +5,6 @@
         },
         {
             "path": "../../../../../../Users/zalro/Documents/GitHub/GuildRecruiter-old"
-        },
-        {
-            "path": "../Guild_Roster_Manager"
         }
     ],
     "settings": {
@@ -24,7 +21,7 @@
             "utf8": "disable"
         },
         "Lua.workspace.library": [
-            "~\\.vscode\\extensions\\ketho.wow-api-0.17.4\\Annotations"
+            "~\\.vscode\\extensions\\ketho.wow-api-0.17.5\\Annotations"
         ],
         "Lua.diagnostics.globals": [
             "ChatFrame_RemoveMessageEventFilter",
@@ -340,7 +337,14 @@
             "STANDARD_TEXT_FONT",
             "ChatFrame_SendTell",
             "FRIEND",
-            "ACHIEVEMENT"
+            "ACHIEVEMENT",
+            "WOW_PROJECT_ID",
+            "WOW_PROJECT_MAINLINE",
+            "Minimap",
+            "EncounterJournal_LoadUI",
+            "Dungeon",
+            "ID",
+            "Raid"
         ]
     }
 }

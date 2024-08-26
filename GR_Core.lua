@@ -1,12 +1,13 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
-ns.core = {}
-local core = ns.core
 
 -- Application Initialization
 local L = LibStub("AceLocale-3.0"):GetLocale('GuildRecruiter')
 local AC, ACD = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0')
 local icon, DB = LibStub('LibDBIcon-1.0'), LibStub('AceDB-3.0')
 local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
+
+ns.core = {}
+local core = ns.core
 
 -- *Blizzard Initialization Called Function
 function GR:OnInitialize()
@@ -37,7 +38,6 @@ end
 
 function core:Init()
     self.hasGM = false
-    self.iAmGM = false
     self.isEnabled = false
     self.fullyStarted = false
     self.ignoreAutoSync = false
@@ -371,11 +371,6 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     -- Setup Tables
     ns.tblRaces, ns.tblClasses = ns.ds:races(), ns.ds:classes()
 
-    --* Setup Tables
-    ns.tblInvalidZones = ns.ds:invalidZones()
-    ns.tblRacesSortedByName = ns.code:sortTableByField(ns.tblRaces, 'name')
-    ns.tblClassesSortedByName = ns.code:sortTableByField(ns.tblClasses, 'name')
-
     AC:RegisterOptionsTable('GuildRecruiter', ns.addonSettings) -- Register the options table
     ns.addonOptions = ACD:AddToBlizOptions('GuildRecruiter', 'Guild Recruiter') -- Add the options to the Blizzard options
     self.iAmGM = (ns.guildInfo.isGuildLeader or ns.guildInfo.guildLeaderToon == GetUnitName('player', true)) or false
@@ -391,14 +386,20 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     ns.win.base:SetShown(false) -- Hide the base window
     self.fullyStarted = true
 
-    ns.code:fOut(L['TITLE']..' ('..GR.version..(GR.isTest and ' '..GR.testLevel or '')..') '..L['IS_ENABLED'], GRColor, true)
+
+    --* Setup Tables
+    ns.tblInvalidZones = ns.ds:invalidZones()
+    ns.tblRacesSortedByName = ns.code:sortTableByField(ns.tblRaces, 'name')
+    ns.tblClassesSortedByName = ns.code:sortTableByField(ns.tblClasses, 'name')
+
+    ns.code:fOut(L['TITLE']..' '..GR.versionOut..' '..L['IS_ENABLED'], GRColor, true)
     if not ns.guildInfo.guildLink then
         ns.code:fOut(L['NO_GUILD_LINK'], GRColor)
         ns.code:fOut(ns.code:cText('FFFF0000', L['NO_GUILD_LINK'], GRColor))
     end
 
-    if GR.isTest then
-        ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.testLevel))), 'FFFFFF00', true)
+    if GR.isPreRelease then
+        ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.preReleaseType))), 'FFFFFF00', true)
      end
 
      --print('hasGM:'..ns.core.hasGM)
