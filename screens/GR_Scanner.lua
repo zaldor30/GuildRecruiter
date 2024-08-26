@@ -366,7 +366,7 @@ function scanner:ChangeCompactMode()
 end
 function scanner:UpdateAnalytics()
     if not self.ctrlBase.frame
-        or self.tblScanner.isCompacts
+        or self.tblScanner.isCompact
         or not self.ctrlAnalyics.lblPlayersScanned then return end
 
     local sessionStats = ns.analytics:getSessionStats('PlayersScanned')
@@ -493,22 +493,9 @@ function scanner:DispalyInviteList()
     invControls.lblFound:SetText(L['READY_INVITE']..': '..#tbl)
     scanner:SetInviteButtonsState()
 end
-function scanner:ParsePlayersToInvite()
-    local tblWho = self.tblWho
-    local tblInvites = self.tblInvites
-
-    for _, v in ipairs(tblWho) do
-        if not tblInvites[v.fullName] and v.guild == '' then
-            tblInvites[v.fullName] = v end
-    end
-
-    self:DispalyInviteList()
-end
 
 --* Who Routines
 function scanner:DisplayWhoList()
-    if self.tblScanner.isCompact then return end
-
     local tblWho = self.tblWho
     local whoControls = self.ctrlWho
 
@@ -534,17 +521,23 @@ function scanner:DisplayWhoList()
         return lblLevel
     end
 
-    whoControls.lblWhoFound:SetText(L['NUMBER_PLAYERS_FOUND']..': '..#tblWho)
-    whoControls.scrollWho:ReleaseChildren()
+    if whoControls.lblWhoFound then
+        whoControls.lblWhoFound:SetText(L['NUMBER_PLAYERS_FOUND']..': '..#tblWho) end
+    if whoControls.scrollWho then whoControls.scrollWho:ReleaseChildren() end
     for k, v in ipairs(tblWho) do
         local lblLevel = nil
-        if not self.tblInvites[k] and v.guild == '' then
-            local inviteOkResult = ns.invite:whoInviteChecks(v)
-            if inviteOkResult then v.guild = ns.code:cText('FFFF0000', '('..inviteOkResult..')') end
 
-            lblLevel = createWhoEntry(v)
-            lblLevel:SetText(ns.code:cText((not inviteOkResult and 'FF00FF00' or 'FFFFFFFF'), v.level))
-        else lblLevel = createWhoEntry(v) end
+        if v.guild == '' then
+            local inviteOkResult = ns.invite:whoInviteChecks(v)
+            if self.tblScanner.isCompact then
+                if inviteOkResult then v.guild = ns.code:cText('FFFF0000', '('..inviteOkResult..')') end
+            elseif not self.tblScanner.isCompact and not self.tblInvites[k] and v.guild == '' then
+                if inviteOkResult then v.guild = ns.code:cText('FFFF0000', '('..inviteOkResult..')') end
+
+                lblLevel = createWhoEntry(v)
+                lblLevel:SetText(ns.code:cText((not inviteOkResult and 'FF00FF00' or 'FFFFFFFF'), v.level))
+            end
+        elseif not self.tblScanner.isCompact then lblLevel = createWhoEntry(v) end
     end
 end
 function scanner:ProcessWhoList(whoResults)
@@ -563,12 +556,23 @@ function scanner:ProcessWhoList(whoResults)
             isChecked = false,
         }
 
+        --local ratingSummary = C_PlayerInfo.GetMythicPlusRatingSummary(pName)
+        --print(ratingSummary.seasonMostPlayedSpecID)
         tinsert(self.tblWho, rec)
     end
 
     -- ToDo: Analytics
     self:DisplayWhoList()
-    self:ParsePlayersToInvite()
+
+    local tblInvites = self.tblInvites
+
+    for _, v in ipairs(self.tblWho) do
+        if not tblInvites[v.fullName] and v.guild == '' then
+            tblInvites[v.fullName] = v
+        end
+    end
+
+    self:DispalyInviteList()
 end
 
 --* Filter Routines

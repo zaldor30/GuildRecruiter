@@ -143,6 +143,7 @@ function core:StartDatabase(clubID)
     ns.pAnalytics = ns.p.analytics or {} -- Profile Analytics
     ns.analytics:Start()
 
+    ns.invite:GetWelcomeMessages() -- Get the welcome messages
     GR.debug = ns.pSettings.debugMode or false -- Set the debug mode
 
     local profiles, _ = db:GetProfiles()
@@ -174,6 +175,9 @@ function core:StartDatabase(clubID)
     elseif ns.pSettings.obeyBlockInvites then self.obeyBlockInvites = ns.pSettings.obeyBlockInvites or false end
 end
 function core:PerformDatabaseMaintenance()
+    if ns.gSettings.antiSpam == nil then ns.gSettings.antiSpam = true end
+    if ns.gmSettings.antiSpam == nil then ns.gmSettings.antiSpam = true end
+
     if not ns.global.dbVersion or ns.global.dbVersion ~= GR.dbVersion then
         ns.global.dbVersion = GR.dbVersion
         if ns.gmSettings.obeyBlockInvites == nil then ns.gmSettings.obeyBlockInvites = true end
@@ -390,12 +394,15 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     ns.code:fOut(L['TITLE']..' ('..GR.version..(GR.isTest and ' '..GR.testLevel or '')..') '..L['IS_ENABLED'], GRColor, true)
     if not ns.guildInfo.guildLink then
         ns.code:fOut(L['NO_GUILD_LINK'], GRColor)
-        ns.code:fOut(ns.cText('FFFF0000', L['NO_GUILD_LINK'], GRColor))
+        ns.code:fOut(ns.code:cText('FFFF0000', L['NO_GUILD_LINK'], GRColor))
     end
 
     if GR.isTest then
         ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.testLevel))), 'FFFFFF00', true)
      end
+
+     --print('hasGM:'..ns.core.hasGM)
+    --print('Guild Greeting:',ns.gmSettings.sendGuildGreeting, 'Guild Message:', ns.gmSettings.guildMessage)
 
     if type(ns.global.showWhatsNew) ~= 'boolean' then
         ns.global.showWhatsNew = true

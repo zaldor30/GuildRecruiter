@@ -1,8 +1,11 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
-### v3.0.37 Notes
+### v3.1.40 Notes
     - Added option to keep addon running and ignore certain ways to close it.
+    - esMX (Spanish Mexico) localization added.
+    - Fixed issue with whispers not being sent when player joins guild.
+    - Fixed issue with compact mode not removing anti-spam/black list before adding to invite list.
 ### v3.0.36 Notes -- Joined forces with FGI to bring recruiting to the next level.
     - Changed the 6 months to 180 days.  Also change 3 months to 120 days.
     (NOTE: If you were using the 6 or 3 months, you will need to update your settings.)
