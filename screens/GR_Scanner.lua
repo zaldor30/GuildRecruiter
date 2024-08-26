@@ -563,6 +563,8 @@ function scanner:ProcessWhoList(whoResults)
             isChecked = false,
         }
 
+        --local ratingSummary = C_PlayerInfo.GetMythicPlusRatingSummary(pName)
+        --print(ratingSummary.seasonMostPlayedSpecID)
         tinsert(self.tblWho, rec)
     end
 

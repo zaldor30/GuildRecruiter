@@ -36,7 +36,6 @@ GR_Init.lua
 shared\GR_Code.lua
 shared\GR_Events.lua
 shared\GR_Dataset.lua
-shared\GG_RaiderIO.lua
 shared\GR_Analytics.lua
 shared\GR_PlayerInvite.lua
 

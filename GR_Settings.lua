@@ -352,7 +352,10 @@ ns.addonSettings = {
                     desc = L['GUILD_WELCOME_MSG_DESC'],
                     type = 'input',
                     width = 2.5,
-                    set = function(_, val) ns.gmSettings.guildMessage = val end,
+                    set = function(_, val)
+                        ns.gmSettings.guildMessage = ns.code:capitalKeyWord(val:trim())
+                        ns.invite:GetWelcomeMessages()
+                    end,
                     get = function() return ns.gmSettings.guildMessage end,
                 },
                 gmForceSendWhisper = {
@@ -389,7 +392,10 @@ ns.addonSettings = {
                     type = 'input',
                     multiline = 3,
                     width = 'full',
-                    set = function(_, val) ns.gmSettings.whisperMessage = ns.code:capitalKeyWord(val:trim()) end,
+                    set = function(_, val)
+                        ns.gmSettings.whisperMessage = ns.code:capitalKeyWord(val:trim())
+                        ns.invite:GetWelcomeMessages()
+                    end,
                     get = function() return ns.gmSettings.whisperMessage end,
                 },
                 gmPreviewCount = {
@@ -696,7 +702,10 @@ ns.addonSettings = {
                     type = 'input',
                     width = 'full',
                     disabled = function() return not ns.gSettings.overrideGM and ns.gmSettings.forceGuildMessage end,
-                    set = function(_, val) ns.gSettings.guildMessage = val end,
+                    set = function(_, val)
+                        ns.gSettings.guildMessage = ns.code:capitalKeyWord(val:trim())
+                        ns.invite:GetWelcomeMessages()
+                    end,
                     get = function()
                         local out = ns.gSettings.guildMessage
                         if not ns.gSettings.overrideGM and ns.gmSettings.forceSendGuildGreeting and ns.gmSettings.forceGuildMessage then
@@ -731,7 +740,10 @@ ns.addonSettings = {
                     multiline = 3,
                     width = 'full',
                     disabled = function() return not ns.gSettings.overrideGM and ns.gmSettings.forceWhisperMessage end,
-                    set = function(_, val) ns.gSettings.whisperMessage = ns.code:capitalKeyWord(val:trim()) end,
+                    set = function(_, val)
+                        ns.gSettings.whisperMessage = ns.code:capitalKeyWord(val:trim())
+                        ns.invite:GetWelcomeMessages()
+                    end,
                     get = function()
                         local out = ns.gSettings.whisperMessage
                         if not ns.gSettings.overrideGM and ns.gmSettings.forceWhisperMessage and ns.gmSettings.whisperMessage then

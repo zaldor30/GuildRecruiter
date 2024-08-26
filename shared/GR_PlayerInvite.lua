@@ -8,6 +8,9 @@ local invite, blackList, antiSpam = ns.invite, ns.blackList, ns.antiSpam
 function invite:Init()
     self.tblSent = {}
     self.sentCount = 0
+
+    self.msgWhisper = nil
+    self.guildMessage = nil
 end
 function invite:IsInvalidZone(zone)
     if ns.tblInvalidZones[zone] then return true
@@ -98,7 +101,9 @@ function invite:SendMessage(pName, cName, msgInvite, showMessage)
         ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER', function(_, _, msg) return msg == msgInvite end, msgInvite)
         ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER_INFORM', function(_, _, msg) return msg == msgInvite end, msgInvite)
         ns.code:fOut(L['INVITE_MESSAGE_SENT']..' '..cName, 'FFFFFF00')
-    else ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER', msgInvite) end
+        ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER', msgInvite)
+        ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER_INFORM', msgInvite)
+    end
     SendChatMessage(msgInvite, 'WHISPER', nil, pName)
 end
 
@@ -184,7 +189,8 @@ function invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg, isMa
     pName = pName:gsub('*-', '') -- Remove realm name if present
     local cName = class and ns.code:cPlayerName(pName, class) or pName
 
-    local guildMessage, msgWhisper = self:GetWelcomeMessages(pName)
+    local msgWhisper = self.msgWhisper and ns.code:variableReplacement(self.msgWhisper, pName) or nil
+    local guildMessage = self.guildMessage and ns.code:variableReplacement(self.guildMessage, pName) or nil
 
     self.tblSent[strlower(fName)] = {
         name = pName,
@@ -201,7 +207,7 @@ function invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg, isMa
     ns.win.scanner:UpdateAnalytics()
     ns.antiSpam:AddToAntiSpamList(fName)
 end
-function invite:GetWelcomeMessages(pName)
+function invite:GetWelcomeMessages()
     local guildMessage, msgWhisper = false, false
 
     if ns.core.hasGM or (ns.gmSettings.sendGuildGreeting and ns.gmSettings.guildMessage ~= '') then
@@ -211,7 +217,6 @@ function invite:GetWelcomeMessages(pName)
     elseif not ns.core.hasGM and ns.gSettings.sendGuildGreeting and ns.gSettings.guildMessage ~= '' then
         guildMessage = ns.gSettings.guildMessage
     end
-    guildMessage = ns.code:variableReplacement(ns.gSettings.guildMessage, pName) or false
 
     if ns.core.hasGM or (ns.gmSettings.sendWhisperGreeting and ns.gmSettings.whisperMessage ~= '') then
         msgWhisper = ns.gmSettings.whisperMessage
@@ -220,9 +225,9 @@ function invite:GetWelcomeMessages(pName)
     elseif not ns.core.hasGM and ns.gSettings.sendWhisperGreeting and ns.gSettings.whisperMessage ~= '' then
         msgWhisper = ns.gSettings.whisperMessage
     end
-    msgWhisper = ns.code:variableReplacement(ns.gSettings.whisperMessage, pName) or false
 
-    return guildMessage, msgWhisper
+    self.msgWhisper = msgWhisper
+    self.guildMessage = guildMessage
 end
 invite:Init() -- Init invite
 

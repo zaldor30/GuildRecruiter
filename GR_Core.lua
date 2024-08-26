@@ -143,6 +143,7 @@ function core:StartDatabase(clubID)
     ns.pAnalytics = ns.p.analytics or {} -- Profile Analytics
     ns.analytics:Start()
 
+    ns.invite:GetWelcomeMessages() -- Get the welcome messages
     GR.debug = ns.pSettings.debugMode or false -- Set the debug mode
 
     local profiles, _ = db:GetProfiles()
@@ -399,7 +400,6 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
 
      --print('hasGM:'..ns.core.hasGM)
     --print('Guild Greeting:',ns.gmSettings.sendGuildGreeting, 'Guild Message:', ns.gmSettings.guildMessage)
-    ns.raiderIO:Start()
 
     if type(ns.global.showWhatsNew) ~= 'boolean' then
         ns.global.showWhatsNew = true
