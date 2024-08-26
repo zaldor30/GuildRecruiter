@@ -1,7 +1,7 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
-### v3.0.38 Notes
+### v3.1.40 Notes
     - Added option to keep addon running and ignore certain ways to close it.
     - esMX (Spanish Mexico) localization added.
     - Fixed issue with whispers not being sent when player joins guild.

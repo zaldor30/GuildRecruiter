@@ -19,7 +19,7 @@ function ds:WhatsNew() -- What's new in the current version
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
 
-    |CFFFFFF00v3.0.38 Notes|r
+    |CFFFFFF00v3.1.40 Notes|r
         - Added option to keep addon running and ignore certain ways to close it.
         - esMX (Spanish Mexico) localization added.
         - Fixed issue with whispers not being sent when player joins guild.
