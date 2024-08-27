@@ -1,6 +1,8 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
+### v3.1.41 Notes
+    - Fix to auto block guild invites not ever sending message.
 ### v3.1.40 Notes
     - Added option to keep addon running and ignore certain ways to close it.
     - esMX (Spanish Mexico) localization added.

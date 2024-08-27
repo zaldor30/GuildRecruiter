@@ -85,9 +85,9 @@ function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreeti
         if isManual or not ns.core.obeyBlockInvites then self:SendMessage(pName, name, msgInvite)
         else
             C_Timer.After(1, function()
-                if invite.tblSent[strlower(pName)] then
+                if invite.tblSent[strlower(fName)] then
                     self:SendMessage(pName, name, msgInvite)
-                    invite.tblSent[strlower(pName)].sentAt = GetServerTime()
+                    invite.tblSent[strlower(fName)].sentAt = GetServerTime()
                 else
                     ns.code:fOut(L['INVITE_REJECTED']..' '..cName, 'FFFFFF00')
                 end
