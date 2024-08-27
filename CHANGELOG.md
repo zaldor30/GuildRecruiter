@@ -2,9 +2,15 @@
 ## 3.0 - War Within Release
 
 ### v3.2.41 Notes
-    - Rework of settings to make things more clear.
     - Rework of invalid zones to support other languages.
     - Also, made seasonal dungeons and raids automatically added to invalid zones.
+    - Settings Rework:
+        - Reorganized settings to make it easier to find things.
+        - Only have invite or GM options, if you are a GM.
+        - GM messages have an option to sync only the ones marked (not fully working yet).
+        - Can see anti-spam list, but not change it.
+        - Reworked black list and added a privacy option for reason.
+        - Reworked invalid zones so you can specify a name of a zone to ignore.
 ### v3.1.40 Notes
     - Added option to keep addon running and ignore certain ways to close it.
     - esMX (Spanish Mexico) localization added.

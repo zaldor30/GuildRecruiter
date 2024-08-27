@@ -50,9 +50,15 @@ function ds:WhatsNew() -- What's new in the current version
                 (or click on the icon in the top left corner)|r
 
     |CFFFFFF00v3.2.41 Notes|r
-        - Rework of settings to make things more clear.
         - Rework of invalid zones to support other languages.
         - Also, made seasonal dungeons and raids automatically added to invalid zones.
+        - Settings Rework:
+            - Reorganized settings to make it easier to find things.
+            - Only have invite or GM options, if you are a GM.
+            - GM messages have an option to sync only the ones marked (not fully working yet).
+            - Can see anti-spam list, but not change it.
+            - Reworked black list and added a privacy option for reason.
+            - Reworked invalid zones so you can specify a name of a zone to ignore.
     |CFFFFFF00v3.1.40 Notes|r
         - Added option to keep addon running and ignore certain ways to close it.
         - esMX (Spanish Mexico) localization added.
@@ -118,19 +124,20 @@ function ds:WhatsNew() -- What's new in the current version
 
     return title, msg, height
 end
+function ds:GetZones()
+    local tbl = {}
+    for mapID = 1, 20000 do  -- Expanded range to cover all potential maps
+        local mapInfo = C_Map.GetMapInfo(mapID)
+        if mapInfo and mapInfo.name then
+            tbl[strlower(mapInfo.name)] = mapInfo
+        end
+    end
+
+    return tbl
+end
 function ds:invalidZones() -- Invalid zones for recruitment
     self.instanceList = self.instanceList or {} -- Instance list
     EncounterJournal_LoadUI() -- Load the Encounter Journal
-
-    --* Zone Lookup Routines
-    for mapID = 1, 3000 do -- This range can be adjusted based on known map IDs in the game
-        local mapInfo = C_Map.GetMapInfo(mapID)
-
-        if mapInfo then
-            self.zoneIDs[strlower(mapInfo.name)] = { mapID = mapInfo.mapID, mapName = mapInfo.name }
-            self.zoneNames[mapInfo.mapID] = { mapID = mapInfo.mapID, mapName = mapInfo.name }
-        end
-    end
 
     local function ListAllInstances(isRaid)
         local index, name, instanceID = 0, nil, 1

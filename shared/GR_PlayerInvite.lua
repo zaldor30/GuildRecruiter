@@ -41,6 +41,7 @@ function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreeti
     if not pName then return end
 
     --pName = 'Monkstrife' --! Remove this line
+    --pName = 'Pbpolytime-Dalaran' --! Remove this line
     local fName = pName:find('-') and pName or pName..'-'..GetRealmName() -- Add realm name if not present
     local name = pName:gsub('*-', '') -- Remove realm name if present
     local cName = class and ns.code:cPlayerName(name, class) or name
@@ -85,9 +86,9 @@ function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreeti
         if isManual or not ns.core.obeyBlockInvites then self:SendMessage(pName, name, msgInvite)
         else
             C_Timer.After(1, function()
-                if invite.tblSent[strlower(pName)] then
+                if invite.tblSent[strlower(fName)] then
                     self:SendMessage(pName, name, msgInvite)
-                    invite.tblSent[strlower(pName)].sentAt = GetServerTime()
+                    invite.tblSent[strlower(fName)].sentAt = GetServerTime()
                 else
                     ns.code:fOut(L['INVITE_REJECTED']..' '..cName, 'FFFFFF00')
                 end

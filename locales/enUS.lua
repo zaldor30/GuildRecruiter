@@ -244,11 +244,15 @@ L['GEN_ACCOUNT_WIDE'] = 'Indicates all your charcters will be effected guild wid
 -- * GR GM Settings Window
 L['GM_SETTINGS'] = 'GM Settings'
 L['GM_SETTINGS_DESC'] = 'Create a message description then the message itself and the save will enable.'
+L['PLAYER_SETTINGS_DESC'] = 'Orange colored messages are from the GM.'
 L['GM_FORCE_DESC1'] = 'The force check box allows you to make guild members use those settings.'
 L['GM_FORCE_DESC2'] = 'Leave un-checked to allow guil members to change those options.'
 L['MAX_CHARS'] = '(<sub> characters per message)'
 L['LENGTH_INFO'] = 'Assumes 12 characters when using PLAYERNAME'
 L['MESSAGE_LENGTH'] = 'Message Length'
+L['BL_PRIVATE_REASON'] = 'Toggle Private Reason'
+L['BL_PRIVATE_REASON_DESC'] = 'Toggle the private reason for black listing.'
+L['BL_PRIVATE_REASON_ERROR'] = 'You did not black list'
 
 -- * GR GM Invite Settings Window
 L['GM_INVITE'] = 'GM Messages'
@@ -276,7 +280,7 @@ L['FORCE_WHISPER_MESSAGE_DESC'] = 'Force the following whisper message to be sen
 L['FORCE_WHISPER_WELCOME_MSG_DESC'] = 'Force the whisper message to be sent to the player.'
 L['FORCE_GUILD_GREETING'] = 'Force Guild Greeting'
 L['FORCE_GUILD_GREETING_DESC'] = 'Force the guild greeting message to be sent to the guild chat.'
-L['FORCE_GUILD_MESSAGE'] = 'Force Guild Message'
+L['FORCE_GUILD_MESSAGE'] = 'Force Guild Greeting Message'
 L['FORCE_GUILD_MESSAGE_DESC'] = 'Force the following message to be sent to the guild chat.'
 L['FORCE_ENABLE_BLOCK_INVITE_CHECK'] = 'Force Block Check'
 L['FORCE_ENABLE_BLOCK_INVITE_CHECK_DESC'] = 'Force the Block Invite Check to be enabled.'
@@ -295,9 +299,11 @@ L['ADD_TO_BLACK_LIST'] = 'Add player to black list.'
 
 -- * Invalid Settings Window
 L['INVALID_ZONE'] = 'Invalid Zones'
+L['ZONE_NOT_FOUND'] = 'Could not find zone'
+L['ZONE_INSTRUCTIONS'] = 'The zone name must EXACTLY match the zone name in the game.'
 L['ZONE_ID'] = 'Zone ID (Numeric ID)'
 L['ZONE_NAME'] = 'Name of the Zone:'
-L['ZONE_TYPE'] = 'Type of Zone:'
+L['ZONE_INVALID_REASON'] = 'Reason for being invalid:'
 L['ZONE_ID_DESC'] = [[
 The zone ID for the invalid zone.
 List of instances:

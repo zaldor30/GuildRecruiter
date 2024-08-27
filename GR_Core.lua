@@ -150,13 +150,12 @@ function core:StartDatabase(clubID)
 
     local profiles, _ = db:GetProfiles()
     if not IsGuildLeader() then
-        ns.guildInfo.isGuildLeader = false
         for _, profile in pairs(profiles) do
-            if profile:find(GetUnitName('player', true)) then
+            if profile:find(UnitName('player')) then
                 if IsGuildLeader() then
                     ns.guildInfo.isGuildLeader = true
                     ns.guildInfo.guildLeaderToon = GetUnitName('player', true)
-                elseif not IsGuildLeader() and ns.guildInfo.guildLeaderToon == GetUnitName('player', true) then
+                elseif not IsGuildLeader() and ns.guildInfo.guildLeaderToon == UnitName('player') then
                     ns.guildInfo.isGuildLeader = false
                     ns.guildInfo.guildLeaderToon = nil
                     ns.gSettings.overrideGM = false
@@ -181,67 +180,81 @@ function core:PerformDatabaseMaintenance()
     if ns.gmSettings.antiSpam == nil then ns.gmSettings.antiSpam = true end
 
     if not ns.global.dbVersion or ns.global.dbVersion ~= GR.dbVersion then
+        local oldVer = tonumber(ns.global.dbVersion)
+        -- Before 3.1
         ns.global.dbVersion = GR.dbVersion
-        if ns.gmSettings.obeyBlockInvites == nil then ns.gmSettings.obeyBlockInvites = true end
-        if ns.gSettings.obeyBlockInvites == nil then ns.gSettings.obeyBlockInvites = true end
+        if oldVer < 3.1 then
+            if ns.gmSettings.obeyBlockInvites == nil then ns.gmSettings.obeyBlockInvites = true end
+            if ns.gSettings.obeyBlockInvites == nil then ns.gSettings.obeyBlockInvites = true end
 
-        -- Fix for old DB settings
-        ns.gmSettings.sendGuildGreeting = ns.gmSettings.sendGuildGreeting or ns.gmSettings.sendWelcome
-        ns.gmSettings.sendWhsiper = ns.gmSettings.sendWhsiper or ns.gmSettings.sendGreeting
-        ns.gmSettings.sendGreeting, ns.gmSettings.sendWelcome = nil, nil
+            -- Fix for old DB settings
+            ns.gmSettings.sendGuildGreeting = ns.gmSettings.sendGuildGreeting or ns.gmSettings.sendWelcome
+            ns.gmSettings.sendWhsiper = ns.gmSettings.sendWhsiper or ns.gmSettings.sendGreeting
+            ns.gmSettings.sendGreeting, ns.gmSettings.sendWelcome = nil, nil
 
-        ns.gSettings.sendGuildGreeting = ns.gSettings.sendGuildGreeting or ns.gSettings.sendWelcome
-        ns.gSettings.sendWhsiper = ns.gSettings.sendWhsiper or ns.gSettings.sendGreeting
+            ns.gSettings.sendGuildGreeting = ns.gSettings.sendGuildGreeting or ns.gSettings.sendWelcome
+            ns.gSettings.sendWhsiper = ns.gSettings.sendWhsiper or ns.gSettings.sendGreeting
 
-        -- Change Message Records
-        if ns.gSettings.welcomeMessage and ns.gSettings.welcomeMessage ~= '' then
-            ns.gSettings.guildMessage = ns.gSettings.welcomeMessage and ns.gSettings.welcomeMessage or ns.gSettings.guildMessage
-            ns.gSettings.welcomeMessage = nil
-        end
-        if ns.gmSettings.welcomeMessage and ns.gmSettings.welcomeMessage ~= '' then
-            ns.gmSettings.guildMessage = ns.gmSettings.welcomeMessage and ns.gmSettings.welcomeMessage or ns.gmSettings.guildMessage
-            ns.gmSettings.welcomeMessage = nil
-        end
-        if ns.gSettings.greetingMessage and ns.gSettings.greetingMessage ~= '' then
-            ns.gSettings.whisperMessage = ns.gSettings.greetingMessage or nil
-            ns.gSettings.greetingMessage = nil
-        end
-        if ns.gmSettings.greetingMessage and ns.gmSettings.greetingMessage ~= '' then
-            ns.gmSettings.whisperMessage = ns.gmSettings.greetingMessage or nil
-            ns.gmSettings.greetingMessage = nil
-        end
-        if ns.gSettings.sendWhisperGreeting or ns.gmSettings.sendWhisperGreeting then
-            ns.gSettings.sendWhsiper = ns.gSettings.sendWhisperGreeting or ns.gSettings.sendWhsiper
-            ns.gmSettings.sendWhsiper = ns.gmSettings.sendWhisperGreeting or ns.gmSettings.sendWhsiper
-            ns.gSettings.sendWhisperGreeting = nil
-            ns.gmSettings.sendWhisperGreeting = nil
+            -- Change Message Records
+            if ns.gSettings.welcomeMessage and ns.gSettings.welcomeMessage ~= '' then
+                ns.gSettings.guildMessage = ns.gSettings.welcomeMessage and ns.gSettings.welcomeMessage or ns.gSettings.guildMessage
+                ns.gSettings.welcomeMessage = nil
+            end
+            if ns.gmSettings.welcomeMessage and ns.gmSettings.welcomeMessage ~= '' then
+                ns.gmSettings.guildMessage = ns.gmSettings.welcomeMessage and ns.gmSettings.welcomeMessage or ns.gmSettings.guildMessage
+                ns.gmSettings.welcomeMessage = nil
+            end
+            if ns.gSettings.greetingMessage and ns.gSettings.greetingMessage ~= '' then
+                ns.gSettings.whisperMessage = ns.gSettings.greetingMessage or nil
+                ns.gSettings.greetingMessage = nil
+            end
+            if ns.gmSettings.greetingMessage and ns.gmSettings.greetingMessage ~= '' then
+                ns.gmSettings.whisperMessage = ns.gmSettings.greetingMessage or nil
+                ns.gmSettings.greetingMessage = nil
+            end
+            if ns.gSettings.sendWhisperGreeting or ns.gmSettings.sendWhisperGreeting then
+                ns.gSettings.sendWhsiper = ns.gSettings.sendWhisperGreeting or ns.gSettings.sendWhsiper
+                ns.gmSettings.sendWhsiper = ns.gmSettings.sendWhisperGreeting or ns.gmSettings.sendWhsiper
+                ns.gSettings.sendWhisperGreeting = nil
+                ns.gmSettings.sendWhisperGreeting = nil
+            end
+
+            -- Combine Message Lists
+            local tblDescHold = {}
+            local tblMsgs, tblGM, tblPlayer = {}, ns.gmSettings.messageList or {}, ns.gSettings.messageList or {}
+            for _, v in pairs(tblGM) do
+                if not tblDescHold[v.desc] then
+                    tinsert(tblMsgs, {
+                        desc = v.desc,
+                        message = v.message,
+                        type = 'GM',
+                    })
+                    tblDescHold[v.desc] = true
+                end
+            end
+            for _, v in pairs(tblPlayer) do
+                if not tblDescHold[v.desc] then
+                    tinsert(tblMsgs, {
+                        desc = v.desc,
+                        message = v.message,
+                        type = 'PLAYER',
+                    })
+                    tblDescHold[v.desc] = true
+                end
+            end
+            ns.gSettings.messageList = tblMsgs or {}
+            ns.gmSettings.messageList, ns.pSettings.messageList = nil, nil
         end
 
-        -- Combine Message Lists
-        local tblDescHold = {}
-        local tblMsgs, tblGM, tblPlayer = {}, ns.gmSettings.messageList or {}, ns.gSettings.messageList or {}
-        for _, v in pairs(tblGM) do
-            if not tblDescHold[v.desc] then
-                tinsert(tblMsgs, {
-                    desc = v.desc,
-                    message = v.message,
-                    type = 'GM',
-                })
-                tblDescHold[v.desc] = true
+        if oldVer >= 3.1 then
+            for k, v in pairs(ns.gSettings.messageList) do
+                if v.type == 'GM' then
+                    ns.gSettings.messageList[k] = nil
+                    ns.gmSettings.messageList[k] = v
+                    ns.gmSettings.messageList[k].gmSync = true
+                end
             end
         end
-        for _, v in pairs(tblPlayer) do
-            if not tblDescHold[v.desc] then
-                tinsert(tblMsgs, {
-                    desc = v.desc,
-                    message = v.message,
-                    type = 'PLAYER',
-                })
-                tblDescHold[v.desc] = true
-            end
-        end
-        ns.gSettings.messageList = tblMsgs or {}
-        ns.gmSettings.messageList, ns.pSettings.messageList = nil, nil
     end
 end
 function core:StartGuildSetup(clubID) -- Get Guild Info and prep database
@@ -292,8 +305,10 @@ function core:PerformRecordMaintenance() -- Perform Record Maintenance
     end
 
     -- Report to console
-    ns.code:fOut('Anti-Spam Records Removed: '..antiSpamRemoved, GRColor)
-    ns.code:fOut('Black List Records Removed: '..blackListRemoved, GRColor)
+    if antiSpamRemoved > 0 then
+        ns.code:fOut('Anti-Spam Records Removed: '..antiSpamRemoved, GRColor) end
+    if blackListRemoved > 0 then
+        ns.code:fOut('Black List Records Removed: '..blackListRemoved, GRColor) end
 end
 function core:StartSlashCommands() -- Start Slash Commands
     local function slashCommand(msg)
@@ -425,6 +440,7 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     end
 end
 
+--* Manual update of settings data
 function core:NotifySettingsUpdate()
     AceConfigRegistry:NotifyChange("GuildRecruiter")
 end

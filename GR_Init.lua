@@ -7,11 +7,11 @@ GR = LibStub('AceAddon-3.0'):NewAddon('GuildRecruiter', 'AceConsole-3.0', 'AceEv
 
 GR.author  = C_AddOns.GetAddOnMetadata('GuildRecruiter', 'Author')
 GR.version = C_AddOns.GetAddOnMetadata('GuildRecruiter', 'Version')
-GR.dbVersion = '3.1'
-GR.isPreRelease = false
-GR.preReleaseType = 'Beta'
+GR.dbVersion = '3.2'
+GR.isPreRelease = true
+GR.preReleaseType = 'Alpha'
 GR.versionOut = '(v'..GR.version..(GR.isPreRelease and ' '..GR.preReleaseType or '')..')'
-GR.debug = true
+GR.debug = false
 
 -- Icons
 GR.icon = ICON_PATH..'GR_Icon.tga'

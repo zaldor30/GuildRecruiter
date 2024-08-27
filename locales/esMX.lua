@@ -198,6 +198,7 @@ L['FORCE_MESSAGE_LIST'] = 'Forzar Mensaje de Invitación'
 L['FORCE_MESSAGE_LIST_DESC'] = 'Forzar el mensaje de invitación para que se envíe al jugador.'
 L['SYNC_MESSAGES'] = 'Sincronizar Mensajes'
 L['SYNC_MESSAGES_DESC'] = 'Sincronizar mensajes con el GM.'
+L['PLAYER_SETTINGS_DESC'] = 'Configuración de mensajes de invitación y bienvenida.'
 
 -- * GR Error Message
 L['INVALID_LEVEL'] = 'Debes ingresar un número entre 1 y'
@@ -251,6 +252,9 @@ L['GM_SETTINGS_DESC'] = 'Primero crea una descripción del mensaje, luego el men
 L['MAX_CHARS'] = '(<sub> caracteres por mensaje)'
 L['LENGTH_INFO'] = 'Asume 12 caracteres al usar NOMBREDELJUGADOR'
 L['MESSAGE_LENGTH'] = 'Longitud del mensaje'
+L['BL_PRIVATE_REASON'] = 'Razón de la lista negra privada'
+L['BL_PRIVATE_REASON_DESC'] = 'Razón de la lista negra que solo se mostrará a los GM.'
+L['BL_PRIVATE_REASON_ERROR'] = 'La razón de la lista negra privada no puede estar vacía.'
 
 -- * GR GM Invite Settings Window
 L['GM_INVITE'] = 'Mensajes del GM'
@@ -292,9 +296,11 @@ L['ADD_TO_BLACK_LIST'] = 'Añadir jugador a la lista negra.'
 
 -- * Invalid Settings Window
 L['INVALID_ZONE'] = 'Zonas Inválidas'
+L['ZONE_NOT_FOUND'] = 'Zona no encontrada'
+L['ZONE_INSTRUCTIONS'] = 'The zone name must EXACTLY match the zone name in the game.'
 L['ZONE_ID'] = 'ID de Zona (ID Numérico)'
 L['ZONE_NAME'] = 'Nombre de la Zona:'
-L['ZONE_TYPE'] = 'Tipo de Zona:'
+L['ZONE_INVALID_REASON'] = 'Razón de la Zona Inválida'
 L['ZONE_ID_DESC'] = [[
 El ID de zona para la zona inválida.
 Lista de instancias:
