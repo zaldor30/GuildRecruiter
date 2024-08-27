@@ -340,7 +340,15 @@
             "STANDARD_TEXT_FONT",
             "ChatFrame_SendTell",
             "FRIEND",
-            "ACHIEVEMENT"
+            "ACHIEVEMENT",
+            "GetCVar",
+            "WOW_PROJECT_ID",
+            "WOW_PROJECT_MAINLINE",
+            "Minimap",
+            "UIParent",
+            "BackdropTemplateMixin",
+            "SetCVar",
+            "GameTooltip"
         ]
     }
 }
