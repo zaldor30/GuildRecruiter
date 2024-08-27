@@ -1,6 +1,10 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
+### v3.2.41 Notes
+    - Rework of settings to make things more clear.
+    - Rework of invalid zones to support other languages.
+    - Also, made seasonal dungeons and raids automatically added to invalid zones.
 ### v3.1.40 Notes
     - Added option to keep addon running and ignore certain ways to close it.
     - esMX (Spanish Mexico) localization added.

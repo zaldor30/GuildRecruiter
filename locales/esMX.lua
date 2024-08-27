@@ -194,6 +194,10 @@ L['MIN_LVL'] = 'Nivel Mínimo:'
 L['MAX_LVL'] = 'Nivel Máximo:'
 L['MESSAGE_LIST'] = 'Mensajes de Invitación'
 L['INVITE_MESSAGE_ONLY'] = 'Enviar solo mensaje de invitación'
+L['FORCE_MESSAGE_LIST'] = 'Forzar Mensaje de Invitación'
+L['FORCE_MESSAGE_LIST_DESC'] = 'Forzar el mensaje de invitación para que se envíe al jugador.'
+L['SYNC_MESSAGES'] = 'Sincronizar Mensajes'
+L['SYNC_MESSAGES_DESC'] = 'Sincronizar mensajes con el GM.'
 
 -- * GR Error Message
 L['INVALID_LEVEL'] = 'Debes ingresar un número entre 1 y'
@@ -201,7 +205,11 @@ L['MIN_LVL_HIGHER_ERROR'] = 'El nivel mínimo debe ser mayor que el nivel máxim
 L['MAX_LVL_LOWER_ERROR'] = 'El nivel máximo debe ser menor que el nivel mínimo.'
 
 -- * GR Config Window Messages
-L['General Settings'] = true
+L['GENERAL_SETTINGS'] = 'Configuración General'
+L['SYSTEM_SETTINGS'] = 'Configuración del Sistema'
+L['INVITE_SCAN_SETTINGS'] = 'Configuración de Invitación y Escaneo'
+L['FORCE_ENABLE_BLOCK_INVITE_CHECK'] = 'Forzar Comprobación de Bloqueo de Invitaciones'
+L['FORCE_ENABLE_BLOCK_INVITE_CHECK_DESC'] = 'Forzar la comprobación de bloqueo de invitaciones para todos los jugadores.'
 L['MESSAGE_REPLACEMENT_INSTRUCTIONS'] = [[
 ENLACEDELGUILD - Creará un enlace clicable a tu guild.
 NOMBREDELGUILD - Mostrará el nombre de tu guild.
@@ -239,7 +247,7 @@ L['GEN_ACCOUNT_WIDE'] = 'indica que afecta a todos los personajes del Guild'
 
 -- * GR GM Settings Window
 L['GM_SETTINGS'] = 'Configuración del GM'
-L['GM_SETTINGS_DESC'] = 'Nota: Los Maestros de Guild tienen acceso a esta configuración en todos sus personajes.'
+L['GM_SETTINGS_DESC'] = 'Primero crea una descripción del mensaje, luego el mensaje en sí, y entonces se habilitará la opción de guardar.'
 L['MAX_CHARS'] = '(<sub> caracteres por mensaje)'
 L['LENGTH_INFO'] = 'Asume 12 caracteres al usar NOMBREDELJUGADOR'
 L['MESSAGE_LENGTH'] = 'Longitud del mensaje'
@@ -252,6 +260,7 @@ L['OVERRIDE_GM_SETTINGS_DESC'] = 'Anular la configuración del GM para este pers
 
 -- * GR Invite Settings Window
 L['INVITE_SETTINGS'] = 'Configuración de Invitaciones'
+L['WELCOME_MESSAGES'] = 'Mensajes de Bienvenida'
 L['ENABLE_ANTI_SPAM'] = 'Habilitar Anti-Spam'
 L['ENABLE_ANTI_SPAM_DESC'] = 'Habilitar la función Anti-Spam para evitar que se haga spam a los jugadores.'
 L['ANTI_SPAM_DAYS'] = 'Retraso para Reinvitación'

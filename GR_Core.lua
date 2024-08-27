@@ -43,6 +43,8 @@ function core:Init()
     self.ignoreAutoSync = false
     self.obeyBlockInvites = true
 
+    self.minimapIcon = nil
+
     self.addonSettings = {
         profile = {
             settings = {
@@ -78,6 +80,7 @@ function core:Init()
                 sendWhsiper = false,
                 forceWhisperMessage = true,
                 whisperMessage = '',
+                forceMessageList = false,
                 messageList = {},
                 guildLeaderToon = nil,
             },
@@ -96,7 +99,6 @@ function core:Init()
                 scanWaitTime = 6,
                 -- Messages
                 messageList = {},
-                overrideGM = false,
                 keepOpen = false,
             },
             keybindings = {
@@ -340,6 +342,7 @@ function core:StartMiniMapIcon() -- Start Mini Map Icon
     })
 
     icon:Register('GR_Icon', iconData, ns.pSettings.minimap)
+    self.minimapIcon = icon
 end
 function core:StartBaseEvents()
     -- Chat Message Response Routine

@@ -47,7 +47,8 @@ function base:CreateBaseFrame()
                 break
             end
         end
-        if not notSpecial and ns.gSettings.keepOpen then
+
+        if not notSpecial and not ns.gSettings.keepOpen then
             _G['GuildRecruiter'] = self.tblFrame.frame
             tinsert(UISpecialFrames, 'GuildRecruiter')
         end

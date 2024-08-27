@@ -338,13 +338,15 @@
             "ChatFrame_SendTell",
             "FRIEND",
             "ACHIEVEMENT",
+            "GetCVar",
             "WOW_PROJECT_ID",
             "WOW_PROJECT_MAINLINE",
             "Minimap",
-            "EncounterJournal_LoadUI",
-            "Dungeon",
-            "ID",
-            "Raid"
+            "UIParent",
+            "BackdropTemplateMixin",
+            "SetCVar",
+            "GameTooltip",
+            "EncounterJournal_LoadUI"
         ]
     }
 }

@@ -49,6 +49,10 @@ function ds:WhatsNew() -- What's new in the current version
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
 
+    |CFFFFFF00v3.2.41 Notes|r
+        - Rework of settings to make things more clear.
+        - Rework of invalid zones to support other languages.
+        - Also, made seasonal dungeons and raids automatically added to invalid zones.
     |CFFFFFF00v3.1.40 Notes|r
         - Added option to keep addon running and ignore certain ways to close it.
         - esMX (Spanish Mexico) localization added.
@@ -136,7 +140,6 @@ function ds:invalidZones() -- Invalid zones for recruitment
             index = index + 1
             instanceID, name = EJ_GetInstanceByIndex(index, isRaid or false)
             if name and instanceID then
-                print('Adding instance: '..name)
                 self.instanceList[strlower(name)] = { name = name, instanceID = instanceID, reason = isRaid and 'Seasonal Raid' or 'Seasonal Dungeon' }
             end
         end
