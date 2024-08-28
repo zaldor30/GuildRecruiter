@@ -68,6 +68,7 @@ function sync:StartSyncRoutine(syncType, sender)
                 self:CancelTimer('syncWait')
                 ns.code:cOut('Found '..count..' guild member to sync with.', GRColor)
                 self:SendCommMessage('SEND_YOUR_SYNC_DATA', 'GUILD')
+                self:SendCommMessage('DB_VERSION_CHECK;'..GR.dbVersion, 'WHISPER', sender)
                 self:AddTimer('WAIT_FOR_DATA', DATA_WAIT_TIMEOUT, function()
                     ns.code:fOut('Sync request with clients timed out.', 'FFFF0000')
                     ns.sync:ShutdownSync('IS_FAIL')
@@ -141,7 +142,7 @@ function sync:CommReceived(message, sender)
 
         local dataReady = true
         if self.syncType <= 2 then
-            for key, v in pairs(self.tblClients) do
+            for _, v in pairs(self.tblClients) do
                 if not v.receivedData then dataReady = false return end
             end
         end
@@ -152,6 +153,12 @@ function sync:CommReceived(message, sender)
             self:SendCommMessage(self.tblMyData, 'GUILD')
             self:ShutdownSync()
         end
+    elseif message:find('DB_VERSION_CHECK') then
+        local _, dbVersion = strsplit(';', message)
+        ns.code:dOut('Received DB Version Check from '..sender)
+        if dbVersion ~= GR.dbVersion then
+            ns.code:fOut('Your database version ('..dbVersion..') is different from the server ('..GR.dbVersion..').', 'FFFF0000')
+        else ns.code:dOut('DB Version Check Passed.') end
     elseif not self.syncType and message == 'SYNC_REQUEST' then -- Start clicnet sync
         ns.code:dOut('Sync request received from '..sender)
 
@@ -160,6 +167,7 @@ function sync:CommReceived(message, sender)
         self.tblClients[sender] = {}
 
         self:SendCommMessage('SYNC_REQUEST_HEARD', 'WHISPER', sender)
+        self:SendCommMessage('DB_VERSION_CHECK;'..GR.dbVersion, 'WHISPER', sender)
         self:AddTimer('WAIT_FOR_DATA', DATA_WAIT_TIMEOUT, function()
             self:ProcessClientSyncData() -- Process data if all clients have not responded
         end)
@@ -170,6 +178,7 @@ function sync:CommReceived(message, sender)
         self.tblClients[sender] = {}
     elseif self.syncType == 3 and self.whoSyncingWith == sender and message == 'SEND_YOUR_SYNC_DATA' then
         ns.code:dOut('Received sync data request from '..sender)
+        
         self:SendCommMessage(self.tblMyData, 'WHISPER', sender)
         self:AddTimer('WAIT_FOR_DATA', DATA_WAIT_TIMEOUT, function()
             ns.code:fOut('Sync request with '..sender..' timed out.', 'FFFF0000')
@@ -185,6 +194,7 @@ end
 
 --* Sync Data Processing Routines
 function sync:ProcessClientSyncData()
+    ns.code:dOut('Processing Client Sync Data')
     local realGMUpdated = false
 
     local function findRevision(ver)

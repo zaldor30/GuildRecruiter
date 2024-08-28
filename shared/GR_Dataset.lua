@@ -50,6 +50,7 @@ function ds:WhatsNew() -- What's new in the current version
                 (or click on the icon in the top left corner)|r
 
     |CFFFFFF00v3.2.41 Notes|r
+        - Working on sync.
         - Rework of invalid zones to support other languages.
         - Also, made seasonal dungeons and raids automatically added to invalid zones.
         - Settings Rework:

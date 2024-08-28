@@ -39,6 +39,7 @@ function invite:SendManualInvite(pName, class, sendWhisper, sendGreeting, sendIn
 end
 function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreetingMsg, isManual, sendInvite)
     if not pName then return end
+    if not CanGuildInvite() then ns.code:fOut(L['NO_GUILD_PERMISSIONS']) return end
 
     --pName = 'Monkstrife' --! Remove this line
     --pName = 'Pbpolytime-Dalaran' --! Remove this line
