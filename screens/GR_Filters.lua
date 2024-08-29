@@ -15,6 +15,7 @@ function filter:Init()
 end
 function filter:SetShown(val)
     if not val then
+        ns.statusText:SetText('')
         ns.win.base.tblFrame.backButton:SetShown(false)
         if self.tblFrame.inline then
             self.tblFrame.inline:ReleaseChildren()
@@ -142,7 +143,7 @@ function filter:CreateTopUIFrame()
     editbox:SetCallback('OnEnterPressed', function(_,_, text)
     end)
     inline:AddChild(editbox)
-    self.tblFrame.inline.filterName = editbox
+    self.tblFrame.filterName = editbox
 
     -- Who Command Editor
     local whoEditbox = aceGUI:Create('EditBox')
@@ -255,6 +256,22 @@ function filter:tblFunctions()
         end
 
         return tbl
+    end
+
+    function tblFunc:saveFilterData()
+        local f = self.tblFrame
+        local gFilters = ns.global.filterList
+
+        if not f.filterName then return
+        else
+            for _, v in pairs(gFilters) do
+                if strlower(v.name) == strlower(f.filterName) then
+                    ns.statusText:SetText(L['FILTER_EXISTS'])
+                    UIErrorsFrame:AddMessage(L['FILTER_EXISTS'], 1, 0, 0, 1)
+                    break
+                end
+            end
+        end
     end
 
     return tblFunc

@@ -274,6 +274,13 @@ function base:CreateStatusBarFrame()
     statusText:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
     statusText:SetJustifyH('LEFT')
     tblFrame.statusText = statusText
+
+    local originalSettext = statusText.SetText
+    local version = ns.code:cText('80FFFFFF', 'v: '..GR.version..(GR.isPreRelease and ' ('..GR.preReleaseType..')' or ''))
+    function statusText:SetText(text)
+        if not text or text == '' then originalSettext(self, version)
+        elseif text then originalSettext(self, text) end
+    end
     ns.statusText = statusText
 
     tblFrame.frame:SetScript('OnSizeChanged', function()
