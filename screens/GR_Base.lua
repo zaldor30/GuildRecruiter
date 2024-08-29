@@ -170,7 +170,13 @@ function base:CreateBaseIconFrame()
     syncIconButton:SetPoint('LEFT', settingsIconButton, 'RIGHT', 5, 0)
     syncIconButton:SetNormalTexture(ICON_PATH..'GR_Sync')
     syncIconButton:SetHighlightTexture(BLUE_HIGHLIGHT)
-    syncIconButton:SetScript('OnClick', function() ns.sync:StartSyncRoutine(2) end)
+    syncIconButton:SetScript('OnClick', function()
+        if ns.sync.isSyncing then
+            ns.code.fOut(L['SYNC_ALREADY_IN_PROGRESS'], 'FFFF0000')
+            return
+        end
+        ns.sync:StartSyncRoutine(2)
+    end)
     syncIconButton:SetScript('OnEnter', function() ns.code:createTooltip(L['SYNC']..' '..L['TITLE'], L['SYNC_TOOLTIP']) end)
     syncIconButton:SetScript('OnLeave', function() GameTooltip:Hide() end)
     if self.isSyncing then syncIconButton:GetNormalTexture():SetVertexColor(0,1,0,1)

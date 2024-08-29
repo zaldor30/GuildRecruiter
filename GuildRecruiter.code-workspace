@@ -346,7 +346,8 @@
             "BackdropTemplateMixin",
             "SetCVar",
             "GameTooltip",
-            "EncounterJournal_LoadUI"
+            "EncounterJournal_LoadUI",
+            "WHISPER"
         ]
     }
 }

@@ -30,7 +30,9 @@ function GR:OnInitialize()
             return
         elseif not IsInGuild() or not clubID or not select(1, GetGuildInfo('player')) then -- If the player is not in a guild, then check again in 1 second
             C_Timer.After(1, function() checkIfInGuild(count + 1) end)
-        elseif clubID then core:StartGuildRecruiter(clubID) end
+        elseif clubID then
+            core.isEnabled = true
+            core:StartGuildRecruiter(clubID) end
     end
 
     checkIfInGuild(0)
@@ -377,14 +379,14 @@ function core:CreateBLandAntiSpamTables()
     ns.tblAntiSpamList = asSuccess and tblAS or {}
 end
 function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
-    self.isEnabled = true
+    if not self.isEnabled then return end
+
     ns.code:dOut('Starting Guild Recruiter')
 
     ns.code.fPlayerName = ns.code:cPlayer(GetUnitName('player', false), select(2, UnitClass("player"))) -- Set the player name
 
     self:StartDatabase(clubID) -- Start the database
     self:StartGuildSetup(clubID) -- Start the guild setup
-    if not self.isEnabled then return end -- If the guild is not enabled, then return
 
     -- Setup Tables
     ns.tblRaces, ns.tblClasses = ns.ds:races(), ns.ds:classes()
@@ -394,7 +396,6 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     self.iAmGM = (ns.guildInfo.isGuildLeader or ns.guildInfo.guildLeaderToon == GetUnitName('player', true)) or false
     ns.gSettings.overrideGM = self.iAmGM and ns.gSettings.overrideGM or false
 
-    if not self.isEnabled then return end
     core:PerformRecordMaintenance() -- Perform record maintenance
     core:StartSlashCommands() -- Start the slash commands
     core:StartMiniMapIcon() -- Start the mini map icon
@@ -432,6 +433,16 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
         ns.win.whatsnew.startUpWhatsNew = true
         C_Timer.After(3, function() ns.win.whatsnew:SetShown(true) end) -- Show the what's new window
     elseif ns.global.currentVersion ~= GR.version then ns.code:fOut(L['NEW_VERSION_INFO'], GRColor, true) end
+
+    local function OnCommReceived(prefix, message, distribution, sender)
+        if not ns.core.isEnabled then return
+        elseif sender == UnitName('player') then return
+        elseif prefix ~= GR.commPrefix then return
+        elseif distribution ~= 'GUILD' and distribution ~= 'WHISPER' then return end
+
+        ns.sync:CommReceived(message, sender)
+    end
+    GR:RegisterComm(GR.commPrefix, OnCommReceived)
 
     --* Start Auto Sync
     if type(ns.pSettings.enableAutoSync) ~= 'boolean' then ns.pSettings.enableAutoSync = true end

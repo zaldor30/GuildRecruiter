@@ -1,8 +1,11 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
-### v3.2.42 Notes
-    - Working on sync.
+### v3.2.43 Notes
+    - Reworked Sync
+        - Now checks version information before syncing.
+        - Will now support larger sized data sets.
+        - Not so spammy now.
     - Rework of invalid zones to support other languages.
     - Also, made seasonal dungeons and raids automatically added to invalid zones.
     - Settings Rework:

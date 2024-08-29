@@ -11,7 +11,9 @@ GR.dbVersion = '3.2'
 GR.isPreRelease = true
 GR.preReleaseType = 'Alpha'
 GR.versionOut = '(v'..GR.version..(GR.isPreRelease and ' '..GR.preReleaseType or '')..')'
+
 GR.debug = false
+GR.commPrefix = 'GRSync'
 
 -- Icons
 GR.icon = ICON_PATH..'GR_Icon.tga'

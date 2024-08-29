@@ -29,6 +29,17 @@ L['is not online'] = 'no está en línea'
 L['has joined the guild'] = 'se ha unido a la hermandad'
 L['declines your guild invitation'] = 'la invitación a tu hermandad'
 L['JOINED_GUILD_MESSAGE'] = ' se unió a la gremia!'
+L['NO_ANTISPAM_ADDED'] = 'No se añadió a la lista de Anti-Spam.'
+
+--? 3.2 Changes
+L['SYNC_ALREADY_IN_PROGRESS'] = '¡La sincronización ya está en progreso con %s!'
+L['NO_CLIENTS_FOUND'] = 'No se encontraron clientes para sincronizar.'
+L['NO_BLACKLISTED_ADDED'] = 'No se añadió a la lista negra.'
+L['CLIENT_REQUEST_DATA_TIMEOUT'] = 'El tiempo de espera de la solicitud de datos del cliente ha expirado.'
+L['FAILED_TO_RECEIVE_SYNC_DATA'] = 'No se pudo recibir los datos de sincronización de'
+L['OUTDATED_VERSION'] = 'Versión desactualizada de Guild Recruiter. Por favor, actualiza tu versión.'
+L['OLDER_VERSION'] = 'Versión más antigua de Guild Recruiter. Por favor, actualiza tu versión.'
+L['NEWER_VERSION'] = 'Versión más nueva de Guild Recruiter. Por favor, actualiza tu versión.'
 
 -- * Donation Message
 L['DONATION_MESSAGE'] = [[
