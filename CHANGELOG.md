@@ -15,6 +15,7 @@
         - Can see anti-spam list, but not change it.
         - Reworked black list and added a privacy option for reason.
         - Reworked invalid zones so you can specify a name of a zone to ignore.
+    - Made races by faction again.
 ### v3.1.40 Notes
     - Added option to keep addon running and ignore certain ways to close it.
     - esMX (Spanish Mexico) localization added.

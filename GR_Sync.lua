@@ -362,7 +362,6 @@ function sync:CommReceived(msg, sender)
         self.tblChuncks[sender].tblChuncks[tonumber(index)] = chunk
 
         if self.tblChuncks[sender].chunkCount >= self.tblChuncks[sender].tChuncks then
-            print('2Chunk Count: '..self.tblChuncks[sender].chunkCount..' Total Chunks: '..self.tblChuncks[sender].tChuncks)
             tremove(self.tblClients, 1)
             self:CancelTimer(sender..'_SYNC_REQUEST_TIME_OUT')
             ns.code:dOut('Received all chunks from '..sender)
