@@ -1,7 +1,7 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
-### v3.2.43 Notes
+### v3.2.44 Notes
     - Reworked Sync
         - Now checks version information before syncing.
         - Will now support larger sized data sets.

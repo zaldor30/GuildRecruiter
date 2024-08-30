@@ -71,8 +71,6 @@ function analytics:saveStats(field, amt)
     amt = (not amt or type(amt) == 'boolean') and 1 or amt
     ns.pAnalytics[field] = ns.pAnalytics[field] and ns.code:inc(ns.pAnalytics[field], amt) or amt
     ns.gAnalytics[field] = ns.gAnalytics[field] and ns.code:inc(ns.gAnalytics[field], amt) or amt
-    ns.guildSession[date('%m%d%Y')][field] = ns.code:inc(ns.guildSession[date('%m%d%Y')][field], amt) or amt
-    ns.SessionStat[field] = ns.code:inc(ns.SessionStat[field], amt)
 end
 function analytics:WaitingOnPlayer(field, amt)
     amt = (not amt or type(amt) == 'boolean') and 1 or amt
