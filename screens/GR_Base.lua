@@ -47,7 +47,8 @@ function base:CreateBaseFrame()
                 break
             end
         end
-        if not notSpecial and ns.gSettings.keepOpen then
+
+        if not notSpecial and not ns.gSettings.keepOpen then
             _G['GuildRecruiter'] = self.tblFrame.frame
             tinsert(UISpecialFrames, 'GuildRecruiter')
         end
@@ -169,7 +170,13 @@ function base:CreateBaseIconFrame()
     syncIconButton:SetPoint('LEFT', settingsIconButton, 'RIGHT', 5, 0)
     syncIconButton:SetNormalTexture(ICON_PATH..'GR_Sync')
     syncIconButton:SetHighlightTexture(BLUE_HIGHLIGHT)
-    syncIconButton:SetScript('OnClick', function() ns.sync:StartSyncRoutine(2) end)
+    syncIconButton:SetScript('OnClick', function()
+        if ns.sync.isSyncing then
+            ns.code.fOut(L['SYNC_ALREADY_IN_PROGRESS'], 'FFFF0000')
+            return
+        end
+        ns.sync:StartSyncRoutine(2)
+    end)
     syncIconButton:SetScript('OnEnter', function() ns.code:createTooltip(L['SYNC']..' '..L['TITLE'], L['SYNC_TOOLTIP']) end)
     syncIconButton:SetScript('OnLeave', function() GameTooltip:Hide() end)
     if self.isSyncing then syncIconButton:GetNormalTexture():SetVertexColor(0,1,0,1)
@@ -267,6 +274,13 @@ function base:CreateStatusBarFrame()
     statusText:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
     statusText:SetJustifyH('LEFT')
     tblFrame.statusText = statusText
+
+    local originalSettext = statusText.SetText
+    local version = ns.code:cText('80FFFFFF', 'v: '..GR.version..(GR.isPreRelease and ' ('..GR.preReleaseType..')' or ''))
+    function statusText:SetText(text)
+        if not text or text == '' then originalSettext(self, version)
+        elseif text then originalSettext(self, text) end
+    end
     ns.statusText = statusText
 
     tblFrame.frame:SetScript('OnSizeChanged', function()

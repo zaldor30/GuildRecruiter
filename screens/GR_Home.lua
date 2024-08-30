@@ -16,6 +16,7 @@ end
 function home:Init()
     self.activeMessage = nil
     self.resetFilters = false
+    self.tblMessages = {}
 
     self.tblFrame = {}
     self.tblFilters = {}
@@ -275,11 +276,17 @@ end
 function home:GetInviteMessages()
     local tblWhispers = {}
     local tblMessages = ns.gSettings.messageList and ns.gSettings.messageList or {}
+    local tblGMMessages = ns.gSettings.GMMessageList and ns.gSettings.GMMessageList or {}
 
     self.tblWhipsers = table.wipe(self.tblWhipsers or {})
+    for k, r in pairs(tblGMMessages) do
+        local msg = r.message
+        local desc = ns.code:cText(GM_DESC_COLOR, r.desc)
+        tblWhispers[k] = { message = msg, desc = desc, type = r.type }
+    end
     for k, r in pairs(tblMessages) do
         local msg = r.message
-        local desc = r.type == 'GM' and ns.code:cText(GM_DESC_COLOR, r.desc) or r.desc
+        local desc = r.desc
         tblWhispers[k] = { message = msg, desc = desc, type = r.type }
     end
 

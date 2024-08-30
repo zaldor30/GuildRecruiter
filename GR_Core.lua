@@ -1,12 +1,13 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
-ns.core = {}
-local core = ns.core
 
 -- Application Initialization
 local L = LibStub("AceLocale-3.0"):GetLocale('GuildRecruiter')
 local AC, ACD = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0')
 local icon, DB = LibStub('LibDBIcon-1.0'), LibStub('AceDB-3.0')
 local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
+
+ns.core = {}
+local core = ns.core
 
 -- *Blizzard Initialization Called Function
 function GR:OnInitialize()
@@ -29,7 +30,9 @@ function GR:OnInitialize()
             return
         elseif not IsInGuild() or not clubID or not select(1, GetGuildInfo('player')) then -- If the player is not in a guild, then check again in 1 second
             C_Timer.After(1, function() checkIfInGuild(count + 1) end)
-        elseif clubID then core:StartGuildRecruiter(clubID) end
+        elseif clubID then
+            core.isEnabled = true
+            core:StartGuildRecruiter(clubID) end
     end
 
     checkIfInGuild(0)
@@ -37,11 +40,12 @@ end
 
 function core:Init()
     self.hasGM = false
-    self.iAmGM = false
     self.isEnabled = false
     self.fullyStarted = false
     self.ignoreAutoSync = false
     self.obeyBlockInvites = true
+
+    self.minimapIcon = nil
 
     self.addonSettings = {
         profile = {
@@ -78,6 +82,7 @@ function core:Init()
                 sendWhsiper = false,
                 forceWhisperMessage = true,
                 whisperMessage = '',
+                forceMessageList = false,
                 messageList = {},
                 guildLeaderToon = nil,
             },
@@ -96,7 +101,6 @@ function core:Init()
                 scanWaitTime = 6,
                 -- Messages
                 messageList = {},
-                overrideGM = false,
                 keepOpen = false,
             },
             keybindings = {
@@ -148,13 +152,12 @@ function core:StartDatabase(clubID)
 
     local profiles, _ = db:GetProfiles()
     if not IsGuildLeader() then
-        ns.guildInfo.isGuildLeader = false
         for _, profile in pairs(profiles) do
-            if profile:find(GetUnitName('player', true)) then
+            if profile:find(UnitName('player')) then
                 if IsGuildLeader() then
                     ns.guildInfo.isGuildLeader = true
                     ns.guildInfo.guildLeaderToon = GetUnitName('player', true)
-                elseif not IsGuildLeader() and ns.guildInfo.guildLeaderToon == GetUnitName('player', true) then
+                elseif not IsGuildLeader() and ns.guildInfo.guildLeaderToon == UnitName('player') then
                     ns.guildInfo.isGuildLeader = false
                     ns.guildInfo.guildLeaderToon = nil
                     ns.gSettings.overrideGM = false
@@ -179,67 +182,81 @@ function core:PerformDatabaseMaintenance()
     if ns.gmSettings.antiSpam == nil then ns.gmSettings.antiSpam = true end
 
     if not ns.global.dbVersion or ns.global.dbVersion ~= GR.dbVersion then
+        local oldVer = tonumber(ns.global.dbVersion) or 1
+        -- Before 3.1
         ns.global.dbVersion = GR.dbVersion
-        if ns.gmSettings.obeyBlockInvites == nil then ns.gmSettings.obeyBlockInvites = true end
-        if ns.gSettings.obeyBlockInvites == nil then ns.gSettings.obeyBlockInvites = true end
+        if oldVer < 3.1 then
+            if ns.gmSettings.obeyBlockInvites == nil then ns.gmSettings.obeyBlockInvites = true end
+            if ns.gSettings.obeyBlockInvites == nil then ns.gSettings.obeyBlockInvites = true end
 
-        -- Fix for old DB settings
-        ns.gmSettings.sendGuildGreeting = ns.gmSettings.sendGuildGreeting or ns.gmSettings.sendWelcome
-        ns.gmSettings.sendWhsiper = ns.gmSettings.sendWhsiper or ns.gmSettings.sendGreeting
-        ns.gmSettings.sendGreeting, ns.gmSettings.sendWelcome = nil, nil
+            -- Fix for old DB settings
+            ns.gmSettings.sendGuildGreeting = ns.gmSettings.sendGuildGreeting or ns.gmSettings.sendWelcome
+            ns.gmSettings.sendWhsiper = ns.gmSettings.sendWhsiper or ns.gmSettings.sendGreeting
+            ns.gmSettings.sendGreeting, ns.gmSettings.sendWelcome = nil, nil
 
-        ns.gSettings.sendGuildGreeting = ns.gSettings.sendGuildGreeting or ns.gSettings.sendWelcome
-        ns.gSettings.sendWhsiper = ns.gSettings.sendWhsiper or ns.gSettings.sendGreeting
+            ns.gSettings.sendGuildGreeting = ns.gSettings.sendGuildGreeting or ns.gSettings.sendWelcome
+            ns.gSettings.sendWhsiper = ns.gSettings.sendWhsiper or ns.gSettings.sendGreeting
 
-        -- Change Message Records
-        if ns.gSettings.welcomeMessage and ns.gSettings.welcomeMessage ~= '' then
-            ns.gSettings.guildMessage = ns.gSettings.welcomeMessage and ns.gSettings.welcomeMessage or ns.gSettings.guildMessage
-            ns.gSettings.welcomeMessage = nil
-        end
-        if ns.gmSettings.welcomeMessage and ns.gmSettings.welcomeMessage ~= '' then
-            ns.gmSettings.guildMessage = ns.gmSettings.welcomeMessage and ns.gmSettings.welcomeMessage or ns.gmSettings.guildMessage
-            ns.gmSettings.welcomeMessage = nil
-        end
-        if ns.gSettings.greetingMessage and ns.gSettings.greetingMessage ~= '' then
-            ns.gSettings.whisperMessage = ns.gSettings.greetingMessage or nil
-            ns.gSettings.greetingMessage = nil
-        end
-        if ns.gmSettings.greetingMessage and ns.gmSettings.greetingMessage ~= '' then
-            ns.gmSettings.whisperMessage = ns.gmSettings.greetingMessage or nil
-            ns.gmSettings.greetingMessage = nil
-        end
-        if ns.gSettings.sendWhisperGreeting or ns.gmSettings.sendWhisperGreeting then
-            ns.gSettings.sendWhsiper = ns.gSettings.sendWhisperGreeting or ns.gSettings.sendWhsiper
-            ns.gmSettings.sendWhsiper = ns.gmSettings.sendWhisperGreeting or ns.gmSettings.sendWhsiper
-            ns.gSettings.sendWhisperGreeting = nil
-            ns.gmSettings.sendWhisperGreeting = nil
+            -- Change Message Records
+            if ns.gSettings.welcomeMessage and ns.gSettings.welcomeMessage ~= '' then
+                ns.gSettings.guildMessage = ns.gSettings.welcomeMessage and ns.gSettings.welcomeMessage or ns.gSettings.guildMessage
+                ns.gSettings.welcomeMessage = nil
+            end
+            if ns.gmSettings.welcomeMessage and ns.gmSettings.welcomeMessage ~= '' then
+                ns.gmSettings.guildMessage = ns.gmSettings.welcomeMessage and ns.gmSettings.welcomeMessage or ns.gmSettings.guildMessage
+                ns.gmSettings.welcomeMessage = nil
+            end
+            if ns.gSettings.greetingMessage and ns.gSettings.greetingMessage ~= '' then
+                ns.gSettings.whisperMessage = ns.gSettings.greetingMessage or nil
+                ns.gSettings.greetingMessage = nil
+            end
+            if ns.gmSettings.greetingMessage and ns.gmSettings.greetingMessage ~= '' then
+                ns.gmSettings.whisperMessage = ns.gmSettings.greetingMessage or nil
+                ns.gmSettings.greetingMessage = nil
+            end
+            if ns.gSettings.sendWhisperGreeting or ns.gmSettings.sendWhisperGreeting then
+                ns.gSettings.sendWhsiper = ns.gSettings.sendWhisperGreeting or ns.gSettings.sendWhsiper
+                ns.gmSettings.sendWhsiper = ns.gmSettings.sendWhisperGreeting or ns.gmSettings.sendWhsiper
+                ns.gSettings.sendWhisperGreeting = nil
+                ns.gmSettings.sendWhisperGreeting = nil
+            end
+
+            -- Combine Message Lists
+            local tblDescHold = {}
+            local tblMsgs, tblGM, tblPlayer = {}, ns.gmSettings.messageList or {}, ns.gSettings.messageList or {}
+            for _, v in pairs(tblGM) do
+                if not tblDescHold[v.desc] then
+                    tinsert(tblMsgs, {
+                        desc = v.desc,
+                        message = v.message,
+                        type = 'GM',
+                    })
+                    tblDescHold[v.desc] = true
+                end
+            end
+            for _, v in pairs(tblPlayer) do
+                if not tblDescHold[v.desc] then
+                    tinsert(tblMsgs, {
+                        desc = v.desc,
+                        message = v.message,
+                        type = 'PLAYER',
+                    })
+                    tblDescHold[v.desc] = true
+                end
+            end
+            ns.gSettings.messageList = tblMsgs or {}
+            ns.gmSettings.messageList, ns.pSettings.messageList = nil, nil
         end
 
-        -- Combine Message Lists
-        local tblDescHold = {}
-        local tblMsgs, tblGM, tblPlayer = {}, ns.gmSettings.messageList or {}, ns.gSettings.messageList or {}
-        for _, v in pairs(tblGM) do
-            if not tblDescHold[v.desc] then
-                tinsert(tblMsgs, {
-                    desc = v.desc,
-                    message = v.message,
-                    type = 'GM',
-                })
-                tblDescHold[v.desc] = true
+        if oldVer >= 3.1 then
+            for k, v in pairs(ns.gSettings.messageList) do
+                if v.type == 'GM' then
+                    ns.gSettings.messageList[k] = nil
+                    ns.gmSettings.messageList[k] = v
+                    ns.gmSettings.messageList[k].gmSync = true
+                end
             end
         end
-        for _, v in pairs(tblPlayer) do
-            if not tblDescHold[v.desc] then
-                tinsert(tblMsgs, {
-                    desc = v.desc,
-                    message = v.message,
-                    type = 'PLAYER',
-                })
-                tblDescHold[v.desc] = true
-            end
-        end
-        ns.gSettings.messageList = tblMsgs or {}
-        ns.gmSettings.messageList, ns.pSettings.messageList = nil, nil
     end
 end
 function core:StartGuildSetup(clubID) -- Get Guild Info and prep database
@@ -290,8 +307,10 @@ function core:PerformRecordMaintenance() -- Perform Record Maintenance
     end
 
     -- Report to console
-    ns.code:fOut('Anti-Spam Records Removed: '..antiSpamRemoved, GRColor)
-    ns.code:fOut('Black List Records Removed: '..blackListRemoved, GRColor)
+    if antiSpamRemoved > 0 then
+        ns.code:fOut('Anti-Spam Records Removed: '..antiSpamRemoved, GRColor) end
+    if blackListRemoved > 0 then
+        ns.code:fOut('Black List Records Removed: '..blackListRemoved, GRColor) end
 end
 function core:StartSlashCommands() -- Start Slash Commands
     local function slashCommand(msg)
@@ -340,6 +359,7 @@ function core:StartMiniMapIcon() -- Start Mini Map Icon
     })
 
     icon:Register('GR_Icon', iconData, ns.pSettings.minimap)
+    self.minimapIcon = icon
 end
 function core:StartBaseEvents()
     -- Chat Message Response Routine
@@ -359,29 +379,23 @@ function core:CreateBLandAntiSpamTables()
     ns.tblAntiSpamList = asSuccess and tblAS or {}
 end
 function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
-    self.isEnabled = true
+    if not self.isEnabled then return end
+
     ns.code:dOut('Starting Guild Recruiter')
 
     ns.code.fPlayerName = ns.code:cPlayer(GetUnitName('player', false), select(2, UnitClass("player"))) -- Set the player name
 
     self:StartDatabase(clubID) -- Start the database
     self:StartGuildSetup(clubID) -- Start the guild setup
-    if not self.isEnabled then return end -- If the guild is not enabled, then return
 
     -- Setup Tables
     ns.tblRaces, ns.tblClasses = ns.ds:races(), ns.ds:classes()
-
-    --* Setup Tables
-    ns.tblInvalidZones = ns.ds:invalidZones()
-    ns.tblRacesSortedByName = ns.code:sortTableByField(ns.tblRaces, 'name')
-    ns.tblClassesSortedByName = ns.code:sortTableByField(ns.tblClasses, 'name')
 
     AC:RegisterOptionsTable('GuildRecruiter', ns.addonSettings) -- Register the options table
     ns.addonOptions = ACD:AddToBlizOptions('GuildRecruiter', 'Guild Recruiter') -- Add the options to the Blizzard options
     self.iAmGM = (ns.guildInfo.isGuildLeader or ns.guildInfo.guildLeaderToon == GetUnitName('player', true)) or false
     ns.gSettings.overrideGM = self.iAmGM and ns.gSettings.overrideGM or false
 
-    if not self.isEnabled then return end
     core:PerformRecordMaintenance() -- Perform record maintenance
     core:StartSlashCommands() -- Start the slash commands
     core:StartMiniMapIcon() -- Start the mini map icon
@@ -391,14 +405,20 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     ns.win.base:SetShown(false) -- Hide the base window
     self.fullyStarted = true
 
-    ns.code:fOut(L['TITLE']..' ('..GR.version..(GR.isTest and ' '..GR.testLevel or '')..') '..L['IS_ENABLED'], GRColor, true)
+
+    --* Setup Tables
+    ns.tblInvalidZones = ns.ds:invalidZones()
+    ns.tblRacesSortedByName = ns.code:sortTableByField(ns.tblRaces, 'name')
+    ns.tblClassesSortedByName = ns.code:sortTableByField(ns.tblClasses, 'name')
+
+    ns.code:fOut(L['TITLE']..' '..GR.versionOut..' '..L['IS_ENABLED'], GRColor, true)
     if not ns.guildInfo.guildLink then
         ns.code:fOut(L['NO_GUILD_LINK'], GRColor)
         ns.code:fOut(ns.code:cText('FFFF0000', L['NO_GUILD_LINK'], GRColor))
     end
 
-    if GR.isTest then
-        ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.testLevel))), 'FFFFFF00', true)
+    if GR.isPreRelease then
+        ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.preReleaseType))), 'FFFFFF00', true)
      end
 
      --print('hasGM:'..ns.core.hasGM)
@@ -414,6 +434,16 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
         C_Timer.After(3, function() ns.win.whatsnew:SetShown(true) end) -- Show the what's new window
     elseif ns.global.currentVersion ~= GR.version then ns.code:fOut(L['NEW_VERSION_INFO'], GRColor, true) end
 
+    local function OnCommReceived(prefix, message, distribution, sender)
+        if not ns.core.isEnabled then return
+        elseif sender == UnitName('player') then return
+        elseif prefix ~= GR.commPrefix then return
+        elseif distribution ~= 'GUILD' and distribution ~= 'WHISPER' then return end
+
+        ns.sync:CommReceived(message, sender)
+    end
+    GR:RegisterComm(GR.commPrefix, OnCommReceived)
+
     --* Start Auto Sync
     if type(ns.pSettings.enableAutoSync) ~= 'boolean' then ns.pSettings.enableAutoSync = true end
     if ns.pSettings.enableAutoSync then
@@ -421,6 +451,7 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     end
 end
 
+--* Manual update of settings data
 function core:NotifySettingsUpdate()
     AceConfigRegistry:NotifyChange("GuildRecruiter")
 end

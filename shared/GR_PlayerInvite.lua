@@ -39,8 +39,10 @@ function invite:SendManualInvite(pName, class, sendWhisper, sendGreeting, sendIn
 end
 function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreetingMsg, isManual, sendInvite)
     if not pName then return end
+    if not CanGuildInvite() then ns.code:fOut(L['NO_GUILD_PERMISSIONS']) return end
 
     --pName = 'Monkstrife' --! Remove this line
+    --pName = 'Pbpolytime-Dalaran' --! Remove this line
     local fName = pName:find('-') and pName or pName..'-'..GetRealmName() -- Add realm name if not present
     local name = pName:gsub('*-', '') -- Remove realm name if present
     local cName = class and ns.code:cPlayerName(name, class) or name
@@ -115,9 +117,9 @@ local function UpdateInvitePlayerStatus(_, ...)
     msg = strlower(msg)
     local fName, key = nil, nil
     if msg and msg:find('Invited By:') and msg:find(UnitName('player')) then -- GRM
-        if GR.isTest then print('you did the invite') end
+        if GR.isPreRelease then print('you did the invite') end
         return
-    elseif msg and msg:find('REINVITED') and GR.isTest then print('You reinvited') return
+    elseif msg and msg:find('REINVITED') and GR.isPreRelease then print('You reinvited') return
     elseif not invite.tblSent then
         ns.observer:Unregister('CHAT_MSG_SYSTEM', UpdateInvitePlayerStatus)
         return

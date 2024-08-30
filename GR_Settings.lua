@@ -2,12 +2,23 @@ local _, ns = ... -- Namespace (myaddon, namespace)
 local L = LibStub("AceLocale-3.0"):GetLocale('GuildRecruiter')
 local icon = LibStub('LibDBIcon-1.0')
 
-local hasGM, iAmGM = ns.core.hasGM, ns.core.iAmGM
+local MAX_CHARACTERS = 255
 local bulletAccountWide = ns.code:cText('ff00ff00', '* ')
 
--- Determine the length of a message
-local maxChars = 255
-local function MessageLength(msg)
+--* Message Routines
+local activeZone, checkedZones, tblPlayerZone = nil, false, nil
+local activeMessage, isGMMessage = nil, false
+local tblAntiSpamSorted, tblBlackListSorted = {}, {}
+
+local function newMsg()
+    return {
+        desc = '',
+        message = '',
+        gmSync = ns.core.hasGM,
+    }
+end
+local tblMessage, tblZoneList, tblZone = nil, nil, {}
+local getMessageLength = function(msg)
     if not msg or msg == '' then return false, 0, msg end
 
     local gd = ns.guildInfo
@@ -26,46 +37,9 @@ local function MessageLength(msg)
     tMsg = msg:gsub('GUILDLINK', ''):gsub('GUILDNAME', ''):gsub('PLAYERNAME', '')
     return (playerNameFound or false), count + (strlen(tMsg) or 0), count, msg
 end
-local function newMsg(type)
-    return {
-        desc = '',
-        message = '',
-        type = type,
-    }
-end
-local function newZone()
-    return {
-        id = '',
-        name = '',
-        reason = '',
-    }
-end
-
-local tblZoneByName = nil
-local function zoneOut()
-    local tbl = {}
-    local tblTemp = ns.ds:convertZoneKeyToName()
-    local tblZonesOut = ns.code:sortTableByField(tblTemp, 'name', true, true)
-    for _, r in pairs(tblZonesOut or {}) do
-        local personal = ns.global.zoneList[r.id] and '|cFF00FF00*|r' or ''
-        if r.id and r.reason and r.name then
-            tbl[r.id] = personal..ns.code:cText('FFFFFF00', r.name)..' ('..r.reason..')'
-        end
-    end
-
-    tblZoneByName = tbl
-    return tbl
-end
-
-local tblZone = newZone()
-local tblMessage, tblGMMessage = nil, nil
-
-local gmActiveMessage, invActiveMessage, activeZone = nil, nil, nil
-
-BL_DAYS_TO_WAIT = 14
 
 ns.addonSettings = {
-    name = L['TITLE']..' ('..GR.version..(GR.isTest and ' '..GR.testLevel..')' or ')'),
+    name = L['TITLE']..' '..GR.versionOut,
     type = 'group',
     args = {
         grSettings = { -- Guild Recruiter Settings
@@ -75,101 +49,112 @@ ns.addonSettings = {
             args = {
                 genHeading1 = {
                     order = 0,
-                    name = L['General Settings'],
+                    name = L['SYSTEM_SETTINGS'],
                     type = 'header',
                 },
-                genTooltips = {
+                genNoteAccountwide = {
                     order = 1,
-                    name = bulletAccountWide..L['GEN_TOOLTIPS'],
-                    desc = L['GEN_TOOLTIP_DESC'],
-                    type = 'toggle',
-                    width = 'full',
-                    set = function(_, val) ns.gSettings.showToolTips = val end,
-                    get = function() return ns.gSettings.showToolTips end,
+                    name = bulletAccountWide..L['GEN_ACCOUNT_WIDE'],
+                    type = 'description',
+                    fontSize = 'medium',
                 },
-                genMinimap = {
+                genMiniMap = {
                     order = 2,
                     name = bulletAccountWide..L['GEN_MINIMAP'],
                     desc = L['GEN_MINIMAP_DESC'],
                     type = 'toggle',
-                    width = 'full',
+                    width = 1,
                     set = function(_, val)
                         ns.pSettings.minimap.hide = not val
-                        if val then icon:Show('GR_Icon')
-                        else icon:Hide('GR_Icon') end
+                        if not val then ns.core.minimapIcon:Hide('GR_Icon')
+                        else ns.core.minimapIcon:Show('GR_Icon') end
                     end,
-                    get = function() return not ns.pSettings.minimap.hide or false end,
+                    get = function() return not ns.pSettings.minimap.hide end,
                 },
                 genWhatsNew = {
                     order = 3,
                     name = bulletAccountWide..L['GEN_WHATS_NEW'],
                     desc = L['GEN_WHATS_NEW_DESC'],
                     type = 'toggle',
-                    width = 'full',
+                    width = 1,
                     set = function(_, val) ns.global.showWhatsNew = val end,
-                    get = function() return ns.global.showWhatsNew end,
+                    get = function() return ns.global.showWhatsNew or false end,
                 },
-                genContext = {
+                genTooltips = {
                     order = 4,
-                    name = L['GEN_CONTEXT'],
-                    desc = L['GEN_CONTEXT_DESC'],
+                    name = bulletAccountWide..L['GEN_TOOLTIPS'],
+                    desc = L['GEN_TOOLTIP_DESC'],
                     type = 'toggle',
-                    width = 'full',
-                    set = function(_, val) ns.pSettings.showContextMenu = val end,
-                    get = function() return ns.pSettings.showContextMenu end,
+                    width = 1,
+                    set = function(_, val) ns.gSettings.showToolTips = val end,
+                    get = function() return ns.gSettings.showToolTips or false end,
                 },
-                genAddonMessages = {
-                    order = 6,
+                genShowAppMessages = {
+                    order = 5,
                     name = L['GEN_ADDON_MESSAGES'],
                     desc = L['GEN_ADDON_MESSAGES_DESC'],
                     type = 'toggle',
-                    width = 'full',
+                    width = 1,
                     set = function(_, val) ns.pSettings.showAppMsgs = val end,
-                    get = function() return ns.pSettings.showAppMsgs end,
+                    get = function() return ns.pSettings.showAppMsgs or false end,
                 },
-                genDisableAutoSync = {
-                    order = 7,
+                genIgnoreESC = {
+                    order = 6,
+                    name = bulletAccountWide..L['KEEP_ADDON_OPEN'],
+                    desc = L['KEEP_ADDON_OPEN_DESC'],
+                    type = 'toggle',
+                    width = 'full',
+                    set = function(_, val) ns.gSettings.keepOpen = val end,
+                    get = function() return ns.gSettings.keepOpen or false end,
+                },
+                genHeading2 = {
+                    order = 10,
+                    name = L['INVITE_SCAN_SETTINGS'],
+                    type = 'header',
+                },
+                genAutoSync = {
+                    order = 11,
                     name = L['AUTO_SYNC'],
                     desc = L['AUTO_SYNC_DESC'],
                     type = 'toggle',
-                    width = 'full',
+                    width = 1,
                     set = function(_, val) ns.pSettings.enableAutoSync = val end,
-                    get = function() return ns.pSettings.enableAutoSync end,
+                    get = function() return ns.pSettings.enableAutoSync or false end,
                 },
-                invShowInvite = {
-                    order = 8,
+                genShowWhispers = {
+                    order = 12,
                     name = L['SHOW_WHISPERS'],
                     desc = L['SHOW_WHISPERS_DESC'],
                     type = 'toggle',
-                    width = 'full',
-                    set = function(_, val) ns.gSettings.sendWhisperGreeting = val end,
-                    get = function() return ns.gSettings.sendWhisperGreeting end,
+                    width = 1,
+                    set = function(_, val) ns.pSettings.showWhispers = val end,
+                    get = function() return ns.pSettings.showWhispers or false end,
                 },
-                invScanInterval = {
-                    order = 9,
+                genContextMenu = {
+                    order = 13,
+                    name = L['GEN_CONTEXT'],
+                    desc = L['GEN_CONTEXT_DESC'],
+                    type = 'toggle',
+                    width = 1,
+                    set = function(_, val) ns.pSettings.showContextMenu = val end,
+                    get = function() return ns.pSettings.showContextMenu or false end,
+                },
+                genScanInterval = {
+                    order = 14,
                     name = bulletAccountWide..L['SCAN_WAIT_TIME'],
                     desc = L['SCAN_WAIT_TIME_DESC'],
                     type = 'input',
-                    width = 'full',
+                    width = 1,
                     set = function(_, val)
                         if tonumber(val) >=2 and tonumber(val) < 10 then ns.gSettings.scanWaitTime = tonumber(val)
                         else return tostring(ns.gSettings.scanWaitTime) end
                     end,
                     get = function() return tostring(ns.gSettings.scanWaitTime) end,
                 },
-                genHeader3 = {
+                genHeading3 = {
+                    order = 20,
                     name = L['KEYBINDING_HEADER'],
                     type = 'header',
-                    order = 19
-                },
-                genIgnoreESC = {
-                    order = 20,
-                    name = bulletAccountWide..L['KEEP_ADDON_OPEN'],
-                    desc = L['KEEP_ADDON_OPEN_DESC'],
-                    type = 'toggle',
-                    width = 'full',
-                    set = function(_, val) ns.gSettings.keepOpen = val end,
-                    get = function() return not ns.gSettings.keepOpen or false end,
                 },
                 genKeybindingInvite = {
                     order = 21,
@@ -213,43 +198,38 @@ ns.addonSettings = {
                     type = 'description',
                     fontSize = 'medium',
                 },
-                genHeadingAW = {
-                    order = 100,
-                    name = bulletAccountWide..L['GEN_ACCOUNT_WIDE'],
-                    type = 'header',
-                },
-                genSpacer2 = {
-                    order = 101,
+                genSpacer1 = {
+                    order = 90,
                     name = ' ',
                     type = 'description',
+                    width = 'full',
                 },
-                genHeading3 = {
-                    order = 102,
+                genHeading4 = {
+                    order = 91,
                     name = 'Debug Settings (Used for testing)',
                     type = 'header',
                 },
                 genShowDebug = {
-                    order = 103,
-                    name = 'Show Debug Messages',
-                    desc = 'Show/Hide debug messages.',
+                    order = 92,
+                    name = 'Put in debug mode',
+                    desc = 'This can cause issue, leave disabled.',
                     type = 'toggle',
                     width = 'full',
                     set = function(_, val) ns.pSettings.debugMode = val end,
                     get = function() return ns.pSettings.debugMode end,
                 },
-            }
+            },
         },
         blankHeader1 = {
-            order = 5,
+            order = 10,
             name = ' ',
             type = 'group',
-            hidden = function() return not ns.core.iAmGM end,
             args = {}
         },
         gmSettings = {
             name = L['GM_SETTINGS'],
             type = 'group',
-            order = 6,
+            order = 11,
             hidden = function() return not ns.core.hasGM end,
             args = {
                 invHeader1 = {
@@ -257,46 +237,84 @@ ns.addonSettings = {
                     type = 'header',
                     order = 0,
                 },
-                gmSettingsDesc = {
+                gmSettingsDesc1 = {
                     order = 1,
-                    name = ns.code:cText('FFFFFF00', L['GM_SETTINGS_DESC']),
+                    name = ns.code:cText('FFFFFF00', L['GM_FORCE_DESC1']),
                     type = 'description',
                     fontSize = 'medium',
                 },
-                genSpacer = {
+                gmSettingsDesc2 = {
                     order = 2,
+                    name = ns.code:cText('FFFFFF00', L['GM_FORCE_DESC2']),
+                    type = 'description',
+                    fontSize = 'medium',
+                },
+                gmSettingsDesc3 = {
+                    order = 3,
                     name = ' ',
                     type = 'description',
+                    fontSize = 'medium',
+                    width = 'full',
+                },
+                gmColumn1 = {
+                    order = 4,
+                    name = 'Force',
+                    type = 'description',
+                    fontSize = 'medium',
+                    width = 1,
+                },
+                gmColumn2 = {
+                    order = 4,
+                    name = 'Setting',
+                    type = 'description',
+                    fontSize = 'medium',
+                    width = 1,
+                },
+                gmForceObeyBlock = {
+                    order = 5,
+                    name = bulletAccountWide..L['FORCE_ENABLE_BLOCK_INVITE_CHECK'],
+                    desc = L['FORCE_ENABLE_BLOCK_INVITE_CHECK_DESC'],
+                    type = 'toggle',
+                    width = 1,
+                    set = function(_, val) ns.gmSettings.forceObey = val end,
+                    get = function() return ns.gmSettings.forceObey or false end,
                 },
                 gmObeyBlock = {
-                    order = 3,
+                    order = 6,
                     name = bulletAccountWide..L['ENABLE_BLOCK_INVITE_CHECK'],
                     desc = L['ENABLE_BLOCK_INVITE_CHECK_DESC'],
                     type = 'toggle',
-                    width = 'full',
+                    width = 1,
                     set = function(_, val) ns.gmSettings.obeyBlockInvites = val end,
-                    get = function() return ns.gmSettings.obeyBlockInvites end,
+                    get = function() return ns.gmSettings.obeyBlockInvites or false end,
                 },
                 gmForceAntiSpam = {
-                    order = 4,
-                    name = L['FORCE_ANTI_SPAM'],
+                    order = 7,
+                    name = bulletAccountWide..L['FORCE_ANTI_SPAM'],
                     desc = L['FORCE_ANTI_SPAM_DESC'],
                     type = 'toggle',
-                    width = .1,
+                    width = 1,
                     set = function(_, val) ns.gmSettings.forceAntiSpam = val end,
-                    get = function() return ns.gmSettings.forceAntiSpam end,
+                    get = function() return ns.gmSettings.forceAntiSpam or false end,
                 },
                 gmAntiSpamEnable = {
-                    order = 5,
+                    order = 8,
                     name = bulletAccountWide..L['ENABLE_ANTI_SPAM'],
                     desc = L['ENABLE_ANTI_SPAM_DESC'],
                     type = 'toggle',
                     width = 1,
                     set = function(_, val) ns.gmSettings.antiSpam = val end,
-                    get = function() return ns.gmSettings.antiSpam end,
+                    get = function() return ns.gmSettings.antiSpam or false end,
+                },
+                gmColumn1Spacer = {
+                    order = 9,
+                    name = ' ',
+                    type = 'description',
+                    fontSize = 'medium',
+                    width = 1,
                 },
                 gmAntiSpamInterval = {
-                    order = 6,
+                    order = 10,
                     name = bulletAccountWide..L['ANTI_SPAM_DAYS'],
                     desc = L['ANTI_SPAM_DAYS_DESC'],
                     type = 'select',
@@ -314,102 +332,228 @@ ns.addonSettings = {
                     set = function(_, val) ns.gmSettings.antiSpamDays = tonumber(val) end,
                     get = function() return ns.gmSettings.antiSpamDays or 7 end,
                 },
-                genSpacer2 = {
-                    order = 10,
-                    name = ' ',
-                    type = 'description',
+                invHeader2 = {
+                    name = L['WELCOME_MESSAGES'],
+                    type = 'header',
+                    order = 20,
                 },
                 gmForceGuildGreeting = {
-                    order = 11,
+                    order = 21,
                     name = L['FORCE_GUILD_GREETING'],
                     desc = L['FORCE_GUILD_GREETING_DESC'],
                     type = 'toggle',
-                    width = .1,
+                    width = 1,
                     set = function(_, val) ns.gmSettings.forceSendGuildGreeting = val end,
-                    get = function() return ns.gmSettings.forceSendGuildGreeting end,
+                    get = function() return ns.gmSettings.forceSendGuildGreeting or false end,
                 },
-                invSendWelcome = {
-                    order = 12,
+                gmGuildGreeting = {
+                    order = 22,
                     name = bulletAccountWide..L['GUILD_WELCOME_MSG'],
                     desc = L['GUILD_WELCOME_MSG_DESC'],
                     type = 'toggle',
-                    width = 2.5,
+                    width = 1,
                     set = function(_, val) ns.gmSettings.sendGuildGreeting = val end,
-                    get = function() return ns.gmSettings.sendGuildGreeting end,
+                    get = function() return ns.gmSettings.sendGuildGreeting or false end,
                 },
                 gmForceGuildGreetingMessage = {
-                    order = 13,
+                    order = 23,
                     name = L['FORCE_GUILD_MESSAGE'],
                     desc = L['FORCE_GUILD_MESSAGE_DESC'],
                     type = 'toggle',
-                    width = .1,
+                    width = 'full',
                     set = function(_, val) ns.gmSettings.forceGuildMessage = val end,
-                    get = function() return ns.gmSettings.forceGuildMessage end,
+                    get = function() return ns.gmSettings.forceGuildMessage or false end,
                 },
-                invWelcomeMessage = {
-                    order = 14,
+                gmGuildWelcomeMessage = {
+                    order = 24,
                     name = bulletAccountWide..L['GUILD_WELCOME_MSG'],
                     desc = L['GUILD_WELCOME_MSG_DESC'],
                     type = 'input',
-                    width = 2.5,
+                    width = 'full',
                     set = function(_, val)
+                        local _, len = getMessageLength(val)
+                        if len >= MAX_CHARACTERS then
+                            ns.code:AcceptDialog(L['MAX_CHARS']:gsub('<sub>', MAX_CHARACTERS), function() return end)
+                            return
+                        end
                         ns.gmSettings.guildMessage = ns.code:capitalKeyWord(val:trim())
                         ns.invite:GetWelcomeMessages()
                     end,
                     get = function() return ns.gmSettings.guildMessage end,
                 },
-                gmForceSendWhisper = {
-                    order = 15,
+                gmForceWelcomeWhisper = {
+                    order = 25,
                     name = L['FORCE_WHISPER_MESSAGE'],
                     desc = L['FORCE_WHISPER_WELCOME_MSG_DESC'],
                     type = 'toggle',
-                    width = .1,
+                    width = 1,
                     set = function(_, val) ns.gmSettings.forceSendWhisper = val end,
-                    get = function() return ns.gmSettings.forceSendWhisper end,
+                    get = function() return ns.gmSettings.forceSendWhisper or false end,
                 },
-                gmSendWhisper = {
-                    order = 16,
+                gmWelcomeWhisper = {
+                    order = 26,
                     name = bulletAccountWide..L['WHISPER_WELCOME_MSG'],
                     desc = L['WHISPER_WELCOME_MSG_DESC'],
                     type = 'toggle',
-                    width = 2.5,
+                    width = 1,
                     set = function(_, val) ns.gmSettings.sendWhisperGreeting = val end,
-                    get = function() return ns.gmSettings.sendWhisperGreeting end,
+                    get = function() return ns.gmSettings.sendWhisperGreeting or false end,
                 },
-                gmForceWhsiperMessage = {
-                    order = 17,
+                gmForceGuildWhisperMessage = {
+                    order = 27,
                     name = L['FORCE_WHISPER_MESSAGE'],
                     desc = L['FORCE_WHISPER_MESSAGE_DESC'],
                     type = 'toggle',
                     width = 'full',
                     set = function(_, val) ns.gmSettings.forceWhisperMessage = val end,
-                    get = function() return ns.gmSettings.forceWhisperMessage end,
+                    get = function() return ns.gmSettings.forceWhisperMessage or false end,
                 },
-                gmWhsiperMessage = {
-                    order = 18,
-                    name = bulletAccountWide..L['WHISPER_WELCOME_MSG'],
-                    desc = L['WHISPER_WELCOME_MSG_DESC'],
+                gmWelcomeWhisperMessage = {
+                    order = 28,
+                    name = bulletAccountWide..L['FORCE_WHISPER_MESSAGE'],
+                    desc = L['FORCE_WHISPER_MESSAGE_DESC'],
                     type = 'input',
                     multiline = 3,
                     width = 'full',
                     set = function(_, val)
+                        local _, len = getMessageLength(val)
+                        if len >= MAX_CHARACTERS then
+                            ns.code:AcceptDialog(L['MAX_CHARS']:gsub('<sub>', MAX_CHARACTERS), function() return end)
+                            return
+                        end
                         ns.gmSettings.whisperMessage = ns.code:capitalKeyWord(val:trim())
                         ns.invite:GetWelcomeMessages()
                     end,
                     get = function() return ns.gmSettings.whisperMessage end,
                 },
-                gmPreviewCount = {
-                    order = 19,
+                genSpacer3 = {
+                    order = 90,
+                    name = ' ',
+                    type = 'description',
+                },
+                GMMessageListInstructions = {
+                    order = 91,
                     name = function()
-                        local playerNameFound, count = MessageLength(ns.gmSettings.whisperMessage)
+                        local msg = L['MESSAGE_REPLACEMENT_INSTRUCTIONS']
+                        msg = msg:gsub('GUILDLINK', ns.code:cText('FFFFFF00', L['GUILDLINK']))
+                        msg = msg:gsub('GUILDNAME', ns.code:cText('FFFFFF00', L['GUILDNAME']))
+                        msg = msg:gsub('PLAYERNAME', ns.code:cText('FFFFFF00', L['PLAYERNAME']))
 
-                        local msg = L['MAX_CHARS']
-                        local color = count < maxChars and 'FF00FF00' or 'FFFF0000'
-                        return L['MESSAGE_LENGTH']..': '..ns.code:cText(color, count)..' '..msg:gsub('<sub>', maxChars)..(playerNameFound and '\n'..L['LENGTH_INFO'] or '')
+                        return msg
                     end,
                     type = 'description',
-                    width = 'full',
                     fontSize = 'medium',
+                },
+            },
+        },
+        playerInviteSettings = {
+            name = L['INVITE_SETTINGS'],
+            type = 'group',
+            order = 11,
+            hidden = function() return ns.core.hasGM end,
+            args = {
+                invHeader1 = {
+                    name = L['INVITE_SETTINGS'],
+                    type = 'header',
+                    order = 0,
+                },
+                invSettingsDesc1 = {
+                    order = 1,
+                    name = ns.code:cText('FFFFFF00', L['ENABLED_NOTE']),
+                    type = 'description',
+                    fontSize = 'medium',
+                },
+                invAntiSpamEnable = {
+                    order = 5,
+                    name = bulletAccountWide..L['ENABLE_ANTI_SPAM'],
+                    desc = L['ENABLE_ANTI_SPAM_DESC'],
+                    type = 'toggle',
+                    width = 1,
+                    disabled = function() return ns.gmSettings.forceAntiSpam end,
+                    set = function(_, val) ns.gSettings.antiSpam = val end,
+                    get = function() return ns.gmSettings.forceAntiSpam and ns.gmSettings.AntiSpam or ns.gSettings.antiSpam end,
+                },
+                invAntiSpamInterval = {
+                    order = 6,
+                    name = bulletAccountWide..L['ANTI_SPAM_DAYS'],
+                    desc = L['ANTI_SPAM_DAYS_DESC'],
+                    type = 'select',
+                    style = 'dropdown',
+                    width = 1,
+                    disabled = function() return ns.gmSettings.forceAntiSpam end,
+                    values = function()
+                        return {
+                            [7] = '7 days',
+                            [14] = '14 days',
+                            [30] = '30 days (1 month)',
+                            [190] = '190 days (3 months)',
+                            [380] = '380 days (6 months)',
+                        }
+                    end,
+                    set = function(_, val) ns.gSettings.antiSpamDays = tonumber(val) end,
+                    get = function() return ns.gmSettings.forceAntiSpam and ns.gmSettings.antiSpamDays or (ns.gSettings.antiSpamDays or 7) end,
+                },
+                invHeader2 = {
+                    name = L['WELCOME_MESSAGES'],
+                    type = 'header',
+                    order = 20,
+                },
+                invGuildGreeting = {
+                    order = 21,
+                    name = bulletAccountWide..L['GUILD_WELCOME_MSG'],
+                    desc = L['GUILD_WELCOME_MSG_DESC'],
+                    type = 'toggle',
+                    width = 'full',
+                    disabled = function() return ns.gmSettings.forceSendGuildGreeting end,
+                    set = function(_, val) ns.gSettings.sendGuildGreeting = val end,
+                    get = function() return ns.gmSettings.forceSendGuildGreeting and ns.gmSettings.sendGuildGreeting or ns.gSettings.sendGuildGreeting end,
+                },
+                invGuildWelcomeMessage = {
+                    order = 22,
+                    name = bulletAccountWide..L['GUILD_WELCOME_MSG'],
+                    desc = L['GUILD_WELCOME_MSG_DESC'],
+                    type = 'input',
+                    width = 'full',
+                    disabled = function() return ns.gmSettings.forceGuildMessage end,
+                    set = function(_, val)
+                        local _, len = getMessageLength(val)
+                        if len >= MAX_CHARACTERS then
+                            ns.code:AcceptDialog(L['MAX_CHARS']:gsub('<sub>', MAX_CHARACTERS), function() return end)
+                            return
+                        end
+                        ns.gSettings.guildMessage = ns.code:capitalKeyWord(val:trim())
+                        ns.invite:GetWelcomeMessages()
+                    end,
+                    get = function() return ns.gmSettings.forceGuildMessage and ns.gmSettings.guildMessage or ns.gSettings.guildMessage end,
+                },
+                gmWelcomeWhisper = {
+                    order = 23,
+                    name = bulletAccountWide..L['WHISPER_WELCOME_MSG'],
+                    desc = L['WHISPER_WELCOME_MSG_DESC'],
+                    type = 'toggle',
+                    width = 'full',
+                    disabled = function() return ns.gmSettings.forceSendWhisper end,
+                    set = function(_, val) ns.gSettings.sendWhisperGreeting = val end,
+                    get = function() return ns.gmSettings.forceSendWhisper or ns.gSettings.sendWhisperGreeting end,
+                },
+                gmWelcomeWhisperMessage = {
+                    order = 24,
+                    name = bulletAccountWide..L['FORCE_WHISPER_MESSAGE'],
+                    desc = L['FORCE_WHISPER_MESSAGE_DESC'],
+                    type = 'input',
+                    multiline = 3,
+                    width = 'full',
+                    disabled = function() return ns.gmSettings.forceWhisperMessage end,
+                    set = function(_, val)
+                        local _, len = getMessageLength(val)
+                        if len >= MAX_CHARACTERS then
+                            ns.code:AcceptDialog(L['MAX_CHARS']:gsub('<sub>', MAX_CHARACTERS), function() return end)
+                            return
+                        end
+                        ns.gSettings.whisperMessage = ns.code:capitalKeyWord(val:trim())
+                        ns.invite:GetWelcomeMessages()
+                    end,
+                    get = function() return ns.gmSettings.forceWhisperMessage and ns.gmSettings.whisperMessage or ns.gSettings.whisperMessage end,
                 },
                 genSpacer3 = {
                     order = 90,
@@ -431,348 +575,208 @@ ns.addonSettings = {
                 },
             }
         },
-        gmMessageList = {
-            order = 7,
+        gmInviteMessageList = {
             name = L['GM_INVITE'],
             type = 'group',
+            order = 12,
             hidden = function() return not ns.core.hasGM end,
             args = {
-                gmMessageListHeading1 = {
-                order = 0,
-                name = L['GM_INVITE'],
-                type = 'header',
+                gmMessageListHeading = {
+                    order = 0,
+                    name = L['GM_INVITE'],
+                    type = 'header',
                 },
                 gmMessageListDesc = {
                     order = 1,
-                    name = ns.code:cText('FFFFFF00', L['GM_SETTINGS_DESC']),
+                    name = L['GM_SETTINGS_DESC'],
                     type = 'description',
                     fontSize = 'medium',
                 },
-                msgGMActive = {
+                gmForceMessageList = {
                     order = 2,
+                    name = L['FORCE_MESSAGE_LIST'],
+                    desc = L['FORCE_MESSAGE_LIST_DESC'],
+                    type = 'toggle',
+                    width = 'full',
+                    set = function(_, val) ns.gmSettings.forceMessageList = val end,
+                    get = function() return ns.gmSettings.forceMessageList end,
+                },
+                gmDropdownList = {
+                    order = 3,
                     name = L['INVITE_ACTIVE_MESSAGE'],
-                    desc = L['NEW_MESSAGE_DESC'],
+                    desc = L['INVITE_ACTIVE_MESSAGE_DESC'],
                     type = 'select',
                     style = 'dropdown',
                     width = 2,
                     values = function()
                         local tbl = {}
-                        for k, r in pairs(ns.gSettings.messageList or {}) do
-                            if r.type == 'GM' then
-                                tbl[k] = ns.code:cText(GM_DESC_COLOR, r.desc)
-                            end
+                        tblMessage = tblMessage or newMsg()
+                        for k, r in pairs(ns.gmSettings.messageList or {}) do
+                            local desc = (r.gmSync or r.gmSync == nil) and ns.code:cText(GM_DESC_COLOR, r.desc) or r.desc
+                            tbl[k] = desc
                         end
                         return tbl
                     end,
-                    set = function(_, val) gmActiveMessage = val end,
+                    set = function(_, val) activeMessage = val end,
                     get = function()
-                        local msg = ns.gSettings.messageList or nil
-                        local active = gmActiveMessage or nil
+                        local msg = ns.gmSettings.messageList or nil
+                        local active = activeMessage or nil
 
-                        if active and msg then tblGMMessage = msg[active] or newMsg()
-                        elseif not msg then gmActiveMessage = nil end
+                        if active and msg then
+                            tblMessage = msg[active] or newMsg()
+                            tblMessage.gmSync = (tblMessage.gmSync == nil) and true or tblMessage.gmSync
+                        elseif not msg then activeMessage = nil end
 
                         return active
                     end,
                 },
-                msgGMNewButton = {
-                    order = 3,
+                gmNewButton = {
+                    order = 4,
                     name = L['NEW'],
                     desc = L['NEW_MESSAGE_DESC'],
                     type = 'execute',
                     width = .5,
-                    disabled = function() return not gmActiveMessage end,
-                    hidden = function() return not ns.core.iAmGM end,
+                    disabled = function() return not activeMessage end,
+                    hidden = function() return not ns.core.hasGM or not activeMessage end,
                     func = function()
-                        tblGMMessage = newMsg()
-                        gmActiveMessage = nil
-                        type = 'GM'
+                        tblMessage = newMsg()
+                        activeMessage = nil
                     end,
                 },
-                msgGMInviteDesc = {
-                    order = 4,
+                gmInviteDesc = {
+                    order = 5,
                     name = L['INVITE_DESC'],
                     desc = L['INVITE_DESC_TOOLTIP'],
                     type = 'input',
                     multiline = false,
-                    width = 'full',
-                    disabled = function() return not ns.core.iAmGM end,
+                    width = 1,
                     set = function(_, val)
-                        if not tblGMMessage then tblGMMessage = newMsg('GM') end
-                        tblGMMessage.desc = val end,
-                    get = function() return tblGMMessage and tblGMMessage.desc or '' end,
+                        if not tblMessage then tblMessage = newMsg() end
+
+                        local _, len = getMessageLength(val)
+                        if len >= MAX_CHARACTERS then
+                            ns.code:AcceptDialog(L['MAX_CHARS']:gsub('<sub>', MAX_CHARACTERS), function() return end)
+                            return
+                        end
+
+                        tblMessage.desc = val end,
+                    get = function() return tblMessage and tblMessage.desc or '' end,
                 },
-                msgGMInviteMessage = {
-                    order = 5,
-                    name = 'Invite Message',
+                gmSyncMessage = {
+                    order = 6,
+                    name = L['SYNC_MESSAGES'],
+                    desc = L['SYNC_MESSAGES_DESC'],
+                    type = 'toggle',
+                    width = 1,
+                    disabled = function() return not tblMessage end,
+                    set = function(_, val) tblMessage.gmSync = val end,
+                    get = function() return tblMessage and tblMessage.gmSync or false end,
+                },
+                gmInviteMessage = {
+                    order = 7,
+                    name = L['INVITE_MESSAGES']..':',
                     type = 'input',
                     multiline = 7,
                     width = 'full',
-                    disabled = function() return not ns.core.iAmGM end,
+                    disabled = function() return not tblMessage end,
                     set = function(_, val)
-                        if not tblGMMessage then tblGMMessage = newMsg('GM') end
-                        tblGMMessage.message = ns.code:capitalKeyWord(val:trim()) end,
-                    get = function() return tblGMMessage and tblGMMessage.message or '' end,
+                        if not tblMessage then tblMessage = newMsg() end
+                        tblMessage.message = ns.code:capitalKeyWord(val:trim()) end,
+                    get = function() return tblMessage and tblMessage.message or '' end,
                 },
-                msgGMHeader4 = {
-                    order = 10,
-                    name = 'Message Preview',
-                    type = 'header',
-                    hidden = function() return tblGMMessage and tblGMMessage.message == '' or true end,
-                },
-                msgGMPreview = {
-                    order = 11,
+                gmPreview = {
+                    order = 8,
                     name = function()
-                        if not tblGMMessage then return '' end
+                        if not tblMessage then return '' end
 
-                        local preview = ns.code:variableReplacement(tblGMMessage.message, UnitName('player'))
-                        if tblGMMessage.message == '' then return '' end
+                        local preview = ns.code:variableReplacement(tblMessage.message, UnitName('player'))
+                        if tblMessage.message == '' then return '' end
 
                         local msg = (ns.code:cText('FFFF80FF', 'To [')..ns.code.fPlayerName..ns.code:cText('FFFF80FF', ']: '..(preview or ''))) or ''
                         msg = msg:gsub(L['GUILD_LINK_NOT_FOUND'], ns.code:cText('FFFF0000', L['GUILD_LINK_NOT_FOUND']))
                         msg = msg:gsub(L['NO_GUILD_NAME'], ns.code:cText('FFFF0000', L['NO_GUILD_NAME']))
+
                         return msg
                     end,
                     type = 'description',
                     width = 'full',
                     fontSize = 'medium',
-                    hidden = function() return (tblGMMessage and tblGMMessage.message) and tblGMMessage.message or '' end,
                 },
                 gmPreviewCount = {
-                    order = 20,
+                    order = 9,
                     name = function()
-                        local playerNameFound, count = MessageLength(ns.gmSettings.whisperMessage)
+                        if not tblMessage then return '' end
+                
+                        local playerNameFound, count = getMessageLength(tblMessage.message)
 
                         local msg = L['MAX_CHARS']
-                        local color = count < maxChars and 'FF00FF00' or 'FFFF0000'
-                        return L['MESSAGE_LENGTH']..': '..ns.code:cText(color, count)..' '..msg:gsub('<sub>', maxChars)..(playerNameFound and '\n'..L['LENGTH_INFO'] or '')
+                        local color = count < MAX_CHARACTERS and 'FF00FF00' or 'FFFF0000'
+                        return L['MESSAGE_LENGTH']..': '..ns.code:cText(color, count)..' '..msg:gsub('<sub>', MAX_CHARACTERS)..(playerNameFound and '\n'..L['LENGTH_INFO'] or '')
                     end,
                     type = 'description',
                     width = 'full',
                     fontSize = 'medium',
                 },
                 msgGMHeader5 = {
-                    order = 21,
+                    order = 20,
                     name = '',
                     type = 'header',
                 },
-                msgGMInviteDel = {
-                    order = 22,
-                    name = L['DELETE'],
-                    type = 'execute',
-                    confirm = function() return L['DELETE_CONFIRMATION'] end,
-                    width = .5,
-                    disabled = function() return not gmActiveMessage and true or false end,
-                    hidden = function() return not ns.core.iAmGM end,
-                    func = function()
-                        local msg = ns.gSettings.messageList or nil
-                        local active = gmActiveMessage or nil
-                        if active and msg and msg[active] then
-                            msg[active] = nil
-                            gmActiveMessage = nil
-                            tblGMMessage = newMsg()
-                        end
-
-                        gmActiveMessage = nil
-                        if ns.pSettings.activeMessage then ns.pSettings.activeMessage = nil end
-                    end,
-                },
                 msgGMInviteSave = {
-                    order = 23,
+                    order = 21,
                     name = L['SAVE'],
                     type = 'execute',
                     width = .5,
                     disabled = function()
-                        if not tblGMMessage then return true end
-                        return not ((tblGMMessage.desc and strlen(tblGMMessage.desc) > 0) and (tblGMMessage.message and strlen(tblGMMessage.message) > 0)) end,
-                    hidden = function() return not ns.core.iAmGM end,
+                        if not tblMessage then return true end
+                        return not ((tblMessage.desc and strlen(tblMessage.desc) > 0) and (tblMessage.message and strlen(tblMessage.message) > 0)) end,
                     func = function()
-                        local msg = ns.gSettings.messageList or {}
-                        local active = gmActiveMessage
+                        local tbl = ns.gmSettings.messageList or {}
+                        local active = activeMessage
 
                         if not active then
-                            tinsert(msg, tblGMMessage)
-                            active = #msg
-                        else msg[active] = tblGMMessage end
-                        ns.gSettings.messageList = msg
+                            tinsert(tbl, tblMessage)
+                            active = #tbl
+                        else tbl[active] = tblMessage end
+                        ns.gmSettings.messageList = tbl
 
-                        tblGMMessage = newMsg()
-                        gmActiveMessage = nil
-                        UIErrorsFrame:AddMessage('Message Saved', 1.0, 0.1, 0.1, 1.0)
+                        tblMessage = newMsg()
+                        activeMessage = nil
+                        UIErrorsFrame:AddMessage('Message Saved', 0, 1, 0, 1)
                     end,
-                },
-            },
-        },
-        blankHeader2 = {
-            order = 10,
-            name = ' ',
-            type = 'group',
-            hidden = function() return ns.core.hasGM end,
-            args = {}
-        },
-        inviteSettings = {
-            order = 11,
-            name = L['INVITE_SETTINGS'],
-            type = 'group',
-            hidden = function() return ns.core.hasGM end,
-            args = {
-                invHeader1 = {
-                    name = L['INVITE_SETTINGS'],
-                    type = 'header',
-                    order = 0,
-                },
-                invObeyBlock = {
-                    order = 3,
-                    name = bulletAccountWide..L['ENABLE_BLOCK_INVITE_CHECK'],
-                    desc = L['ENABLE_BLOCK_INVITE_CHECK_DESC'],
-                    type = 'toggle',
-                    width = 'full',
-                    disabled = function() return ns.gmSettings.forceObey end,
-                    set = function(_, val) ns.gSettings.obeyBlockInvites = val end,
-                    get = function() return ns.gSettings.obeyBlockInvites end,
-                },
-                invAntiSpamEnable = {
-                    order = 6,
-                    name = bulletAccountWide..L['ENABLE_ANTI_SPAM'],
-                    desc = L['ENABLE_ANTI_SPAM_DESC'],
-                    type = 'toggle',
-                    width = 1.5,
-                    disabled = function() return not ns.gSettings.overrideGM and ns.gmSettings.forceAntiSpam end,
-                    set = function(_, val) ns.gSettings.antiSpam = val end,
-                    get = function()
-                        local out = ns.gSettings.antiSpam
-                        if not ns.gSettings.overrideGM and ns.gmSettings.forceAntiSpam then
-                            out = ns.gmSettings.antiSpam
-                        end
-
-                        return out
-                    end,
-                },
-                invAntiSpamInterval = {
-                    order = 7,
-                    name = bulletAccountWide..L['ANTI_SPAM_DAYS'],
-                    desc = L['ANTI_SPAM_DAYS_DESC'],
-                    type = 'select',
-                    style = 'dropdown',
-                    width = 1,
-                    disabled = function() return not ns.gSettings.overrideGM and ns.gmSettings.forceAntiSpam end,
-                    values = function()
-                        return {
-                            [7] = '7 days',
-                            [14] = '14 days',
-                            [30] = '30 days (1 month)',
-                            [120] = '120 days (3 months)',
-                            [180] = '180 days (6 months)',
-                        }
-                    end,
-                    set = function(_, val) ns.gSettings.antiSpamDays = tonumber(val) end,
-                    get = function()
-                        if ns.gSettings.antiSpam then return ns.gSettings.antiSpamDays
-                        else return ns.gSettings.antiSpamDays or 7 end
-                    end,
-                },
-                invSendWelcome = {
-                    order = 10,
-                    name = bulletAccountWide..L['GUILD_WELCOME_MSG'],
-                    desc = L['GUILD_WELCOME_MSG_DESC'],
-                    type = 'toggle',
-                    width = 'full',
-                    disabled = function()
-                        local disableMe = false
-                        if not ns.gSettings.overrideGM and ns.gmSettings.forceSendGuildGreeting and ns.gmSettings.sendGuildGreeting then
-                            disableMe = true
-                        end
-
-                        return disableMe
-                    end,
-                    set = function(_, val) ns.gSettings.sendGuildGreeting = val end,
-                    get = function()
-                        local out = ns.gSettings.sendGuildGreeting
-                        if not ns.gSettings.overrideGM and ns.gmSettings.forceSendGuildGreeting then
-                            out = ns.gmSettings.sendGuildGreeting
-                        end
-
-                        return out
-                    end,
-                },
-                invWelcomeMessage = {
-                    order = 11,
-                    name = bulletAccountWide..L['GUILD_WELCOME_MSG'],
-                    desc = L['GUILD_WELCOME_MSG_DESC'],
-                    type = 'input',
-                    width = 'full',
-                    disabled = function() return not ns.gSettings.overrideGM and ns.gmSettings.forceGuildMessage end,
-                    set = function(_, val)
-                        ns.gSettings.guildMessage = ns.code:capitalKeyWord(val:trim())
-                        ns.invite:GetWelcomeMessages()
-                    end,
-                    get = function()
-                        local out = ns.gSettings.guildMessage
-                        if not ns.gSettings.overrideGM and ns.gmSettings.forceSendGuildGreeting and ns.gmSettings.forceGuildMessage then
-                            out = ns.gmSettings.guildMessage
-                        end
-
-                        return out
-                    end,
-                },
-                invSendGreeting = {
-                    order = 12,
-                    name = bulletAccountWide..L['WHISPER_WELCOME_MSG'],
-                    desc = L['WHISPER_WELCOME_MSG_DESC'],
-                    type = 'toggle',
-                    width = 'full',
-                    disabled = function() return not ns.gSettings.overrideGM and ns.gmSettings.forceGuildMessage end,
-                    set = function(_, val) ns.gSettings.sendWhisperGreeting = val end,
-                    get = function()
-                        local out = ns.gSettings.sendWhisperGreeting
-                        if not ns.gSettings.overrideGM and ns.gmSettings.forceSendWhisper then
-                            out = ns.gmSettings.sendWhisperGreeting
-                        end
-
-                        return out
-                    end,
-                },
-                invGreetingMessage = {
-                    order = 13,
-                    name = bulletAccountWide..L['WHISPER_WELCOME_MSG'],
-                    desc = L['WHISPER_WELCOME_MSG_DESC'],
-                    type = 'input',
-                    multiline = 3,
-                    width = 'full',
-                    disabled = function() return not ns.gSettings.overrideGM and ns.gmSettings.forceWhisperMessage end,
-                    set = function(_, val)
-                        ns.gSettings.whisperMessage = ns.code:capitalKeyWord(val:trim())
-                        ns.invite:GetWelcomeMessages()
-                    end,
-                    get = function()
-                        local out = ns.gSettings.whisperMessage
-                        if not ns.gSettings.overrideGM and ns.gmSettings.forceWhisperMessage and ns.gmSettings.whisperMessage then
-                            out = ns.gmSettings.whisperMessage
-                        end
-
-                        return out
-                    end,
-                },
-                invPreviewCount = {
-                    order = 14,
-                    name = function()
-                        local playerNameFound, count = MessageLength(ns.gSettings.whisperMessage)
-
-                        local msg = L['MAX_CHARS']
-                        local color = count < maxChars and 'FF00FF00' or 'FFFF0000'
-                        return L['MESSAGE_LENGTH']..': '..ns.code:cText(color, count)..' '..msg:gsub('<sub>', maxChars)..(playerNameFound and '\n'..L['LENGTH_INFO'] or '')
-                    end,
-                    type = 'description',
-                    width = 'full',
-                    fontSize = 'medium',
                 },
                 genSpacer = {
-                    order = 15,
+                    order = 22,
+                    name = '',
+                    type = 'description',
+                    width = .5,
+                },
+                gmInviteDel = {
+                    order = 23,
+                    name = L['DELETE'],
+                    type = 'execute',
+                    confirm = function() return L['DELETE_CONFIRMATION'] end,
+                    width = .5,
+                    disabled = function() return not activeMessage and true or false end,
+                    func = function()
+                        local msg = ns.gmSettings.messageList or nil
+                        local active = activeMessage or nil
+                        if active and msg and msg[active] then
+                            msg[active] = nil
+                            tblMessage = newMsg()
+                        end
+
+                        activeMessage = nil
+                        if ns.pSettings.activeMessage then ns.pSettings.activeMessage = nil end
+                    end,
+                },
+                genSpacer3 = {
+                    order = 90,
                     name = ' ',
                     type = 'description',
                 },
-                invMessageListInstructions = {
-                    order = 16,
+                gmMessageListInstructions = {
+                    order = 91,
                     name = function()
                         local msg = L['MESSAGE_REPLACEMENT_INSTRUCTIONS']
                         msg = msg:gsub('GUILDLINK', ns.code:cText('FFFFFF00', L['GUILDLINK']))
@@ -786,32 +790,25 @@ ns.addonSettings = {
                 },
             }
         },
-        inviteMessages = {
-            order = 12,
+        invInviteMessageList = {
             name = L['INVITE_MESSAGES'],
             type = 'group',
-            --hidden = function() return ns.core.hasGM end,
+            order = 12,
+            hidden = function() return ns.core.hasGM end,
             args = {
                 invMessageListHeading = {
                     order = 0,
                     name = L['INVITE_MESSAGES'],
                     type = 'header',
                 },
-                invMessageInfo = {
+                invMessageListDesc = {
                     order = 1,
-                    name = function()
-                        local msg = L['INVITE_MESSAGES_DESC']
-                        msg = msg:gsub('GUILDLINK', ns.code:cText('FFFFFF00', L['GUILDLINK']))
-                        msg = msg:gsub('GUILDNAME', ns.code:cText('FFFFFF00', L['GUILDNAME']))
-                        msg = msg:gsub('PLAYERNAME', ns.code:cText('FFFFFF00', L['PLAYERNAME']))
-
-                        return msg
-                    end,
+                    name = L['PLAYER_SETTINGS_DESC'],
                     type = 'description',
                     fontSize = 'medium',
                 },
-                invActive = {
-                    order = 5,
+                invDropdownList = {
+                    order = 2,
                     name = L['INVITE_ACTIVE_MESSAGE'],
                     desc = L['INVITE_ACTIVE_MESSAGE_DESC'],
                     type = 'select',
@@ -819,145 +816,161 @@ ns.addonSettings = {
                     width = 2,
                     values = function()
                         local tbl = {}
-                        for k, r in pairs(ns.gSettings.messageList or {}) do
-                            if r.type == 'PLAYER' then tbl[k] = r.desc end
+                        tblMessage = tblMessage or newMsg()
+                        for k, r in pairs(ns.gmSettings.messageList or {}) do
+                            local desc = (r.gmSync or r.gmSync == nil) and ns.code:cText(GM_DESC_COLOR, r.desc) or r.desc
+                            tbl[k] = desc
                         end
+                        for k, r in pairs(ns.gSettings.messageList or {}) do tbl[k] = r.desc end
                         return tbl
                     end,
-                    set = function(_, val) invActiveMessage = val end,
+                    set = function(_, val) activeMessage = val end,
                     get = function()
                         local msg = ns.gSettings.messageList or nil
-                        local active = invActiveMessage or nil
+                        local active = activeMessage or nil
 
-                        if active and msg then tblMessage = msg[active] or newMsg()
-                        elseif not msg then invActiveMessage = nil end
+                        if active and msg then
+                            isGMMessage = msg[active].gmSync or false
+                            tblMessage = msg[active] or newMsg()
+                            tblMessage.gmSync = false
+                        elseif not msg then activeMessage = nil end
 
                         return active
                     end,
                 },
                 invNewButton = {
-                    order = 6,
+                    order = 3,
                     name = L['NEW'],
                     desc = L['NEW_MESSAGE_DESC'],
                     type = 'execute',
                     width = .5,
-                    disabled = function() return not invActiveMessage end,
+                    disabled = function() return not activeMessage end,
+                    hidden = function() return not activeMessage end,
                     func = function()
+                        isGMMessage = false
+                        activeMessage = nil
                         tblMessage = newMsg()
-                        invActiveMessage = nil
                     end,
                 },
                 invInviteDesc = {
-                    order = 7,
+                    order = 4,
                     name = L['INVITE_DESC'],
                     desc = L['INVITE_DESC_TOOLTIP'],
                     type = 'input',
                     multiline = false,
                     width = 'full',
+                    disabled = function() return isGMMessage end,
                     set = function(_, val)
-                        if not tblMessage then tblMessage = newMsg('PLAYER') end
-                        tblMessage.desc = val
-                        end,
+                        if not tblMessage then tblMessage = newMsg() end
+
+                        local _, len = getMessageLength(val)
+                        if len >= MAX_CHARACTERS then
+                            ns.code:AcceptDialog(L['MAX_CHARS']:gsub('<sub>', MAX_CHARACTERS), function() return end)
+                            return
+                        end
+
+                        tblMessage.desc = val end,
                     get = function() return tblMessage and tblMessage.desc or '' end,
                 },
                 invInviteMessage = {
-                    order = 8,
+                    order = 5,
                     name = L['INVITE_MESSAGES']..':',
                     type = 'input',
                     multiline = 7,
                     width = 'full',
+                    disabled = function() return isGMMessage or not tblMessage end,
                     set = function(_, val)
-                        if not tblMessage then tblMessage = newMsg('PLAYER') end
-                        tblMessage.message = ns.code:capitalKeyWord(val:trim())
-                    end,
+                        if not tblMessage then tblMessage = newMsg() end
+                        tblMessage.message = ns.code:capitalKeyWord(val:trim()) end,
                     get = function() return tblMessage and tblMessage.message or '' end,
                 },
-                invHeader4 = {
-                    order = 9,
-                    name = 'Message Preview',
-                    type = 'header',
-                    hidden = function() return tblMessage and not tblMessage.message or true end,
-                },
                 invPreview = {
-                    order = 9,
+                    order = 6,
                     name = function()
                         if not tblMessage then return '' end
 
                         local preview = ns.code:variableReplacement(tblMessage.message, UnitName('player'))
-                        if not tblMessage or tblMessage.message == '' then return '' end
+                        if tblMessage.message == '' then return '' end
 
                         local msg = (ns.code:cText('FFFF80FF', 'To [')..ns.code.fPlayerName..ns.code:cText('FFFF80FF', ']: '..(preview or ''))) or ''
                         msg = msg:gsub(L['GUILD_LINK_NOT_FOUND'], ns.code:cText('FFFF0000', L['GUILD_LINK_NOT_FOUND']))
                         msg = msg:gsub(L['NO_GUILD_NAME'], ns.code:cText('FFFF0000', L['NO_GUILD_NAME']))
+
                         return msg
                     end,
                     type = 'description',
                     width = 'full',
                     fontSize = 'medium',
-                    hidden = function() return (tblMessage and tblMessage.message) and tblMessage.message or '' end,
                 },
                 invPreviewCount = {
-                    order = 14,
+                    order = 7,
                     name = function()
-                        local playerNameFound, count = MessageLength(ns.gSettings.whisperMessage)
+                        if not tblMessage then return '' end
+                
+                        local playerNameFound, count = getMessageLength(tblMessage.message)
 
                         local msg = L['MAX_CHARS']
-                        local color = count < maxChars and 'FF00FF00' or 'FFFF0000'
-                        return L['MESSAGE_LENGTH']..': '..ns.code:cText(color, count)..' '..msg:gsub('<sub>', maxChars)..(playerNameFound and '\n'..L['LENGTH_INFO'] or '')
+                        local color = count < MAX_CHARACTERS and 'FF00FF00' or 'FFFF0000'
+                        return L['MESSAGE_LENGTH']..': '..ns.code:cText(color, count)..' '..msg:gsub('<sub>', MAX_CHARACTERS)..(playerNameFound and '\n'..L['LENGTH_INFO'] or '')
                     end,
                     type = 'description',
                     width = 'full',
                     fontSize = 'medium',
                 },
-                invHeader5 = {
-                    order = 15,
+                msgGMHeader5 = {
+                    order = 20,
                     name = '',
                     type = 'header',
                 },
-                invInviteDel = {
-                    order = 16,
-                    name = L['DELETE'],
-                    type = 'execute',
-                    confirm = function() return L['DELETE_CONFIRMATION'] end,
-                    width = .5,
-                    disabled = function() return not invActiveMessage and true or false end,
-                    func = function()
-                        local msg = ns.gSettings.messageList or nil
-                        local active = invActiveMessage or nil
-                        if active and msg and msg[active] then
-                            msg[active] = nil
-                            invActiveMessage = nil
-                            tblMessage = newMsg()
-                        end
-
-                        invActiveMessage = nil
-                        if ns.pSettings.activeMessage then ns.pSettings.activeMessage = nil end
-                    end,
-                },
-                invInviteSave = {
-                    order = 17,
+                invGMInviteSave = {
+                    order = 21,
                     name = L['SAVE'],
                     type = 'execute',
                     width = .5,
                     disabled = function()
                         if not tblMessage then return true end
-                        return not ((tblMessage.desc and strlen(tblMessage.desc) > 0) and (tblMessage.message and strlen(tblMessage.message) > 0)) end,
+                        return isGMMessage or (not ((tblMessage.desc and strlen(tblMessage.desc) > 0) and (tblMessage.message and strlen(tblMessage.message) > 0))) end,
                     func = function()
-                        local msg = ns.gSettings.messageList or {}
-                        local active = invActiveMessage
+                        local tbl = ns.gSettings.messageList or {}
+                        local active = activeMessage
 
                         if not active then
-                            tinsert(msg, tblMessage)
-                            active = #msg
-                        else msg[active] = tblMessage end
-                        ns.gSettings.messageList = msg
+                            tinsert(tbl, tblMessage)
+                            active = #tbl
+                        else tbl[active] = tblMessage end
+                        ns.gSettings.messageList = tbl
 
                         tblMessage = newMsg()
-                        invActiveMessage = nil
-                        UIErrorsFrame:AddMessage('Message Saved', 1.0, 0.1, 0.1, 1.0)
+                        activeMessage = nil
+                        UIErrorsFrame:AddMessage('Message Saved', 0, 1, 0, 1)
                     end,
                 },
                 genSpacer = {
+                    order = 22,
+                    name = '',
+                    type = 'description',
+                    width = .5,
+                },
+                invInviteDel = {
+                    order = 23,
+                    name = L['DELETE'],
+                    type = 'execute',
+                    confirm = function() return L['DELETE_CONFIRMATION'] end,
+                    width = .5,
+                    disabled = function() return isGMMessage or not activeMessage end,
+                    func = function()
+                        local msg = ns.gSettings.messageList or nil
+                        local active = activeMessage or nil
+                        if active and msg and msg[active] then
+                            msg[active] = nil
+                            tblMessage = newMsg()
+                        end
+
+                        activeMessage = nil
+                        if ns.pSettings.activeMessage then ns.pSettings.activeMessage = nil end
+                    end,
+                },
+                genSpacer3 = {
                     order = 90,
                     name = ' ',
                     type = 'description',
@@ -978,15 +991,55 @@ ns.addonSettings = {
             }
         },
         blankHeader3 = {
-            order = 15,
+            order = 20,
             name = ' ',
             type = 'group',
             args = {}
         },
+        antiSpam = {
+            name = L['ANTI_SPAM'],
+            type = 'group',
+            order = 21,
+            args = {
+                asHeader1 = {
+                    order = 0,
+                    name = L['ANTI_SPAM'],
+                    type = 'header',
+                },
+                asDesc1 = {
+                    order = 1,
+                    name = ns.code:cText('FFFFFF00', 'This is read only for now, will be updated in the future.'),
+                    type = 'description',
+                    fontSize = 'medium',
+                },
+                asHeader3 = {
+                    order = 3,
+                    name = '',
+                    type = 'header',
+                },
+                asMultiSelect = {
+                    order = 4,
+                    type = 'multiselect',
+                    name = 'Anti-Spam Player List',
+                    width = 'full',
+                    values = function()
+                        local tbl = {}
+                        tblAntiSpamSorted = ns.code:sortTableByField(ns.tblAntiSpamList, 'name')
+                        for k, r in pairs(tblAntiSpamSorted or {}) do
+                            tbl[k] = (r.name..': '..date("%m/%d/%Y %H:%M", r.date))
+                        end
+
+                        return tbl
+                    end,
+                    set = function(_, key, val) ns.tblAntiSpamList[tblAntiSpamSorted[key].key].selected = val end,
+                    get = function(_, key) return ns.tblAntiSpamList[tblAntiSpamSorted[key].key].selected or false end,
+                }
+            }
+        },
         blackList = {
             name = L['BLACK_LIST'],
             type = 'group',
-            order = 16,
+            order = 22,
             args = {
                 blHeader1 = {
                     order = 0,
@@ -996,176 +1049,214 @@ ns.addonSettings = {
                 blRemoveButton = {
                     name = L['BLACK_LIST_REMOVE'],
                     type = 'execute',
-                    width = 'full',
+                    width = 1,
                     confirm = function() return L['DELETE_CONFIRMATION'] end,
                     order = 1,
                     func = function()
                         ns.g.blackListRemoved = ns.g.blackListRemoved and ns.g.blackListRemoved or {}
-                        for k, r in pairs(ns.tblBlackList and ns.tblBlackList or {}) do
+                        for _, r in pairs(tblBlackListSorted) do
                             if r.selected then
-                                ns.g.blackListRemoved[k] = C_DateAndTime.GetServerTimeLocal()
-                                ns.tblBlackList[k] = nil
+                                tinsert(ns.g.blackListRemoved, ns.tblBlackList[r.key])
+                                ns.tblBlackList[r.key] = nil
                             end
                         end
 
                         ns.code:saveTables('BLACK_LIST')
                     end,
                 },
-                blHeader3 = {
+                blPrivateReasonButton = {
+                    name = L['BL_PRIVATE_REASON'],
+                    desc = L['BL_PRIVATE_REASON_DESC'],
+                    type = 'execute',
+                    width = 1,
                     order = 2,
+                    func = function()
+                        for _, r in pairs(tblBlackListSorted) do
+                            if r.blBy == UnitName('player') then
+                                if r.selected and not r.private then
+                                    ns.tblBlackList[r.key].private = true
+                                elseif r.selected and r.private then
+                                    ns.tblBlackList[r.key].private = false
+                                end
+                            elseif r.selected then ns.code:fOut(L['BL_PRIVATE_REASON_ERROR']..' '..r.key) end
+                            r.selected = false
+                        end
+
+                        -- Put back in to black list table
+                        for _, r in pairs(ns.tblBlackList) do ns.tblBlackList[r.key] = r end
+                        ns.code:saveTables('BLACK_LIST')
+                    end,
+                },
+                blHeader3 = {
+                    order = 3,
                     name = '',
                     type = 'header',
                 },
                 blMultiSelect = {
-                    order = 3,
+                    order = 4,
                     type = 'multiselect',
                     name = 'Black Listed Players',
                     width = 'full',
                     values = function()
                         local tbl = {}
-                        for k, r in pairs(ns.tblBlackList or {}) do
-                            local name = k
-                            tbl[k] = (name..': '..(r.reason or 'Unknown'))
+                        tblBlackListSorted = ns.code:sortTableByField(ns.tblBlackList, 'name')
+                        for k, r in pairs(tblBlackListSorted or {}) do
+                            local reason = r.reason
+                            if r.private then reason = '<Private>' end
+                            tbl[k] = (r.name..': '..(reason or 'Unknown'))
                         end
 
                         return tbl
                     end,
-                    set = function(_, key, val) ns.tblBlackList[key].selected = val end,
-                    get = function(_, key) return ns.tblBlackList[key].selected or false end,
+                    set = function(_, key, val) tblBlackListSorted[key].selected = val end,
+                    get = function(_, key) return tblBlackListSorted[key].selected or false end,
                 }
             }
         },
-        invalidZones = {
+        zoneList = {
             name = L['INVALID_ZONE'],
             type = 'group',
-            order = 17,
+            order = 23,
             args = {
-                zonesHeader1 = {
+                zHeader1 = {
                     order = 0,
                     name = L['INVALID_ZONE'],
                     type = 'header',
                 },
-                zoneID = {
+                zSettingsDesc1 = {
                     order = 1,
-                    name = L['ZONE_ID'],
-                    desc = L['ZONE_ID_DESC'],
-                    type = 'input',
-                    width = .7,
-                    set = function(_, val)
-                        if not tonumber(val) then return end
-                        tblZone.id = tonumber(val)
-                    end,
-                    get = function() return tostring(tblZone.id) end,
+                    name = ns.code:cText('FF00FF00', L['ZONE_INSTRUCTIONS']),
+                    type = 'description',
+                    fontSize = 'medium',
+                },
+                zHeader2 = {
+                    order = 2,
+                    name = '',
+                    type = 'header',
                 },
                 zoneName = {
-                    order = 2,
+                    order = 3,
                     name = L['ZONE_NAME'],
                     type = 'input',
-                    width = .9,
-                    set = function(_, val) tblZone.name = val end,
-                    get = function() return tostring(tblZone.name) end,
+                    width = 1,
+                    set = function(_, val)
+                        tblZone.name = val
+                        tblZoneList = tblZoneList or ns.ds:GetZones()
+                        if not tblZoneList[strlower(val)] then
+                            ns.code:AcceptDialog(L['ZONE_NOT_FOUND']..' '..val, function() return end)
+                            activeZone = nil
+                        else activeZone = tblZoneList[strlower(val)] end
+                    end,
+                    get = function() return tblZone.name and tostring(tblZone.name) or '' end,
                 },
                 zoneDesc = {
-                    order = 2,
-                    name = L['ZONE_TYPE'],
+                    order = 4,
+                    name = L['ZONE_INVALID_REASON'],
                     type = 'input',
-                    width = .8,
+                    width = 1,
                     set = function(_, val) tblZone.reason = val end,
-                    get = function() return tostring(tblZone.reason) end,
+                    get = function() return tblZone.reason and tostring(tblZone.reason) or '' end,
                 },
-                invNewButton = {
-                    order = 4,
-                    name = L['NEW'],
-                    type = 'execute',
-                    width = .5,
-                    disabled = function() return not activeZone end,
-                    func = function()
-                        tblZone = newZone()
-                        activeZone = nil
-                    end,
-                },
-                invSaveButton = {
-                    order = 4,
-                    name = L['SAVE'],
-                    type = 'execute',
-                    width = .5,
-                    disabled = function()
-                        local saveFail = tblZone.id == '' or tblZone.name == '' or tblZone.reason == ''
-                        if not activeZone then
-                            for _, r in pairs(ns.tblInvalidZones) do
-                                if strlower(r.name) == strlower(tblZone.name) then
-                                    saveFail = true
-                                    break
-                                end
-                            end
-                        end
-
-                        return saveFail
-                    end,
-                    func = function()
-                        ns.global.zoneList[tonumber(tblZone.id)] = tblZone
-                        ns.tblInvalidZones = ns.ds:invalidZones()
-                        tblZone = newZone()
-                        activeZone = nil
-                        zoneOut()
-                    end,
-                },
-                invMessageListInstructions = {
+                zSpacer1 = {
                     order = 5,
                     name = ' ',
                     type = 'description',
                     fontSize = 'medium',
                     width = .5,
                 },
-                invDeleteButton = {
+                zNewButton = {
                     order = 6,
+                    name = L['NEW'],
+                    type = 'execute',
+                    width = .5,
+                    hidden = function() return not activeZone or checkedZones end,
+                    func = function()
+                        tblZone = {}
+                        activeZone = nil
+                    end,
+                },
+                zSaveButton = {
+                    order = 7,
+                    name = L['SAVE'],
+                    type = 'execute',
+                    width = .5,
+                    hidden = function() return not activeZone or checkedZones end,
+                    disabled = function()
+                        if activeZone and tblZone.name and tblZone.reason then
+                            return checkedZones else return true end
+                    end,
+                    func = function()
+                        ns.global.zoneList = ns.global.zoneList or {}
+                        local key = strlower(tblZone.name)
+                        ns.global.zoneList[key] = tblZone
+                        UIErrorsFrame:AddMessage('Zone Saved', 0, 1, 0, 1)
+                    end,
+                },
+                zDeleteButton = {
+                    order = 9,
                     name = L['DELETE'],
                     confirm = function() return L['DELETE_CONFIRMATION'] end,
                     type = 'execute',
                     width = .5,
-                    disabled = function() return not activeZone end,
+                    hidden = function() return not checkedZones end,
                     func = function()
-                        if not activeZone then return end
-
-                        ns.global.zoneList[activeZone] = nil
-                        ns.tblInvalidZones = ns.ds:invalidZones()
-                        activeZone = nil
-                        tblZone = newZone()
-                        zoneOut()
+                        for k, r in pairs(tblPlayerZone) do
+                            if r.selected then
+                                ns.global.zoneList[k] = nil
+                                tblPlayerZone[k] = nil
+                            end
+                        end
+                        checkedZones = false
+                        UIErrorsFrame:AddMessage('Zones Deleted', 0, 1, 0, 1)
                     end,
                 },
-                ZoneNote = {
-                    order = 14,
-                    name = L['ZONE_NOTE'],
-                    type = 'description',
-                    fontSize = 'medium',
-                },
-                zonesList = {
-                    order = 15,
-                    name = L['ZONE_LIST_NAME'],
+                zPlayerZones = {
+                    order = 10,
                     type = 'multiselect',
+                    name = 'Player\'s Invalid Zone List:',
                     width = 'full',
                     values = function()
-                        if not tblZoneByName then zoneOut() end
-                        return tblZoneByName
+                        local tbl = {}
+                        tblPlayerZone = tblPlayerZone or {}
+                        for k, r in pairs(ns.global.zoneList or {}) do
+                            tblPlayerZone[k] = {
+                                r,
+                                selected = tblPlayerZone[k] and tblPlayerZone[k].selected or false,
+                            }
+                            tbl[k] = r.name..ns.code:cText('FFFFFF00', ' Reason: '..r.reason) end
+
+                        return tbl
                     end,
-                    set = function(_, key)
-                        if not tblZoneByName or not tblZoneByName[key] then return end
-                        activeZone = key
-                        tblZone = {
-                            id = key,
-                            name = ns.tblInvalidZones[key].name,
-                            reason = ns.tblInvalidZones[key].reason
-                        }
-                        zoneOut()
+                    set = function(_, key, val)
+                        if tblPlayerZone then
+                            tblPlayerZone[key].selected = val
+                            checkedZones = false
+                            for _, r in pairs(tblPlayerZone) do
+                                if r.selected then checkedZones = true break end
+                            end
+                        end
+                    end,
+                    get = function(_, key)
+                        if not tblPlayerZone then print('tblPlayerZone missing') return false end
+                        print(tblPlayerZone[key].selected)
+                        return tblPlayerZone[key].selected
                     end,
                 },
-                ZoneInstructions = {
-                    order = 90,
-                    name = L['ZONE_ID_DESC'],
-                    type = 'description',
-                    fontSize = 'medium',
-                },
+                zLockedZones = {
+                    order = 11,
+                    type = 'multiselect',
+                    name = 'Locked Invalid Zone List (View Only):',
+                    width = 'full',
+                    values = function()
+                        local tbl = {}
+                        for k, r in pairs(ns.tblInvalidZones or {}) do
+                            tbl[k] = r.name..ns.code:cText('FFFFFF00', ' Reason: '..r.reason) end
+
+                        return tbl
+                    end,
+                    set = function(_, key, val) return end,
+                    get = function(_, key) return false end,
+                }
             }
         },
         blankHeader4 = {
@@ -1246,5 +1337,5 @@ ns.addonSettings = {
                 },
             }
         },
-    }
+    },
 }

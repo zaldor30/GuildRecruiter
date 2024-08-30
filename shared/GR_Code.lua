@@ -181,6 +181,18 @@ function code:Confirmation(msg, func)
     }
     StaticPopup_Show("MY_YES_NO_DIALOG")
 end
+function code:AcceptDialog(msg, func)
+
+    StaticPopupDialogs["MY_ACCEPT_DIALOG"] = {
+        text = msg,
+        button1 = "Ok",
+        OnAccept = func,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+    }
+    StaticPopup_Show("MY_ACCEPT_DIALOG")
+end
 
 --* Miscellaneous Routines
 function code:inc(data, count) return (data or 0) + (count or 1) end
@@ -200,3 +212,7 @@ function code:isInMyGuild(name)
     end
     return false
 end
+function code:GetZoneIDByName(zoneName)
+    return code.zoneIDs[zoneName]
+end
+code:Init()

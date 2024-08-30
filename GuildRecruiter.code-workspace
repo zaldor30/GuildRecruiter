@@ -5,9 +5,6 @@
         },
         {
             "path": "../../../../../../Users/zalro/Documents/GitHub/GuildRecruiter-old"
-        },
-        {
-            "path": "../Guild_Roster_Manager"
         }
     ],
     "settings": {
@@ -348,6 +345,9 @@
             "UIParent",
             "BackdropTemplateMixin",
             "SetCVar",
+            "GameTooltip",
+            "EncounterJournal_LoadUI",
+            "WHISPER"
             "GameTooltip"
         ]
     }

@@ -29,6 +29,17 @@ L['is not online'] = 'no está en línea'
 L['has joined the guild'] = 'se ha unido a la hermandad'
 L['declines your guild invitation'] = 'la invitación a tu hermandad'
 L['JOINED_GUILD_MESSAGE'] = ' se unió a la gremia!'
+L['NO_ANTISPAM_ADDED'] = 'No se añadió a la lista de Anti-Spam.'
+
+--? 3.2 Changes
+L['SYNC_ALREADY_IN_PROGRESS'] = '¡La sincronización ya está en progreso con %s!'
+L['NO_CLIENTS_FOUND'] = 'No se encontraron clientes para sincronizar.'
+L['NO_BLACKLISTED_ADDED'] = 'No se añadió a la lista negra.'
+L['CLIENT_REQUEST_DATA_TIMEOUT'] = 'El tiempo de espera de la solicitud de datos del cliente ha expirado.'
+L['FAILED_TO_RECEIVE_SYNC_DATA'] = 'No se pudo recibir los datos de sincronización de'
+L['OUTDATED_VERSION'] = 'Versión desactualizada de Guild Recruiter. Por favor, actualiza tu versión.'
+L['OLDER_VERSION'] = 'Versión más antigua de Guild Recruiter. Por favor, actualiza tu versión.'
+L['NEWER_VERSION'] = 'Versión más nueva de Guild Recruiter. Por favor, actualiza tu versión.'
 
 -- * Donation Message
 L['DONATION_MESSAGE'] = [[
@@ -194,6 +205,11 @@ L['MIN_LVL'] = 'Nivel Mínimo:'
 L['MAX_LVL'] = 'Nivel Máximo:'
 L['MESSAGE_LIST'] = 'Mensajes de Invitación'
 L['INVITE_MESSAGE_ONLY'] = 'Enviar solo mensaje de invitación'
+L['FORCE_MESSAGE_LIST'] = 'Forzar Mensaje de Invitación'
+L['FORCE_MESSAGE_LIST_DESC'] = 'Forzar el mensaje de invitación para que se envíe al jugador.'
+L['SYNC_MESSAGES'] = 'Sincronizar Mensajes'
+L['SYNC_MESSAGES_DESC'] = 'Sincronizar mensajes con el GM.'
+L['PLAYER_SETTINGS_DESC'] = 'Configuración de mensajes de invitación y bienvenida.'
 
 -- * GR Error Message
 L['INVALID_LEVEL'] = 'Debes ingresar un número entre 1 y'
@@ -201,7 +217,11 @@ L['MIN_LVL_HIGHER_ERROR'] = 'El nivel mínimo debe ser mayor que el nivel máxim
 L['MAX_LVL_LOWER_ERROR'] = 'El nivel máximo debe ser menor que el nivel mínimo.'
 
 -- * GR Config Window Messages
-L['General Settings'] = true
+L['GENERAL_SETTINGS'] = 'Configuración General'
+L['SYSTEM_SETTINGS'] = 'Configuración del Sistema'
+L['INVITE_SCAN_SETTINGS'] = 'Configuración de Invitación y Escaneo'
+L['FORCE_ENABLE_BLOCK_INVITE_CHECK'] = 'Forzar Comprobación de Bloqueo de Invitaciones'
+L['FORCE_ENABLE_BLOCK_INVITE_CHECK_DESC'] = 'Forzar la comprobación de bloqueo de invitaciones para todos los jugadores.'
 L['MESSAGE_REPLACEMENT_INSTRUCTIONS'] = [[
 ENLACEDELGUILD - Creará un enlace clicable a tu guild.
 NOMBREDELGUILD - Mostrará el nombre de tu guild.
@@ -239,10 +259,13 @@ L['GEN_ACCOUNT_WIDE'] = 'indica que afecta a todos los personajes del Guild'
 
 -- * GR GM Settings Window
 L['GM_SETTINGS'] = 'Configuración del GM'
-L['GM_SETTINGS_DESC'] = 'Nota: Los Maestros de Guild tienen acceso a esta configuración en todos sus personajes.'
+L['GM_SETTINGS_DESC'] = 'Primero crea una descripción del mensaje, luego el mensaje en sí, y entonces se habilitará la opción de guardar.'
 L['MAX_CHARS'] = '(<sub> caracteres por mensaje)'
 L['LENGTH_INFO'] = 'Asume 12 caracteres al usar NOMBREDELJUGADOR'
 L['MESSAGE_LENGTH'] = 'Longitud del mensaje'
+L['BL_PRIVATE_REASON'] = 'Razón de la lista negra privada'
+L['BL_PRIVATE_REASON_DESC'] = 'Razón de la lista negra que solo se mostrará a los GM.'
+L['BL_PRIVATE_REASON_ERROR'] = 'La razón de la lista negra privada no puede estar vacía.'
 
 -- * GR GM Invite Settings Window
 L['GM_INVITE'] = 'Mensajes del GM'
@@ -252,6 +275,7 @@ L['OVERRIDE_GM_SETTINGS_DESC'] = 'Anular la configuración del GM para este pers
 
 -- * GR Invite Settings Window
 L['INVITE_SETTINGS'] = 'Configuración de Invitaciones'
+L['WELCOME_MESSAGES'] = 'Mensajes de Bienvenida'
 L['ENABLE_ANTI_SPAM'] = 'Habilitar Anti-Spam'
 L['ENABLE_ANTI_SPAM_DESC'] = 'Habilitar la función Anti-Spam para evitar que se haga spam a los jugadores.'
 L['ANTI_SPAM_DAYS'] = 'Retraso para Reinvitación'
@@ -283,9 +307,11 @@ L['ADD_TO_BLACK_LIST'] = 'Añadir jugador a la lista negra.'
 
 -- * Invalid Settings Window
 L['INVALID_ZONE'] = 'Zonas Inválidas'
+L['ZONE_NOT_FOUND'] = 'Zona no encontrada'
+L['ZONE_INSTRUCTIONS'] = 'The zone name must EXACTLY match the zone name in the game.'
 L['ZONE_ID'] = 'ID de Zona (ID Numérico)'
 L['ZONE_NAME'] = 'Nombre de la Zona:'
-L['ZONE_TYPE'] = 'Tipo de Zona:'
+L['ZONE_INVALID_REASON'] = 'Razón de la Zona Inválida'
 L['ZONE_ID_DESC'] = [[
 El ID de zona para la zona inválida.
 Lista de instancias:

@@ -1,6 +1,21 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
+### v3.2.44 Notes
+    - Reworked Sync
+        - Now checks version information before syncing.
+        - Will now support larger sized data sets.
+        - Not so spammy now.
+    - Rework of invalid zones to support other languages.
+    - Also, made seasonal dungeons and raids automatically added to invalid zones.
+    - Settings Rework:
+        - Reorganized settings to make it easier to find things.
+        - Only have invite or GM options, if you are a GM.
+        - GM messages have an option to sync only the ones marked (not fully working yet).
+        - Can see anti-spam list, but not change it.
+        - Reworked black list and added a privacy option for reason.
+        - Reworked invalid zones so you can specify a name of a zone to ignore.
+    - Made races by faction again.
 ### v3.1.41 Notes
     - Fix to auto block guild invites not ever sending message.
 ### v3.1.40 Notes
