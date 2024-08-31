@@ -174,6 +174,7 @@ function core:StartDatabase(clubID)
     end
 
     self.hasGM = ns.guildInfo.isGuildLeader
+    if self.hasGM then ns.gSettings.messageList = nil end -- DB Clean up remove by end 2024
     if self.hasGM and ns.gmSettings.forceObey then self.obeyBlockInvites = ns.gmSettings.obeyBlockInvites or false
     elseif ns.pSettings.obeyBlockInvites then self.obeyBlockInvites = ns.pSettings.obeyBlockInvites or false end
 end
