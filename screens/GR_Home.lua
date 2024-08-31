@@ -276,7 +276,11 @@ end
 function home:GetInviteMessages()
     local tblWhispers = {}
     local tblMessages = ns.gSettings.messageList and ns.gSettings.messageList or {}
-    local tblGMMessages = ns.gSettings.GMMessageList and ns.gSettings.GMMessageList or {}
+    local tblGMMessages = ns.gmSettings.messageList and ns.gmSettings.messageList or {}
+    print('GM Messages')
+    for k,r in pairs(tblGMMessages) do
+        print(k,r)
+    end
 
     self.tblWhipsers = table.wipe(self.tblWhipsers or {})
     for k, r in pairs(tblGMMessages) do
