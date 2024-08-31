@@ -61,7 +61,9 @@ function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreeti
 
     -- Message Prep
     local invFormat = ns.pSettings.inviteFormat or 2
-    local msgInvite = useInviteMsg and ns.gSettings.messageList[ns.pSettings.activeMessage].message or nil
+    local activeMessage = ns.pSettings.activeMessage or 1
+    local messageList = ns.gSettings.messageList[activeMessage] or ns.gmSettings.messageList[activeMessage] or ns.pSettings.messageList[activeMessage] or nil
+    local msgInvite = (messageList and useInviteMsg) and messageList.message or nil
     if msgInvite then msgInvite = ns.code:variableReplacement(msgInvite, name) end
 
     -- Verify if there is a invite message if not guild invite only.

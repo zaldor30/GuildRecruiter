@@ -1,6 +1,9 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
+### 3.2.49
+    - Fixed GM messages not showing up on home screen.
+    - Fixed issue with GMs not being able to send messages.
 ### v3.2.44 Notes
     - Reworked Sync
         - Now checks version information before syncing.
