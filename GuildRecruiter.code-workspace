@@ -345,9 +345,12 @@
             "UIParent",
             "BackdropTemplateMixin",
             "SetCVar",
+<<<<<<< Updated upstream
             "GameTooltip",
             "EncounterJournal_LoadUI",
             "WHISPER"
+=======
+>>>>>>> Stashed changes
             "GameTooltip"
         ]
     }
