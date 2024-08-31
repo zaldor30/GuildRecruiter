@@ -49,6 +49,9 @@ function ds:WhatsNew() -- What's new in the current version
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
 
+    |CFFFFFF00v3.2.49 Notes|r
+        - Fixed GM messages not showing up on home screen.
+        - Fixed issue with GMs not being able to send messages.
     |CFFFFFF00v3.2.44 Notes|r
         - Reworked Sync
             - Now checks version information before syncing.

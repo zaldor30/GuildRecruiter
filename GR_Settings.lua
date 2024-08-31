@@ -1238,7 +1238,7 @@ ns.addonSettings = {
                     end,
                     get = function(_, key)
                         if not tblPlayerZone then print('tblPlayerZone missing') return false end
-                        print(tblPlayerZone[key].selected)
+
                         return tblPlayerZone[key].selected
                     end,
                 },
