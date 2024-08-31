@@ -48,7 +48,7 @@ function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreeti
     local cName = class and ns.code:cPlayerName(name, class) or name
 
     -- Make sure player is not on the black list or anti spam list
-    if self.tblSent[strlower(pName)] then
+    if not isManual and self.tblSent[strlower(pName)] then
         ns.code:fOut(cName..' '..L['INVITE_ALREADY_SENT'])
         return
     elseif blackList:IsOnBlackList(fName) then
@@ -67,7 +67,7 @@ function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreeti
         ns.code:fOut(L['NO_INVITE_MESSAGE'])
         return
     end
-    local msgInvite = (messageList and useInviteMsg) and messageList.message or nil
+    local msgInvite = (messageList and useInviteMsg) and messageList[activeMessage].message or nil
     if msgInvite then msgInvite = ns.code:variableReplacement(msgInvite, name) end
 
     -- Verify if there is a invite message if not guild invite only.
@@ -150,9 +150,9 @@ local function UpdateInvitePlayerStatus(_, ...)
     elseif msg:find(L['NO_PLAYER_NAMED']) then
         ns.analytics:saveStats('PlayersInvited', -1)
         invite.tblSent[key] = nil
-    --[[elseif msg:find(L['PLAYER_IN_GUILD']) or msg:find(L['PLAYER_ALREADY_IN_GUILD']) then
+    elseif msg:find(L['PLAYER_IN_GUILD']) or msg:find(L['PLAYER_ALREADY_IN_GUILD']) then
         ns.analytics:saveStats('PlayersInvited', -1)
-        invite.tblSent[key] = nil]]--
+        invite.tblSent[key] = nil
     elseif msg:find(L['PLAYER_JOINED_GUILD']) then
         local isGreetingOk = (invite.tblSent[key] and invite.tblSent[key].guild and invite.tblSent[key].guild ~= '') or false
         local isWhisperOk = (invite.tblSent[key] and invite.tblSent[key].whisper and invite.tblSent[key].whisper ~= '') or false
