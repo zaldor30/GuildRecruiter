@@ -325,8 +325,8 @@ ns.addonSettings = {
                             [7] = '7 days',
                             [14] = '14 days',
                             [30] = '30 days (1 month)',
-                            [190] = '190 days (3 months)',
-                            [380] = '380 days (6 months)',
+                            [90] = '90 days (3 months)',
+                            [180] = '180 days (6 months)',
                         }
                     end,
                     set = function(_, val) ns.gmSettings.antiSpamDays = tonumber(val) end,
@@ -486,8 +486,8 @@ ns.addonSettings = {
                             [7] = '7 days',
                             [14] = '14 days',
                             [30] = '30 days (1 month)',
-                            [190] = '190 days (3 months)',
-                            [380] = '380 days (6 months)',
+                            [90] = '90 days (3 months)',
+                            [180] = '180 days (6 months)',
                         }
                     end,
                     set = function(_, val) ns.gSettings.antiSpamDays = tonumber(val) end,
