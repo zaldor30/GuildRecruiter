@@ -182,6 +182,12 @@ function core:PerformDatabaseMaintenance()
     if ns.gmSettings.antiSpam == nil then ns.gmSettings.antiSpam = true end
 
     if not ns.global.dbVersion or ns.global.dbVersion ~= GR.dbVersion then
+        if ns.gSettings.antiSpamDays == 180 then ns.gSettings.antiSpamDays = 90 end
+        if ns.gSettings.antiSpamDays == 380 then ns.gSettings.antiSpamDays = 180 end
+        if ns.gmSettings.antiSpamDays == 180 then ns.gmSettings.antiSpamDays = 90 end
+        if ns.gmSettings.antiSpamDays == 380 then ns.gmSettings.antiSpamDays = 180 end
+        if ns.gmSettings.antiSpamDays == 180 then ns.gmSettings.antiSpamDays = 90 end
+
         local oldVer = tonumber(ns.global.dbVersion) or 1
         -- Before 3.1
         ns.global.dbVersion = GR.dbVersion
