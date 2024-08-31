@@ -62,7 +62,11 @@ function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreeti
     -- Message Prep
     local invFormat = ns.pSettings.inviteFormat or 2
     local activeMessage = ns.pSettings.activeMessage or 1
-    local messageList = ns.gSettings.messageList[activeMessage] or ns.gmSettings.messageList[activeMessage] or ns.pSettings.messageList[activeMessage] or nil
+    local messageList = ns.gmSettings.messageList or ns.gSettings.messageList or nil
+    if not messageList then
+        ns.code:fOut(L['NO_INVITE_MESSAGE'])
+        return
+    end
     local msgInvite = (messageList and useInviteMsg) and messageList.message or nil
     if msgInvite then msgInvite = ns.code:variableReplacement(msgInvite, name) end
 
@@ -146,9 +150,9 @@ local function UpdateInvitePlayerStatus(_, ...)
     elseif msg:find(L['NO_PLAYER_NAMED']) then
         ns.analytics:saveStats('PlayersInvited', -1)
         invite.tblSent[key] = nil
-    elseif msg:find(L['PLAYER_IN_GUILD']) or msg:find(L['PLAYER_ALREADY_IN_GUILD']) then
+    --[[elseif msg:find(L['PLAYER_IN_GUILD']) or msg:find(L['PLAYER_ALREADY_IN_GUILD']) then
         ns.analytics:saveStats('PlayersInvited', -1)
-        invite.tblSent[key] = nil
+        invite.tblSent[key] = nil]]--
     elseif msg:find(L['PLAYER_JOINED_GUILD']) then
         local isGreetingOk = (invite.tblSent[key] and invite.tblSent[key].guild and invite.tblSent[key].guild ~= '') or false
         local isWhisperOk = (invite.tblSent[key] and invite.tblSent[key].whisper and invite.tblSent[key].whisper ~= '') or false

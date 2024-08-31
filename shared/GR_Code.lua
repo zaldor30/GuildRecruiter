@@ -207,7 +207,6 @@ function code:isInMyGuild(name)
     local totalMembers = GetNumGuildMembers()
     for i = 1, totalMembers do
         local gName = GetGuildRosterInfo(i)
-        print(gName)
         if strlower(gName) == strlower(noRealmName) then return true
         elseif strlower(gName) == strlower(realmName) then return true end
     end

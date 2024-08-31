@@ -498,8 +498,13 @@ local function InitializeDropdownMenu(self, level)
         end
         UIDropDownMenu_AddButton(info, level)
 
-        local activeMessage = ns.pSettings.activeMessage or nil
-        local msg = activeMessage and ns.gSettings.messageList[activeMessage] or nil
+        local activeMessage = ns.pSettings.activeMessage or 1
+        local messageList = ns.gmSettings.messageList or ns.gSettings.messageList or nil
+        if not messageList then
+            ns.code:fOut(L['NO_INVITE_MESSAGE'])
+            return
+        end
+        local msg = messageList and messageList[activeMessage].messages or nil
         if msg then
             -- Separator for spacing
             info = UIDropDownMenu_CreateInfo()
@@ -568,24 +573,27 @@ local function PositionCustomDropdown()
 end
 
 -- Original SetItemRef function
-local originalSetItemRef = SetItemRef
+--local originalSetItemRef = SetItemRef
 
 -- Override SetItemRef to capture right-clicks on player names
-SetItemRef = function(link, text, button, chatFrame)
+hooksecurefunc("SetItemRef", function(link, text, button, chatFrame)
     if button == "RightButton" then
         local type, name = strsplit(":", link)
         if type == "player" then
+            if InCombatLockdown() then return end  -- Prevent opening menu during combat
+
             -- Store the clicked player name in the dropdown frame
             customDropdown.chatPlayerName = name
+            customDropdown.fromInviteMenu = true  -- Mark that this click is from the invite menu
+
             -- Show the system context menu
-            originalSetItemRef(link, text, button, chatFrame)
-            -- Calculate the position for the custom dropdown menu
             local xOffset, yOffset = PositionCustomDropdown()
-                -- Initialize and show the custom dropdown menu
             UIDropDownMenu_Initialize(customDropdown, InitializeDropdownMenu, "MENU")
-            ToggleDropDownMenu(1, nil, customDropdown, "cursor", 180, 100)
-            return
+            ToggleDropDownMenu(1, nil, customDropdown, "cursor", xOffset, yOffset)
+        else
+            customDropdown.fromInviteMenu = false  -- Mark that this is not from the invite menu
         end
+    else
+        customDropdown.fromInviteMenu = false  -- Mark that this is not from the invite menu
     end
-    originalSetItemRef(link, text, button, chatFrame)
-end
+end)

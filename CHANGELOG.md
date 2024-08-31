@@ -1,6 +1,10 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
+### 3.2.50
+    - Can now right click chat and copy player name again.
+    - Fixing issues with GM message.
+    - Fixing issues with right click invite.
 ### 3.2.49
     - Fixed GM messages not showing up on home screen.
     - Fixed issue with GMs not being able to send messages.
