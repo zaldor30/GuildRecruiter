@@ -49,6 +49,12 @@ function ds:WhatsNew() -- What's new in the current version
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
 
+    |CFFFFFF00v3.2.51 Notes|r
+        - Fixed issue if you have no messages and do guild invite, it would not send the message.
+    |CFFFFFF00v3.2.50 Notes|r
+        - Can now right click chat and copy player name again.
+        - Fixing issues with GM message.
+        - Fixing issues with right click invite.
     |CFFFFFF00v3.2.49 Notes|r
         - Fixed GM messages not showing up on home screen.
         - Fixed issue with GMs not being able to send messages.
