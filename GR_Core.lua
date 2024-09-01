@@ -156,13 +156,13 @@ function core:StartDatabase(clubID)
             if profile:find(UnitName('player')) then
                 if IsGuildLeader() then
                     ns.guildInfo.isGuildLeader = true
-                    ns.guildInfo.guildLeaderToon = GetUnitName('player', true)
-                elseif not IsGuildLeader() and ns.guildInfo.guildLeaderToon == UnitName('player') then
+                    ns.g.guildLeaderToon = GetUnitName('player', true)
+                elseif not IsGuildLeader() and ns.g.guildLeaderToon == UnitName('player') then
                     ns.guildInfo.isGuildLeader = false
-                    ns.guildInfo.guildLeaderToon = nil
+                    ns.g.guildLeaderToon = nil
                     ns.gSettings.overrideGM = false
                     ns.code:dOut(GetUnitName('player', true)..' is no longer the Guild Leader')
-                elseif ns.guildInfo.guildLeaderToon ~= GetUnitName('player', true) then
+                elseif ns.g.guildLeaderToon ~= GetUnitName('player', true) then
                     ns.guildInfo.isGuildLeader = ns.guildInfo.isGuildLeader
                 end
                 break
@@ -170,10 +170,10 @@ function core:StartDatabase(clubID)
         end
     else
         ns.guildInfo.isGuildLeader = true
-        ns.guildInfo.guildLeaderToon = GetUnitName('player', true)
+        ns.g.guildLeaderToon = GetUnitName('player', true)
     end
 
-    self.hasGM = ns.guildInfo.isGuildLeader
+    self.hasGM = ns.gSettings.isGuildLeader
     if self.hasGM then ns.gSettings.messageList = nil end -- DB Clean up remove by end 2024
     if self.hasGM and ns.gmSettings.forceObey then self.obeyBlockInvites = ns.gmSettings.obeyBlockInvites or false
     elseif ns.pSettings.obeyBlockInvites then self.obeyBlockInvites = ns.pSettings.obeyBlockInvites or false end
@@ -400,7 +400,7 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
 
     AC:RegisterOptionsTable('GuildRecruiter', ns.addonSettings) -- Register the options table
     ns.addonOptions = ACD:AddToBlizOptions('GuildRecruiter', 'Guild Recruiter') -- Add the options to the Blizzard options
-    self.iAmGM = (ns.guildInfo.isGuildLeader or ns.guildInfo.guildLeaderToon == GetUnitName('player', true)) or false
+    self.iAmGM = (ns.guildInfo.isGuildLeader or ns.g.guildLeaderToon == GetUnitName('player', true)) or false
     ns.gSettings.overrideGM = self.iAmGM and ns.gSettings.overrideGM or false
 
     core:PerformRecordMaintenance() -- Perform record maintenance
