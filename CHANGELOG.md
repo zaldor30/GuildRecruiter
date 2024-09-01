@@ -2,7 +2,7 @@
 ## 3.0 - War Within Release
 
 ### 3.2.52
-    - Small change to DB fix for sync.
+    - Updated the Ace3 library.
 ### 3.2.51
     - Fixed issue if you have no messages and do guild invite, it would not send the message.
 ### 3.2.50

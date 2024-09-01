@@ -174,7 +174,6 @@ function core:StartDatabase(clubID)
     end
 
     self.hasGM = ns.gSettings.isGuildLeader
-    if self.hasGM then ns.gSettings.messageList = nil end -- DB Clean up remove by end 2024
     if self.hasGM and ns.gmSettings.forceObey then self.obeyBlockInvites = ns.gmSettings.obeyBlockInvites or false
     elseif ns.pSettings.obeyBlockInvites then self.obeyBlockInvites = ns.pSettings.obeyBlockInvites or false end
 end
@@ -252,7 +251,7 @@ function core:PerformDatabaseMaintenance()
                 end
             end
             ns.gSettings.messageList = tblMsgs or {}
-            ns.gmSettings.messageList, ns.pSettings.messageList = nil, nil
+            ns.gmSettings.messageList, ns.gSettings.messageList = nil, nil
         end
 
         if oldVer >= 3.1 then
