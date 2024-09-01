@@ -1,6 +1,8 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
+### 3.2.51
+    - Fixed issue if you have no messages and do guild invite, it would not send the message.
 ### 3.2.50
     - Can now right click chat and copy player name again.
     - Fixing issues with GM message.
