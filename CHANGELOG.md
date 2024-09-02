@@ -1,6 +1,8 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
+### 3.2.54
+    - Fixed issue with no messages.
 ### 3.2.53
     - Fixed issue with detecting if you are a GM.
     - Fixed issue if you change your GM toon.
