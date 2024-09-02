@@ -84,7 +84,6 @@ function core:Init()
                 whisperMessage = '',
                 forceMessageList = false,
                 messageList = {},
-                guildLeaderToon = nil,
             },
             settings = {
                 -- General Settings
@@ -107,6 +106,8 @@ function core:Init()
                 scan = 'CTRL-SHIFT-S',
                 invite = 'CTRL-SHIFT-I',
             },
+            isGuildLeader = false,
+            guildLeaderToon = nil,
             blackList = {},
             blackListRemoved = {},
             antiSpamList = {},
@@ -161,7 +162,7 @@ function core:StartDatabase(clubID)
         ns.g.guildLeaderToon = GetUnitName('player', true)
     end
 
-    self.hasGM = ns.gSettings.isGuildLeader
+    self.hasGM = ns.g.isGuildLeader
     if self.hasGM and ns.gmSettings.forceObey then self.obeyBlockInvites = ns.gmSettings.obeyBlockInvites or false
     elseif ns.pSettings.obeyBlockInvites then self.obeyBlockInvites = ns.pSettings.obeyBlockInvites or false end
 end
@@ -387,7 +388,6 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
 
     AC:RegisterOptionsTable('GuildRecruiter', ns.addonSettings) -- Register the options table
     ns.addonOptions = ACD:AddToBlizOptions('GuildRecruiter', 'Guild Recruiter') -- Add the options to the Blizzard options
-    self.iAmGM = (ns.guildInfo.isGuildLeader or ns.g.guildLeaderToon == GetUnitName('player', true)) or false
     ns.gSettings.overrideGM = self.iAmGM and ns.gSettings.overrideGM or false
 
     core:PerformRecordMaintenance() -- Perform record maintenance
@@ -407,8 +407,8 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
 
     ns.code:fOut(L['TITLE']..' '..GR.versionOut..' '..L['IS_ENABLED'], GRColor, true)
     if not ns.guildInfo.guildLink then
-        ns.code:fOut(L['NO_GUILD_LINK'], GRColor)
-        ns.code:fOut(ns.code:cText('FFFF0000', L['NO_GUILD_LINK'], GRColor))
+        ns.code:fOut(L['NO_GUILD_LINK'], 'FFFF0000')
+        ns.code:fOut(L['NO_GUILD_LINK2'], GRColor)
     end
 
     if GR.isPreRelease then
