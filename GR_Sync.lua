@@ -50,7 +50,6 @@ end
 
 --* Sync Start/Stop Routines
 function sync:StartSyncRoutine(syncType, sender)
-    ns.code:fOut('Am I still the GM (sync)? '..tostring(self.hasGM))
     self.syncType = syncType or nil
     if not ns.core.isEnabled then return
     elseif self.syncType and self.syncStart then
