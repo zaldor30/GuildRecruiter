@@ -39,6 +39,7 @@ L['FAILED_TO_RECEIVE_SYNC_DATA'] = 'Failed to receive sync data from'
 L['OUTDATED_VERSION'] = 'is using an outdated version'
 L['OLDER_VERSION'] = 'is using an older version'
 L['NEWER_VERSION'] = 'is using a newer version'
+L['NOT_GUILD_LEADER'] = 'This character is not the guild leader.  Make sure you log into the new guild leader.'
 
 -- * Donation Message
 L['DONATION_MESSAGE'] = [[

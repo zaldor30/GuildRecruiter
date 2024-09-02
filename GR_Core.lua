@@ -150,26 +150,14 @@ function core:StartDatabase(clubID)
     ns.invite:GetWelcomeMessages() -- Get the welcome messages
     GR.debug = ns.pSettings.debugMode or false -- Set the debug mode
 
-    local profiles, _ = db:GetProfiles()
     if not IsGuildLeader() then
-        for _, profile in pairs(profiles) do
-            if profile:find(UnitName('player')) then
-                if IsGuildLeader() then
-                    ns.guildInfo.isGuildLeader = true
-                    ns.g.guildLeaderToon = GetUnitName('player', true)
-                elseif not IsGuildLeader() and ns.g.guildLeaderToon == UnitName('player') then
-                    ns.guildInfo.isGuildLeader = false
-                    ns.g.guildLeaderToon = nil
-                    ns.gSettings.overrideGM = false
-                    ns.code:dOut(GetUnitName('player', true)..' is no longer the Guild Leader')
-                elseif ns.g.guildLeaderToon ~= GetUnitName('player', true) then
-                    ns.guildInfo.isGuildLeader = ns.guildInfo.isGuildLeader
-                end
-                break
-            end
+        if UnitName('player') == ns.g.guildLeaderToon then
+            ns.g.isGuildLeader = false
+            ns.g.guildLeaderToon = nil
+            ns.code:fOut(L['NOT_GUILD_LEADER'])
         end
     else
-        ns.guildInfo.isGuildLeader = true
+        ns.g.isGuildLeader = true
         ns.g.guildLeaderToon = GetUnitName('player', true)
     end
 

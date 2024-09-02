@@ -49,6 +49,9 @@ function ds:WhatsNew() -- What's new in the current version
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
 
+    |CFFFFFF00v3.2.53 Notes|r
+        - Fixed issue with detecting if you are a GM.
+        - Fixed issue if you change your GM toon.
     |CFFFFFF00v3.2.51 Notes|r
         - Fixed issue if you have no messages and do guild invite, it would not send the message.
     |CFFFFFF00v3.2.50 Notes|r

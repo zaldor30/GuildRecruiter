@@ -40,6 +40,7 @@ L['FAILED_TO_RECEIVE_SYNC_DATA'] = 'No se pudo recibir los datos de sincronizaci
 L['OUTDATED_VERSION'] = 'Versión desactualizada de Guild Recruiter. Por favor, actualiza tu versión.'
 L['OLDER_VERSION'] = 'Versión más antigua de Guild Recruiter. Por favor, actualiza tu versión.'
 L['NEWER_VERSION'] = 'Versión más nueva de Guild Recruiter. Por favor, actualiza tu versión.'
+L['NOT_GUILD_LEADER'] = 'No eres el líder del guild.'
 
 -- * Donation Message
 L['DONATION_MESSAGE'] = [[

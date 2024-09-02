@@ -3,7 +3,7 @@
 
 ## Interface: 110002
 ## Title: Guild Recruiter
-## Version: 3.2.52
+## Version: 3.2.53
 ## Notes: Facilitates guild officers to recruit new members
 ## Author: Moonfury
 ## SavedVariables: GuildRecruiterDB
