@@ -49,6 +49,11 @@ function ds:WhatsNew() -- What's new in the current version
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
 
+    |CFFFFFF00v3.2.55 Notes|r
+        - Added a queue for invite messages.
+        Some have said they are getting a temporary ban for spamming.
+            To combat this, I have added a queue for invite messages.  This will allow you to send a message to a player and then
+            it will wait 1 second before sending the next message.
     |CFFFFFF00v3.2.54 Notes|r
         - Fixed issue with no messages.
     |CFFFFFF00v3.2.53 Notes|r

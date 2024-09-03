@@ -6,11 +6,15 @@ local invite, blackList, antiSpam = ns.invite, ns.blackList, ns.antiSpam
 
 --* Invite
 function invite:Init()
+    self.isSendingInvites = false
+
     self.tblSent = {}
     self.sentCount = 0
 
     self.msgWhisper = nil
     self.guildMessage = nil
+
+    self.inviteQueue = {}
 end
 function invite:IsInvalidZone(zone)
     if ns.tblInvalidZones[zone] then return true
@@ -62,7 +66,7 @@ function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreeti
     -- Message Prep
     local invFormat = ns.pSettings.inviteFormat or 2
     local activeMessage = ns.pSettings.activeMessage or 1
-    local messageList = ns.gmSettings.messageList or ns.gSettings.messageList or nil
+    local messageList = (ns.gmSettings.messageList and #ns.gmSettings.messageList > 0) and ns.gmSettings.messageList or ns.gSettings.messageList or nil
     if useInviteMsg and not messageList and invFormat ~= 2 then
         ns.code:fOut(L['NO_INVITE_MESSAGE'])
         return
@@ -83,6 +87,18 @@ function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreeti
         return
     end
 
+    tinsert(self.inviteQueue, {
+        pName = pName,
+        msgInvite = msgInvite,
+        sendInvite = sendInvite,
+        guildInvite = sendInvite,
+        invFormat = invFormat,
+        useInviteMsg = useInviteMsg,
+        class = class,
+
+        useWhisperMsg, useGreetingMsg, isManual = useWhisperMsg, useGreetingMsg, isManual
+    })
+
     if pName and sendInvite then -- Guild Invite
         C_GuildInfo.Invite(pName)
         ns.code:fOut(L['GUILD_INVITE_SENT']..' '..cName, 'FFFFFF00')
@@ -90,19 +106,44 @@ function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreeti
 
     invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg, isManual)
 
-    if invFormat ~= 2 and invFormat ~= 4 and useInviteMsg and msgInvite then
-        if isManual or not ns.core.obeyBlockInvites then self:SendMessage(pName, name, msgInvite)
-        else
-            C_Timer.After(1, function()
-                if invite.tblSent[strlower(fName)] then
-                    self:SendMessage(pName, name, msgInvite)
-                    invite.tblSent[strlower(fName)].sentAt = GetServerTime()
-                else
-                    ns.code:fOut(L['INVITE_REJECTED']..' '..cName, 'FFFFFF00')
-                end
-            end)
+    invite:SendInvites()
+end
+function invite:SendInvites()
+    if self.isSendingInvites then return end
+
+    local function sendNextMessage()
+        local tblNext = tremove(self.inviteQueue, 1)
+
+        if not tblNext then self.isSendingInvites = false return
+        elseif not self.tblSent[strlower(tblNext.pName)] then sendNextMessage() return end
+        ns.code:dOut('You have '..(#self.inviteQueue+1)..' messages in the invite queue.', 'FFFFFF00')
+
+        local invFormat, useInviteMsg = tblNext.invFormat or 2, tblNext.useInviteMsg or false
+        local msgInvite = tblNext.msgInvite
+        local isManual = tblNext.isManual
+
+        local pName, sendInvite = tblNext.pName, tblNext.msgInvite
+        local fName = pName:find('-') and pName or pName..'-'..GetRealmName()
+        local cName = pName:gsub('-.*', '') -- Remove realm name
+
+        if invFormat ~= 2 and invFormat ~= 4 and useInviteMsg and msgInvite then
+            if isManual or not ns.core.obeyBlockInvites then self:SendMessage(pName, pName, msgInvite)
+            else
+                C_Timer.After(1, function()
+                    if invite.tblSent[strlower(fName)] then
+                        self:SendMessage(pName, pName, msgInvite)
+                        invite.tblSent[strlower(fName)].sentAt = GetServerTime()
+                    else
+                        ns.code:fOut(L['INVITE_REJECTED']..' '..cName, 'FFFFFF00')
+                    end
+                end)
+            end
         end
+
+        C_Timer.After(1, sendNextMessage)
     end
+    self.isSendingInvites = true
+    sendNextMessage()
 end
 function invite:SendMessage(pName, cName, msgInvite, showMessage)
     msgInvite = ns.code:variableReplacement(msgInvite, pName:gsub('-.*', '')) -- Remove realm name
@@ -192,9 +233,6 @@ local function UpdateInvitePlayerStatus(_, ...)
     end
 
     ns.win.scanner:UpdateAnalytics()
-    if not next(invite.tblSent) then -- Close out event handler if not more invites
-        --ns.observer:Unregister('CHAT_MSG_SYSTEM', UpdateInvitePlayerStatus)
-    end
 end
 function invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg, isManual)
     if not pName then return end
