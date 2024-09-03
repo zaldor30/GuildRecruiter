@@ -268,23 +268,18 @@ function sync:ChunkDataAndSend(encodedData, sender)
         return
     end
 
-    local chunkSize, cIndex = 250, 1
+    local chunkSize = 250
     local totalChunks = math.ceil(#encodedData / chunkSize)
     if GR.useVerboseDebug then
         ns.code:dOut('Total Chunks: '..totalChunks..' With a size of '..chunkSize) end
 
-    local function delaySend()
-        if cIndex > totalChunks then return end
-
+    for i = 1, totalChunks do
         local sendTo = sender == 'ALL' and 'GUILD' or 'WHISPER'
-        local chunk = string.sub(encodedData, (cIndex - 1) * chunkSize + 1, cIndex * chunkSize)
-        local message = string.format("%d:%d:%s", cIndex, totalChunks, chunk)
+        local chunk = string.sub(encodedData, (i - 1) * chunkSize + 1, i * chunkSize)
+        local message = string.format("%d:%d:%s", i, totalChunks, chunk)
         self:SendCommMessage(message, sendTo, (sender == 'ALL' and nil or sender))
-        cIndex = cIndex + 1
-
-        C_Timer.After(0.1, delaySend)
+        -- Use a delay here if needed to prevent spam
     end
-    delaySend()
 end
 --? End of Data Functions
 
@@ -294,6 +289,7 @@ end
     SYNC_REQUEST_HEARD: Sync Request Heard
     SYNC_YOUR_DATA: Send your data
     CLIENT_SYNC_DATA: Send your data
+    SEND_YOUR_DATA: Send your data
 ]]
 function sync:SendCommMessage(msg, channel, target)
     if not msg then return end
