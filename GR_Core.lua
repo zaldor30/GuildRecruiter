@@ -69,18 +69,18 @@ function core:Init()
             guildInfo = {},
             gmSettings = {
                 -- GM Settings
-                forceObey = true,
+                forceObey = false,
                 obeyBlockInvites = true, -- Obey Block Invites
-                forceAntiSpam = true,
-                antiSpam = false,
+                forceAntiSpam = false,
+                antiSpam = true,
                 antiSpamDays = 7,
                 forceSendGuildGreeting = false,
                 sendGuildGreeting = false,
-                forceGuildMessage = true,
+                forceGuildMessage = false,
                 guildMessage = L['DEFAULT_GUILD_WELCOME'],
                 forceSendWhisper = false,
                 sendWhsiper = false,
-                forceWhisperMessage = true,
+                forceWhisperMessage = false,
                 whisperMessage = '',
                 forceMessageList = false,
                 messageList = {},
@@ -148,7 +148,6 @@ function core:StartDatabase(clubID)
     ns.pAnalytics = ns.p.analytics or {} -- Profile Analytics
     ns.analytics:Start()
 
-    ns.invite:GetWelcomeMessages() -- Get the welcome messages
     GR.debug = ns.pSettings.debugMode or false -- Set the debug mode
 
     if not IsGuildLeader() then
@@ -409,6 +408,14 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     if not ns.guildInfo.guildLink then
         ns.code:fOut(L['NO_GUILD_LINK'], 'FFFF0000')
         ns.code:fOut(L['NO_GUILD_LINK2'], GRColor)
+    end
+    if not self.hasGM and not (ns.g.guildLeaderToon or ns.g.guildLeaderToon == '') then
+        for k in pairs(ns.gmSettings) do
+            if k:match('force') then ns.gmSettings[k] = false end
+        end
+     end
+    if not ns.gmSettings.antiSpam or not ns.gSettings.antiSpam then
+        ns.code:fOut('Anti-Spam is turned off, see options.', 'FFFF0000')
     end
 
     if GR.isPreRelease then

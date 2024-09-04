@@ -49,6 +49,14 @@ function ds:WhatsNew() -- What's new in the current version
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
 
+    |CFFFFFF00v3.2.55 Notes|r
+        - Fixed issue with no messages.
+        - Fixed database defaults for new installs.
+        - Added a warning about Anti-Spam not being enabled.
+        - Added a message governor of invites.
+            This will limit invites being sent to 1 every second.
+            This will not slow you down, the system will queue
+            the invites and send them.
     |CFFFFFF00v3.2.54 Notes|r
         - Fixed issue with no messages.
     |CFFFFFF00v3.2.53 Notes|r

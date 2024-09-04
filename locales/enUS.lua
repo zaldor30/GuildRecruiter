@@ -29,6 +29,10 @@ L['PLAYER_ALREADY_IN_GUILD'] = "is already in a guild"
 L['PLAYER_JOINED_GUILD'] = "has joined the guild"
 L['PLAYER_DECLINED_INVITE'] = "declines your guild invitation"
 
+--? 3.3.55 Changes
+L['NO_WHISPER_MESSAGE'] = 'You selected whisper greeting message, but do not have one.'
+L['NO_GREETING_MESSAGE'] = 'You selected guild greeting message, but do not have one.'
+
 --? 3.2 Changes
 L['SYNC_ALREADY_IN_PROGRESS'] = 'Sync already in progress with'
 L['NO_CLIENTS_FOUND'] = 'No clients found to sync with.'
@@ -101,14 +105,14 @@ L['NO_PLAYER_NAME'] = 'player'
 L['BLACK_LIST'] = 'Blacklist'
 L['OK_INVITE'] = 'Do you want to invite anyway?'
 L['INVITE_REJECTED'] = 'Message not sent, appears player has Block Guild Invites on.'
-L['NO_INVITE_MESSAGE'] = 'No message selected. Please select a message in the home screen.'
+L['NO_INVITE_MESSAGE'] = 'No message selected. Please select a message at the home screen.'
 L['INVITE_IN_GUILD'] = 'is already in the guild'
 L['IS_ON_SPAM_LIST'] = 'is on the Anti-Spam list'
 L['GUILD_INVITE_SENT'] = 'Guild invite sent to'
 L['INVITE_MESSAGE_SENT'] = 'Invite message sent to'
 L['INVITE_ALREADY_SENT'] = 'has already been invited'
 L['NO_GUILD_LINK'] = 'No guild link found. Sync with GM or log into a GM character.'
-L['NO_GUILD_LINK2'] = 'Try reloading your UI (/rl) and see if you get the message again.'
+L['NO_GUILD_LINK2'] = 'Try reloading your UI (/rl) and see if you get the message again (might have to do this a couple times.).'
 L['SELECT_MESSAGE'] = 'Select a message from the list or create one in settings.'
 L['FORCE_ANTI_SPAM'] = 'Force Anti-Spam'
 L['FORCE_ANTI_SPAM_DESC'] = 'Force the Anti-Spam feature to prevent spamming players.'
