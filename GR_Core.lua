@@ -69,18 +69,18 @@ function core:Init()
             guildInfo = {},
             gmSettings = {
                 -- GM Settings
-                forceObey = true,
+                forceObey = false,
                 obeyBlockInvites = true, -- Obey Block Invites
-                forceAntiSpam = true,
-                antiSpam = false,
+                forceAntiSpam = false,
+                antiSpam = true,
                 antiSpamDays = 7,
                 forceSendGuildGreeting = false,
                 sendGuildGreeting = false,
-                forceGuildMessage = true,
+                forceGuildMessage = false,
                 guildMessage = L['DEFAULT_GUILD_WELCOME'],
                 forceSendWhisper = false,
                 sendWhsiper = false,
-                forceWhisperMessage = true,
+                forceWhisperMessage = false,
                 whisperMessage = '',
                 forceMessageList = false,
                 messageList = {},
