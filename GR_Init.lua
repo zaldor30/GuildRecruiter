@@ -8,8 +8,7 @@ GR = LibStub('AceAddon-3.0'):NewAddon('GuildRecruiter', 'AceConsole-3.0', 'AceEv
 GR.author  = C_AddOns.GetAddOnMetadata('GuildRecruiter', 'Author')
 GR.version = C_AddOns.GetAddOnMetadata('GuildRecruiter', 'Version')
 GR.dbVersion = '3.2'
-GR.isTesting = true --! PAY ATTENTION TO THIS VARIABLE
-GR.isPreRelease = false
+GR.isPreRelease = true
 GR.preReleaseType = 'Beta'
 GR.versionOut = '(v'..GR.version..(GR.isPreRelease and ' '..GR.preReleaseType or '')..')'
 
