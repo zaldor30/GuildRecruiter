@@ -2,12 +2,13 @@
 ## 3.0 - War Within Release
 
 ### 3.2.55
-    - Added a queue for invite messages.
-      Some have said they are getting a temporary ban for spamming.
-        To combat this, I have added a queue for invite messages.  This will allow you to send a message to a player and then
-        it will wait 1 second before sending the next message.
-### 3.2.54
     - Fixed issue with no messages.
+    - Fixed database defaults for new installs.
+    - Added a warning about Anti-Spam not being enabled.
+    - Added a message governor of invites.
+      This will limit invites being sent to 1 every second.
+      This will not slow you down, the system will queue
+      the invites and send them.
 ### 3.2.53
     - Fixed issue with detecting if you are a GM.
     - Fixed issue if you change your GM toon.

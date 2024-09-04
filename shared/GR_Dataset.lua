@@ -50,10 +50,13 @@ function ds:WhatsNew() -- What's new in the current version
                 (or click on the icon in the top left corner)|r
 
     |CFFFFFF00v3.2.55 Notes|r
-        - Added a queue for invite messages.
-        Some have said they are getting a temporary ban for spamming.
-            To combat this, I have added a queue for invite messages.  This will allow you to send a message to a player and then
-            it will wait 1 second before sending the next message.
+        - Fixed issue with no messages.
+        - Fixed database defaults for new installs.
+        - Added a warning about Anti-Spam not being enabled.
+        - Added a message governor of invites.
+            This will limit invites being sent to 1 every second.
+            This will not slow you down, the system will queue
+            the invites and send them.
     |CFFFFFF00v3.2.54 Notes|r
         - Fixed issue with no messages.
     |CFFFFFF00v3.2.53 Notes|r

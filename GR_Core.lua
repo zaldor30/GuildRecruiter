@@ -409,6 +409,14 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
         ns.code:fOut(L['NO_GUILD_LINK'], 'FFFF0000')
         ns.code:fOut(L['NO_GUILD_LINK2'], GRColor)
     end
+    if not self.hasGM and not (ns.g.guildLeaderToon or ns.g.guildLeaderToon == '') then
+        for k in pairs(ns.gmSettings) do
+            if k:match('force') then ns.gmSettings[k] = false end
+        end
+     end
+    if not ns.gmSettings.antiSpam or not ns.gSettings.antiSpam then
+        ns.code:fOut('Anti-Spam is turned off, see options.', 'FFFF0000')
+    end
 
     if GR.isPreRelease then
         ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.preReleaseType))), 'FFFFFF00', true)
