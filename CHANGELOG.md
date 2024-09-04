@@ -1,8 +1,14 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
-### 3.2.54
+### 3.2.55
     - Fixed issue with no messages.
+    - Fixed database defaults for new installs.
+    - Added a warning about Anti-Spam not being enabled.
+    - Added a message governor of invites.
+      This will limit invites being sent to 1 every second.
+      This will not slow you down, the system will queue
+      the invites and send them.
 ### 3.2.53
     - Fixed issue with detecting if you are a GM.
     - Fixed issue if you change your GM toon.
