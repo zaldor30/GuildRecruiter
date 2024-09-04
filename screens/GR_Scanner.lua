@@ -60,6 +60,8 @@ function scanner:SetShown(isShown)
         return
     end
 
+    ns.invite:UpdateInvite()
+
     --* Event Routines
     ns.observer:Notify('CLOSE_SCREENS')
     ns.observer:Register('CLOSE_SCREENS', obsCLOSE_SCANNER)
@@ -528,7 +530,7 @@ function scanner:DisplayWhoList()
         local lblLevel = nil
 
         if v.guild == '' then
-            local inviteOkResult = ns.invite:whoInviteChecks(v)
+            local inviteOkResult = ns.invite:CheckPlayerInviteStatus(v.fullName, v.zone)
             if self.tblScanner.isCompact then
                 if inviteOkResult then v.guild = ns.code:cText('FFFF0000', '('..inviteOkResult..')') end
             elseif not self.tblScanner.isCompact and not self.tblInvites[k] and v.guild == '' then

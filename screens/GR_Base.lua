@@ -276,7 +276,8 @@ function base:CreateStatusBarFrame()
     tblFrame.statusText = statusText
 
     local originalSettext = statusText.SetText
-    local version = ns.code:cText('80FFFFFF', 'v: '..GR.version..(GR.isPreRelease and ' ('..GR.preReleaseType..')' or ''))
+    local version = ns.code:cText('80FFFFFF', 'v'..GR.version..(GR.isPreRelease and ' ('..GR.preReleaseType..')' or ''))
+    version = GR.isTesting and 'You are in Testing Mode' or version
     function statusText:SetText(text)
         if not text or text == '' then originalSettext(self, version)
         elseif text then originalSettext(self, text) end

@@ -1,40 +1,91 @@
 local _, ns = ... -- Namespace (myaddon, namespace)
 local L = LibStub("AceLocale-3.0"):GetLocale('GuildRecruiter')
+local aTimer = LibStub("AceTimer-3.0")
 
 ns.invite, ns.blackList, ns.antiSpam = {}, {}, {}
 local invite, blackList, antiSpam = ns.invite, ns.blackList, ns.antiSpam
 
---* Invite
-function invite:Init()
-    self.isSendingInvites = false
+local invPlayer, invMonitor = {}, {}
+function invMonitor:addPlayer(pName)
+    if not pName then return end
+    if not invPlayer[pName] or invMonitor[pName] then return end
 
-    self.tblSent = {}
-    self.sentCount = 0
+    local iPlayer = invPlayer[pName]
+    invMonitor[pName] = {
+        name = iPlayer.name,
+        fullName = iPlayer.fullName,
+        colorName = iPlayer.colorName,
 
-    self.msgWhisper = nil
-    self.guildMessage = nil
+        useInviteMsg = iPlayer.useInviteMsg,
+        useWhisperMsg = iPlayer.useWhisperMsg,
+        useGreetingMsg = iPlayer.useGreetingMsg,
 
-    self.inviteQueue = {}
+        isManual = iPlayer.isManual,
+        sendInvite = iPlayer.sendInvite,
+        inviteSent = iPlayer.inviteSent or false,
+        messageSent = false,
+    }
+    return invPlayer[pName]
 end
-function invite:IsInvalidZone(zone)
-    if ns.tblInvalidZones[zone] then return true
-    else
-        for _, r in pairs(ns.tblInvalidZones) do
-            if strlower(r.name):find(strlower(zone)) then return true end
+
+--* Timer Functions
+local activeTimers = {}
+local function timerFunc() -- Ace Timer Functions
+    local tblFunc = {}
+    function tblFunc:addTimer(name, time, func)
+        if not name or not time or not func then return end
+        if activeTimers[name] then return end
+
+        activeTimers[name] = aTimer:ScheduleTimer(func, time)
+    end
+    function tblFunc:cancelTimer(name)
+        if not name then return end
+        if activeTimers[name] then
+            aTimer:CancelTimer(activeTimers[name])
+            activeTimers[name] = nil
+        end
+    end
+    function tblFunc:cancelAllTimers()
+        for k, v in pairs(activeTimers) do
+            aTimer:CancelTimer(v)
+            activeTimers[k] = nil
         end
     end
 
-    return false
+    return tblFunc
+end
+local timers = timerFunc()
+--? End of Timer Functions
+
+function invite:Init()
+    self.tblSendMessages = {}
+
+    self.inviteMessage = nil
+    self.greetingMessage = nil
+    self.greetingWhisper = nil
+end
+function invite:UpdateInvite() -- Setup Messages
+    --* Guild Greeting Message
+    if ns.core.hasGM or ns.gmSettings.forceMessageList then self.inviteMessage = ns.gmSettings.guildMessage or nil
+    else self.greetingMessage = ns.gSettings.guildMessage or nil end
+
+    --* Guild Greeting Whisper
+    if ns.core.hasGM or ns.gmSettings.forceWhisperMessage then self.greetingWhisper = ns.gmSettings.whisperMessage or nil
+    else self.greetingWhisper = ns.gSettings.whisperMessage or nil end
+
+    --* Guild Invite Message (Selected)
+    if ns.pSettings.activeMessage ~= '' then
+        if (ns.core.hasGM or ns.gmSettings.forceMessageList) and ns.gmSettings.forceMessageList then
+            self.inviteMessage = ns.gmSettings.messageList[ns.pSettings.activeMessage].message
+        elseif ns.pSettings.activeMessage ~= '' and ns.gSettings.messageList then
+            self.inviteMessage = ns.gSettings.messageList[ns.pSettings.activeMessage].message
+        end
+    end
+
+    timers:cancelAllTimers()
 end
 
-function invite:whoInviteChecks(r)
-    if self:IsInvalidZone(r.zone) then return r.zone
-    elseif antiSpam:isOnAntiSpamList(r.fullName) then return L['ANTI_SPAM']
-    elseif blackList:IsOnBlackList(r.fullName) then return L['BLACK_LISTED'] end
-
-    return nil -- Returns error is not ok to invite
-end
-
+--* Invite Player to Guild
 function invite:SendAutoInvite(pName, class, sendInvMessage, sendInvite)
     self:StartInvite(pName, class, sendInvMessage, true, true, false, sendInvite)
 end
@@ -42,245 +93,132 @@ function invite:SendManualInvite(pName, class, sendWhisper, sendGreeting, sendIn
     self:StartInvite(pName, class, false, sendWhisper, sendGreeting, true, sendInvite)
 end
 function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreetingMsg, isManual, sendInvite)
-    if not pName then return end
-    if not CanGuildInvite() then ns.code:fOut(L['NO_GUILD_PERMISSIONS']) return end
-
-    --pName = 'Monkstrife' --! Remove this line
-    --pName = 'Pbpolytime-Dalaran' --! Remove this line
-    local fName = pName:find('-') and pName or pName..'-'..GetRealmName() -- Add realm name if not present
-    local name = pName:gsub('*-', '') -- Remove realm name if present
-    local cName = class and ns.code:cPlayerName(name, class) or name
-
-    -- Make sure player is not on the black list or anti spam list
-    if not isManual and self.tblSent[strlower(pName)] then
-        ns.code:fOut(cName..' '..L['INVITE_ALREADY_SENT'])
+    if not CanGuildInvite() then
+        ns.code:fOut(L['NO_GUILD_PERMISSIONS'])
         return
-    elseif blackList:IsOnBlackList(fName) then
-        if not isManual then ns.code:fOut(fName..' '..L['IS_ON_BLACK_LIST'], 'FF0000') return
-        elseif not ns.code:confirmDialog('Player '..fName..L['IS_ON_BLACK_LIST']..'\n'..L['OK_INVITE'], function() return true end) then return end
-    elseif not isManual and antiSpam:isOnAntiSpamList(fName) then
-        ns.code:fOut(fName..' '..L['IS_ON_SPAM_LIST'], 'FF0000')
-        return
+    elseif not pName then return end
+
+    if GR.isTesting then pName = 'Monkstrife' end
+
+    local name = pName:gsub('*-', '')
+    local fullName = pName:find('-') and pName or pName .. '-' .. GetRealmName()
+    local colorName = class and ns.code:cPlayer(name, class) or name
+
+    --* Check Messages
+    useInviteMsg = (useInviteMsg and ns.pSettings.inviteFormat ~= 2) and useInviteMsg or false
+    if useInviteMsg then
+        if useInviteMsg and not self.inviteMessage then
+            useInviteMsg = false
+            ns.code:fOut(L['NO_INVITE_MESSAGE'], 'FFFF0000') end
+        if useWhisperMsg and not self.greetingWhisper then
+            useWhisperMsg = false
+            ns.code:fOut(L['NO_WHISPER_MESSAGE'], 'FFFF0000') end
+        if useGreetingMsg and not self.greetingMessage then
+            useGreetingMsg = false
+            ns.code:fOut(L['NO_GREETING_MESSAGE'], 'FFFF0000') end
     end
+    --? End of Check Messages
 
-    -- Message Prep
-    local invFormat = ns.pSettings.inviteFormat or 2
-    local activeMessage = ns.pSettings.activeMessage or 1
-    local messageList = (ns.gmSettings.messageList and #ns.gmSettings.messageList > 0) and ns.gmSettings.messageList or ns.gSettings.messageList or nil
-    if useInviteMsg and not messageList and invFormat ~= 2 then
-        ns.code:fOut(L['NO_INVITE_MESSAGE'])
-        return
-    end
+    invPlayer[pName] = {
+        name = name,
+        fullName = fullName,
+        colorName = colorName,
 
-    local msgInvite = (messageList and useInviteMsg) and messageList[activeMessage].message or nil
-    if msgInvite then msgInvite = ns.code:variableReplacement(msgInvite, name) end
-
-    -- Verify if there is a invite message if not guild invite only.
-    if useInviteMsg and not messageList and invFormat ~= 2 then
-        ns.code:fOut(L['NO_INVITE_MESSAGE'])
-        return
-    end
-
-    -- Check if in my guild
-    if isManual and ns.code:isInMyGuild(fName) then
-        ns.code:fOut(cName..' '..L['INVITE_IN_GUILD'])
-        return
-    end
-
-    tinsert(self.inviteQueue, {
-        pName = pName,
-        msgInvite = msgInvite,
-        sendInvite = sendInvite,
-        guildInvite = sendInvite,
-        invFormat = invFormat,
         useInviteMsg = useInviteMsg,
-        class = class,
+        useWhisperMsg = useWhisperMsg,
+        useGreetingMsg = useGreetingMsg,
+        inviteFormat = ns.pSettings.inviteFormat or 2,
 
-        useWhisperMsg, useGreetingMsg, isManual = useWhisperMsg, useGreetingMsg, isManual
-    })
+        isManual = isManual,
+        sendInvite = sendInvite,
+        inviteSent = false,
+    }
+    local curPlayer = invPlayer[pName]
+    if curPlayer == 1 then curPlayer.messageSent = false end
 
-    if pName and sendInvite then -- Guild Invite
-        C_GuildInfo.Invite(pName)
-        ns.code:fOut(L['GUILD_INVITE_SENT']..' '..cName, 'FFFFFF00')
+    -- Verify player can be invited (double check)
+    if not isManual and not GR.isTesting then
+        local result = invite:CheckPlayerInviteStatus(pName)
+        if result == 'BlackList' then
+            ns.code:fOut(pName..' '..L['IS_ON_BLACK_LIST'], 'FFFF0000')
+            return
+        elseif result == 'AntiSpam' then
+            ns.code:fOut(pName..' '..L['IS_ON_ANTI_SPAM'], 'FFFF0000')
+            return
+        end
+    elseif isManual then
+        if ns.code:isInMyGuild(pName) then
+            ns.code:fOut(curPlayer.colorName..' '..L['INVITE_IN_GUILD'])
+            return
+        end
+        if invite:ManualInvitePlayerCheck(pName) then
+            ns.code:fOut(pName..' '..L['IS_ON_BLACK_LIST'], 'FFFF0000')
+            if not ns.code:Confirmation(pName..L['IS_ON_BLACK_LIST']..'\n'..ns.tblBlackList[pName].reason..'\n\nAre you sure you want to invite?', function() blackList:AddToBlackList(pName) return true end) then
+                return end
+        end
     end
 
-    invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg, isManual)
+    -- Add Player to Invite Monitor List
+    local monPlayer = invMonitor:addPlayer(pName)
+    curPlayer.inviteSent = useInviteMsg
+    curPlayer.messageSent = useInviteMsg
 
-    invite:SendInvites()
+    timers:addTimer(pName..'INVITE_TIMEOUT', 120, function()
+        timers:cancelTimer(pName..'INVITE_TIMEOUT')
+    end)
+
+    if pName and sendInvite then
+        C_GuildInfo.Invite(pName)
+
+        ns.code:fOut(L['GUILD_INVITE_SENT']..' '..curPlayer.colorName)
+        timers:addTimer(pName..'INVITE_MESSAGE_WAIT', 1, function()
+            if monPlayer and useInviteMsg then monPlayer.inviteSent = false end
+            if monPlayer and useWhisperMsg then monPlayer.messageSent = false end
+            timers.cancelTimer(pName..'INVITE_MESSAGE_WAIT')
+
+            tinsert(self.tblSendMessages, pName)
+            if #self.tblSendMessages == 1 then self:SendInviteMessages() end
+        end)
+    elseif pName and useInviteMsg then
+        if monPlayer and useInviteMsg then monPlayer.messageSent = false end
+        tinsert(self.tblSendMessages, pName)
+        if #self.tblSendMessages == 1 then self:SendInviteMessages() end
+    end
+
 end
-function invite:SendInvites()
-    if self.isSendingInvites then return end
+--? End of Invite Player to Guild
+
+--* Invite Check Routines
+function invite:ManualInvitePlayerCheck(name)
+    invite:CheckPlayerInviteStatus(name, nil, true)
+end
+function invite:CheckPlayerInviteStatus(name, zone, skipAntiSpam)
+    if zone and ns.tblInvalidZones[zone] then return zone
+    elseif blackList:IsOnBlackList(name) then return 'BlackList'
+    elseif not skipAntiSpam and antiSpam:isOnAntiSpamList(name) then return 'AntiSpam' end
+end
+--? End of Invite Check Routines
+
+--* Invite Message Routines
+function invite:SendInviteMessages()
+    local isRunning = false
 
     local function sendNextMessage()
-        local tblNext = tremove(self.inviteQueue, 1)
+        if #self.tblSendMessages == 0 then isRunning = false return end
+        local k = tremove(self.tblSendMessages, 1)
 
-        if not tblNext then self.isSendingInvites = false return
-        elseif not self.tblSent[strlower(tblNext.pName)] then sendNextMessage() return end
-        ns.code:dOut('You have '..(#self.inviteQueue+1)..' messages in the invite queue.', 'FFFFFF00')
-
-        local invFormat, useInviteMsg = tblNext.invFormat or 2, tblNext.useInviteMsg or false
-        local msgInvite = tblNext.msgInvite
-        local isManual = tblNext.isManual
-
-        local pName, sendInvite = tblNext.pName, tblNext.msgInvite
-        local fName = pName:find('-') and pName or pName..'-'..GetRealmName()
-        local cName = pName:gsub('-.*', '') -- Remove realm name
-
-        if invFormat ~= 2 and invFormat ~= 4 and useInviteMsg and msgInvite then
-            if isManual or not ns.core.obeyBlockInvites then self:SendMessage(pName, pName, msgInvite)
-            else
-                C_Timer.After(1, function()
-                    if invite.tblSent[strlower(fName)] then
-                        self:SendMessage(pName, pName, msgInvite)
-                        invite.tblSent[strlower(fName)].sentAt = GetServerTime()
-                    else
-                        ns.code:fOut(L['INVITE_REJECTED']..' '..cName, 'FFFFFF00')
-                    end
-                end)
-            end
-        end
-
-        C_Timer.After(1, sendNextMessage)
+        invMonitor[k].messageSent = true
+        SendChatMessage(self.inviteMessage, 'WHISPER', nil, k)
+        C_Timer.After(1, function() sendNextMessage() end)
     end
-    self.isSendingInvites = true
+
+    if isRunning then return end
+
+    isRunning = true
     sendNextMessage()
 end
-function invite:SendMessage(pName, cName, msgInvite, showMessage)
-    msgInvite = ns.code:variableReplacement(msgInvite, pName:gsub('-.*', '')) -- Remove realm name
-    if not ns.pSettings.showWhispers and not showMessage then
-        ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER', function(_, _, msg) return msg == msgInvite end, msgInvite)
-        ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER_INFORM', function(_, _, msg) return msg == msgInvite end, msgInvite)
-        ns.code:fOut(L['INVITE_MESSAGE_SENT']..' '..cName, 'FFFFFF00')
-        ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER', msgInvite)
-        ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER_INFORM', msgInvite)
-    end
-    SendChatMessage(msgInvite, 'WHISPER', nil, pName)
-end
-
--- After Invite Routines
-local function UpdateInvitePlayerStatus(_, ...)
-    local msg = ...
-    if not msg then return end
-
-    msg = strlower(msg)
-    local fName, key = nil, nil
-    if msg and msg:find('Invited By:') and msg:find(UnitName('player')) then -- GRM
-        if GR.isPreRelease then print('you did the invite') end
-        return
-    elseif msg and msg:find('REINVITED') and GR.isPreRelease then print('You reinvited') return
-    elseif not invite.tblSent then
-        ns.observer:Unregister('CHAT_MSG_SYSTEM', UpdateInvitePlayerStatus)
-        return
-    end
-
-
-    for _, v in pairs(invite.tblSent) do
-        local nHold = strlower(v.name)
-        local noRealm = nHold:gsub('-.*', '') -- Remove realm name
-        local withRealm = nHold:find('-') and nHold or nHold..'-'..GetRealmName() -- Add realm name if not present
-        if msg:find(noRealm) or msg:find(strlower(withRealm)) then
-            fName = withRealm break end
-    end
-    if not fName then return end
-
-    --* CHAT_MSG_SYSTEM Response Routines
-    key = strlower(fName) -- key is in lower case
-    if not invite.tblSent[key] then return
-    elseif msg:find(L['PLAYER_NOT_ONLINE']) then
-        ns.analytics:saveStats('PlayersInvited', -1)
-        invite.tblSent[key] = nil
-    elseif msg:find(L['NO_PLAYER_NAMED']) then
-        ns.analytics:saveStats('PlayersInvited', -1)
-        invite.tblSent[key] = nil
-    elseif msg:find(L['PLAYER_IN_GUILD']) or msg:find(L['PLAYER_ALREADY_IN_GUILD']) then
-        ns.analytics:saveStats('PlayersInvited', -1)
-        invite.tblSent[key] = nil
-    elseif msg:find(L['PLAYER_JOINED_GUILD']) then
-        local isGreetingOk = (invite.tblSent[key] and invite.tblSent[key].guild and invite.tblSent[key].guild ~= '') or false
-        local isWhisperOk = (invite.tblSent[key] and invite.tblSent[key].whisper and invite.tblSent[key].whisper ~= '') or false
-
-        if isGreetingOk or isWhisperOk then
-            C_Timer.After(5, function()
-                if not key or not invite.tblSent[key] then return end
-
-                local pName = invite.tblSent[key].name
-                pName = pName:find(GetRealmName()) and pName:gsub('-.*', '') or pName
-                local guildMsg, whisperMsg = invite.tblSent[key].guild, invite.tblSent[key].whisper
-
-                if isGreetingOk then SendChatMessage(guildMsg, 'GUILD') end
-                if isWhisperOk then SendChatMessage(whisperMsg, 'WHISPER', nil, pName) end
-                ns.analytics:saveStats('PlayersJoined')
-                ns.win.scanner:UpdateAnalytics()
-                invite.tblSent[key] = nil
-            end)
-        else
-            ns.analytics:saveStats('PlayersJoined')
-            invite.tblSent[key] = nil
-        end
-    elseif msg:find(L['PLAYER_DECLINED_INVITE']) then
-        if ns.pSettings.inviteFormat == 4 and not invite.tblSent[key].isManual then
-            local name = invite.tblSent[key].name:gsub('-.*', '') -- Remove realm name
-            local invMsg = ns.code:variableReplacement(ns.gSettings.messageList[ns.pSettings.activeMessage].message, name)
-            invite:SendMessage(fName, name, invMsg, true)
-            invite.tblSent[key].sentAt = GetServerTime()
-        else
-            ns.analytics:saveStats('PlayersDeclined')
-            invite.tblSent[key] = nil
-        end
-    elseif invite.tblSent[key].sentAt + 60 < GetServerTime() then
-        ns.analytics:saveStats('PlayersDeclined')
-        invite.tblSent[key] = nil
-    end
-
-    ns.win.scanner:UpdateAnalytics()
-end
-function invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg, isManual)
-    if not pName then return end
-    local fName = pName:find('-') and pName or pName..'-'..GetRealmName() -- Add realm name if not present
-    local oName = pName:gsub('*-', '') -- Remove realm name if present
-    local cName = class and ns.code:cPlayerName(oName, class) or oName
-
-    local msgWhisper = self.msgWhisper and ns.code:variableReplacement(self.msgWhisper, pName) or nil
-    local guildMessage = self.guildMessage and ns.code:variableReplacement(self.guildMessage, pName) or nil
-
-    self.tblSent[strlower(fName)] = {
-        name = pName,
-        fName = fName,
-        cName = cName,
-        whisper = (useWhisperMsg and msgWhisper) and msgWhisper:gsub('<', ''):gsub('>', '') or nil,
-        guild = (useGreetingMsg and guildMessage) and guildMessage:gsub('<', ''):gsub('>', '') or nil,
-        sentMsg = false,
-        sentAt = GetServerTime(),
-        isManual = isManual,
-    }
-
-    ns.analytics:saveStats('PlayersInvited')
-    ns.win.scanner:UpdateAnalytics()
-    ns.antiSpam:AddToAntiSpamList(fName)
-end
-function invite:GetWelcomeMessages()
-    local guildMessage, msgWhisper = false, false
-
-    if ns.core.hasGM or (ns.gmSettings.sendGuildGreeting and ns.gmSettings.guildMessage ~= '') then
-        guildMessage = ns.gmSettings.guildMessage
-    elseif not ns.core.hasGM and ns.gmSettings.forceSendGuildGreeting and ns.gmSettings.guildMessage ~= '' then
-        guildMessage = ns.gmSettings.guildMessage
-    elseif not ns.core.hasGM and ns.gSettings.sendGuildGreeting and ns.gSettings.guildMessage ~= '' then
-        guildMessage = ns.gSettings.guildMessage
-    end
-
-    if ns.core.hasGM or (ns.gmSettings.sendWhisperGreeting and ns.gmSettings.whisperMessage ~= '') then
-        msgWhisper = ns.gmSettings.whisperMessage
-    elseif not ns.core.hasGM and ns.gmSettings.forceSendWhisper and ns.gmSettings.whisperMessage ~= '' then
-        msgWhisper = ns.gmSettings.whisperMessage
-    elseif not ns.core.hasGM and ns.gSettings.sendWhisperGreeting and ns.gSettings.whisperMessage ~= '' then
-        msgWhisper = ns.gSettings.whisperMessage
-    end
-
-    self.msgWhisper = msgWhisper
-    self.guildMessage = guildMessage
-end
-invite:Init() -- Init invite
+--? End of Invite Message Routines
+invite:Init()
 
 --* Black List
 function blackList:Init()
@@ -444,4 +382,6 @@ function antiSpam:AddToAntiSpamList(pName)
     return true
 end
 
+local function UpdateInvitePlayerStatus(_, ...)
+end
 ns.observer:Register("CHAT_MSG_SYSTEM", UpdateInvitePlayerStatus)

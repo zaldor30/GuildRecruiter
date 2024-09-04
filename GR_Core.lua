@@ -148,7 +148,6 @@ function core:StartDatabase(clubID)
     ns.pAnalytics = ns.p.analytics or {} -- Profile Analytics
     ns.analytics:Start()
 
-    ns.invite:GetWelcomeMessages() -- Get the welcome messages
     GR.debug = ns.pSettings.debugMode or false -- Set the debug mode
 
     if not IsGuildLeader() then
