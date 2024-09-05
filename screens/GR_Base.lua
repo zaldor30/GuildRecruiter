@@ -94,7 +94,7 @@ function base:CreateBaseHeaderFrame()
     -- Title Text
     local textString = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     textString:SetPoint('LEFT', 7, 12)
-    textString:SetText(L['TITLE'])
+    textString:SetText(L['TITLE']..(GR.isPreRelease and ' ('..GR.preReleaseType..')' or ''))
     textString:SetTextColor(1, 1, 1, 1) -- Set the text color (r,g,b,a) values
     textString:SetFont(DEFAULT_FONT, 16, 'OUTLINE')
 
