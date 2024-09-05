@@ -414,7 +414,7 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
             if k:match('force') then ns.gmSettings[k] = false end
         end
      end
-    if not ns.gmSettings.antiSpam or not ns.gSettings.antiSpam then
+    if (self.hasGM and (not ns.gmSettings.antiSpam or not ns.gmSettings.antiSpamDays)) or (not self.hasGM and (not ns.gSettings.antiSpam or not ns.gSettings.antiSpamDays)) then
         ns.code:fOut('Anti-Spam is turned off, see options.', 'FFFF0000')
     end
 
@@ -434,16 +434,6 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
         ns.win.whatsnew.startUpWhatsNew = true
         C_Timer.After(3, function() ns.win.whatsnew:SetShown(true) end) -- Show the what's new window
     elseif ns.global.currentVersion ~= GR.version then ns.code:fOut(L['NEW_VERSION_INFO'], GRColor, true) end
-
-    local function OnCommReceived(prefix, message, distribution, sender)
-        if not ns.core.isEnabled then return
-        elseif sender == UnitName('player') then return
-        elseif prefix ~= GR.commPrefix then return
-        elseif distribution ~= 'GUILD' and distribution ~= 'WHISPER' then return end
-
-        ns.sync:CommReceived(message, sender)
-    end
-    GR:RegisterComm(GR.commPrefix, OnCommReceived)
 
     --* Start Auto Sync
     if type(ns.pSettings.enableAutoSync) ~= 'boolean' then ns.pSettings.enableAutoSync = true end
