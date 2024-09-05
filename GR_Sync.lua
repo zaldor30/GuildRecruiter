@@ -6,9 +6,9 @@ ns.sync = {}
 local sync, gSync = {}, ns.sync
 
 local REQUEST_WAIT_TIMEOUT, SERVER_SEND_DATA_WAIT = 2, 10
-local SYNC_FAIL_TIMER, DATA_WAIT_TIMEOUT = 120, 60
+local SYNC_FAIL_TIMER, DATA_WAIT_TIMEOUT = 30, 60
 
-local myData = {}
+local myData = nil
 local cBlacklist, cAntiSpamList = 0, 0
 local server, serverComms, clientComms = {}, {}, {}
 local isSyncing, syncMaster, syncType, syncPrefix = false, nil, nil, nil
@@ -82,7 +82,7 @@ local function serverSync()
         ns.code:dOut(L['FINDING_CLIENTS_SYNC'])
         GR:SendCommMessage(GR.commPrefix, 'SYNC_REQUEST;'..GR.dbVersion..';'..GR.version, 'GUILD')
         timer:add('SYNC_REQUEST_TIME_OUT', REQUEST_WAIT_TIMEOUT, function()
-            if clientData.count > 0 then
+            if (clientData.count or 0) > 0 then
                 ns.code:cOut(L['CLIENTS_FOUND']..' '..tostring(clientData.count), GRColor)
                 server:SendDataRequests()
             else
@@ -106,7 +106,7 @@ local function serverCommsSync()
     local tblFunc = {}
     function tblFunc:OnCommReceived(message, sender)
         if message:match('SYNC_REQUEST_HEARD') then
-            if clientData[sender] then
+            if clientData.clients[sender] then
                 ns.code:dOut('Duplicate Sync Request Heard from '..sender)
                 return
             end
@@ -145,9 +145,10 @@ local function clientCommsFunctions()
         elseif message:match('SYNC_DATA_REQUEST') then
             timer:cancel(sender..'_SYNC_REQUEST_TIME_OUT')
             ns.code:dOut('Received Data Request from '..sender)
-            sync:SendChunks()
+            sync:SendChunks(sender)
             timer:add('DATA_WAIT_TIMEOUT', DATA_WAIT_TIMEOUT, function() sync:EndOfSync('IS_FAIL', L['FAILED_TO_SEND_SYNC_DATA']) end)
         else
+            print('Getting Chunk')
             clientData.clients[sender] = clientData.clients[sender] or {}
             clientData.clients[sender].chunks = clientData.clients[sender].chunks or {}
             sync:ProcessChunks(message, sender)
@@ -195,30 +196,28 @@ function sync:GatherMyData()
 
     myData = compressed
 end
-function sync:SendChunks() -- Chunk and Send
+function sync:SendChunks(sender) -- Chunk and Send
     if not myData or type(myData) ~= 'string' then return end
 
-    local chunkSize = 250
-    local dataLen = #myData
-    local numChunks = math.ceil(dataLen / chunkSize)
+    local function SendChunkWithDelay(index, chunkSize, encodedData, recipient)
+        local totalChunks = math.ceil(#encodedData / chunkSize)
 
-    if numChunks == 1 then
-        GR:SendCommMessage(GR.commPrefix, '1;1;'..myData, 'GUILD')
-        return
+        if index <= #encodedData then
+            -- Add metadata (chunkIndex/totalChunks)
+            local chunk = encodedData:sub(index, index + chunkSize - 1)
+            local message = string.format("%d:%d:%s", index, totalChunks, chunk)
+
+            -- Log chunk info and send it
+            print(string.format("Sending chunk %d of %d, size: %d", index, totalChunks, #chunk))
+            C_ChatInfo.SendAddonMessage(GR.commPrefix, message, "WHISPER", recipient)
+            
+            -- Delay the sending of the next chunk
+            C_Timer.After(0.1, function()
+                SendChunkWithDelay(index + chunkSize, chunkSize, encodedData, recipient)
+            end)
+        end
     end
-
-    local chunk = 1
-    local function sendNextChunk()
-        if chunk > numChunks then return end
-
-        local chunkData = myData:sub((chunk - 1) * chunkSize + 1, chunk * chunkSize)
-        ns.code:dOut('Sending Chunk '..chunk..' of '..numChunks)
-        GR:SendCommMessage(GR.commPrefix, chunk..';'..numChunks..';'..chunkData, 'GUILD')
-        chunk = chunk + 1
-
-        C_Timer.After(0.1, sendNextChunk)
-    end
-    sendNextChunk()
+    SendChunkWithDelay(1, 250, myData, sender)
 end
 function sync:CheckVersion(message, sender)
     local dbVer = tonumber(GR.dbVersion)
@@ -248,23 +247,26 @@ function sync:CheckVersion(message, sender)
     return true
 end
 function sync:ProcessChunks(message, sender)
-    local index, total, data = strsplit(';', message)
+    print(message)
+    local index, total, data = message:match("^(%d+):(%d+):(.+)$")
     index, total = tonumber(index), tonumber(total)
     if not index or not total or not data then
         ns.code:dOut('Invalid Sync Data from '..sender)
         return
     end
 
-    if clientData[sender].chunks[index] then
+    if clientData.clients[sender].chunks[index] then
         ns.code:dOut('Duplicate Sync Data from '..sender)
         return
     end
 
-    clientData[sender].chunkCount = clientData[sender].chunkCount and clientData[sender].chunkCount or 1
-    clientData[sender].chunks[index] = data
+    ns.code:dOut('Received Chunk '..index..' of '..total..' from '..sender)
+    clientData.clients[sender].chunkCount = clientData.clients[sender].chunkCount and clientData.clients[sender].chunkCount + 1 or 1
+    clientData.clients[sender].chunks[clientData.clients[sender].chunkCount] = data
 
-    if clientData[sender].chunkCount == total then
-        local assembled = table.concat(clientData[sender].chunks)
+    if clientData.clients[sender].chunkCount == total then
+        ns.code:dOut('All Chunks Received from '..sender)
+        local assembled = table.concat(clientData.clients[sender].chunks)
         local success, tbl = ns.code:decompressData(assembled, true)
         if not success then
             ns.code:fOut(sender..'\'s data was not reassembled.', 'FF0000')
