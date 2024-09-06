@@ -202,11 +202,12 @@ function sync:GatherMyData()
         isGuildMaster = ns.core.hasGM
     }
 
-    for k, v in pairs(ns.guildInfo) do tbl.guildInfo[k] = v end
     for k, v in pairs(ns.gmSettings) do tbl.gmSettings[k] = v end
     for key, r in pairs(tbl.gmSettings.messageList or {}) do
         if not r.gmSync then tbl.gmSettings.messageList[key] = nil end
     end
+    tbl.guildInfo = ns.code:compressData(ns.tblBlackList or {}, false, true)
+    tbl.gmSettings = ns.code:compressData(ns.tblBlackList or {}, false, true)
     tbl.blacklist = ns.code:compressData(ns.tblBlackList or {}, false, true)
     tbl.antispamList = ns.code:compressData(ns.tblAntiSpamList or {}, false, true)
 
@@ -308,33 +309,40 @@ end
 function sync:ImportData()
     local gmFound = false
 
-    for _, v in pairs(clientData.clients or {}) do
+    for k, v in pairs(clientData.clients or {}) do
         if not gmFound then
             local r = v.restored
             if v.restored then
+                local blSuccess, tblGI = ns.code:decompressData(r.guildInfo, false, true)
+                local blSuccess, tblGM = ns.code:decompressData(r.gmSettings, false, true)
+                
                 ns.guildInfo.lastSync = ns.guildInfo.lastSync or 0
                 r.lastSync = r.guildInfo.lastSync or 0
 
                 if r.isGuildMaster then
                     gmFound = r.isGuildMaster
                     ns.guildInfo.lastSync = time()
-                    ns.guildInfo.wasGM = r.isGuildMaster
-                    ns.gmSettings = r.gmSettings
-                elseif r.wasGM and not ns.guildInfo.wasGM then
-                    ns.guildInfo = r.guildInfo
-                    ns.guildInfo.wasGM = r.wasGM
-                    ns.guildInfo.lastSync = r.lastSync
-                    ns.gmSettings = r.gmSettings
-                elseif r.lastSync > 0 and r.lastSync > ns.guildInfo.lastSync then
-                    ns.guildInfo = r.guildInfo
-                    ns.guildInfo.wasGM = r.wasGM
-                    ns.guildInfo.lastSync = r.lastSync
-                    ns.gmSettings = r.gmSettings
+                    ns.guildInfo.wasGM = tblGI.isGuildMaster
+                    ns.gmSettings = tblGM.gmSettings
+                elseif tblGI.wasGM and not ns.guildInfo.wasGM then
+                    ns.guildInfo = tblGI.guildInfo
+                    ns.guildInfo.wasGM = tblGI.wasGM
+                    ns.guildInfo.lastSync = tblGI.lastSync
+                    ns.gmSettings = tblGM.gmSettings
+                elseif tblGI.lastSync > 0 and tblGI.lastSync > ns.guildInfo.lastSync then
+                    ns.guildInfo = tblGI.guildInfo
+                    ns.guildInfo.wasGM = tblGI.wasGM
+                    ns.guildInfo.lastSync = tblGI.lastSync
+                    ns.gmSettings = tblGM.gmSettings
                 end
             end
 
             cBlacklist, cAntiSpamList = 0, 0
             local blSuccess, tblBL = ns.code:decompressData(r.blacklist, false, true)
+            if not blSuccess then
+                ns.code:dOut('Failed to decompress Blacklist data from '..k, 'FF0000')
+                return
+            end
             for key, rec in pairs(tblBL) do
                 if not ns.tblBlackList[key] then
                     ns.tblBlackList[key] = rec
@@ -343,6 +351,10 @@ function sync:ImportData()
                 end
             end
             local asSuccess, tblAS = ns.code:decompressData(r.blacklist, false, true)
+            if not asSuccess then
+                ns.code:dOut('Failed to decompress Anti-Spam data from '..k, 'FF0000')
+                return
+            end
             for key, rec in pairs(tblAS) do
                 if not ns.tblAntiSpamList[key] then
                     ns.tblAntiSpamList[key] = rec
