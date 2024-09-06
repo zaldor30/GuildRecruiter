@@ -209,7 +209,7 @@ function sync:GatherMyData()
     for k, v in pairs(ns.tblBlackList or {}) do tbl.blacklist[k] = v end
     for k, v in pairs(ns.tblAntiSpamList or {}) do tbl.antispamList[k] = v end
 
-    local compressed = ns.code:compressData(tbl, true)
+    local compressed = ns.code:compressData(tbl, true, true)
     if not compressed then
         ns.code:fOut(L['SYNC_COMPRESS_FAIL'], 'FF0000')
         return
@@ -289,8 +289,9 @@ function sync:ProcessChunks(message, sender)
     ns.code:dOut('Received Chunk '..clientData.clients[sender].chunkCount..' of '..total..' from '..sender)
     if clientData.clients[sender].chunkCount == total then -- Server mode, make sure got all clients
         ns.code:dOut('All Chunks Received from '..sender)
+
         local assembled = table.concat(clientData.clients[sender].chunks)
-        local success, tbl = ns.code:decompressData(assembled, true)
+        local success, tbl = ns.code:decompressData(assembled, true, true)
         if not success then
             ns.code:fOut(sender..'\'s data was not reassembled.', 'FF0000')
             return
