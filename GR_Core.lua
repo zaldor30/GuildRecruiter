@@ -79,7 +79,7 @@ function core:Init()
                 forceGuildMessage = false,
                 guildMessage = L['DEFAULT_GUILD_WELCOME'],
                 forceSendWhisper = false,
-                sendWhsiper = false,
+                sendWhisperGreeting = false,
                 forceWhisperMessage = false,
                 whisperMessage = '',
                 forceMessageList = false,
@@ -95,7 +95,7 @@ function core:Init()
                 antiSpamDays = 7,
                 sendGuildGreeting = false,
                 guildMessage = L['DEFAULT_GUILD_WELCOME'],
-                sendWhsiper = false,
+                sendWhisperGreeting = false,
                 whisperMessage = '',
                 scanWaitTime = 6,
                 -- Messages
@@ -361,7 +361,10 @@ function core:StartBaseEvents()
     ns.events:RegisterEvent('CHAT_MSG_SYSTEM', CHAT_MSG_SYSTEM)
 
     -- Saves the ns.tblBlackList and ns.antiSpamList tables on logout
-    ns.events:RegisterEvent('PLAYER_LOGOUT', function() ns.code:saveTables() end)
+    ns.events:RegisterEvent('PLAYER_LOGOUT', function()
+        ns.code:saveTables()
+        ns.analytics:UpdateSaveData()
+    end)
 end
 function core:CreateBLandAntiSpamTables()
     ns.tblBlackList, ns.antiSpamList = {}, {}

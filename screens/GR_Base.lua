@@ -67,6 +67,7 @@ function base:CreateBaseFrame()
     f:SetScript('OnDragStop', OnDragStop)
     f:SetScript('OnHide', function()
         ns.code:saveTables()
+        ns.analytics:UpdateSaveData()
 
         self.tblFrame.frame:SetShown(false)
         ns.observer:Notify('CLOSE_SCREENS')

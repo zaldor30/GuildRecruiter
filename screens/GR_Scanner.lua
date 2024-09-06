@@ -12,7 +12,7 @@ end
 local function CallBackWhoListUpdate()
     ns.events:Unregister('WHO_LIST_UPDATE', CallBackWhoListUpdate)
 
-    ns.analytics:saveStats('PlayersScanned', C_FriendList.GetNumWhoResults())
+    ns.analytics:incStats('PlayersScanned', C_FriendList.GetNumWhoResults())
 
     local sessionStats = ns.analytics:getSessionStats('PlayersScanned')
     scanner:UpdateAnalytics()
@@ -371,22 +371,23 @@ function scanner:UpdateAnalytics()
         or self.tblScanner.isCompact
         or not self.ctrlAnalyics.lblPlayersScanned then return end
 
-    local sessionStats = ns.analytics:getSessionStats('PlayersScanned')
+    local _,_, sessionStats = ns.analytics:getSessionStats('PlayersScanned')
     self.ctrlAnalyics.lblPlayersScanned:SetText(L['TOTAL_SCANNED']..': '..sessionStats)
 
-    sessionStats = ns.analytics:getSessionStats('PlayersInvited')
+    _,_, sessionStats = ns.analytics:getSessionStats('PlayersInvited')
     self.ctrlAnalyics.lblTotalInvites:SetText(L['TOTAL_INVITED']..': '..sessionStats)
 
     sessionStats = ns.analytics:getSessionStats('WaitingOnInvite')
+    sessionStats = sessionStats > 0 and ns.code:cText('FFFF0000', sessionStats) or ns.code:cText('FF00FF00', 0)
     self.ctrlAnalyics.lblWaitingOn:SetText(L['INVITES_PENDING']..': '..sessionStats)
 
-    sessionStats = ns.analytics:getSessionStats('PlayersDeclined')
+    _,_, sessionStats = ns.analytics:getSessionStats('PlayersDeclined')
     self.ctrlAnalyics.lblDeclined:SetText(L['TOTAL_DECLINED']..': '..sessionStats)
 
-    sessionStats = ns.analytics:getSessionStats('PlayersJoined')
+    _,_, sessionStats = ns.analytics:getSessionStats('PlayersJoined')
     self.ctrlAnalyics.lblAccepted:SetText(L['TOTAL_ACCEPTED']..': '..sessionStats)
 
-    sessionStats = ns.analytics:getSessionStats('PlayersBlackListed')
+    _,_, sessionStats = ns.analytics:getSessionStats('PlayersBlackListed')
     self.ctrlAnalyics.lblTotalBlackList:SetText(L['TOTAL_BLACKLISTED']..': '..sessionStats)
 end
 

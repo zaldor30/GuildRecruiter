@@ -49,8 +49,11 @@ function ds:WhatsNew() -- What's new in the current version
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
 
-    |CFFFFFF00v3.2.57 Notes|r
+    |CFFFFFF00v3.2.56 Notes|r
         - Fixed sync, so it can handle larger data sets.
+        - Rework on inviting to make more reliable.
+        - Invite: Added delay for messages to comply with Blizzard's API.
+        - Rework analytics to more accurately track stats.
     |CFFFFFF00v3.2.55 Notes|r
         - Fixed issue with no messages.
         - Fixed database defaults for new installs.
