@@ -236,7 +236,7 @@ function sync:SendChunks(sender) -- Chunk and Send
             C_ChatInfo.SendAddonMessage(GR.commPrefix, message, "WHISPER", recipient)
             
             -- Delay the sending of the next chunk
-            C_Timer.After(0.1, function()
+            C_Timer.After(0.5, function()
                 SendChunkWithDelay(index + chunkSize, chunkSize, encodedData, recipient)
             end)
         end
