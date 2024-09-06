@@ -46,18 +46,18 @@ function code:fOut(msg, color, noPrefix) -- Force console print routine)
 end
 
 -- * Data Compression Routines
-function code:compressData(data, encode)
+function code:compressData(data, encode, skipCompression)
     if not data then return end
 
     local serializedData = aceSerializer:Serialize(data)
-    local compressedData = LibDeflate:CompressDeflate(serializedData)
+    local compressedData = not skipCompression and LibDeflate:CompressDeflate(serializedData) or serializedData
     return (encode and LibDeflate:EncodeForWoWAddonChannel(compressedData) or compressedData)
 end
-function code:decompressData(data, decode)
+function code:decompressData(data, decode, skipCompression)
     if not data or data == '' or type(data) ~= 'string' then return false, nil end
 
     data = (decode and LibDeflate:DecodeForWoWAddonChannel(data) or data)
-    local decompressedData = LibDeflate:DecompressDeflate(data)
+    local decompressedData = not skipCompression and LibDeflate:DecompressDeflate(data) or data
     if decompressedData then return aceSerializer:Deserialize(decompressedData)
     else return false, nil end -- Decompression failed
 end
