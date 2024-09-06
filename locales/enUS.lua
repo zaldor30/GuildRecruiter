@@ -37,6 +37,11 @@ L['FINDING_CLIENTS_SYNC'] = 'Finding players to sync with.'
 L['SYNC_REQUEST_RECEIVED'] = 'Sync request received from'
 L['CLIENTS_FOUND'] = 'players found to sync with:'
 
+L['PLAYER_IS_IN_GUILD'] = 'is already in the guild.'
+L['PLAYER_IS_ON_BLACKLIST'] = 'is on the blacklist.'
+L['PLAYER_IS_ON_ANTISPAM_LIST'] = 'is on the Anti-Spam list.'
+L['PLAYER_MANUAL_ON_BLACKLIST'] = 'is on the blacklist.\nReason: %REASON%\n\nDo you want to invite them to the guild?'
+
 --? 3.2 Changes
 L['SYNC_ALREADY_IN_PROGRESS'] = 'Sync already in progress with'
 L['NO_CLIENTS_FOUND'] = 'No clients found to sync with.'

@@ -60,6 +60,8 @@ function scanner:SetShown(isShown)
         return
     end
 
+    ns.invite:GetWelcomeMessages()
+
     --* Event Routines
     ns.observer:Notify('CLOSE_SCREENS')
     ns.observer:Register('CLOSE_SCREENS', obsCLOSE_SCANNER)
@@ -670,7 +672,4 @@ function scanner:CreateFilters(displayOnly, nextRecord)
 end
 scanner:Init()
 
--- ToDo: Check Keybinds (Add to scanner:CreateBaseFrame)
 -- ToDo: Create Analytics (Add to scanner:CreateAnalyticsFrame)
--- ToDo: Create Analytics (Add to scanner:ProcessWhoList)
--- ToDo: Create Custom Filters (Add to scanner:CreateFilters)
