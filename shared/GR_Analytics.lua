@@ -31,7 +31,7 @@ function analytics:Start()
         ["PlayersScanned"] = 0,
         ["PlayersJoined"] = 0,
         ["WaitingOnInvite"] = 0,
-}
+    }
 end
 function analytics:getSessionStats(field, isSavedStat) return self:getStats(field, (isSavedStat or false), true) end
 function analytics:getStats(field)
@@ -54,11 +54,17 @@ function analytics:incStats(field, amt)
     self.tblPlayer[field] = (self.tblPlayer[field] or 0) + amt
     self.tblSession[field] = (self.tblSession[field] or 0) + amt
 
+    if ns.win.scanner:IsShown() then ns.win.scanner:UpdateAnalytics() end
     return self.tblGlobal[field], self.tblPlayer[field], self.tblSession[field]
 end
 function analytics:UpdateSaveData()
-    ns.pAnalytics = self.tblPlayer
-    ns.gAnalytics = self.tblGlobal
+    for k,v in pairs(self.tblPlayer) do
+        ns.pAnalytics[k] = v
+    end
+
+    for k,v in pairs(self.tblGlobal) do
+        ns.gAnalytics[k] = v
+    end
 end
 function analytics:WaitingOnPlayer(field, amt)
     amt = (not amt or type(amt) == 'boolean') and 1 or amt
