@@ -1,6 +1,8 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
+### 3.2.56
+    - Fixed sync, so it can handle larger data sets.
 ### 3.2.55
     - Fixed issue with no messages.
     - Fixed database defaults for new installs.
