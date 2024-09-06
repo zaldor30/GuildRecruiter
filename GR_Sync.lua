@@ -8,7 +8,7 @@ local sync, gSync = {}, ns.sync
 local REQUEST_WAIT_TIMEOUT, SERVER_SEND_DATA_WAIT = 2, 10
 local SYNC_FAIL_TIMER, DATA_WAIT_TIMEOUT = 30, 60
 
-local myData = nil
+local myData, clientData = nil, { clients = {}, count = 0, receivedCount = 0 }
 local cBlacklist, cAntiSpamList = 0, 0
 local server, serverComms, clientComms = {}, {}, {}
 local isSyncing, syncMaster, syncType, syncPrefix = false, nil, nil, nil
@@ -69,16 +69,16 @@ function sync:EndOfSync(isFail, failMessage)
     ns.code:fOut(syncPrefix..' is complete.', GRColor)
     isSyncing, syncMaster, syncType, syncPrefix = false, nil, nil, nil
     ns.win.base.tblFrame.syncIcon:GetNormalTexture():SetVertexColor(1, 1, 1, 1)
+
+    clientData = table.wipe(clientData)
+    clientData = { clients = {}, count = 0, receivedCount = 0 }
 end
 --? End of Start and End of Sync Routines
 
 --* Sync Server Routines
-local clientData = {}
 local function serverSync()
     local tblFunc = {}
     function tblFunc:StartServerSync(typeOfSync, sender) -- SYNC_REQUEST
-        clientData = {}
-        clientData.clients = {}
         ns.code:dOut(L['FINDING_CLIENTS_SYNC'])
         GR:SendCommMessage(GR.commPrefix, 'SYNC_REQUEST;'..GR.dbVersion..';'..GR.version, 'GUILD')
         timer:add('SYNC_REQUEST_TIME_OUT', REQUEST_WAIT_TIMEOUT, function()
@@ -113,11 +113,28 @@ local function serverCommsSync()
 
             ns.code:dOut('Sync Request Heard from '..sender)
             if not sync:CheckVersion(message, sender) then return end
-            clientData.clients[sender] = clientData.clients[sender] or {}
-            clientData.clients[sender].chunks = {}
+            if not clientData.clients[sender] then
+                clientData.clients[sender] = {}
+                clientData.clients[sender].chunks = {}
+                clientData.clients[sender].restored = {}
+            end
             clientData.count = clientData.count and clientData.count + 1 or 1
             timer:add(sender..'_SYNC_REQUEST_TIME_OUT', SERVER_SEND_DATA_WAIT, function() sync:EndOfSync('IS_FAIL', sender..' '..L['FAILED_TO_RECEIVE_SYNC_DATA']) end)
-        else sync:ProcessChunks(message, sender) end
+        else
+            if sync:ProcessChunks(message, sender) then
+                clientData.receivedCount = clientData.receivedCount and clientData.receivedCount + 1 or 1
+                if clientData.receivedCount ~= clientData.count then return end
+
+                sync:ImportData()
+                sync:GatherMyData()
+                for k in pairs(clientData.clients) do
+                    ns.code:dOut('Sending Data to '..k)
+                    sync:SendChunks(k)
+                end
+
+                sync:EndOfSync()
+            end
+        end
     end
 
     return tblFunc
@@ -148,10 +165,17 @@ local function clientCommsFunctions()
             sync:SendChunks(sender)
             timer:add('DATA_WAIT_TIMEOUT', DATA_WAIT_TIMEOUT, function() sync:EndOfSync('IS_FAIL', L['FAILED_TO_SEND_SYNC_DATA']) end)
         else
-            print('Getting Chunk')
-            clientData.clients[sender] = clientData.clients[sender] or {}
-            clientData.clients[sender].chunks = clientData.clients[sender].chunks or {}
-            sync:ProcessChunks(message, sender)
+            if not clientData.clients[sender] then
+                clientData.clients[sender] = {}
+                clientData.clients[sender].chunks = {}
+                clientData.clients[sender].restored = {}
+            end
+
+            if sync:ProcessChunks(message, sender) then
+                ns.code:dOut('Data Received from '..sender)
+                sync:ImportData()
+                sync:EndOfSync()
+            end
         end
     end
 
@@ -182,11 +206,8 @@ function sync:GatherMyData()
     for key, r in pairs(tbl.gmSettings.messageList or {}) do
         if not r.gmSync then tbl.gmSettings.messageList[key] = nil end
     end
-    for k, v in pairs(ns.blacklist or {}) do tbl.blacklist[k] = v end
-    for k in pairs(tbl.blacklist) do
-        if k == 'private' then tbl.blacklist[k].reason = '' end
-    end
-    for k, v in pairs(ns.antispamList or {}) do tbl.antispamList[k] = v end
+    for k, v in pairs(ns.tblBlackList or {}) do tbl.blacklist[k] = v end
+    for k, v in pairs(ns.tblAntiSpamList or {}) do tbl.antispamList[k] = v end
 
     local compressed = ns.code:compressData(tbl, true)
     if not compressed then
@@ -196,19 +217,22 @@ function sync:GatherMyData()
 
     myData = compressed
 end
+
 function sync:SendChunks(sender) -- Chunk and Send
     if not myData or type(myData) ~= 'string' then return end
 
+    local chunkCount = 0
     local function SendChunkWithDelay(index, chunkSize, encodedData, recipient)
         local totalChunks = math.ceil(#encodedData / chunkSize)
 
         if index <= #encodedData then
             -- Add metadata (chunkIndex/totalChunks)
+            chunkCount = chunkCount + 1
             local chunk = encodedData:sub(index, index + chunkSize - 1)
-            local message = string.format("%d:%d:%s", index, totalChunks, chunk)
+            local message = string.format("%d:%d:%s", chunkCount, totalChunks, chunk)
 
             -- Log chunk info and send it
-            print(string.format("Sending chunk %d of %d, size: %d", index, totalChunks, #chunk))
+            ns.code:dOut(string.format("Sending chunk %d of %d, size: %d", chunkCount, totalChunks, #chunk))
             C_ChatInfo.SendAddonMessage(GR.commPrefix, message, "WHISPER", recipient)
             
             -- Delay the sending of the next chunk
@@ -247,7 +271,6 @@ function sync:CheckVersion(message, sender)
     return true
 end
 function sync:ProcessChunks(message, sender)
-    print(message)
     local index, total, data = message:match("^(%d+):(%d+):(.+)$")
     index, total = tonumber(index), tonumber(total)
     if not index or not total or not data then
@@ -260,11 +283,11 @@ function sync:ProcessChunks(message, sender)
         return
     end
 
-    ns.code:dOut('Received Chunk '..index..' of '..total..' from '..sender)
     clientData.clients[sender].chunkCount = clientData.clients[sender].chunkCount and clientData.clients[sender].chunkCount + 1 or 1
-    clientData.clients[sender].chunks[clientData.clients[sender].chunkCount] = data
+    clientData.clients[sender].chunks[index] = data
 
-    if clientData.clients[sender].chunkCount == total then
+    ns.code:dOut('Received Chunk '..clientData.clients[sender].chunkCount..' of '..total..' from '..sender)
+    if clientData.clients[sender].chunkCount == total then -- Server mode, make sure got all clients
         ns.code:dOut('All Chunks Received from '..sender)
         local assembled = table.concat(clientData.clients[sender].chunks)
         local success, tbl = ns.code:decompressData(assembled, true)
@@ -272,8 +295,57 @@ function sync:ProcessChunks(message, sender)
             ns.code:fOut(sender..'\'s data was not reassembled.', 'FF0000')
             return
         end
-        print(tbl)
+
+        clientData.clients[sender].restored = tbl
+        return true
     end
+end
+function sync:ImportData()
+    local gmFound = false
+
+    for _, v in pairs(clientData.clients or {}) do
+        if not gmFound then
+            local r = v.restored
+            if v.restored then
+                ns.guildInfo.lastSync = ns.guildInfo.lastSync or 0
+                r.lastSync = r.guildInfo.lastSync or 0
+
+                if r.isGuildMaster then
+                    gmFound = r.isGuildMaster
+                    ns.guildInfo.lastSync = time()
+                    ns.guildInfo.wasGM = r.isGuildMaster
+                    ns.gmSettings = r.gmSettings
+                elseif r.wasGM and not ns.guildInfo.wasGM then
+                    ns.guildInfo = r.guildInfo
+                    ns.guildInfo.wasGM = r.wasGM
+                    ns.guildInfo.lastSync = r.lastSync
+                    ns.gmSettings = r.gmSettings
+                elseif r.lastSync > 0 and r.lastSync > ns.guildInfo.lastSync then
+                    ns.guildInfo = r.guildInfo
+                    ns.guildInfo.wasGM = r.wasGM
+                    ns.guildInfo.lastSync = r.lastSync
+                    ns.gmSettings = r.gmSettings
+                end
+            end
+
+            cBlacklist, cAntiSpamList = 0, 0
+            for key, rec in pairs(r.blacklist) do
+                if not ns.tblBlackList[key] then
+                    ns.tblBlackList[key] = rec
+                    if rec.private then ns.tblBlackList[key].reason = 'private' end
+                    cBlacklist = cBlacklist + 1
+                end
+            end
+            for key, rec in pairs(r.antispamList) do
+                if not ns.tblAntiSpamList[key] then
+                    ns.tblAntiSpamList[key] = rec
+                    cAntiSpamList = cAntiSpamList + 1
+                end
+            end
+        end
+    end
+
+    ns.code:saveTables()
 end
 sync:Init()
 --? End of Data Functions

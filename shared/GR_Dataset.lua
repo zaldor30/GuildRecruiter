@@ -49,6 +49,8 @@ function ds:WhatsNew() -- What's new in the current version
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
 
+    |CFFFFFF00v3.2.57 Notes|r
+        - Fixed sync, so it can handle larger data sets.
     |CFFFFFF00v3.2.55 Notes|r
         - Fixed issue with no messages.
         - Fixed database defaults for new installs.

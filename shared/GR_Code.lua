@@ -69,7 +69,7 @@ function code:saveTables(whichOne)
     else
         ns.g.blackList = ns.code:compressData(ns.tblBlackList) or ''
         ns.g.antiSpamList = ns.code:compressData(ns.tblAntiSpamList) or ''
-        if ns.guildSession then ns.gAnalytics.session = ns.code:compressData(ns.guildSession) end
+        --if ns.guildSession then ns.gAnalytics.session = ns.code:compressData(ns.guildSession) end
     end
 end
 function code:sortTableByField(tbl, sortField, reverse, showit)
