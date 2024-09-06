@@ -57,9 +57,17 @@ function code:decompressData(data, decode, skipCompression)
     if not data or data == '' or type(data) ~= 'string' then return false, nil end
 
     data = (decode and LibDeflate:DecodeForWoWAddonChannel(data) or data)
+    if not data then
+        ns.code:dOut('Failed to decode data', 'FF0000')
+        return false, nil
+    end
     local decompressedData = not skipCompression and LibDeflate:DecompressDeflate(data) or data
-    if decompressedData then return aceSerializer:Deserialize(decompressedData)
-    else return false, nil end -- Decompression failed
+    if not decompressedData then
+        ns.code:dOut('Failed to decompress data', 'FF0000')
+        return false, nil
+    end
+
+    return aceSerializer:Deserialize(decompressedData)
 end
 
 -- * Tables and Data Sorting Routines

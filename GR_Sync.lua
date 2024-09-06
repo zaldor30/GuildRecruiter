@@ -5,8 +5,8 @@ local aceTimer = LibStub("AceTimer-3.0")
 ns.sync = {}
 local sync, gSync = {}, ns.sync
 
-local REQUEST_WAIT_TIMEOUT, SERVER_SEND_DATA_WAIT = 2, 10
-local SYNC_FAIL_TIMER, DATA_WAIT_TIMEOUT = 30, 60
+local REQUEST_WAIT_TIMEOUT, SERVER_SEND_DATA_WAIT = 2, 60
+local SYNC_FAIL_TIMER, DATA_WAIT_TIMEOUT = 120, 60
 
 local myData, clientData = nil, { clients = {}, count = 0, receivedCount = 0 }
 local cBlacklist, cAntiSpamList = 0, 0
@@ -82,6 +82,7 @@ local function serverSync()
         ns.code:dOut(L['FINDING_CLIENTS_SYNC'])
         GR:SendCommMessage(GR.commPrefix, 'SYNC_REQUEST;'..GR.dbVersion..';'..GR.version, 'GUILD')
         timer:add('SYNC_REQUEST_TIME_OUT', REQUEST_WAIT_TIMEOUT, function()
+            timer:cancel('SYNC_REQUEST_TIME_OUT')
             if (clientData.count or 0) > 0 then
                 ns.code:cOut(L['CLIENTS_FOUND']..' '..tostring(clientData.count), GRColor)
                 server:SendDataRequests()
@@ -206,10 +207,10 @@ function sync:GatherMyData()
     for key, r in pairs(tbl.gmSettings.messageList or {}) do
         if not r.gmSync then tbl.gmSettings.messageList[key] = nil end
     end
-    for k, v in pairs(ns.tblBlackList or {}) do tbl.blacklist[k] = v end
-    for k, v in pairs(ns.tblAntiSpamList or {}) do tbl.antispamList[k] = v end
+    tbl.blacklist = ns.code:compressData(ns.tblBlackList or {}, false, true)
+    tbl.antispamList = ns.code:compressData(ns.tblAntiSpamList or {}, false, true)
 
-    local compressed = ns.code:compressData(tbl, true, true)
+    local compressed = ns.code:compressData(tbl, true)
     if not compressed then
         ns.code:fOut(L['SYNC_COMPRESS_FAIL'], 'FF0000')
         return
@@ -236,7 +237,7 @@ function sync:SendChunks(sender) -- Chunk and Send
             C_ChatInfo.SendAddonMessage(GR.commPrefix, message, "WHISPER", recipient)
             
             -- Delay the sending of the next chunk
-            C_Timer.After(0.5, function()
+            C_Timer.After(0.2, function()
                 SendChunkWithDelay(index + chunkSize, chunkSize, encodedData, recipient)
             end)
         end
@@ -291,7 +292,10 @@ function sync:ProcessChunks(message, sender)
         ns.code:dOut('All Chunks Received from '..sender)
 
         local assembled = table.concat(clientData.clients[sender].chunks)
-        local success, tbl = ns.code:decompressData(assembled, true, true)
+        --[[for k,v in ipairs(clientData.clients[sender].chunks) do
+            assembled = assembled and assembled..v or v
+        end--]]
+        local success, tbl = ns.code:decompressData(assembled, true)
         if not success then
             ns.code:fOut(sender..'\'s data was not reassembled.', 'FF0000')
             return
@@ -330,14 +334,16 @@ function sync:ImportData()
             end
 
             cBlacklist, cAntiSpamList = 0, 0
-            for key, rec in pairs(r.blacklist) do
+            local blSuccess, tblBL = ns.code:decompressData(r.blacklist, false, true)
+            for key, rec in pairs(tblBL) do
                 if not ns.tblBlackList[key] then
                     ns.tblBlackList[key] = rec
                     if rec.private then ns.tblBlackList[key].reason = 'private' end
                     cBlacklist = cBlacklist + 1
                 end
             end
-            for key, rec in pairs(r.antispamList) do
+            local asSuccess, tblAS = ns.code:decompressData(r.blacklist, false, true)
+            for key, rec in pairs(tblAS) do
                 if not ns.tblAntiSpamList[key] then
                     ns.tblAntiSpamList[key] = rec
                     cAntiSpamList = cAntiSpamList + 1
