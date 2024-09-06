@@ -80,10 +80,8 @@ function invite:StartInvite(pName, class, useInviteMsg, useWhisperMsg, useGreeti
     -- Check if in my guild
     if isManual and ns.code:isInMyGuild(fName) then
         ns.code:fOut(cName..' '..L['INVITE_IN_GUILD'])
-        invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg, isManual)
         return
     end
-    ns.antiSpam:AddToAntiSpamList(fName)
 
     if pName and sendInvite then -- Guild Invite
         C_GuildInfo.Invite(pName)
@@ -220,6 +218,7 @@ function invite:RegisterInvite(pName, class, useWhisperMsg, useGreetingMsg, isMa
 
     ns.analytics:saveStats('PlayersInvited')
     ns.win.scanner:UpdateAnalytics()
+    ns.antiSpam:AddToAntiSpamList(fName)
 end
 function invite:GetWelcomeMessages()
     local guildMessage, msgWhisper = false, false
