@@ -206,8 +206,8 @@ function sync:GatherMyData()
     for key, r in pairs(tbl.gmSettings.messageList or {}) do
         if not r.gmSync then tbl.gmSettings.messageList[key] = nil end
     end
-    tbl.guildInfo = ns.code:compressData(ns.tblBlackList or {}, false, true)
-    tbl.gmSettings = ns.code:compressData(ns.tblBlackList or {}, false, true)
+    tbl.guildInfo = ns.code:compressData(ns.guildInfo or {}, false, true)
+    tbl.gmSettings = ns.code:compressData(ns.gmSettings or {}, false, true)
     tbl.blacklist = ns.code:compressData(ns.tblBlackList or {}, false, true)
     tbl.antispamList = ns.code:compressData(ns.tblAntiSpamList or {}, false, true)
 
@@ -243,7 +243,7 @@ function sync:SendChunks(sender) -- Chunk and Send
             end)
         end
     end
-    SendChunkWithDelay(1, 250, myData, sender)
+    SendChunkWithDelay(1, 245, myData, sender)
 end
 function sync:CheckVersion(message, sender)
     local dbVer = tonumber(GR.dbVersion)
@@ -297,6 +297,7 @@ function sync:ProcessChunks(message, sender)
             assembled = assembled and assembled..v or v
         end--]]
         local success, tbl = ns.code:decompressData(assembled, true)
+        print(success, tbl)
         if not success then
             ns.code:fOut(sender..'\'s data was not reassembled.', 'FF0000')
             return
@@ -313,8 +314,8 @@ function sync:ImportData()
         if not gmFound then
             local r = v.restored
             if v.restored then
-                local blSuccess, tblGI = ns.code:decompressData(r.guildInfo, false, true)
-                local blSuccess, tblGM = ns.code:decompressData(r.gmSettings, false, true)
+                local giSuccess, tblGI = ns.code:decompressData(r.guildInfo, false, true)
+                local gmSuccess, tblGM = ns.code:decompressData(r.gmSettings, false, true)
                 
                 ns.guildInfo.lastSync = ns.guildInfo.lastSync or 0
                 r.lastSync = r.guildInfo.lastSync or 0
