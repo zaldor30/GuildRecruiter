@@ -440,6 +440,8 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
     if ns.pSettings.enableAutoSync then
         C_Timer.After(15, function() ns.sync:StartSyncRoutine(1) end)
     end
+
+    for k,v in pairs(ns.gmSettings) do print(k,v) end
 end
 
 --* Manual update of settings data

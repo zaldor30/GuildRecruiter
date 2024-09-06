@@ -202,12 +202,12 @@ function sync:GatherMyData()
         isGuildMaster = ns.core.hasGM
     }
 
-    for k, v in pairs(ns.gmSettings) do tbl.gmSettings[k] = v end
+    tbl.gmSettings = ns.gmSettings
     for key, r in pairs(tbl.gmSettings.messageList or {}) do
         if not r.gmSync then tbl.gmSettings.messageList[key] = nil end
     end
     tbl.guildInfo = ns.code:compressData(ns.guildInfo or {}, false, true)
-    tbl.gmSettings = ns.code:compressData(ns.gmSettings or {}, false, true)
+    tbl.gmSettings = ns.code:compressData(tbl.gmSettings or {}, false, true)
     tbl.blacklist = ns.code:compressData(ns.tblBlackList or {}, false, true)
     tbl.antispamList = ns.code:compressData(ns.tblAntiSpamList or {}, false, true)
 
@@ -297,7 +297,6 @@ function sync:ProcessChunks(message, sender)
             assembled = assembled and assembled..v or v
         end--]]
         local success, tbl = ns.code:decompressData(assembled, true)
-        print(success, tbl)
         if not success then
             ns.code:fOut(sender..'\'s data was not reassembled.', 'FF0000')
             return
