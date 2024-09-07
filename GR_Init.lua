@@ -10,7 +10,7 @@ GR.version = C_AddOns.GetAddOnMetadata('GuildRecruiter', 'Version')
 GR.dbVersion = '3.2'
 GR.isTesting = false
 GR.isPreRelease = true
-GR.preReleaseType = 'Alpha'
+GR.preReleaseType = 'Beta'
 GR.versionOut = '(v'..GR.version..(GR.isPreRelease and ' '..GR.preReleaseType or '')..')'
 
 GR.debug = false

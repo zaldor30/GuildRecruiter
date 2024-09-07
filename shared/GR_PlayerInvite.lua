@@ -112,7 +112,7 @@ function invite:PerformInviteChecks(pName, isManual, zone)
     elseif ns.tblBlackList[name] or blackList.IsOnBlackList(name) then
         if isManual then ns.code:fOut(name..' '..L['PLAYER_IS_ON_BLACKLIST'], 'FFFFFF00') end
         return L['BLACK_LISTED']
-    elseif not isManual and ns.tblAntiSpamList[pName] then
+    elseif not isManual and ns.tblAntiSpamList[name] then
         if not zone then ns.code:fOut(name..' '..L['PLAYER_IS_ON_ANTISPAM_LIST'], 'FFFFFF00') end
         return L['ANTI_SPAM']
     end
@@ -345,7 +345,7 @@ function blackList:BlackListReasonPrompt(blName)
             if not blName then return end
 
             local value = data.editBox:GetText()
-            value = value ~= '' and value or L['No Reason']
+            value = value ~= '' and value or L['NO_REASON']
 
             blackList:AddToBlackList(blName, value)
 

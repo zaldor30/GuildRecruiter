@@ -241,7 +241,7 @@ function sync:SendChunks(sender) -- Chunk and Send
 
         -- Delay the sending of the next chunk
         if #chunks == 0 then return end
-        C_Timer.After(0.2, function()
+        C_Timer.After((chunkCount/20 == 0 and 2 or .3), function()
             SendChunkWithDelay(recipient)
         end)
     end
@@ -286,11 +286,10 @@ function sync:ProcessChunks(message, sender)
         ns.code:dOut('Duplicate Sync Data from '..sender)
         return
     end
-
     clientData.clients[sender].chunkCount = clientData.clients[sender].chunkCount and clientData.clients[sender].chunkCount + 1 or 1
     clientData.clients[sender].chunks[index] = data
 
-    ns.code:dOut('Received Chunk '..clientData.clients[sender].chunkCount..' of '..total..' from '..sender)
+    ns.code:dOut('Received Chunk '..clientData.clients[sender].chunkCount..' of '..total..' from '..sender..' Chunk Size: '..#data)
     if clientData.clients[sender].chunkCount == total then -- Server mode, make sure got all clients
         ns.code:dOut('All Chunks Received from '..sender)
 
