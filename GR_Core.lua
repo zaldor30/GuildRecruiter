@@ -286,10 +286,11 @@ function core:PerformRecordMaintenance() -- Perform Record Maintenance
 
     -- Anti-Spam List Maintenance
     local antiSpamRemoved, blackListRemoved = 0, 0
-    local antiSpamDays = (ns.gmSettings.antiSpam and ns.gmSettings.antiSpamDays) and ns.gmSettings.antiSpamDays or nil
-    antiSpamDays = (not ns.gmSettings.antiSpam and (ns.gSettings.antiSpam and ns.gSettings.antiSpamDays)) and ns.gSettings.antiSpamDays or 7
+    local antiSpamDays = (ns.gmSettings and ns.gmSettings.antiSpam and ns.gmSettings.antiSpamDays) and ns.gmSettings.antiSpamDays or nil
+    antiSpamDays = ((ns.gmSettings and not ns.gmSettings.antiSpam) and (ns.gSettings.antiSpam and ns.gSettings.antiSpamDays)) and ns.gSettings.antiSpamDays or 7
+    local expireSeconds = antiSpamDays * SECONDS_IN_A_DAY
 
-    local antiSpamExpire = C_DateAndTime.GetServerTimeLocal() - (antiSpamDays * SECONDS_IN_A_DAY)
+    local antiSpamExpire = time() - expireSeconds
     for k, r in pairs(ns.tblAntiSpamList or {}) do
         if not r.date then
             ns.tblAntiSpamList[k] = nil

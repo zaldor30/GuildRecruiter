@@ -54,7 +54,7 @@ function invite:StartInvite(pName, class, useInviteMsg, isManual, sendInvite, sk
 
     --* Handle Invite Rejects
     local checkResult = nil
-    if not GR.isTesting then checkResult = self:PerformInviteChecks(pName, isManual) end
+    if not GR.isTesting then checkResult = self:PerformInviteChecks(fName, isManual) end
     if checkResult == 'GUILD' then return
     elseif checkResult == L['BLACK_LISTED'] then
         if not isManual then return end
@@ -62,7 +62,7 @@ function invite:StartInvite(pName, class, useInviteMsg, isManual, sendInvite, sk
         if not ns.code:Confirmation(L['PLAYER_MANUAL_ON_BLACKLIST']:gsub('%%REASON%%', ns.tblBlackList[pName].reason), function()
             return true end) then return end
     elseif not isManual and checkResult == L['ANTI_SPAM'] then return end
-    antiSpam:AddToAntiSpamList(pName)
+    antiSpam:AddToAntiSpamList(fName)
     --? End Handle Invite Rejects
 
     local function SendGuildInvite()
@@ -109,10 +109,10 @@ function invite:PerformInviteChecks(pName, isManual, zone)
         ns.code:fOut(name..' '..L['IS_ALREADY_IN_GUILD'], 'FFFFFF00')
         return 'GUILD'
     elseif zone and ns.tblInvalidZones[strlower(zone)] then return zone
-    elseif blackList:IsOnBlackList(name) then
+    elseif ns.tblBlackList[pName] then
         if not zone and not isManual then ns.code:fOut(name..' '..L['PLAYER_IS_ON_BLACKLIST'], 'FFFFFF00') end
         return L['BLACK_LISTED']
-    elseif not isManual and antiSpam.isOnAntiSpamList(name) then
+    elseif not isManual and ns.tblAntiSpamList[pName] then
         if not zone then ns.code:fOut(name..' '..L['PLAYER_IS_ON_ANTISPAM_LIST'], 'FFFFFF00') end
         return L['ANTI_SPAM']
     end
@@ -372,7 +372,7 @@ function antiSpam:isOnAntiSpamList(pName)
 
     local found = false
     for k in pairs(ns.tblAntiSpamList) do
-        if strlower(k) == strlower(pName) then found = true break end
+        if k == pName then found = true break end
     end
 
     return found
@@ -381,12 +381,12 @@ function antiSpam:AddToAntiSpamList(pName)
     if not pName then return false end
 
     pName = pName:find('-') and pName or pName..'-'..GetRealmName() -- Add realm name if not present
-    if antiSpam.isOnAntiSpamList(pName) then return false end
+    if ns.tblAntiSpamList[pName] then return false end
 
     ns.tblAntiSpamList[pName] = {
         name = pName,
         asBy = UnitName('player'),
-        date = C_DateAndTime.GetServerTimeLocal(),
+        date = time(),
     }
 
     return true

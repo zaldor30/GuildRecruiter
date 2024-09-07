@@ -72,11 +72,13 @@ end
 
 -- * Tables and Data Sorting Routines
 function code:saveTables(whichOne)
+    ns.g.blackList = ns.code:compressData(ns.tblBlackList) or ''
+    ns.g.antiSpamList = ns.code:compressData(ns.tblAntiSpamList) or ''
+
+    if ns.tblAntiSpamList then return end
     if whichOne == 'BLACK_LIST' then ns.g.blackList = ns.code:compressData(ns.tblBlackList)
     elseif whichOne == 'ANTI_SPAM_LIST' then ns.g.antiSpamList = ns.code:compressData(ns.tblAntiSpamList)
     else
-        ns.g.blackList = ns.code:compressData(ns.tblBlackList) or ''
-        ns.g.antiSpamList = ns.code:compressData(ns.tblAntiSpamList) or ''
         --if ns.guildSession then ns.gAnalytics.session = ns.code:compressData(ns.guildSession) end
     end
 end

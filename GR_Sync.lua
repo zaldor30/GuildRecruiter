@@ -203,7 +203,7 @@ function sync:GatherMyData()
     }
 
     tbl.gmSettings = ns.gmSettings
-    for key, r in pairs(tbl.gmSettings.messageList or {}) do
+    for key, r in pairs(tbl.gmSettings and tbl.gmSettings.messageList or {}) do
         if not r.gmSync then tbl.gmSettings.messageList[key] = nil end
     end
     tbl.guildInfo = ns.code:compressData(ns.guildInfo or {}, false, true)
@@ -314,26 +314,36 @@ function sync:ImportData()
             local r = v.restored
             if v.restored then
                 local giSuccess, tblGI = ns.code:decompressData(r.guildInfo, false, true)
+                if not giSuccess then
+                    ns.code:dOut('Failed to decompress Guild Info data from '..k, 'FF0000')
+                    return
+                end
                 local gmSuccess, tblGM = ns.code:decompressData(r.gmSettings, false, true)
-                
+                if not gmSuccess then
+                    ns.code:dOut('Failed to decompress GM Settings data from '..k, 'FF0000')
+                    return
+                end
+
                 ns.guildInfo.lastSync = ns.guildInfo.lastSync or 0
                 r.lastSync = r.guildInfo.lastSync or 0
-
-                if r.isGuildMaster then
-                    gmFound = r.isGuildMaster
-                    ns.guildInfo.lastSync = time()
-                    ns.guildInfo.wasGM = tblGI.isGuildMaster
-                    ns.gmSettings = tblGM.gmSettings
-                elseif tblGI.wasGM and not ns.guildInfo.wasGM then
-                    ns.guildInfo = tblGI.guildInfo
-                    ns.guildInfo.wasGM = tblGI.wasGM
-                    ns.guildInfo.lastSync = tblGI.lastSync
-                    ns.gmSettings = tblGM.gmSettings
-                elseif tblGI.lastSync > 0 and tblGI.lastSync > ns.guildInfo.lastSync then
-                    ns.guildInfo = tblGI.guildInfo
-                    ns.guildInfo.wasGM = tblGI.wasGM
-                    ns.guildInfo.lastSync = tblGI.lastSync
-                    ns.gmSettings = tblGM.gmSettings
+                
+                if not ns.core.hasGM then
+                    if r.isGuildMaster then
+                        gmFound = r.isGuildMaster
+                        ns.guildInfo.lastSync = time()
+                        ns.guildInfo.wasGM = tblGI.isGuildMaster
+                        ns.gmSettings = tblGM.gmSettings
+                    elseif tblGI.wasGM and not ns.guildInfo.wasGM then
+                        ns.guildInfo = tblGI.guildInfo
+                        ns.guildInfo.wasGM = tblGI.wasGM
+                        ns.guildInfo.lastSync = tblGI.lastSync
+                        ns.gmSettings = tblGM.gmSettings
+                    elseif tblGI.lastSync > 0 and tblGI.lastSync > ns.guildInfo.lastSync then
+                        ns.guildInfo = tblGI.guildInfo
+                        ns.guildInfo.wasGM = tblGI.wasGM
+                        ns.guildInfo.lastSync = tblGI.lastSync
+                        ns.gmSettings = tblGM.gmSettings
+                    end
                 end
             end
 
