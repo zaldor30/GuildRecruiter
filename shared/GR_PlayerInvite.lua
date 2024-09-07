@@ -22,7 +22,7 @@ function invite:GetWelcomeMessages()
     local activeMessage = ns.pSettings.activeMessage or nil
 
     self.inviteMessage = (location.messageList and location.messageList[activeMessage]) and location.messageList[activeMessage].message or nil
-    
+
     local useLocation = (ns.core.hasGM or ns.gmSettings.forceGuildMessage) and ns.gmSettings or ns.gSettings
     self.greetingGuild = (ns.gmSettings.forceGuildMessage or ns.gSettings.sendGuildGreeting) and useLocation.guildMessage or nil
 
@@ -100,22 +100,24 @@ function invite:StartInvite(pName, class, useInviteMsg, isManual, sendInvite, sk
 end
 
 --* Invite Support Functions
-function invite:whoInviteChecks(v) invite:PerformInviteChecks(v.fullName, false, v.zone) end
+function invite:whoInviteChecks(v) return invite:PerformInviteChecks(v.fullName, false, v.zone) end
 function invite:PerformInviteChecks(pName, isManual, zone)
     if not pName then return end
     local name = pName:match('-') and pName or pName..'-'..GetRealmName() -- Add realm name if not present
-
-    if isManual and ns.core:IsInGuild(name) then
+    
+    if isManual and ns.code:isInMyGuild(name) then
         ns.code:fOut(name..' '..L['IS_ALREADY_IN_GUILD'], 'FFFFFF00')
         return 'GUILD'
     elseif zone and ns.tblInvalidZones[strlower(zone)] then return zone
-    elseif ns.tblBlackList[pName] then
-        if not zone and not isManual then ns.code:fOut(name..' '..L['PLAYER_IS_ON_BLACKLIST'], 'FFFFFF00') end
+    elseif ns.tblBlackList[name] or blackList.IsOnBlackList(name) then
+        if isManual then ns.code:fOut(name..' '..L['PLAYER_IS_ON_BLACKLIST'], 'FFFFFF00') end
         return L['BLACK_LISTED']
     elseif not isManual and ns.tblAntiSpamList[pName] then
         if not zone then ns.code:fOut(name..' '..L['PLAYER_IS_ON_ANTISPAM_LIST'], 'FFFFFF00') end
         return L['ANTI_SPAM']
     end
+
+    return false
 end
 function invite:SendMessage(pName, cName, message, showMessage)
     message = ns.code:variableReplacement(message, pName:gsub('%-.*', '')) -- Remove realm name
@@ -256,7 +258,7 @@ function blackList:AddToBlackList(pName, reason)
     if not pName then return false end
 
     pName = pName:find('-') and pName or pName..'-'..GetRealmName() -- Add realm name if not present
-    if blackList.IsOnBlackList(pName) then return false end
+    if ns.tblBlackList[pName] then return false end
 
     ns.tblBlackList[pName] = {
         name = pName,

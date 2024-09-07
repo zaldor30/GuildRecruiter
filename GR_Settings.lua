@@ -1060,8 +1060,6 @@ ns.addonSettings = {
                                 ns.tblBlackList[r.key] = nil
                             end
                         end
-
-                        ns.code:saveTables('BLACK_LIST')
                     end,
                 },
                 blPrivateReasonButton = {
@@ -1084,7 +1082,6 @@ ns.addonSettings = {
 
                         -- Put back in to black list table
                         for _, r in pairs(ns.tblBlackList) do ns.tblBlackList[r.key] = r end
-                        ns.code:saveTables('BLACK_LIST')
                     end,
                 },
                 blHeader3 = {

@@ -80,7 +80,7 @@ local function serverSync()
     local tblFunc = {}
     function tblFunc:StartServerSync(typeOfSync, sender) -- SYNC_REQUEST
         ns.code:dOut(L['FINDING_CLIENTS_SYNC'])
-        GR:SendCommMessage(GR.commPrefix, 'SYNC_REQUEST;'..GR.dbVersion..';'..GR.version, 'GUILD')
+        GR:SendCommMessage(GR.commPrefix, 'SYNC_REQUEST:'..GR.dbVersion..':'..GR.version, 'GUILD')
         timer:add('SYNC_REQUEST_TIME_OUT', REQUEST_WAIT_TIMEOUT, function()
             timer:cancel('SYNC_REQUEST_TIME_OUT')
             if (clientData.count or 0) > 0 then
@@ -150,7 +150,7 @@ local function clientCommsFunctions()
     function tblFunc:OnCommReceived(message, sender)
         if not message then return end
 
-        if message:match('SYNC_REQUEST;') then
+        if message:match('SYNC_REQUEST:') then
             if isSyncing then return
             else sync:StartSync(3, sender) end
 
@@ -159,7 +159,7 @@ local function clientCommsFunctions()
 
             sync:GatherMyData()
             timer:add(sender..'_SYNC_REQUEST_TIME_OUT', DATA_WAIT_TIMEOUT, function() sync:EndOfSync('IS_FAIL', sender..' '..L['FAILED_TO_RECEIVE_SYNC_DATA']) end)
-            GR:SendCommMessage(GR.commPrefix, 'SYNC_REQUEST_HEARD;'..GR.dbVersion..';'..GR.version, 'WHISPER', sender)
+            GR:SendCommMessage(GR.commPrefix, 'SYNC_REQUEST_HEARD:'..GR.dbVersion..':'..GR.version, 'WHISPER', sender)
         elseif message:match('SYNC_DATA_REQUEST') then
             timer:cancel(sender..'_SYNC_REQUEST_TIME_OUT')
             ns.code:dOut('Received Data Request from '..sender)
@@ -223,33 +223,35 @@ end
 function sync:SendChunks(sender) -- Chunk and Send
     if not myData or type(myData) ~= 'string' then return end
 
-    local chunkCount = 0
-    local function SendChunkWithDelay(index, chunkSize, encodedData, recipient)
-        local totalChunks = math.ceil(#encodedData / chunkSize)
-
-        if index <= #encodedData then
-            -- Add metadata (chunkIndex/totalChunks)
-            chunkCount = chunkCount + 1
-            local chunk = encodedData:sub(index, index + chunkSize - 1)
-            local message = string.format("%d:%d:%s", chunkCount, totalChunks, chunk)
-
-            -- Log chunk info and send it
-            ns.code:dOut(string.format("Sending chunk %d of %d, size: %d", chunkCount, totalChunks, #chunk))
-            C_ChatInfo.SendAddonMessage(GR.commPrefix, message, "WHISPER", recipient)
-            
-            -- Delay the sending of the next chunk
-            C_Timer.After(0.2, function()
-                SendChunkWithDelay(index + chunkSize, chunkSize, encodedData, recipient)
-            end)
+    local chunks = {}
+    local function GetChunks(encodedData, chunkSize)
+        for i = 1, #encodedData, chunkSize do
+            table.insert(chunks, encodedData:sub(i, i + chunkSize - 1))
         end
     end
-    SendChunkWithDelay(1, 245, myData, sender)
+    GetChunks(myData, 245)
+
+    local chunkCount, totalChunks = 0, #chunks
+    local function SendChunkWithDelay(recipient)
+        local chunkOut = tremove(chunks, 1)
+        chunkCount = chunkCount + 1
+        chunkOut = chunkCount..':'..totalChunks..':'..chunkOut
+        ns.code:dOut(string.format("Sending chunk %d of %d, size: %d", chunkCount, totalChunks, #chunkOut))
+        C_ChatInfo.SendAddonMessage(GR.commPrefix, chunkOut, "WHISPER", recipient)
+
+        -- Delay the sending of the next chunk
+        if #chunks == 0 then return end
+        C_Timer.After(0.2, function()
+            SendChunkWithDelay(recipient)
+        end)
+    end
+    SendChunkWithDelay(sender)
 end
 function sync:CheckVersion(message, sender)
     local dbVer = tonumber(GR.dbVersion)
     local grVer = type(GR.version) == 'string' and tonumber(GR.version:match('^%d+%.%d+%.(.*)')) or nil
 
-    local _, dbVersion, grVersion = strsplit(';', message)
+    local _, dbVersion, grVersion = strsplit(':', message)
     local acVer = grVersion
     dbVersion = (dbVersion and dbVersion ~= '') and tonumber(dbVersion) or nil
     grVersion = (grVersion and grVersion ~= '') and tonumber(grVersion:match('^%d+%.%d+%.(.*)')) or nil
@@ -326,7 +328,7 @@ function sync:ImportData()
 
                 ns.guildInfo.lastSync = ns.guildInfo.lastSync or 0
                 r.lastSync = r.guildInfo.lastSync or 0
-                
+
                 if not ns.core.hasGM then
                     if r.isGuildMaster then
                         gmFound = r.isGuildMaster

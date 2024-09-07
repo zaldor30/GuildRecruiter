@@ -402,7 +402,6 @@ function scanner:SkipPlayerInvite()
         end
     end
     for k in pairs(tbl) do self.tblInvites[k] = nil end
-    ns.code:saveTables('ANTI_SPAM_LIST')
 
     -- Update Data and Button State
     self:DisplayWhoList()
@@ -418,7 +417,6 @@ function scanner:BlackListPlayer()
         end
     end
     for k in pairs(tbl) do self.tblInvites[k] = nil end
-    ns.code:saveTables('BLACK_LIST')
 
     -- Update Data and Button State
     self:DisplayWhoList()
