@@ -13,6 +13,8 @@ local cBlacklist, cAntiSpamList = 0, 0
 local server, serverComms, clientComms = {}, {}, {}
 local isSyncing, syncMaster, syncType, syncPrefix = false, nil, nil, nil
 
+local tblSync = {}
+
 --* Timer Metatable Functions
 local timer = {}
 timer = setmetatable({}, {
@@ -311,6 +313,7 @@ function sync:ImportData()
     local gmFound = false
 
     for k, v in pairs(clientData.clients or {}) do
+        local loadGM = false
         if not gmFound then
             local r = v.restored
             if v.restored then
@@ -333,19 +336,22 @@ function sync:ImportData()
                         gmFound = r.isGuildMaster
                         ns.guildInfo.lastSync = time()
                         ns.guildInfo.wasGM = tblGI.isGuildMaster
-                        ns.gmSettings = tblGM.gmSettings
+                        loadGM = true
                     elseif tblGI.wasGM and not ns.guildInfo.wasGM then
                         ns.guildInfo = tblGI.guildInfo
                         ns.guildInfo.wasGM = tblGI.wasGM
                         ns.guildInfo.lastSync = tblGI.lastSync
-                        ns.gmSettings = tblGM.gmSettings
+                        loadGM = true
                     elseif tblGI.lastSync > 0 and tblGI.lastSync > ns.guildInfo.lastSync then
                         ns.guildInfo = tblGI.guildInfo
                         ns.guildInfo.wasGM = tblGI.wasGM
                         ns.guildInfo.lastSync = tblGI.lastSync
-                        ns.gmSettings = tblGM.gmSettings
+                        loadGM = true
                     end
                 end
+
+                if loadGM then
+                    for k1, v1 in pairs(tblGM or {}) do ns.gmSettings[k1] = v1 end end
             end
 
             cBlacklist, cAntiSpamList = 0, 0
@@ -361,7 +367,7 @@ function sync:ImportData()
                     cBlacklist = cBlacklist + 1
                 end
             end
-            local asSuccess, tblAS = ns.code:decompressData(r.blacklist, false, true)
+            local asSuccess, tblAS = ns.code:decompressData(r.antispamList, false, true)
             if not asSuccess then
                 ns.code:dOut('Failed to decompress Anti-Spam data from '..k, 'FF0000')
                 return
