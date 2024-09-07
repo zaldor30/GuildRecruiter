@@ -289,7 +289,6 @@ function core:PerformRecordMaintenance() -- Perform Record Maintenance
     local antiSpamDays = (ns.gmSettings and ns.gmSettings.antiSpam and ns.gmSettings.antiSpamDays) and ns.gmSettings.antiSpamDays or nil
     antiSpamDays = ((ns.gmSettings and not ns.gmSettings.antiSpam) and (ns.gSettings.antiSpam and ns.gSettings.antiSpamDays)) and ns.gSettings.antiSpamDays or 7
     local expireSeconds = antiSpamDays * SECONDS_IN_A_DAY
-    local antiSpamExpireOld = C_DateAndTime.GetServerTimeLocal() - (antiSpamDays * SECONDS_IN_A_DAY)
 
     local antiSpamExpire = time() - expireSeconds
     for k, r in pairs(ns.tblAntiSpamList or {}) do
@@ -316,8 +315,8 @@ function core:StartSlashCommands() -- Start Slash Commands
         if not msg or msg == '' and not ns.win.home:IsShown() then return ns.win.home:SetShown(true)
         elseif msg == L['HELP'] then ns.code:fOut(L['SLASH_COMMANDS'], GRColor, true)
         elseif strlower(msg) == L['CONFIG'] then Settings.OpenToCategory('Guild Recruiter')
-        elseif strlower(msg):match(tostring(L['BLACKLIST_ICON'])) then
-            msg = strlower(msg):gsub(tostring(L['BLACKLIST_ICON']), ''):trim()
+        elseif strlower(msg):match(L['BLACKLIST']) then
+            msg = strlower(msg):gsub(tostring(L['BLACKLIST']), ''):trim()
             local name = strupper(strsub(msg,1,1))..strlower(strsub(msg,2))
             ns:add(name)
         end

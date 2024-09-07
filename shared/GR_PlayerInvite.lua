@@ -158,9 +158,10 @@ function invite:StartQueue()
 
         local pName = tremove(self.tblQueue, 1)
         invite:SendMessage(pName, pName:gsub('%-.*', ''), self.inviteMessage, 'WHISPER')
-        C_Timer.After(1, function() SendNextMessage() end)
+        C_Timer.After(.5, function() SendNextMessage() end)
     end
 
+    if self.queueRunning then return end
     self.queueRunning = true
     SendNextMessage()
 end
