@@ -265,7 +265,7 @@ function blackList:AddToBlackList(pName, reason)
         name = pName,
         reason = reason,
         blBy = UnitName('player'),
-        date = C_DateAndTime.GetServerTimeLocal(),
+        date = time(),
     }
     ns.analytics:incStats('PlayersBlackListed')
 

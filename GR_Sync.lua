@@ -13,7 +13,7 @@ local cBlacklist, cAntiSpamList = 0, 0
 local server, serverComms, clientComms = {}, {}, {}
 local isSyncing, syncMaster, syncType, syncPrefix = false, nil, nil, nil
 
-local tblSync = {}
+local tblSync, tblSyncGUID = {}, {}
 
 --* Timer Metatable Functions
 local timer = {}
@@ -48,6 +48,9 @@ function sync:StartSync(typeOfSync, sender)
             ns.code:fOut(L['SYNC_ALREADY_IN_PROGRESS']..' ('..(syncMaster or sender)..')', 'FFFF0000') end
         return
     end
+
+    ns.g.syncList = ns.g.syncList or {}
+    tblSync = ns.g.syncList
 
     ns.win.base.tblFrame.syncIcon:GetNormalTexture():SetVertexColor(0, 1, 0, 1)
 
@@ -159,9 +162,12 @@ local function clientCommsFunctions()
             ns.code:cOut(L['SYNC_REQUEST_RECEIVED']..' '..sender, GRColor)
             if not sync:CheckVersion(message, sender) then sync:EndOfSync() return end
 
-            sync:GatherMyData()
+            local _,_,_, lastSync, GUID = strsplit(':', message)
+            tblSyncGUID[sender] = tblSync[GUID] or 0
+            local prevSync = tblSyncGUID[sender]
+            sync:GatherMyData(prevSync)
             timer:add(sender..'_SYNC_REQUEST_TIME_OUT', DATA_WAIT_TIMEOUT, function() sync:EndOfSync('IS_FAIL', sender..' '..L['FAILED_TO_RECEIVE_SYNC_DATA']) end)
-            GR:SendCommMessage(GR.commPrefix, 'SYNC_REQUEST_HEARD:'..GR.dbVersion..':'..GR.version, 'WHISPER', sender)
+            GR:SendCommMessage(GR.commPrefix, 'SYNC_REQUEST_HEARD:'..GR.dbVersion..':'..GR.version..':'..lastSync..':'..UnitGUID('player'), 'WHISPER', sender)
         elseif message:match('SYNC_DATA_REQUEST') then
             timer:cancel(sender..'_SYNC_REQUEST_TIME_OUT')
             ns.code:dOut('Received Data Request from '..sender)
@@ -195,8 +201,9 @@ clientComms = clientCommsFunctions()
     ALL: Cancel All Timers
 ]]
 --* Data Functions
-function sync:GatherMyData()
+function sync:GatherMyData(lastSync)
     local tbl = {
+        sender = UnitName('player'),
         guildInfo = {},
         gmSettings = {},
         blacklist = {},
@@ -210,8 +217,19 @@ function sync:GatherMyData()
     end
     tbl.guildInfo = ns.code:compressData(ns.guildInfo or {}, false, true)
     tbl.gmSettings = ns.code:compressData(tbl.gmSettings or {}, false, true)
-    tbl.blacklist = ns.code:compressData(ns.tblBlackList or {}, false, true)
-    tbl.antispamList = ns.code:compressData(ns.tblAntiSpamList or {}, false, true)
+
+    lastSync = lastSync or 0
+    local tblBL = {}
+    for key, rec in pairs(ns.tblBlackList or {}) do
+        if rec.date > lastSync then tblBL[key] = rec end
+    end
+    tbl.blacklist = ns.code:compressData(tblBL or {}, false, true)
+
+    local tblAS = {}
+    for key, rec in pairs(ns.tblAntiSpamList or {}) do
+        if rec.date > lastSync then tblAS[key] = rec end
+    end
+    tbl.antispamList = ns.code:compressData(tblAS or {}, false, true)
 
     local compressed = ns.code:compressData(tbl, true)
     if not compressed then
@@ -223,7 +241,7 @@ function sync:GatherMyData()
 end
 
 function sync:SendChunks(sender) -- Chunk and Send
-    if not myData or type(myData) ~= 'string' then return end
+    myData = sync:GatherMyData(tblSyncGUID[sender])
 
     local chunks = {}
     local function GetChunks(encodedData, chunkSize)
@@ -378,6 +396,7 @@ function sync:ImportData()
                     cAntiSpamList = cAntiSpamList + 1
                 end
             end
+            tblSync[tblSyncGUID[r.sender]] = time()
         end
     end
 
