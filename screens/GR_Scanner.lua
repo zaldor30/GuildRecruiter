@@ -530,7 +530,7 @@ function scanner:DisplayWhoList()
 
         if v.guild == '' then
             local inviteOkResult = ns.invite:whoInviteChecks(v)
-            
+
             if self.tblScanner.isCompact then
                 if inviteOkResult then v.guild = ns.code:cText('FFFF0000', '('..inviteOkResult..')') end
             elseif not self.tblScanner.isCompact and not self.tblInvites[k] and v.guild == '' then

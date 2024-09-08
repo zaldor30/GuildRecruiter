@@ -39,8 +39,8 @@ shared\GR_Dataset.lua
 shared\GR_Analytics.lua
 shared\GR_PlayerInvite.lua
 
-GR_Core.lua
 GR_Sync.lua
+GR_Core.lua
 GR_Settings.lua
 
 Screens\GR_Base.lua

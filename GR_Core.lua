@@ -14,6 +14,13 @@ function GR:OnInitialize()
     if core.isEnabled then return end -- Prevents double initialization
 
     GR:RegisterChatCommand('rl', function() ReloadUI() end) -- Set the /rl slash command to reload the UI
+    ns.events:RegisterEvent('PLAYER_LOGIN', function()
+        local function OnCommReceived(_,prefix, message, distribution, sender)
+            ns.sync:OnCommReceived(prefix, message, distribution, sender)
+        end
+        --GR:RegisterComm(GR.commPrefix, OnCommReceived)
+        ns.events:RegisterEvent('CHAT_MSG_ADDON', OnCommReceived)
+    end)
 
     local function checkIfInGuild(count) -- Check if the player is in a guild
         if not count then return end
@@ -32,7 +39,8 @@ function GR:OnInitialize()
             C_Timer.After(1, function() checkIfInGuild(count + 1) end)
         elseif clubID then
             core.isEnabled = true
-            core:StartGuildRecruiter(clubID) end
+            core:StartGuildRecruiter(clubID)
+        end
     end
 
     checkIfInGuild(0)
@@ -367,6 +375,7 @@ function core:StartBaseEvents()
         ns.code:saveTables()
         ns.analytics:UpdateSaveData()
     end)
+--? End of Communication Routines
 end
 function core:CreateBLandAntiSpamTables()
     ns.tblBlackList, ns.antiSpamList = {}, {}

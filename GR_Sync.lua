@@ -117,11 +117,11 @@ local function serverCommsSync()
                 return
             end
 
-            if not sync:CheckVersion(message, sender) then return end
-            local _,_,_, GUID = strsplit(':', message)
-
             ns.code:dOut('Sync Request Heard from '..sender)
+
+            local _,_,_, GUID = strsplit(':', message)
             if not sync:CheckVersion(message, sender) then return end
+
             if not clientData.clients[sender] or not clientData.clients[sender].chunks then
                 clientData.clients[sender] = clientData.clients[sender] or {}
                 clientData.clients[sender].chunks = {}
@@ -287,6 +287,12 @@ function sync:CheckVersion(message, sender)
     local grVer = type(GR.version) == 'string' and tonumber(GR.version:match('^%d+%.%d+%.(.*)')) or nil
 
     local _, dbVersion, grVersion, GUID = strsplit(':', message)
+    local cVersion = grVersion
+    if not dbVersion or dbVersion == '' or not grVersion or grVersion == '' then
+        ns.code:fOut(sender..' '..L['OUTDATED_VERSION'], 'FFBCD142')
+        return false
+    end
+
     local acVer = grVersion
     dbVersion = (dbVersion and dbVersion ~= '') and tonumber(dbVersion) or nil
     grVersion = (grVersion and grVersion ~= '') and tonumber(grVersion:match('^%d+%.%d+%.(.*)')) or nil
@@ -307,6 +313,9 @@ function sync:CheckVersion(message, sender)
         ns.code:fOut(sender..' ('..acVer..') '..' '..L['NEWER_VERSION']..' '..GR.versionOut, 'FFBCD142')
     end
 
+    if not clientData.clients[sender] then
+        ns.code:dOut(sender..' Version Info: DB v'..dbVersion..' GR v'..cVersion, 'FFBCD142') end
+
     return GUID
 end
 function sync:ProcessChunks(message, sender)
@@ -324,9 +333,13 @@ function sync:ProcessChunks(message, sender)
     clientData.clients[sender].chunkCount = clientData.clients[sender].chunkCount and clientData.clients[sender].chunkCount + 1 or 1
     clientData.clients[sender].chunks[index] = data
 
-    ns.code:dOut('Received Chunk '..clientData.clients[sender].chunkCount..' of '..total..' from '..sender..' Chunk Size: '..#data)
-    if clientData.clients[sender].chunkCount == total then -- Server mode, make sure got all clients
+    local cCount = clientData.clients[sender].chunkCount
+    ns.code:dOut('Received Chunk '..cCount..' of '..total..' from '..sender..' Chunk Size: '..#data)
+    ns.statusText:SetText('<VER> Syncing: '..FormatPercentage(cCount/total, 2), 'SKIP_FADE')
+
+    if cCount == total then -- Server mode, make sure got all clients
         ns.code:dOut('All Chunks Received from '..sender)
+        ns.statusText:SetText('<VER> Syncing: Finished')
 
         local assembled = table.concat(clientData.clients[sender].chunks)
         --[[for k,v in ipairs(clientData.clients[sender].chunks) do
@@ -422,10 +435,7 @@ sync:Init()
 
 --* Public Functions
 function gSync:StartSyncRoutine(typeOfSync, sender) sync:StartSync(typeOfSync, sender) end
---? End of Public Functions
-
---* Communication Routines
-local function OnCommReceived(prefix, message, distribution, sender)
+function gSync:OnCommReceived(prefix, message, distribution, sender)
     if not ns.core.isEnabled then return
     elseif sender == UnitName('player') then return
     elseif prefix ~= GR.commPrefix then return
@@ -434,5 +444,4 @@ local function OnCommReceived(prefix, message, distribution, sender)
     if syncType == 1 or syncType == 2 then serverComms:OnCommReceived(message, sender)
     else clientComms:OnCommReceived(message, sender) end
 end
-GR:RegisterComm(GR.commPrefix, OnCommReceived)
---? End of Communication Routines
+--? End of Public Functions
