@@ -165,7 +165,7 @@ function analytics:CreateSessionStats()
     self:CreateStatsLabel(L['TOTAL_SCANNED']..':', ns.analytics:getSessionStats('PlayersScanned'), statsScroll1)
     self:CreateStatsLabel(L['TOTAL_INVITED']..':', ns.analytics:getSessionStats('PlayersInvited'), statsScroll1)
 
-    local pending = ns.analytics:getStats('WaitingOnPlayer', true) or 0
+    local pending = ns.analytics:getStats('WaitingOnInvite', true) or 0
     local lblUnknown = aceGUI:Create("Label")
     lblUnknown:SetText(L['INVITES_PENDING']..':')
     lblUnknown:SetFontObject('GameFontHighlight')
@@ -189,7 +189,7 @@ function analytics:CreateSessionStats()
     self:CreateStatsLabel(L['TOTAL_BLACKLISTED']..':', ns.analytics:getSessionStats('PlayersBlackListed'), statsScroll2)
 
     local function refreshTimer()
-        pending = ns.analytics:getSessionStats('WaitingOnPlayer')
+        pending = ns.analytics:getSessionStats('WaitingOnInvite')
 
         if not self.statsShown then return end
         lblUnknown2:SetText(ns.code:cText(pending > 0 and 'FFFF0000' or 'FFFFFFFF', pending))

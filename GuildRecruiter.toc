@@ -3,7 +3,7 @@
 
 ## Interface: 110002
 ## Title: Guild Recruiter
-## Version: 3.2.55
+## Version: 3.2.56
 ## Notes: Facilitates guild officers to recruit new members
 ## Author: Moonfury
 ## SavedVariables: GuildRecruiterDB
@@ -39,8 +39,8 @@ shared\GR_Dataset.lua
 shared\GR_Analytics.lua
 shared\GR_PlayerInvite.lua
 
-GR_Core.lua
 GR_Sync.lua
+GR_Core.lua
 GR_Settings.lua
 
 Screens\GR_Base.lua

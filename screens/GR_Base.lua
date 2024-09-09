@@ -67,6 +67,7 @@ function base:CreateBaseFrame()
     f:SetScript('OnDragStop', OnDragStop)
     f:SetScript('OnHide', function()
         ns.code:saveTables()
+        ns.analytics:UpdateSaveData()
 
         self.tblFrame.frame:SetShown(false)
         ns.observer:Notify('CLOSE_SCREENS')
@@ -94,9 +95,16 @@ function base:CreateBaseHeaderFrame()
     -- Title Text
     local textString = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     textString:SetPoint('LEFT', 7, 12)
-    textString:SetText(L['TITLE'])
+    textString:SetText(L['TITLE']..(GR.isPreRelease and ' ('..GR.preReleaseType..')' or ''))
     textString:SetTextColor(1, 1, 1, 1) -- Set the text color (r,g,b,a) values
     textString:SetFont(DEFAULT_FONT, 16, 'OUTLINE')
+    tblFrame.titleText = textString
+
+    ns.baseTitle = function(text)
+        textString:SetText(text)
+        if text == '' or not textString:GetText() or textString:GetText() == '' then
+            textString:SetText(L['TITLE']..(GR.isPreRelease and ' ('..GR.preReleaseType..')' or '')) end
+    end
 
     -- Close Button
     local closeButton = CreateFrame('Button', 'GR_BASE_CLOSE', f)
@@ -273,14 +281,39 @@ function base:CreateStatusBarFrame()
     statusText:SetText('')
     statusText:SetFont(DEFAULT_FONT, 11, 'OUTLINE')
     statusText:SetJustifyH('LEFT')
+
+    local fadeOutGroup = statusText:CreateAnimationGroup()
+    local fadeOut = fadeOutGroup:CreateAnimation('Alpha')
+    fadeOut:SetFromAlpha(1)  -- Start fully visible
+    fadeOut:SetToAlpha(0)    -- End fully invisible
+    fadeOut:SetDuration(2)
+    fadeOut:SetSmoothing("OUT")
+
+    local fadeInGroup = statusText:CreateAnimationGroup()
+    local fadeIn = fadeInGroup:CreateAnimation('Alpha')
+    fadeIn:SetFromAlpha(0)  -- Start fully visible
+    fadeIn:SetToAlpha(1)    -- End fully invisible
+    fadeIn:SetDuration(2)
+    fadeIn:SetSmoothing("IN")
+
+    fadeOutGroup:SetScript('OnFinished', function()
+        statusText:SetText('')
+        fadeInGroup:Play()
+    end)
     tblFrame.statusText = statusText
 
     local originalSettext = statusText.SetText
     local version = ns.code:cText('80FFFFFF', 'v'..GR.version..(GR.isPreRelease and ' ('..GR.preReleaseType..')' or ''))
     version = GR.isTesting and 'You are in Testing Mode' or version
-    function statusText:SetText(text)
+    function statusText:SetText(text, skipFade)
         if not text or text == '' then originalSettext(self, version)
+        elseif text:match('<VER>') then
+            text = text:gsub('<VER>', version)
+            originalSettext(self, text)
         elseif text then originalSettext(self, text) end
+
+        if text == '' or skipFade then return end
+        C_Timer.After(5, function() fadeOutGroup:Stop() fadeOutGroup:Play() end)
     end
     ns.statusText = statusText
 

@@ -471,7 +471,7 @@ ns.addonSettings = {
                     width = 1,
                     disabled = function() return ns.gmSettings.forceAntiSpam end,
                     set = function(_, val) ns.gSettings.antiSpam = val end,
-                    get = function() return ns.gmSettings.forceAntiSpam and ns.gmSettings.AntiSpam or ns.gSettings.antiSpam end,
+                    get = function() return (ns.gmSettings and ns.gmSettings.forceAntiSpam) and ns.gmSettings.AntiSpam or ns.gSettings.antiSpam end,
                 },
                 invAntiSpamInterval = {
                     order = 6,
@@ -817,7 +817,7 @@ ns.addonSettings = {
                     values = function()
                         local tbl = {}
                         tblMessage = tblMessage or newMsg()
-                        for k, r in pairs(ns.gmSettings.messageList or {}) do
+                        for k, r in pairs(ns.gmSettings and ns.gmSettings.messageList or {}) do
                             local desc = (r.gmSync or r.gmSync == nil) and ns.code:cText(GM_DESC_COLOR, r.desc) or r.desc
                             tbl[k] = desc
                         end
@@ -1060,8 +1060,6 @@ ns.addonSettings = {
                                 ns.tblBlackList[r.key] = nil
                             end
                         end
-
-                        ns.code:saveTables('BLACK_LIST')
                     end,
                 },
                 blPrivateReasonButton = {
@@ -1084,7 +1082,6 @@ ns.addonSettings = {
 
                         -- Put back in to black list table
                         for _, r in pairs(ns.tblBlackList) do ns.tblBlackList[r.key] = r end
-                        ns.code:saveTables('BLACK_LIST')
                     end,
                 },
                 blHeader3 = {

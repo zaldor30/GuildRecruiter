@@ -12,7 +12,7 @@ end
 local function CallBackWhoListUpdate()
     ns.events:Unregister('WHO_LIST_UPDATE', CallBackWhoListUpdate)
 
-    ns.analytics:saveStats('PlayersScanned', C_FriendList.GetNumWhoResults())
+    ns.analytics:incStats('PlayersScanned', C_FriendList.GetNumWhoResults())
 
     local sessionStats = ns.analytics:getSessionStats('PlayersScanned')
     scanner:UpdateAnalytics()
@@ -42,6 +42,7 @@ function scanner:SetShown(isShown)
     local tblBase = ns.win.base.tblFrame
 
     if not isShown then
+        ns.baseTitle('')
         tblBase.backButton:SetShown(false)
         tblBase.resetButton:SetShown(false)
         tblBase.compactButton:SetShown(false)
@@ -59,6 +60,8 @@ function scanner:SetShown(isShown)
 
         return
     end
+
+    ns.invite:GetWelcomeMessages()
 
     --* Event Routines
     ns.observer:Notify('CLOSE_SCREENS')
@@ -80,6 +83,9 @@ function scanner:SetShown(isShown)
         filterCount = self.tblScanner.filterCount or 0,
         totalFilters = self.tblScanner.totalFilters or 0,
     }
+
+    if self.tblScanner.isCompact then ns.baseTitle('GR'..(GR.isPreRelease and ' ('..GR.preReleaseType..')' or ''))
+    else ns.baseTitle('') end
 
     --* Setup Base Frame
     tblBase.backButton:SetShown(true)
@@ -362,6 +368,10 @@ function scanner:ChangeCompactMode()
     self.tblScanner.isCompact = not self.tblScanner.isCompact
     ns.pSettings.isCompact = self.tblScanner.isCompact
 
+    if ns.pSettings.isCompact then
+        ns.baseTitle('GR'..(GR.isPreRelease and ' ('..GR.preReleaseType..')' or ''))
+    else ns.baseTitle('') end
+
     self:SetShown(true)
 end
 function scanner:UpdateAnalytics()
@@ -369,22 +379,23 @@ function scanner:UpdateAnalytics()
         or self.tblScanner.isCompact
         or not self.ctrlAnalyics.lblPlayersScanned then return end
 
-    local sessionStats = ns.analytics:getSessionStats('PlayersScanned')
+    local _,_, sessionStats = ns.analytics:getSessionStats('PlayersScanned')
     self.ctrlAnalyics.lblPlayersScanned:SetText(L['TOTAL_SCANNED']..': '..sessionStats)
 
-    sessionStats = ns.analytics:getSessionStats('PlayersInvited')
+    _,_, sessionStats = ns.analytics:getSessionStats('PlayersInvited')
     self.ctrlAnalyics.lblTotalInvites:SetText(L['TOTAL_INVITED']..': '..sessionStats)
 
     sessionStats = ns.analytics:getSessionStats('WaitingOnInvite')
+    sessionStats = sessionStats > 0 and ns.code:cText('FFFF0000', sessionStats) or ns.code:cText('FF00FF00', 0)
     self.ctrlAnalyics.lblWaitingOn:SetText(L['INVITES_PENDING']..': '..sessionStats)
 
-    sessionStats = ns.analytics:getSessionStats('PlayersDeclined')
+    _,_, sessionStats = ns.analytics:getSessionStats('PlayersDeclined')
     self.ctrlAnalyics.lblDeclined:SetText(L['TOTAL_DECLINED']..': '..sessionStats)
 
-    sessionStats = ns.analytics:getSessionStats('PlayersJoined')
+    _,_, sessionStats = ns.analytics:getSessionStats('PlayersJoined')
     self.ctrlAnalyics.lblAccepted:SetText(L['TOTAL_ACCEPTED']..': '..sessionStats)
 
-    sessionStats = ns.analytics:getSessionStats('PlayersBlackListed')
+    _,_, sessionStats = ns.analytics:getSessionStats('PlayersBlackListed')
     self.ctrlAnalyics.lblTotalBlackList:SetText(L['TOTAL_BLACKLISTED']..': '..sessionStats)
 end
 
@@ -399,7 +410,6 @@ function scanner:SkipPlayerInvite()
         end
     end
     for k in pairs(tbl) do self.tblInvites[k] = nil end
-    ns.code:saveTables('ANTI_SPAM_LIST')
 
     -- Update Data and Button State
     self:DisplayWhoList()
@@ -415,7 +425,6 @@ function scanner:BlackListPlayer()
         end
     end
     for k in pairs(tbl) do self.tblInvites[k] = nil end
-    ns.code:saveTables('BLACK_LIST')
 
     -- Update Data and Button State
     self:DisplayWhoList()
@@ -529,6 +538,7 @@ function scanner:DisplayWhoList()
 
         if v.guild == '' then
             local inviteOkResult = ns.invite:whoInviteChecks(v)
+
             if self.tblScanner.isCompact then
                 if inviteOkResult then v.guild = ns.code:cText('FFFF0000', '('..inviteOkResult..')') end
             elseif not self.tblScanner.isCompact and not self.tblInvites[k] and v.guild == '' then
@@ -670,7 +680,4 @@ function scanner:CreateFilters(displayOnly, nextRecord)
 end
 scanner:Init()
 
--- ToDo: Check Keybinds (Add to scanner:CreateBaseFrame)
 -- ToDo: Create Analytics (Add to scanner:CreateAnalyticsFrame)
--- ToDo: Create Analytics (Add to scanner:ProcessWhoList)
--- ToDo: Create Custom Filters (Add to scanner:CreateFilters)

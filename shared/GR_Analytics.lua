@@ -5,72 +5,66 @@ ns.analytics = {}
 local analytics = ns.analytics
 
 function analytics:Init()
+    self.tblGlobal = {}
+    self.tblPlayer = {}
+    self.tblSession = {}
 end
 function analytics:Start()
-    -- Create Table if Needed
-    ns.pAnalytics = {
-        ["PlayersBlackListed"] = ns.pAnalytics["PlayersBlackListed"] or 0,
-        ["PlayersInvited"] = ns.pAnalytics["PlayersInvited"] or 0,
-        ["PlayersDeclined"] = ns.pAnalytics["PlayersDeclined"] or 0,
-        ["startDate"] = ns.pAnalytics["startDate"] or time(),
-        ["PlayersScanned"] = ns.pAnalytics["PlayersScanned"] or 0,
-        ["PlayersJoined"] = ns.pAnalytics["PlayersJoined"] or 0,
-    }
-    ns.gAnalytics = {
-        ["PlayersBlackListed"] = ns.gAnalytics["PlayersBlackListed"] or 0,
-        ["PlayersInvited"] = ns.gAnalytics["PlayersInvited"] or 0,
-        ["PlayersDeclined"] = ns.gAnalytics["PlayersDeclined"] or 0,
-        ["startDate"] = ns.gAnalytics["startDate"] or time(),
-        ["PlayersScanned"] = ns.gAnalytics["PlayersScanned"] or 0,
-        ["PlayersJoined"] = ns.gAnalytics["PlayersJoined"] or 0,
+    local location = ns.pAnalytics
+    local template = {
+        ["PlayersBlackListed"] = location["PlayersBlackListed"] or 0,
+        ["PlayersInvited"] = location["PlayersInvited"] or 0,
+        ["PlayersDeclined"] = location["PlayersDeclined"] or 0,
+        ["startDate"] = location["startDate"] or time(),
+        ["PlayersScanned"] = location["PlayersScanned"] or 0,
+        ["PlayersJoined"] = location["PlayersJoined"] or 0,
     }
 
-    -- Create Guild Recruiter Accessable Tables
-    local success, tblGSession = ns.code:decompressData(ns.gAnalytics.session or {})
-    ns.pStats = ns.pAnalytics
-    ns.gStats = ns.gAnalytics
-    ns.SessionStat = {
+    self.tblPlayer = template
+    location = ns.gAnalytics
+    self.tblGlobal = template
+    self.tblSession = {
         ["PlayersBlackListed"] = 0,
         ["PlayersInvited"] = 0,
-        ["PlayersDeclined"] = 0,
+        ["PlayersDeclined"] =0,
         ["startDate"] = time(),
         ["PlayersScanned"] = 0,
         ["PlayersJoined"] = 0,
-        ['WaitingOnInvite'] = 0,
-    }
-    ns.guildSession = success and tblGSession or {}
-    ns.guildSession[date('%m%d%Y')] = ns.guildSession[date('%m%d%Y')] or {
-        ["PlayersBlackListed"] = 0,
-        ["PlayersInvited"] = 0,
-        ["PlayersDeclined"] = 0,
-        ["startDate"] = time(),
-        ["PlayersScanned"] = 0,
-        ["PlayersJoined"] = 0,
-        ['WaitingOnInvite'] = 0,
+        ["WaitingOnInvite"] = 0,
     }
 end
 function analytics:getSessionStats(field, isSavedStat) return self:getStats(field, (isSavedStat or false), true) end
-function analytics:getStats(field, isGlobal, session)
-    if not field then return end
+function analytics:getStats(field)
+    if not field then return
+    elseif field == 'WaitingOnInvite' then return self.tblSession[field]
+    elseif not self.tblSession[field] then
+        ns.code:fOut('Analytics: Field not found: '..field)
+        return
+    end
 
-    local tbl = {}
-    if not isGlobal and session then tbl = ns.SessionStat or {} -- Current Session Stats
-    elseif isGlobal and session then tbl = ns.guildSession[date('%m%d%Y')] or {} -- Session stats that are saved
-    elseif not isGlobal and not session then tbl = ns.pStats or {} -- Profile Stats
-    elseif isGlobal and not session then  tbl = ns.gStats or {} end -- Global Stats
-
-    return (tbl and tbl[field]) and tbl[field] or 0
+    local global, player, session = self.tblGlobal[field], self.tblPlayer[field], self.tblSession[field]
+    return global, player, session
 end
-function analytics:saveStats(field, amt)
+function analytics:incStats(field, amt)
     if not field then return
     elseif field == 'WaitingOnInvite' then self:WaitingOnInvite(field, amt) return end
 
-    local curDate = date('%m%d%Y')
-    ns.guildSession[curDate] = ns.guildSession[curDate] or self.blankRecord
-
     amt = (not amt or type(amt) == 'boolean') and 1 or amt
-    ns.pAnalytics[field] = ns.pAnalytics[field] and ns.code:inc(ns.pAnalytics[field], amt) or amt
-    ns.gAnalytics[field] = ns.gAnalytics[field] and ns.code:inc(ns.gAnalytics[field], amt) or amt
+    self.tblGlobal[field] = (self.tblGlobal[field] or 0) + amt
+    self.tblPlayer[field] = (self.tblPlayer[field] or 0) + amt
+    self.tblSession[field] = (self.tblSession[field] or 0) + amt
+
+    if ns.win.scanner:IsShown() then ns.win.scanner:UpdateAnalytics() end
+    return self.tblGlobal[field], self.tblPlayer[field], self.tblSession[field]
+end
+function analytics:UpdateSaveData()
+    for k,v in pairs(self.tblPlayer) do
+        ns.pAnalytics[k] = v
+    end
+
+    for k,v in pairs(self.tblGlobal) do
+        ns.gAnalytics[k] = v
+    end
 end
 function analytics:WaitingOnPlayer(field, amt)
     amt = (not amt or type(amt) == 'boolean') and 1 or amt

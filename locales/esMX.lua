@@ -31,6 +31,20 @@ L['declines your guild invitation'] = 'la invitación a tu hermandad'
 L['JOINED_GUILD_MESSAGE'] = ' se unió a la gremia!'
 L['NO_ANTISPAM_ADDED'] = 'No se añadió a la lista de Anti-Spam.'
 
+--? 3.2.56 Changes
+L['NO_WHISPER_MESSAGE'] = 'Seleccionaste un mensaje de susurro, pero no tienes ninguno.'
+L['NO_GREETING_MESSAGE'] = 'Seleccionaste un mensaje de bienvenida del guild, pero no tienes ninguno.'
+L['SYNC_TIMED_OUT'] = 'La sincronización no respondió a tiempo.'
+L['FINDING_CLIENTS_SYNC'] = 'Buscando jugadores para con quien sincronizar.'
+L['SYNC_REQUEST_RECEIVED'] = 'Solicitud de sincronización recibida de'
+L['CLIENTS_FOUND'] = 'jugadores encontrados para sincronizar:'
+L['NO_REASON_GIVEN'] = 'No se dio ninguna razón.'
+
+L['PLAYER_IS_IN_GUILD'] = 'ya está en el guild.'
+L['PLAYER_IS_ON_BLACKLIST'] = 'está en la lista negra.'
+L['PLAYER_IS_ON_ANTISPAM_LIST'] = 'está en la lista Anti-Spam.'
+L['PLAYER_MANUAL_ON_BLACKLIST'] = 'está en la lista negra.\nRazón: %REASON%\n\n¿Deseas invitarlo al guild?'
+
 --? 3.2 Changes
 L['SYNC_ALREADY_IN_PROGRESS'] = '¡La sincronización ya está en progreso con %s!'
 L['NO_CLIENTS_FOUND'] = 'No se encontraron clientes para sincronizar.'

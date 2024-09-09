@@ -46,30 +46,40 @@ function code:fOut(msg, color, noPrefix) -- Force console print routine)
 end
 
 -- * Data Compression Routines
-function code:compressData(data, encode)
+function code:compressData(data, encode, skipCompression)
     if not data then return end
 
     local serializedData = aceSerializer:Serialize(data)
-    local compressedData = LibDeflate:CompressDeflate(serializedData)
+    local compressedData = not skipCompression and LibDeflate:CompressDeflate(serializedData) or serializedData
     return (encode and LibDeflate:EncodeForWoWAddonChannel(compressedData) or compressedData)
 end
-function code:decompressData(data, decode)
+function code:decompressData(data, decode, skipCompression)
     if not data or data == '' or type(data) ~= 'string' then return false, nil end
 
     data = (decode and LibDeflate:DecodeForWoWAddonChannel(data) or data)
-    local decompressedData = LibDeflate:DecompressDeflate(data)
-    if decompressedData then return aceSerializer:Deserialize(decompressedData)
-    else return false, nil end -- Decompression failed
+    if not data then
+        ns.code:dOut('Failed to decode data', 'FF0000')
+        return false, nil
+    end
+    local decompressedData = not skipCompression and LibDeflate:DecompressDeflate(data) or data
+    if not decompressedData then
+        ns.code:dOut('Failed to decompress data', 'FF0000')
+        return false, nil
+    end
+
+    return aceSerializer:Deserialize(decompressedData)
 end
 
 -- * Tables and Data Sorting Routines
 function code:saveTables(whichOne)
+    ns.g.blackList = ns.code:compressData(ns.tblBlackList) or ''
+    ns.g.antiSpamList = ns.code:compressData(ns.tblAntiSpamList) or ''
+
+    if ns.tblAntiSpamList then return end
     if whichOne == 'BLACK_LIST' then ns.g.blackList = ns.code:compressData(ns.tblBlackList)
     elseif whichOne == 'ANTI_SPAM_LIST' then ns.g.antiSpamList = ns.code:compressData(ns.tblAntiSpamList)
     else
-        ns.g.blackList = ns.code:compressData(ns.tblBlackList) or ''
-        ns.g.antiSpamList = ns.code:compressData(ns.tblAntiSpamList) or ''
-        if ns.guildSession then ns.gAnalytics.session = ns.code:compressData(ns.guildSession) end
+        --if ns.guildSession then ns.gAnalytics.session = ns.code:compressData(ns.guildSession) end
     end
 end
 function code:sortTableByField(tbl, sortField, reverse, showit)

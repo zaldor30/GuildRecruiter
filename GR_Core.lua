@@ -14,6 +14,13 @@ function GR:OnInitialize()
     if core.isEnabled then return end -- Prevents double initialization
 
     GR:RegisterChatCommand('rl', function() ReloadUI() end) -- Set the /rl slash command to reload the UI
+    ns.events:RegisterEvent('PLAYER_LOGIN', function()
+        local function OnCommReceived(_,prefix, message, distribution, sender)
+            ns.sync:OnCommReceived(prefix, message, distribution, sender)
+        end
+        --GR:RegisterComm(GR.commPrefix, OnCommReceived)
+        ns.events:RegisterEvent('CHAT_MSG_ADDON', OnCommReceived)
+    end)
 
     local function checkIfInGuild(count) -- Check if the player is in a guild
         if not count then return end
@@ -32,7 +39,8 @@ function GR:OnInitialize()
             C_Timer.After(1, function() checkIfInGuild(count + 1) end)
         elseif clubID then
             core.isEnabled = true
-            core:StartGuildRecruiter(clubID) end
+            core:StartGuildRecruiter(clubID)
+        end
     end
 
     checkIfInGuild(0)
@@ -79,7 +87,7 @@ function core:Init()
                 forceGuildMessage = false,
                 guildMessage = L['DEFAULT_GUILD_WELCOME'],
                 forceSendWhisper = false,
-                sendWhsiper = false,
+                sendWhisperGreeting = false,
                 forceWhisperMessage = false,
                 whisperMessage = '',
                 forceMessageList = false,
@@ -95,7 +103,7 @@ function core:Init()
                 antiSpamDays = 7,
                 sendGuildGreeting = false,
                 guildMessage = L['DEFAULT_GUILD_WELCOME'],
-                sendWhsiper = false,
+                sendWhisperGreeting = false,
                 whisperMessage = '',
                 scanWaitTime = 6,
                 -- Messages
@@ -286,12 +294,14 @@ function core:PerformRecordMaintenance() -- Perform Record Maintenance
 
     -- Anti-Spam List Maintenance
     local antiSpamRemoved, blackListRemoved = 0, 0
-    local antiSpamDays = (ns.gmSettings.antiSpam and ns.gmSettings.antiSpamDays) and ns.gmSettings.antiSpamDays or nil
-    antiSpamDays = (not ns.gmSettings.antiSpam and (ns.gSettings.antiSpam and ns.gSettings.antiSpamDays)) and ns.gSettings.antiSpamDays or 7
+    local antiSpamDays = (ns.gmSettings and ns.gmSettings.antiSpam and ns.gmSettings.antiSpamDays) and ns.gmSettings.antiSpamDays or nil
+    antiSpamDays = ((ns.gmSettings and not ns.gmSettings.antiSpam) and (ns.gSettings.antiSpam and ns.gSettings.antiSpamDays)) and ns.gSettings.antiSpamDays or 7
+    local expireSeconds = antiSpamDays * SECONDS_IN_A_DAY
 
-    local antiSpamExpire = C_DateAndTime.GetServerTimeLocal() - (antiSpamDays * SECONDS_IN_A_DAY)
+    local antiSpamExpire = time() - expireSeconds
     for k, r in pairs(ns.tblAntiSpamList or {}) do
-        if not r.date then
+        if ns.tblBlackList[k] then ns.tblAntiSpamList[k] = nil
+        elseif not r.date then
             ns.tblAntiSpamList[k] = nil
             antiSpamRemoved = antiSpamRemoved + 1
         elseif r.date < antiSpamExpire then
@@ -313,8 +323,8 @@ function core:StartSlashCommands() -- Start Slash Commands
         if not msg or msg == '' and not ns.win.home:IsShown() then return ns.win.home:SetShown(true)
         elseif msg == L['HELP'] then ns.code:fOut(L['SLASH_COMMANDS'], GRColor, true)
         elseif strlower(msg) == L['CONFIG'] then Settings.OpenToCategory('Guild Recruiter')
-        elseif strlower(msg):match(tostring(L['BLACKLIST_ICON'])) then
-            msg = strlower(msg):gsub(tostring(L['BLACKLIST_ICON']), ''):trim()
+        elseif strlower(msg):match(L['BLACKLIST']) then
+            msg = strlower(msg):gsub(tostring(L['BLACKLIST']), ''):trim()
             local name = strupper(strsub(msg,1,1))..strlower(strsub(msg,2))
             ns:add(name)
         end
@@ -361,7 +371,11 @@ function core:StartBaseEvents()
     ns.events:RegisterEvent('CHAT_MSG_SYSTEM', CHAT_MSG_SYSTEM)
 
     -- Saves the ns.tblBlackList and ns.antiSpamList tables on logout
-    ns.events:RegisterEvent('PLAYER_LOGOUT', function() ns.code:saveTables() end)
+    ns.events:RegisterEvent('PLAYER_LOGOUT', function()
+        ns.code:saveTables()
+        ns.analytics:UpdateSaveData()
+    end)
+--? End of Communication Routines
 end
 function core:CreateBLandAntiSpamTables()
     ns.tblBlackList, ns.antiSpamList = {}, {}
@@ -414,7 +428,7 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
             if k:match('force') then ns.gmSettings[k] = false end
         end
      end
-    if not ns.gmSettings.antiSpam or not ns.gSettings.antiSpam then
+    if (self.hasGM and (not ns.gmSettings.antiSpam or not ns.gmSettings.antiSpamDays)) or (not self.hasGM and (not ns.gSettings.antiSpam or not ns.gSettings.antiSpamDays)) then
         ns.code:fOut('Anti-Spam is turned off, see options.', 'FFFF0000')
     end
 
@@ -434,16 +448,6 @@ function core:StartGuildRecruiter(clubID) -- Start Guild Recruiter
         ns.win.whatsnew.startUpWhatsNew = true
         C_Timer.After(3, function() ns.win.whatsnew:SetShown(true) end) -- Show the what's new window
     elseif ns.global.currentVersion ~= GR.version then ns.code:fOut(L['NEW_VERSION_INFO'], GRColor, true) end
-
-    local function OnCommReceived(prefix, message, distribution, sender)
-        if not ns.core.isEnabled then return
-        elseif sender == UnitName('player') then return
-        elseif prefix ~= GR.commPrefix then return
-        elseif distribution ~= 'GUILD' and distribution ~= 'WHISPER' then return end
-
-        ns.sync:CommReceived(message, sender)
-    end
-    GR:RegisterComm(GR.commPrefix, OnCommReceived)
 
     --* Start Auto Sync
     if type(ns.pSettings.enableAutoSync) ~= 'boolean' then ns.pSettings.enableAutoSync = true end
@@ -493,7 +497,7 @@ local function InitializeDropdownMenu(self, level)
         UIDropDownMenu_AddButton(info, level)
 
         local activeMessage = ns.pSettings.activeMessage or 1
-        local messageList = ns.gmSettings.messageList or ns.gSettings.messageList or nil
+        local messageList = ns.gmSettings and ns.gmSettings.messageList or (ns.gSettings.messageList or nil)
         if not messageList then
             ns.code:fOut(L['NO_INVITE_MESSAGE'])
             return

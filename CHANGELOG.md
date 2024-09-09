@@ -1,6 +1,12 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
+### 3.2.56
+    - Fixed sync, so it can handle larger data sets.
+    - Sync: Added time-stamping to the sync data.
+    - Rework on inviting to make more reliable.
+    - Invite: Added delay for messages to comply with Blizzard's API.
+    - Rework analytics to more accurately track stats.
 ### 3.2.55
     - Fixed issue with no messages.
     - Fixed database defaults for new installs.
