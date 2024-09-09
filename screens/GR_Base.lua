@@ -98,6 +98,13 @@ function base:CreateBaseHeaderFrame()
     textString:SetText(L['TITLE']..(GR.isPreRelease and ' ('..GR.preReleaseType..')' or ''))
     textString:SetTextColor(1, 1, 1, 1) -- Set the text color (r,g,b,a) values
     textString:SetFont(DEFAULT_FONT, 16, 'OUTLINE')
+    tblFrame.titleText = textString
+
+    ns.baseTitle = function(text)
+        textString:SetText(text)
+        if text == '' or not textString:GetText() or textString:GetText() == '' then
+            textString:SetText(L['TITLE']..(GR.isPreRelease and ' ('..GR.preReleaseType..')' or '')) end
+    end
 
     -- Close Button
     local closeButton = CreateFrame('Button', 'GR_BASE_CLOSE', f)

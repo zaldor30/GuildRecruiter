@@ -42,6 +42,7 @@ function scanner:SetShown(isShown)
     local tblBase = ns.win.base.tblFrame
 
     if not isShown then
+        ns.baseTitle('')
         tblBase.backButton:SetShown(false)
         tblBase.resetButton:SetShown(false)
         tblBase.compactButton:SetShown(false)
@@ -82,6 +83,9 @@ function scanner:SetShown(isShown)
         filterCount = self.tblScanner.filterCount or 0,
         totalFilters = self.tblScanner.totalFilters or 0,
     }
+
+    if self.tblScanner.isCompact then ns.baseTitle('GR'..(GR.isPreRelease and ' ('..GR.preReleaseType..')' or ''))
+    else ns.baseTitle('') end
 
     --* Setup Base Frame
     tblBase.backButton:SetShown(true)
@@ -363,6 +367,10 @@ end
 function scanner:ChangeCompactMode()
     self.tblScanner.isCompact = not self.tblScanner.isCompact
     ns.pSettings.isCompact = self.tblScanner.isCompact
+
+    if ns.pSettings.isCompact then
+        ns.baseTitle('GR'..(GR.isPreRelease and ' ('..GR.preReleaseType..')' or ''))
+    else ns.baseTitle('') end
 
     self:SetShown(true)
 end

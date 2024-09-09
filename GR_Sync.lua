@@ -54,6 +54,8 @@ function sync:StartSync(typeOfSync, sender)
 
     ns.win.base.tblFrame.syncIcon:GetNormalTexture():SetVertexColor(0, 1, 0, 1)
 
+    clientData.clients = {}
+
     isSyncing, syncType, syncMaster = true, typeOfSync, (sender or UnitName('player'))
     syncPrefix = syncType == 1 and 'Auto Sync' or syncType == 2 and 'Manual Sync' or 'Sync with '..syncMaster
     ns.code:cOut('Starting '..syncPrefix..'.', GRColor)
@@ -101,7 +103,7 @@ local function serverSync()
         timer:cancel('SYNC_REQUEST_TIME_OUT')
         for k in pairs(clientData.clients) do
             ns.code:dOut('Sending Data Request to '..k)
-            GR:SendCommMessage(GR.commPrefix, 'SYNC_DATA_REQUEST:'..UnitGUID('player'), 'WHISPER', k)
+            GR:SendCommMessage(GR.commPrefix, 'SYNC_DATA_REQUEST:'..UnitGUID('player')..':'..(tblSync[UnitGUID('player')] or 0), 'WHISPER', k)
         end
         timer:add('DATA_WAIT_TIMEOUT', DATA_WAIT_TIMEOUT, function() sync:EndOfSync('IS_FAIL', L['FAILED_TO_SEND_SYNC_DATA']) end)
     end
@@ -118,18 +120,15 @@ local function serverCommsSync()
             end
 
             ns.code:dOut('Sync Request Heard from '..sender)
+            clientData.clients[sender] = { chunks = {}, restored = {} }
 
-            local _,_,_, GUID = strsplit(':', message)
+            local _,_,_, GUID, lastSync = strsplit(':', message)
             if not sync:CheckVersion(message, sender) then return end
 
-            if not clientData.clients[sender] or not clientData.clients[sender].chunks then
-                clientData.clients[sender] = clientData.clients[sender] or {}
-                clientData.clients[sender].chunks = {}
-                clientData.clients[sender].restored = {}
-            end
-
             clientData.clients[sender].GUID = (GUID and GUID ~= '') and GUID or clientData.clients[sender].GUID
+            clientData.clients[sender].lastSync = tonumber(lastSync) or 0
             clientData.count = clientData.count and clientData.count + 1 or 1
+
             timer:add(sender..'_SYNC_REQUEST_TIME_OUT', SERVER_SEND_DATA_WAIT, function() sync:EndOfSync('IS_FAIL', sender..' '..L['FAILED_TO_RECEIVE_SYNC_DATA']) end)
         else
             if sync:ProcessChunks(message, sender) then
@@ -141,11 +140,9 @@ local function serverCommsSync()
                     if GUID then tblSync[GUID] = time() end
                     ns.g.syncList = tblSync
                 end
-                for k in pairs(clientData.clients) do
+                for k, v in pairs(clientData.clients) do
                     ns.code:dOut('Sending Data to '..k)
-
-                    local GUID = clientData.clients[sender].GUID or nil
-                    sync:SendChunks(k, GUID and tblSync[GUID] or 0)
+                    sync:SendChunks(k, v.lastSync)
                 end
 
                 sync:EndOfSync()
@@ -172,24 +169,21 @@ local function clientCommsFunctions()
             ns.code:cOut(L['SYNC_REQUEST_RECEIVED']..' '..sender, GRColor)
             if not sync:CheckVersion(message, sender) then sync:EndOfSync() return end
 
+            local _,_,_, GUID = strsplit(':', message)
+            clientData.clients[sender] = { chunks = {}, restored = {} }
             timer:add(sender..'_SYNC_REQUEST_TIME_OUT', DATA_WAIT_TIMEOUT, function() sync:EndOfSync('IS_FAIL', sender..' '..L['FAILED_TO_RECEIVE_SYNC_DATA']) end)
-            GR:SendCommMessage(GR.commPrefix, 'SYNC_REQUEST_HEARD:'..GR.dbVersion..':'..GR.version..':'..UnitGUID('player'), 'WHISPER', sender)
+            GR:SendCommMessage(GR.commPrefix, 'SYNC_REQUEST_HEARD:'..GR.dbVersion..':'..GR.version..':'..UnitGUID('player')..':'..(tblSync[GUID] or 0), 'WHISPER', sender)
         elseif message:match('SYNC_DATA_REQUEST') then
             timer:cancel(sender..'_SYNC_REQUEST_TIME_OUT')
             ns.code:dOut('Received Data Request from '..sender)
 
-            local _, GUID = strsplit(':', message)
-            clientData.clients[sender] = {}
+            local _, GUID, lastSync = strsplit(':', message)
             clientData.clients[sender].GUID = GUID
-            sync:SendChunks(sender, GUID and tblSync[GUID] or 0)
+            clientData.clients[sender].lastSync = tonumber(lastSync) or 0
+
+            sync:SendChunks(sender, GUID and clientData.clients[sender].lastSync)
             timer:add('DATA_WAIT_TIMEOUT', DATA_WAIT_TIMEOUT, function() sync:EndOfSync('IS_FAIL', L['FAILED_TO_SEND_SYNC_DATA']) end)
         else
-            if not clientData.clients[sender] or not clientData.clients[sender].chunks then
-                clientData.clients[sender] = clientData.clients[sender] or {}
-                clientData.clients[sender].chunks = {}
-                clientData.clients[sender].restored = {}
-            end
-
             if sync:ProcessChunks(message, sender) then
                 ns.code:dOut('Data Received from '..sender)
                 if sync:ImportData() then
