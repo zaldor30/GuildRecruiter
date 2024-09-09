@@ -87,7 +87,7 @@ local function serverSync()
     local tblFunc = {}
     function tblFunc:StartServerSync(typeOfSync, sender) -- SYNC_REQUEST
         ns.code:dOut(L['FINDING_CLIENTS_SYNC'])
-        GR:SendCommMessage(GR.commPrefix, 'SYNC_REQUEST:'..GR.dbVersion..':'..GR.version..':'..UnitGUID('player'), 'GUILD')
+        GR:SendCommMessage(GR.commPrefix, 'SYNC_REQUEST:'..GR.dbVersion..':'..GR.version..':'..UnitGUID('player')..':'..(tblSync[UnitGUID('player')] or 0), 'GUILD')
         timer:add('SYNC_REQUEST_TIME_OUT', REQUEST_WAIT_TIMEOUT, function()
             timer:cancel('SYNC_REQUEST_TIME_OUT')
             if (clientData.count or 0) > 0 then
@@ -101,9 +101,9 @@ local function serverSync()
     end
     function tblFunc:SendDataRequests() -- SYNC_DATA_REQUEST
         timer:cancel('SYNC_REQUEST_TIME_OUT')
-        for k in pairs(clientData.clients) do
+        for k, v in pairs(clientData.clients) do
             ns.code:dOut('Sending Data Request to '..k)
-            GR:SendCommMessage(GR.commPrefix, 'SYNC_DATA_REQUEST:'..UnitGUID('player')..':'..(tblSync[UnitGUID('player')] or 0), 'WHISPER', k)
+            GR:SendCommMessage(GR.commPrefix, 'SYNC_DATA_REQUEST:'..UnitGUID('player')..':'..(tblSync[v.GUID] or 0), 'WHISPER', k)
         end
         timer:add('DATA_WAIT_TIMEOUT', DATA_WAIT_TIMEOUT, function() sync:EndOfSync('IS_FAIL', L['FAILED_TO_SEND_SYNC_DATA']) end)
     end
@@ -171,6 +171,8 @@ local function clientCommsFunctions()
 
             local _,_,_, GUID = strsplit(':', message)
             clientData.clients[sender] = { chunks = {}, restored = {} }
+            clientData.clients[sender].GUID = (GUID and GUID ~= '') and GUID or clientData.clients[sender].GUID
+
             timer:add(sender..'_SYNC_REQUEST_TIME_OUT', DATA_WAIT_TIMEOUT, function() sync:EndOfSync('IS_FAIL', sender..' '..L['FAILED_TO_RECEIVE_SYNC_DATA']) end)
             GR:SendCommMessage(GR.commPrefix, 'SYNC_REQUEST_HEARD:'..GR.dbVersion..':'..GR.version..':'..UnitGUID('player')..':'..(tblSync[GUID] or 0), 'WHISPER', sender)
         elseif message:match('SYNC_DATA_REQUEST') then
@@ -181,7 +183,7 @@ local function clientCommsFunctions()
             clientData.clients[sender].GUID = GUID
             clientData.clients[sender].lastSync = tonumber(lastSync) or 0
 
-            sync:SendChunks(sender, GUID and clientData.clients[sender].lastSync)
+            sync:SendChunks(sender, clientData.clients[sender].lastSync or 0)
             timer:add('DATA_WAIT_TIMEOUT', DATA_WAIT_TIMEOUT, function() sync:EndOfSync('IS_FAIL', L['FAILED_TO_SEND_SYNC_DATA']) end)
         else
             if sync:ProcessChunks(message, sender) then
@@ -252,15 +254,16 @@ function sync:SendChunks(sender, prevSync) -- Chunk and Send
     sync:GatherMyData(prevSync)
     if not myData then return end
 
-    local chunks = {}
+    local chunks, cCount = {}, 0
     local function GetChunks(encodedData, chunkSize)
         for i = 1, #encodedData, chunkSize do
+            cCount = cCount + 1
             table.insert(chunks, encodedData:sub(i, i + chunkSize - 1))
         end
     end
     GetChunks(myData, 245)
 
-    local chunkCount, totalChunks = 0, #chunks
+    local chunkCount, totalChunks = 0, cCount
     local function SendChunkWithDelay(recipient)
         local chunkOut = tremove(chunks, 1)
         chunkCount = chunkCount + 1
