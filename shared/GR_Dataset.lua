@@ -49,6 +49,8 @@ function ds:WhatsNew() -- What's new in the current version
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
 
+    |CFFFFFF00v3.2.57 Notes|r
+        - Fixing compact mode scanning.
     |CFFFFFF00v3.2.56 Notes|r
         - Fixed sync, so it can handle larger data sets.
         - Sync: Added time-stamping to the sync data.
@@ -186,8 +188,8 @@ function ds:invalidZones() -- Invalid zones for recruitment
             end
         end
     end
-    ListAllInstances()
-    ListAllInstances(true)
+    ListAllInstances() -- List all seasonal dungeons
+    ListAllInstances(true) -- List all seasonal raids
 
     local function GetZoneInfo(tblIDs)
         if not tblIDs then return end

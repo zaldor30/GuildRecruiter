@@ -539,13 +539,13 @@ function scanner:DisplayWhoList()
         if v.guild == '' then
             local inviteOkResult = ns.invite:whoInviteChecks(v)
 
-            if self.tblScanner.isCompact then
-                if inviteOkResult then v.guild = ns.code:cText('FFFF0000', '('..inviteOkResult..')') end
-            elseif not self.tblScanner.isCompact and not self.tblInvites[k] and v.guild == '' then
+            if not self.tblInvites[k] and v.guild == '' then
                 if inviteOkResult then v.guild = ns.code:cText('FFFF0000', '('..inviteOkResult..')') end
 
-                lblLevel = createWhoEntry(v)
-                lblLevel:SetText(ns.code:cText((not inviteOkResult and 'FF00FF00' or 'FFFFFFFF'), v.level))
+                if not self.tblScanner.isCompact then
+                    lblLevel = createWhoEntry(v)
+                    lblLevel:SetText(ns.code:cText((not inviteOkResult and 'FF00FF00' or 'FFFFFFFF'), v.level))
+                end
             end
         elseif not self.tblScanner.isCompact then lblLevel = createWhoEntry(v) end
     end

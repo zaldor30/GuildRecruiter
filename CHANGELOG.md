@@ -1,6 +1,8 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
+### 3.2.57
+    - Fixing compact mode scanning.
 ### 3.2.56
     - Fixed sync, so it can handle larger data sets.
     - Sync: Added time-stamping to the sync data.
