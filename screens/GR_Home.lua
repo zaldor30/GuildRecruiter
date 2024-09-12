@@ -279,12 +279,12 @@ function home:GetInviteMessages()
     local tblGMMessages = ns.gmSettings.messageList and ns.gmSettings.messageList or {}
 
     self.tblWhipsers = table.wipe(self.tblWhipsers or {})
-    for k, r in pairs(tblGMMessages) do
+    for k, r in pairs(ns.core.hasGM and tblGMMessages or {}) do
         local msg = r.message
         local desc = ns.code:cText(GM_DESC_COLOR, r.desc)
         tblWhispers[k] = { message = msg, desc = desc, type = r.type }
     end
-    for k, r in pairs(tblMessages) do
+    for k, r in pairs(not ns.core.hasGM and tblMessages or {}) do
         local msg = r.message
         local desc = r.desc
         tblWhispers[k] = { message = msg, desc = desc, type = r.type }

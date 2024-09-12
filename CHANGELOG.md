@@ -1,6 +1,8 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
+### 3.2.58
+    - Fix to not sending invite messages.
 ### 3.2.57
     - Fixing compact mode scanning.
 ### 3.2.56

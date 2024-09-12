@@ -29,11 +29,11 @@ function invite:GetWelcomeMessages()
     useLocation = (ns.core.hasGM or ns.gmSettings.forceWhisperMessage) and ns.gmSettings or ns.gSettings
     self.greetingWhisper = (ns.gmSettings.forceWhisperMessage or ns.gSettings.sendWhisperGreeting) and useLocation.whisperMessage or nil
 
-    if ns.gSettings.invFormat and (not self.inviteMessage or self.inviteMessage == '') then
+    if ns.gSettings.invFormat  ~= 2 and (not self.inviteMessage and self.inviteMessage ~= '') then
         ns.code:fOut(L['NO_INVITE_MESSAGE'], 'FFFF0000')
-    elseif (ns.gmSettings.forceSendGuildGreeting or ns.gSettings.sendGuildGreeting) and (not self.greetingGuild or self.greetingGuild == '') then
+    elseif (ns.gmSettings.forceSendGuildGreeting or ns.gSettings.sendGuildGreeting) and (not self.greetingGuild and self.greetingGuild ~= '') then
         ns.code:fOut(L['NO_GREETING_MESSAGE'], 'FFFF0000')
-    elseif (ns.gmSettings.forceSendWhisper or ns.gSettings.sendWhisperGreeting) and (not self.greetingWhisper or self.greetingWhisper == '') then
+    elseif (ns.gmSettings.forceSendWhisper or ns.gSettings.sendWhisperGreeting) and (not self.greetingWhisper and self.greetingWhisper ~= '') then
         ns.code:fOut(L['NO_WHISPER_MESSAGE'], 'FFFF0000')
     end
 end

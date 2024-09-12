@@ -1,5 +1,6 @@
 -- Localization file for English/United States
 local L = LibStub("AceLocale-3.0"):NewLocale("GuildRecruiter", "enUS", true)
+if not L then return end
 
 -- * General
 L["TITLE"] = "Guild Recruiter"

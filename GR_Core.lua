@@ -321,10 +321,10 @@ function core:StartSlashCommands() -- Start Slash Commands
         msg = strlower(msg:trim())
 
         if not msg or msg == '' and not ns.win.home:IsShown() then return ns.win.home:SetShown(true)
-        elseif msg == L['HELP'] then ns.code:fOut(L['SLASH_COMMANDS'], GRColor, true)
-        elseif strlower(msg) == L['CONFIG'] then Settings.OpenToCategory('Guild Recruiter')
-        elseif strlower(msg):match(L['BLACKLIST']) then
-            msg = strlower(msg):gsub(tostring(L['BLACKLIST']), ''):trim()
+        elseif msg == strlower(L['HELP']) then ns.code:fOut(L['SLASH_COMMANDS'], GRColor, true)
+        elseif strlower(msg) == strlower(L['CONFIG']) then Settings.OpenToCategory('Guild Recruiter')
+        elseif strlower(msg):match(strlower(L['BLACKLIST'])) then
+            msg = strlower(msg):gsub(strlower(L['BLACKLIST']), ''):trim()
             local name = strupper(strsub(msg,1,1))..strlower(strsub(msg,2))
             ns:add(name)
         end
