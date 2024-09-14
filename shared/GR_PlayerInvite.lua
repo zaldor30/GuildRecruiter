@@ -122,7 +122,7 @@ end
 function invite:SendMessage(pName, cName, message, showMessage)
     message = ns.code:variableReplacement(message, pName:gsub('%-.*', '')) -- Remove realm name
 
-    if not ns.pSettings.showWhispers and not showMessage then
+    if ns.pSettings.showWhispers or not showMessage then
         ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER', function(_, _, msg) return msg == message end, message)
         ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER_INFORM', function(_, _, msg) return msg == message end, message)
         SendChatMessage(message, 'WHISPER', nil, pName)
