@@ -73,7 +73,7 @@ function invite:StartInvite(pName, class, useInviteMsg, isManual, sendInvite, sk
     --* Manual Invite
     if isManual then
         if sendInvite then SendGuildInvite() end
-        if useInviteMsg and self.inviteMessage then invite:SendMessage(pName, self.inviteMessage, 'WHISPER') end
+        if useInviteMsg and self.inviteMessage then invite:SendMessage(pName, cName, self.inviteMessage, 'WHISPER') end
         if skipMessages then ns.analytics:incStats('PlayersInvited') return end
         invite:RegisterInvite(pName, cName, (class or UnitClassBase(pName)), isManual)
         return
@@ -119,17 +119,17 @@ function invite:PerformInviteChecks(pName, isManual, zone)
 
     return false
 end
-function invite:SendMessage(pName, cName, message, showMessage)
+function invite:SendMessage(pName, cName, message, channel)
     message = ns.code:variableReplacement(message, pName:gsub('%-.*', '')) -- Remove realm name
 
-    if ns.pSettings.showWhispers or not showMessage then
+    if not ns.pSettings.showWhispers then
         ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER', function(_, _, msg) return msg == message end, message)
         ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER_INFORM', function(_, _, msg) return msg == message end, message)
-        SendChatMessage(message, 'WHISPER', nil, pName)
+        SendChatMessage(message, channel, nil, pName)
         ns.code:fOut(L['INVITE_MESSAGE_SENT']..' '..cName, 'FFFFFF00')
         ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER', message)
         ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER_INFORM', message)
-    else SendChatMessage(message, 'WHISPER', nil, pName) end
+    else SendChatMessage(message, channel, nil, pName) end
 end
 local function UpdateInvitePlayerStatus(_, ...) invite:UpdateInvitePlayerStatus(...) end
 function invite:RegisterInvite(pName, cName, class, isManual)
