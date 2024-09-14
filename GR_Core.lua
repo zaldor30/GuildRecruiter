@@ -497,12 +497,10 @@ local function InitializeDropdownMenu(self, level)
         UIDropDownMenu_AddButton(info, level)
 
         local activeMessage = ns.pSettings.activeMessage or 1
-        local messageList = ns.gmSettings and ns.gmSettings.messageList or (ns.gSettings.messageList or nil)
-        if not messageList then
-            ns.code:fOut(L['NO_INVITE_MESSAGE'])
-            return
-        end
-        local msg = messageList and messageList[activeMessage].messages or nil
+        local location = ns.core.hasGM and ns.gmSettings or ns.gSettings
+        local messageList = (location.messageList and location.messageList[activeMessage]) and location.messageList[activeMessage].message or nil
+        local msg = (messageList and messageList[activeMessage]) and messageList[activeMessage].messages or nil
+
         if msg then
             -- Separator for spacing
             info = UIDropDownMenu_CreateInfo()

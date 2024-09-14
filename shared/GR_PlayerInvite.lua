@@ -106,7 +106,7 @@ function invite:PerformInviteChecks(pName, isManual, zone)
     local name = pName:match('-') and pName or pName..'-'..GetRealmName() -- Add realm name if not present
     
     if isManual and ns.code:isInMyGuild(name) then
-        ns.code:fOut(name..' '..L['IS_ALREADY_IN_GUILD'], 'FFFFFF00')
+        ns.code:fOut(name..' '..L['PLAYER_ALREADY_IN_GUILD'], 'FFFFFF00')
         return 'GUILD'
     elseif zone and ns.tblInvalidZones[strlower(zone)] then return zone
     elseif ns.tblBlackList[name] or blackList.IsOnBlackList(name) then

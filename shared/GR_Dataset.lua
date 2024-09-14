@@ -49,6 +49,8 @@ function ds:WhatsNew() -- What's new in the current version
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
 
+    |CFFFFFF00v3.2.59 Notes|r
+        - Fix to right click inviting error no message.
     |CFFFFFF00v3.2.58 Notes|r
         - Fix to not sending invite messages.
     |CFFFFFF00v3.2.57 Notes|r
