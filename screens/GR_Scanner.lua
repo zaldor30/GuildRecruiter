@@ -61,7 +61,7 @@ function scanner:SetShown(isShown)
         return
     end
 
-    ns.invite:GetWelcomeMessages()
+    --ns.invite:GetWelcomeMessages()
 
     --* Event Routines
     ns.observer:Notify('CLOSE_SCREENS')

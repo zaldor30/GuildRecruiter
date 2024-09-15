@@ -169,6 +169,7 @@ function core:StartDatabase(clubID)
         ns.g.guildLeaderToon = GetUnitName('player', true)
     end
 
+    ns.invite:GetWelcomeMessages() -- Get the welcome messages
     self.hasGM = ns.g.isGuildLeader
     if self.hasGM and ns.gmSettings.forceObey then self.obeyBlockInvites = ns.gmSettings.obeyBlockInvites or false
     elseif ns.pSettings.obeyBlockInvites then self.obeyBlockInvites = ns.pSettings.obeyBlockInvites or false end

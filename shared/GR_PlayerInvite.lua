@@ -41,7 +41,7 @@ function invite:SendAutoInvite(pName, class, useInviteMsg, sendInvite)
     self:StartInvite(pName, class, useInviteMsg, false, sendInvite)
 end
 function invite:SendManualInvite(pName, class, sendWhisper, sendGreeting, sendInvite)
-    self:StartInvite(pName, class, sendInvite, true, sendInvite, (not sendWhisper and not sendGreeting))
+    self:StartInvite(pName, class, false, true, sendInvite, (not sendWhisper and not sendGreeting))
 end
 function invite:StartInvite(pName, class, useInviteMsg, isManual, sendInvite, skipMessages)
     if not pName then return end
@@ -75,13 +75,13 @@ function invite:StartInvite(pName, class, useInviteMsg, isManual, sendInvite, sk
         if sendInvite then SendGuildInvite() end
         if useInviteMsg and self.inviteMessage then invite:SendMessage(pName, cName, self.inviteMessage, 'WHISPER') end
         if skipMessages then ns.analytics:incStats('PlayersInvited') return end
-        invite:RegisterInvite(pName, cName, (class or UnitClassBase(pName)), isManual)
+        invite:RegisterInvite(pName, cName, (class or UnitClassBase(pName)), isManual, skipMessages)
         return
     end
     --? End of Manual Invite
 
     --* Automated Invite Functions
-    invite:RegisterInvite(pName, cName, (class or UnitClassBase(pName)), isManual)
+    invite:RegisterInvite(pName, cName, (class or UnitClassBase(pName)), isManual, skipMessages)
 
     if sendInvite then SendGuildInvite() end
     if useInviteMsg then
@@ -132,13 +132,14 @@ function invite:SendMessage(pName, cName, message, channel)
     else SendChatMessage(message, channel, nil, pName) end
 end
 local function UpdateInvitePlayerStatus(_, ...) invite:UpdateInvitePlayerStatus(...) end
-function invite:RegisterInvite(pName, cName, class, isManual)
+function invite:RegisterInvite(pName, cName, class, isManual, skipMessages)
     self.tblSent[pName] = {
         name = pName:gsub('%-.*', ''),
         pName = pName,
         cName = cName,
         class = class,
         manual = isManual,
+        skipWelcome = skipMessages,
         sentAt = time(),
     }
 
@@ -198,7 +199,7 @@ function invite:UpdateInvitePlayerStatus(msg)
         ns.analytics:incStats('PlayersInvited', -1)
         removePlayer = true
     elseif msg:find(L['PLAYER_JOINED_GUILD']) then
-        if self.greetingGuild or self.greetingWhisper then
+        if not self.tblSent[key].skipMessages then
             C_Timer.After(3, function()
                 if self.greetingGuild then SendChatMessage(ns.code:variableReplacement(self.greetingGuild, key:gsub('%-.*', ''), true), 'GUILD') end
                 if self.greetingWhisper then SendChatMessage(ns.code:variableReplacement(self.greetingWhisper, key:gsub('%-.*', ''), true), 'WHISPER', nil, key) end

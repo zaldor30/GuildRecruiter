@@ -1,6 +1,10 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
+### 3.2.65
+    - Fix to anti-spam list.
+    - Fix to sending messages.
+    - Fix to right click invite.
 ### 3.2.59
     - Fix to right click inviting error no message.
 ### 3.2.58
