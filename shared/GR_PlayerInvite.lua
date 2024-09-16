@@ -36,7 +36,6 @@ function invite:GetWelcomeMessages()
     elseif (ns.gmSettings.forceSendWhisper or ns.gSettings.sendWhisperGreeting) and (not self.greetingWhisper and self.greetingWhisper ~= '') then
         ns.code:fOut(L['NO_WHISPER_MESSAGE'], 'FFFF0000')
     end
-    print(activeMessage, self.inviteMessage)
 end
 function invite:SendAutoInvite(pName, class, useInviteMsg, sendInvite)
     self:StartInvite(pName, class, useInviteMsg, false, sendInvite)
