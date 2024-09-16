@@ -1,6 +1,10 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
+### 3.2.67
+    - Fixed issue with wrong message trying to be sent during invite.
+    - Fix to nil message when sending.
+    - Fix to sync with yourself.
 ### 3.2.65
     - Fix to anti-spam list.
     - Fix to sending messages.

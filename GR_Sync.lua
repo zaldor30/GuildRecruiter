@@ -434,7 +434,7 @@ sync:Init()
 function gSync:StartSyncRoutine(typeOfSync, sender) sync:StartSync(typeOfSync, sender) end
 function gSync:OnCommReceived(prefix, message, distribution, sender)
     if not ns.core.isEnabled then return
-    elseif sender == UnitName('player') then return
+    elseif sender:match(UnitName('player')) then return
     elseif prefix ~= GR.commPrefix then return
     elseif distribution ~= 'GUILD' and distribution ~= 'WHISPER' then return end
 

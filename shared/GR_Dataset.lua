@@ -49,6 +49,10 @@ function ds:WhatsNew() -- What's new in the current version
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
 
+    |CFFFFFF00v3.2.67 Notes|r
+        - Fixed issue with wrong message trying to be sent during invite.
+        - Fix to nil message when sending.
+        - Fix to sync with yourself.
     |CFFFFFF00v3.2.65 Notes|r
         - Fix to anti-spam list.
         - Fix to sending messages.

@@ -36,6 +36,7 @@ function invite:GetWelcomeMessages()
     elseif (ns.gmSettings.forceSendWhisper or ns.gSettings.sendWhisperGreeting) and (not self.greetingWhisper and self.greetingWhisper ~= '') then
         ns.code:fOut(L['NO_WHISPER_MESSAGE'], 'FFFF0000')
     end
+    print(activeMessage, self.inviteMessage)
 end
 function invite:SendAutoInvite(pName, class, useInviteMsg, sendInvite)
     self:StartInvite(pName, class, useInviteMsg, false, sendInvite)
@@ -120,16 +121,18 @@ function invite:PerformInviteChecks(pName, isManual, zone)
     return false
 end
 function invite:SendMessage(pName, cName, message, channel)
+    if not message then return end
+
     message = ns.code:variableReplacement(message, pName:gsub('%-.*', '')) -- Remove realm name
 
-    if not ns.pSettings.showWhispers and message and channel and pName then
+    if not ns.pSettings.showWhispers then
         ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER', function(_, _, msg) return msg == message end, message)
         ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER_INFORM', function(_, _, msg) return msg == message end, message)
         SendChatMessage(message, channel, nil, pName)
         ns.code:fOut(L['INVITE_MESSAGE_SENT']..' '..cName, 'FFFFFF00')
         ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER', message)
         ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER_INFORM', message)
-    elseif message and channel and pName then SendChatMessage(message, channel, nil, pName) end
+    else SendChatMessage(message, channel, nil, pName) end
 end
 local function UpdateInvitePlayerStatus(_, ...) invite:UpdateInvitePlayerStatus(...) end
 function invite:RegisterInvite(pName, cName, class, isManual, skipMessages)
