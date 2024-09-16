@@ -122,14 +122,14 @@ end
 function invite:SendMessage(pName, cName, message, channel)
     message = ns.code:variableReplacement(message, pName:gsub('%-.*', '')) -- Remove realm name
 
-    if not ns.pSettings.showWhispers then
+    if not ns.pSettings.showWhispers and message and channel and pName then
         ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER', function(_, _, msg) return msg == message end, message)
         ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER_INFORM', function(_, _, msg) return msg == message end, message)
         SendChatMessage(message, channel, nil, pName)
         ns.code:fOut(L['INVITE_MESSAGE_SENT']..' '..cName, 'FFFFFF00')
         ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER', message)
         ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER_INFORM', message)
-    else SendChatMessage(message, channel, nil, pName) end
+    elseif message and channel and pName then SendChatMessage(message, channel, nil, pName) end
 end
 local function UpdateInvitePlayerStatus(_, ...) invite:UpdateInvitePlayerStatus(...) end
 function invite:RegisterInvite(pName, cName, class, isManual, skipMessages)
