@@ -479,7 +479,7 @@ local function InitializeDropdownMenu(self, level)
         info.notCheckable = true
         info.fontObject = GameFontNormalOutline
         info.func = function()
-            ns.invite:SendManualInvite(self.chatPlayerName, select(2, UnitClass(self.chatPlayerName)), false, false, true)
+            ns.invite:SendManualInvite(self.chatPlayerName, true)
         end
         UIDropDownMenu_AddButton(info, level)
 
@@ -494,7 +494,7 @@ local function InitializeDropdownMenu(self, level)
         info.notCheckable = true
         info.fontObject = GameFontNormalOutline
         info.func = function()
-            ns.invite:SendManualInvite(self.chatPlayerName, select(2, UnitClass(self.chatPlayerName)), true, true, true)
+            ns.invite:SendManualInvite(self.chatPlayerName, true, false, true)
         end
         UIDropDownMenu_AddButton(info, level)
 

@@ -19,6 +19,7 @@ end
 -- * Create the Main (base) Window
 local base = ns.win.base
 function base:Init()
+    self.isFGILoaded = false
     self.inviteMessage = nil
     self.isMoveLocked = true
 
@@ -32,7 +33,7 @@ function base:Init()
 end
 function base:StartUp() -- Start the Main (base) Window.  Called from ns.core.
     self.screenPos = ns.pSettings.screenPos or self.screenPos
-
+    self.isFGILoaded = C_AddOns.IsAddOnLoaded('FastGuildInvite')
     self:CreateBaseFrame()
     self:CreateBaseHeaderFrame()
     self:CreateBaseIconFrame()
@@ -300,13 +301,21 @@ function base:CreateStatusBarFrame()
         statusText:SetText('')
         fadeInGroup:Play()
     end)
+
+    statusBar:SetScript('OnEnter', function()
+        if not base.isFGILoaded then return end
+        ns.code:createTooltip('FGI is Loaded', 'FastGuildInvite (FGI) is known to cause issues with Guild Recruiter.\n  \nPlease disable FGI to use Guild Recruiter.')
+    end)
+    statusBar:SetScript('OnLeave', function() GameTooltip:Hide() end)
     tblFrame.statusText = statusText
 
     local originalSettext = statusText.SetText
     local version = ns.code:cText('80FFFFFF', 'v'..GR.version..(GR.isPreRelease and ' ('..GR.preReleaseType..')' or ''))
     version = GR.isTesting and 'You are in Testing Mode' or version
     function statusText:SetText(text, skipFade)
-        if not text or text == '' then originalSettext(self, version)
+        if not text or text == '' then
+            if base.isFGILoaded then originalSettext(self, ns.code:cText('FFFF0000', 'Please disable FGI.'))
+            else originalSettext(self, version) end
         elseif text:match('<VER>') then
             text = text:gsub('<VER>', version)
             originalSettext(self, text)

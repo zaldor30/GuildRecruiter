@@ -1,6 +1,9 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
+### 3.2.69
+    - Added warning about FGI not disabled.
+    - Hardened checks on anti-spam and black list.
 ### 3.2.67
     - Fixed issue with wrong message trying to be sent during invite.
     - Fix to nil message when sending.

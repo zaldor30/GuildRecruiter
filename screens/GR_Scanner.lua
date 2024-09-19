@@ -61,7 +61,15 @@ function scanner:SetShown(isShown)
         return
     end
 
-    --ns.invite:GetWelcomeMessages()
+    print('ADDONS LOADED', C_AddOns.GetNumAddOns())
+    for i = 1, C_AddOns.GetNumAddOns() do
+        local name, title, _, loadable, reason, _ = C_AddOns.GetAddOnInfo(i)
+        
+        -- Check if the addon is loaded
+        if C_AddOns.IsAddOnLoaded(i) then
+            print("Loaded AddOn: " .. name .. " (" .. title .. ")")
+        end
+    end
 
     --* Event Routines
     ns.observer:Notify('CLOSE_SCREENS')
@@ -439,7 +447,7 @@ function scanner:InvitePlayers()
     self.tblInvites[tbl.fullName] = nil
     self:DispalyInviteList()
 
-    ns.invite:SendAutoInvite(tbl.fullName, (select(2, UnitClass(tbl.fullName)) or nil), ((ns.pSettings.inviteFormat ~= 2) or false), ((ns.pSettings.inviteFormat ~= 1) or false))
+    ns.invite:SendAutoInvite(tbl.fullName, ((ns.pSettings.inviteFormat ~= 2) or false), ((ns.pSettings.inviteFormat ~= 1) or false))
 end
 function scanner:SetInviteButtonsState()
     local anyChecked, count = false, 0
