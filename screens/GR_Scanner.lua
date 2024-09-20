@@ -61,16 +61,6 @@ function scanner:SetShown(isShown)
         return
     end
 
-    print('ADDONS LOADED', C_AddOns.GetNumAddOns())
-    for i = 1, C_AddOns.GetNumAddOns() do
-        local name, title, _, loadable, reason, _ = C_AddOns.GetAddOnInfo(i)
-        
-        -- Check if the addon is loaded
-        if C_AddOns.IsAddOnLoaded(i) then
-            print("Loaded AddOn: " .. name .. " (" .. title .. ")")
-        end
-    end
-
     --* Event Routines
     ns.observer:Notify('CLOSE_SCREENS')
     ns.observer:Register('CLOSE_SCREENS', obsCLOSE_SCANNER)
