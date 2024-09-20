@@ -43,6 +43,8 @@ function invite:SendAutoInvite(pName, sendGuildInvite, useInviteMsg)
     elseif not CanGuildInvite() then ns.code:fOut(L['NO_GUILD_PERMISSIONS']) return end
 
     if GR.isTesting then pName = 'Monkstrife' end
+
+    useInviteMsg = useInviteMsg and (ns.pSettings.inviteFormat == 1 or ns.pSettings.inviteFormat == 3) or false
     local fName = pName:match('-') and pName or pName..'-'..GetRealmName() -- Add realm name if not present
     local cName = UnitClassBase(pName) and ns.code:cPlayer(fName, class) or pName:gsub('%-.*', '')
 
@@ -50,14 +52,14 @@ function invite:SendAutoInvite(pName, sendGuildInvite, useInviteMsg)
     if blackList:IsOnBlackList(fName) or blackList:IsOnBlackList(pName) then
         ns.code:fOut(cName..' '..L['IS_ON_BLACK_LIST'], 'FFFFFF00')
         return
-    elseif antiSpam:isOnAntiSpamList(fName) or antiSpam:isOnAntiSpamList(pName) then
-        ns.code:fOut(cName..' '..L['IS_ON_ANTI_SPAM_LIST'], 'FFFFFF00')
+    elseif not GR.isTesting and (antiSpam:isOnAntiSpamList(fName) or antiSpam:isOnAntiSpamList(pName)) then
+        ns.code:fOut(cName..' '..L['PLAYER_IS_ON_ANTISPAM_LIST'], 'FFFFFF00')
         return
     end
 
     local sendWelcome = self.greetingGuild or self.greetingWhisper or false
     invite:RegisterInvite(pName, cName, (class or UnitClassBase(pName)), false, sendWelcome)
-    self:InvitePlayer(pName, fName, cName, sendGuildInvite, useInviteMsg)
+    self:InvitePlayer(pName, cName, sendGuildInvite, useInviteMsg)
 end
 function invite:SendManualInvite(pName, sendGuildInvite, useInviteMsg, sendWelcome)
     if not pName then return
@@ -168,16 +170,12 @@ end
 
 --* Perform Invite Functions
 function invite:InvitePlayer(pName, cName, sendGuildInvite, useInviteMsg)
-    if not pName then return
-    elseif useInviteMsg and not self.inviteMessage or self.inviteMessage == '' then
-        ns.code:fOut(L['NO_INVITE_MESSAGE'], 'FFFF0000')
-        return
-    end
+    if not pName then return end
 
     antiSpam:AddToAntiSpamList(pName:match('-') and pName or pName..'-'..GetRealmName()) -- Add realm name if not present
-    if not sendGuildInvite then
-        ns.code:fOut(cName..' '..L['INVITE_SENT'], 'FFFFFF00')
-        GuildInvite(pName)
+    if sendGuildInvite then
+        ns.code:fOut(L['GUILD_INVITE_SENT']..' '..cName, 'FFFFFF00')
+        C_GuildInfo.Invite(pName)
     end
 
     if useInviteMsg then
