@@ -385,7 +385,7 @@ function sync:ImportData()
                         ns.guildInfo.wasGM = tblGI.wasGM
                         ns.guildInfo.lastSync = tblGI.lastSync
                         loadGM = true
-                    elseif tblGI.lastSync > 0 and tblGI.lastSync > ns.guildInfo.lastSync then
+                    elseif tblGI.lastSync and tblGI.lastSync > 0 and tblGI.lastSync > ns.guildInfo.lastSync then
                         ns.guildInfo = tblGI.guildInfo
                         ns.guildInfo.wasGM = tblGI.wasGM
                         ns.guildInfo.lastSync = tblGI.lastSync
