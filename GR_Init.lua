@@ -9,11 +9,11 @@ GR.author  = C_AddOns.GetAddOnMetadata('GuildRecruiter', 'Author')
 GR.version = C_AddOns.GetAddOnMetadata('GuildRecruiter', 'Version')
 GR.dbVersion = '3.2'
 GR.isTesting = false
-GR.isPreRelease = false
+GR.isPreRelease = true
 GR.preReleaseType = 'Beta'
 GR.versionOut = '(v'..GR.version..(GR.isPreRelease and ' '..GR.preReleaseType or '')..')'
 
-GR.debug = false
+GR.debug = true --! Change
 GR.commPrefix = 'GRSync'
 C_ChatInfo.RegisterAddonMessagePrefix(GR.commPrefix)
 

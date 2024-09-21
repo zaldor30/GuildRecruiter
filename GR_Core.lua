@@ -133,7 +133,6 @@ function core:StartDatabase(clubID)
 
     -- Initialize the database        
     db.global[clubID] = db.global[clubID] or self.addonSettings.global
-    ns.code:dOut('Current Profile: ', db:GetCurrentProfile())
 
     db.profile.settings = db.profile.settings or self.addonSettings.profile.settings
     db.profile.analytics = db.profile.analytics or self.addonSettings.profile.analytics
