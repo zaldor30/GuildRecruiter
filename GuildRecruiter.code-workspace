@@ -345,7 +345,10 @@
             "GameTooltip",
             "EncounterJournal_LoadUI",
             "WHISPER",
-            "GameTooltip"
+            "GameTooltip",
+            "UIDropDownMenu_SetWidth",
+            "UIDropDownMenu_SetButtonWidth",
+            "UIDropDownMenu_JustifyText"
         ]
     }
 }

@@ -124,7 +124,11 @@
         "UIDropDownMenu_CreateInfo",
         "ChatFrame_RemoveMessageEventFilter",
         "EncounterJournal_LoadUI",
-        "tostring"
+        "tostring",
+        "UIDropDownMenu_SetWidth",
+        "UIDropDownMenu_SetButtonWidth",
+        "UIDropDownMenu_JustifyText",
+        "UIDropDownMenu_SetText"
     ],
     "Lua.diagnostics.disable": [
         "undefined-field",

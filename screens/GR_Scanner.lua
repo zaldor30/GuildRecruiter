@@ -463,6 +463,7 @@ end
 -- Parsing Invite Routines
 function scanner:DispalyInviteList()
     local tblInvites, invControls = self.tblInvites, self.ctrlInvite
+    if not invControls or not invControls.scrollInvite then return end
 
     -- Create Checkboxes for each player
     local function createCheckBox(fullName, pName, pClass, pLevel, isChecked)

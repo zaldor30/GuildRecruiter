@@ -217,7 +217,7 @@ function base:CreateBaseIconFrame()
     blacklistIconButton:SetShown(true)
 
     -- Create Filter 
-    if ns.pSettings.debugMode then
+    if GR.enableFilters then
         local filterIconButton = CreateFrame('Button', 'GR_BASE_FILTERICON', tblFrame.topFrame)
         filterIconButton:SetSize(20, 20)
         filterIconButton:SetPoint('LEFT', blacklistIconButton, 'RIGHT', 5, 0)

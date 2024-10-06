@@ -9,10 +9,124 @@ local function obsCLOSE_Filters()
     ns.observer:Unregister('CLOSE_SCREENS', obsCLOSE_Filters)
     filter:SetShown(false)
 end
+
+local scrollBoxHeight = 215 -- Class and Race Scrollbox Height
+
+--* Metatable for filter frame
+local tblRaces, tblClasses, tblFilters = { data = {}, selected = {} }, { data = {}, selected = {} }, { data = {}, selected = {} }
+local metaRaces = {
+    __index = function(tbl, key)
+        if key == 'data' then
+            return tbl.data
+        end
+    end,
+    __newIndex = function(tbl, key, value)
+        if key == 'data' then
+            for i = 1, #value do
+                tbl[key][i] = value[i]
+            end
+        end
+    end,
+
+    sort = function(tbl, key)
+        local sortedList = {}
+        for _, v in pairs(tbl.data) do
+            local rec = v[key]
+            rec.isChecked = true
+            rec.checkbox = nil
+
+            table.insert(sortedList, rec)
+        end
+        table.sort(sortedList, function(a, b) return a.name < b.name end)
+        tbl.sortedByName = sortedList
+        return sortedList
+    end,
+    hasChecks = function(self)
+        for _, v in pairs(self.data) do
+            if v.isChecked then return true end
+        end
+        return false
+    end,
+}
+local metaClasses = {
+    __index = function(tbl, key)
+        if key == 'data' then
+            return tbl.data
+        end
+    end,
+    __newIndex = function(tbl, key, value)
+        if key == 'data' then
+            for i = 1, #value do
+                tbl[key][i] = value[i]
+            end
+        end
+    end,
+
+    sort = function(tbl, key)
+        local sortedList = {}
+        for _, v in pairs(tbl.data) do
+            local rec = v[key]
+            rec.isChecked = true
+            rec.checkbox = nil
+
+            table.insert(sortedList, rec)
+        end
+        table.sort(sortedList, function(a, b) return a.name < b.name end)
+        tbl.sortedByName = sortedList
+        return sortedList
+    end,
+    hasChecks = function(self)
+        for _, v in pairs(self.data) do
+            if v.isChecked then return true end
+        end
+        return false
+    end,
+}
+local metaFilters = {
+    __index = function(tbl, key)
+        if key == 'data' then
+            return tbl.data
+        end
+    end,
+    __newIndex = function(tbl, key, value)
+        if key == 'data' then
+            for i = 1, #value do
+                tbl[key][i] = value[i]
+            end
+        end
+    end,
+
+    sort = function(tbl, key)
+        local sortedList = {}
+        for _, v in pairs(tbl.data) do
+            local rec = v[key]
+            rec.isChecked = true
+            rec.checkbox = nil
+
+            table.insert(sortedList, rec)
+        end
+        table.sort(sortedList, function(a, b) return a.name < b.name end)
+        tbl.sortedByName = sortedList
+        return sortedList
+    end,
+    hasChecks = function(self)
+        for _, v in pairs(self.data) do
+            if v.isChecked then return true end
+        end
+        return false
+    end,
+}
+
 function filter:Init()
     self.tblFrame = {}
-    self.tblFilter = {}
+    self.badDesc = true -- Flag for bad description editbox
+
+    setmetatable(tblRaces, metaRaces)
+    setmetatable(tblClasses, metaClasses)
+    setmetatable(tblFilters, metaFilters)
 end
+
+--* Frame Routines
 function filter:SetShown(val)
     if not val then
         ns.statusText:SetText('')
@@ -28,255 +142,60 @@ function filter:SetShown(val)
     ns.observer:Notify('CLOSE_SCREENS')
     ns.observer:Register('CLOSE_SCREENS', obsCLOSE_Filters)
 
+    --* Reconfigure base frame
     ns.win.base.tblFrame.backButton:SetShown(true)
     ns.win.base.tblFrame.frame:SetSize(500, 580)
     ns.win.base.tblFrame.frame:SetShown(true)
 
-    --* Create Display Tables
-    self.tblFilter = {
-        activeFilter = nil,
-
-        tblRaceList = {},
-        tblClassList = {},
-        factionToShow = 1, -- Both Factions
-    }
-    for k, r in pairs(ns.tblRacesSortedByName) do
-        self.tblFilter.tblRaceList[k] = {
-            name = r.name,
-            fName = r.name,
-            faction = r.faction,
-            fileName = r.raceFile,
-            isChecked = true
-        }
-    end
-    for k, c in pairs(ns.tblClassesSortedByName) do
-        self.tblFilter.tblClassList[k] = {
-            name = c.name,
-            fName = ns.code:cPlayer(c.name, c.classFile),
-            icon = c.icon,
-            fileName = c.classFile,
-            isChecked = true
-        }
-    end
-
-    --* Create Controls
+    self:Init() -- Initialize filter frame
     self:CreateBaseFrame()
-    self:CreateTopUIFrame()
-    self:CreateRaceClassFrame()
-    self:CreateRaceClassCheckboxes()
-    self:CheckButtonEnable()
+    self:FillTopFrame()
 end
-
---* Construct UI
 function filter:CreateBaseFrame()
-    local tblBase = ns.win.base.tblFrame
+    local frame = ns.win.base.tblFrame
 
-    local f = self.tblFrame.frame or CreateFrame('Frame', nil, tblBase.frame)
-    f:SetFrameStrata(DEFAULT_STRATA)
-    f:SetPoint('TOPLEFT', tblBase.topFrame, 'BOTTOMLEFT', -5, 15)
-    f:SetPoint('BOTTOMRIGHT', tblBase.statusBar, 'TOPRIGHT', 0, -5)
-    f:SetShown(true)
+    local f = self.tblFrame.frame or CreateFrame('Frame', nil, frame.frame, 'BackdropTemplate')
+    f:SetPoint('TOPLEFT', frame.iconFrame, 'BOTTOMLEFT', 0, 0)
+    f:SetPoint('BOTTOMRIGHT', frame.statusBar, 'TOPRIGHT', 0, 0)
+    f:SetBackdrop(BackdropTemplate())
+    f:SetBackdropColor(1, 1, 1, 0)
     self.tblFrame.frame = f
 
-    local inline = self.tblFrame.inline or aceGUI:Create('InlineGroup')
-    inline:SetLayout('Flow')
-    inline:SetPoint('TOPLEFT', f, 'TOPLEFT', 5, 0)
-    inline:SetPoint('BOTTOMRIGHT', f, 'BOTTOMRIGHT', 0, 5)
-    inline.frame:SetShown(true)
-    self.tblFrame.inline = inline
+    local fTop = self.tblFrame.top or CreateFrame('Frame', nil, f, 'BackdropTemplate')
+    fTop:SetBackdrop(BackdropTemplate())
+    fTop:SetPoint('TOPLEFT', f, 'TOPLEFT', 5, -10)
+    fTop:SetPoint('BOTTOMRIGHT', f, 'TOPRIGHT', -5, -100)
+    self.tblFrame.top = fTop
+
+    local fBottom = self.tblFrame.fBottom or CreateFrame('Frame', nil, f, 'BackdropTemplate')
+    fBottom:SetBackdrop(BackdropTemplate())
+    fBottom:SetPoint('TOPLEFT', fTop, 'BOTTOMLEFT', 0, -10)
+    fBottom:SetPoint('BOTTOMRIGHT', f, 'BOTTOMRIGHT', -5, 10)
+    self.tblFrame.fBottom = fBottom
 end
---! Change filter Dropdown
---! Double check delete
---! Btndelete
---! Who Command Editor
-function filter:CreateTopUIFrame()
-    local function resetCustomFilter()
-        self.activeFilter = nil
-        self.tblFrame.filterCombo:SetList(filter.tbls:GetFilterList())
-    end
-    local function checkControlsEnabled()
-    end
+function filter:FillTopFrame()
+    local fTop = self.tblFrame.top
 
-    local inline = aceGUI:Create('InlineGroup')
-    inline:SetLayout('Flow')
-    inline:SetFullWidth(true)
-    self.tblFrame.inline:AddChild(inline)
+    local dropdown = CreateFrame("Frame", "Filter_Selection", fTop, "UIDropDownMenuTemplate")
+    dropdown:SetPoint('TOPLEFT', fTop, 'TOPLEFT', 5, -10)
+    local function InitializeDropdown(self, level)
+        local info = UIDropDownMenu_CreateInfo()
 
-    local combobox = aceGUI:Create('Dropdown')
-    combobox:SetLabel(L['FILTERS'])
-    combobox:SetRelativeWidth(.5)
-    combobox:SetList(filter.tbls:GetFilterList())
-    combobox:SetCallback('OnValueChanged', function(_, _, val)
-    end)
-    inline:AddChild(combobox)
-    self.tblFrame.filterCombo = combobox
-
-    -- New Button
-    local btnNew = aceGUI:Create('Button')
-    btnNew:SetText(L['NEW'])
-    btnNew:SetRelativeWidth(.25)
-    btnNew:SetCallback('OnClick', function() resetCustomFilter() end)
-    inline:AddChild(btnNew)
-    self.tblFrame.inline.btnNew = btnNew
-
-    -- Delete Button
-    local btnDelete = aceGUI:Create('Button')
-    btnDelete:SetText(L['DELETE'])
-    btnDelete:SetRelativeWidth(.25)
-    btnDelete:SetCallback('OnClick', function()
-        if not filter.activeFilter then return end
-
-        ns.code:confirmation(L['DELETE_FILTER_CONFIRM'], function()
-            ns.code:fOut('Filter Deleted: '..ns.global.filterList[filter.activeFilter].name)
-            ns.global.filterList[filter.activeFilter] = nil
-        end)
-
-        resetCustomFilter()
-    end)
-    inline:AddChild(btnDelete)
-    self.tblFrame.inline.btnDelete = btnDelete
-
-    -- Filter Name
-    local editbox = aceGUI:Create('EditBox')
-    editbox:SetLabel(L['FILTER_DESC']..':')
-    editbox:SetRelativeWidth(1)
-    editbox:SetCallback('OnEnterPressed', function(_,_, text)
-    end)
-    inline:AddChild(editbox)
-    self.tblFrame.filterName = editbox
-
-    -- Who Command Editor
-    local whoEditbox = aceGUI:Create('EditBox')
-    whoEditbox:SetLabel(L['WHO_COMMAND']..':')
-    whoEditbox:SetFullWidth(true)
-    whoEditbox:SetCallback('OnEnterPressed', function(_, _, text)
-        filter.fData:saveFilter(nil, text)
-    end)
-    inline:AddChild(whoEditbox)
-    self.tblFrame.inline.whoEditbox = whoEditbox
-end
-function filter:CreateRaceClassFrame()
-    local scrollBoxHeight = 215
-
-    local inline = aceGUI:Create('InlineGroup')
-    inline:SetLayout('Flow')
-    inline:SetRelativeWidth(.5)
-    inline:SetHeight(scrollBoxHeight)
-    self.tblFrame.inline:AddChild(inline)
-
-    local cScrollbox = aceGUI:Create('ScrollFrame')
-    cScrollbox:SetLayout('Flow')
-    cScrollbox:SetFullWidth(true)
-    cScrollbox:SetFullHeight(true)
-    cScrollbox:SetHeight(scrollBoxHeight)
-    inline:AddChild(cScrollbox)
-    self.tblFrame.inline.classScrollbox = cScrollbox
-
-    -- Class Header
-    local header = aceGUI:Create('Heading')
-    header:SetText(L['CLASSES'])
-    header:SetRelativeWidth(1)
-    self.tblFrame.inline.classScrollbox:AddChild(header)
-
-    local rinline = aceGUI:Create('InlineGroup')
-    rinline:SetLayout('Flow')
-    rinline:SetRelativeWidth(.5)
-    rinline:SetHeight(scrollBoxHeight)
-    self.tblFrame.inline:AddChild(rinline)
-
-    local rScrollbox = aceGUI:Create('ScrollFrame')
-    rScrollbox:SetLayout('Flow')
-    rScrollbox:SetFullWidth(true)
-    rScrollbox:SetFullHeight(true)
-    rScrollbox:SetHeight(scrollBoxHeight)
-    rinline:AddChild(rScrollbox)
-    self.tblFrame.inline.raceScrollbox = rScrollbox
-
-    -- Race Header
-    header = aceGUI:Create('Heading')
-    header:SetText(L['RACES'])
-    header:SetRelativeWidth(1)
-    self.tblFrame.inline.raceScrollbox:AddChild(header)
-
-    -- Blank Space
-    local padding = aceGUI:Create('Label')
-    padding:SetText(' ')
-    padding:SetRelativeWidth(.7)
-    self.tblFrame.inline:AddChild(padding)
-
-    -- Save Button
-    local btnSave = aceGUI:Create('Button')
-    btnSave:SetText(L['SAVE'])
-    btnSave:SetRelativeWidth(.3)
-    btnSave:SetCallback('OnClick', function() filter.fData:saveFilterData() end)
-    self.tblFrame.inline:AddChild(btnSave)
-    self.tblFrame.inline.btnSave = btnSave
-end
-function filter:CreateRaceClassCheckboxes()
-    local function createCheckbox(tbl, parent, isRaces)
-        local hordeColor, allianceColor = 'FF8C1616', 'FF2E4994'
-        local fName = not isRaces and tbl.fName or tbl.name
-        if isRaces then
-            fName = tbl.faction == 'Alliance' and ns.code:cText(allianceColor, fName) or ns.code:cText(hordeColor, fName)
-        end
-
-        local checkbox = aceGUI:Create('CheckBox')
-        checkbox:SetLabel(fName)
-        checkbox:SetRelativeWidth(.5)
-        checkbox:SetValue(tbl.isChecked)
-        checkbox:SetCallback('OnEnter', function()
-            if not isRaces then return end
-            ns.code:createTooltip(tbl.name, ns.code:cText(tbl.faction == 'Alliance' and allianceColor or hordeColor, tbl.faction))
-        end)
-        checkbox:SetCallback('OnLeave', function() GameTooltip:Hide() end)
-        checkbox:SetCallback('OnValueChanged', function(_, _, val)
-            tbl.isChecked = val
-            filter:CheckButtonEnable()
-        end)
-        parent:AddChild(checkbox)
-        return checkbox
-    end
-
-    for _, c in pairs(self.tblFilter.tblClassList) do
-        createCheckbox(c, self.tblFrame.inline.classScrollbox)
-    end
-
-    for _, r in pairs(self.tblFilter.tblRaceList) do
-        createCheckbox(r, self.tblFrame.inline.raceScrollbox, true)
-    end
-end
---* Filter Support Routines
-function filter:tblFunctions()
-    local tblFunc = {}
-    function tblFunc:GetFilterList()
-        local tbl = {}
-        local tblList = ns.global.filterList and ns.global.filterList or {}
-        for k, v in pairs(tblList) do
-            tbl[k] = v.name
-        end
-
-        return tbl
-    end
-
-    function tblFunc:saveFilterData()
-        local f = self.tblFrame
-        local gFilters = ns.global.filterList
-
-        if not f.filterName then return
-        else
-            for _, v in pairs(gFilters) do
-                if strlower(v.name) == strlower(f.filterName) then
-                    ns.statusText:SetText(L['FILTER_EXISTS'])
-                    UIErrorsFrame:AddMessage(L['FILTER_EXISTS'], 1, 0, 0, 1)
-                    break
-                end
+        -- Loop through the list of names
+        for index, name in ipairs({}) do
+            info.text = name  -- Set the text to the name
+            info.arg1 = index  -- The index is passed as arg1
+            info.func = function(self, arg1)
+                print("Selected index: ", arg1)
             end
+
+            UIDropDownMenu_AddButton(info, level)
         end
     end
 
-    return tblFunc
+    UIDropDownMenu_Initialize(dropdown, InitializeDropdown)
+    UIDropDownMenu_SetWidth(dropdown, 350)  -- Set the width of the dropdown
+    UIDropDownMenu_SetButtonWidth(dropdown, 250)  -- Set the button width
+    UIDropDownMenu_JustifyText(dropdown, "LEFT")  -- Justify text to the left
+    UIDropDownMenu_SetText(dropdown, 'Select a filter or enter a description for a new one.')
 end
-function filter:CheckButtonEnable()
-end
-filter:Init()
-filter.tbls = filter:tblFunctions()
