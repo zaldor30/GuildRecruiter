@@ -371,7 +371,9 @@ function sync:ImportData()
                     return
                 end
 
-                ns.guildInfo.lastSync = ns.guildInfo.lastSync or 0
+                ns.guildInfo = ns.guildInfo or {}
+                ns.guildInfo.lastSync = ns.guildInfo and ns.guildInfo.lastSync or 0
+                tblGI.lastSync = tblGI.lastSync or 0
                 r.lastSync = r.guildInfo.lastSync or 0
 
                 if not ns.core.hasGM then

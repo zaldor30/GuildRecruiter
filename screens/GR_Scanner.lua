@@ -82,6 +82,7 @@ function scanner:SetShown(isShown)
         totalFilters = self.tblScanner.totalFilters or 0,
     }
 
+    ns.invite:GetWelcomeMessages()
     if self.tblScanner.isCompact then ns.baseTitle('GR'..(GR.isPreRelease and ' ('..GR.preReleaseType..')' or ''))
     else ns.baseTitle('') end
 
@@ -463,6 +464,7 @@ end
 -- Parsing Invite Routines
 function scanner:DispalyInviteList()
     local tblInvites, invControls = self.tblInvites, self.ctrlInvite
+    if not invControls or not invControls.scrollInvite then return end
 
     -- Create Checkboxes for each player
     local function createCheckBox(fullName, pName, pClass, pLevel, isChecked)

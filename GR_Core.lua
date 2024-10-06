@@ -251,12 +251,12 @@ function core:PerformDatabaseMaintenance()
             ns.gmSettings.messageList, ns.gSettings.messageList = nil, nil
         end
 
-        if oldVer >= 3.1 then
+        if oldVer >= 3.1 or core.hasGM then
             for k, v in pairs(ns.gSettings.messageList) do
                 if v.type == 'GM' then
-                    ns.gSettings.messageList[k] = nil
                     ns.gmSettings.messageList[k] = v
                     ns.gmSettings.messageList[k].gmSync = true
+                    ns.gSettings.messageList[k] = nil
                 end
             end
         end

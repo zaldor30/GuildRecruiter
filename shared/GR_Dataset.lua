@@ -49,6 +49,9 @@ function ds:WhatsNew() -- What's new in the current version
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
 
+    |CFFFFFF00v3.2.70 Notes|r
+        - Fixed nil issues.
+        - Possible fix for wrong message being sent.
     |CFFFFFF00v3.2.69 Notes|r
         - Added warning about FGI not disabled.
         - Hardened checks on anti-spam and black list.
