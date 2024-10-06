@@ -81,6 +81,7 @@ function scanner:SetShown(isShown)
         filterCount = self.tblScanner.filterCount or 0,
         totalFilters = self.tblScanner.totalFilters or 0,
     }
+    ns.invite:GetWelcomeMessages() -- Get Welcome Messages
 
     if self.tblScanner.isCompact then ns.baseTitle('GR'..(GR.isPreRelease and ' ('..GR.preReleaseType..')' or ''))
     else ns.baseTitle('') end

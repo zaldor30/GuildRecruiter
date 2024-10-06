@@ -147,8 +147,6 @@ function core:StartDatabase(clubID)
     ns.guildInfo = ns.g.guildInfo or {} -- Guild Info
     ns.gmSettings = ns.g.gmSettings or self.addonSettings.global.gmSettings -- GM Settings
 
-    self:PerformDatabaseMaintenance() -- Perform Database Maintenance
-
     -- Other Variables Declaration
     ns.gFilterList = ns.g.filterList or {} -- Global Filter List
     ns.gAnalytics = ns.g.analytics or {} -- Global Analytics
@@ -172,6 +170,7 @@ function core:StartDatabase(clubID)
     if self.hasGM and ns.gmSettings.forceObey then self.obeyBlockInvites = ns.gmSettings.obeyBlockInvites or false
     elseif ns.pSettings.obeyBlockInvites then self.obeyBlockInvites = ns.pSettings.obeyBlockInvites or false end
 
+    self:PerformDatabaseMaintenance() -- Perform Database Maintenance
     ns.invite:GetWelcomeMessages() -- Get the welcome messages
 end
 function core:PerformDatabaseMaintenance()
@@ -251,12 +250,12 @@ function core:PerformDatabaseMaintenance()
             ns.gmSettings.messageList, ns.gSettings.messageList = nil, nil
         end
 
-        if oldVer >= 3.1 then
+        if oldVer >= 3.1 or core.hasGM then
             for k, v in pairs(ns.gSettings.messageList) do
                 if v.type == 'GM' then
-                    ns.gSettings.messageList[k] = nil
                     ns.gmSettings.messageList[k] = v
                     ns.gmSettings.messageList[k].gmSync = true
+                    ns.gSettings.messageList[k] = nil
                 end
             end
         end
