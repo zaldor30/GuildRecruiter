@@ -830,7 +830,7 @@ ns.addonSettings = {
                         local active = activeMessage or nil
 
                         if active and msg then
-                            isGMMessage = msg[active].gmSync or false
+                            isGMMessage = msg[active] and msg[active].gmSync or false
                             tblMessage = msg[active] or newMsg()
                             tblMessage.gmSync = false
                         elseif not msg then activeMessage = nil end
