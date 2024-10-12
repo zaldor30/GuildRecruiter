@@ -32,12 +32,13 @@ Libs\LibDeflate\LibDeflate.lua
 locales\Locales.xml
 
 GR_Init.lua
+Shared\GR_Constants.lua
 
-#shared\GR_Code.lua
-#shared\GR_Events.lua
-#shared\GR_Dataset.lua
-#shared\GR_Analytics.lua
-#shared\GR_PlayerInvite.lua
+#Shared\GR_Code.lua
+#Shared\GR_Events.lua
+#Shared\GR_Dataset.lua
+#Shared\GR_Analytics.lua
+#Shared\GR_PlayerInvite.lua
 
 #GR_Sync.lua
 #GR_Core.lua

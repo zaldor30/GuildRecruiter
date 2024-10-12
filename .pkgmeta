@@ -26,9 +26,12 @@ ignore:
   - .git
   - .github
   - .gitignore
+  - .gitattributes
   - .vscode
   - GuildRecruiter.code-workspace
+  - GuildRecruiter_Classic-development.toc
+  - GuildRecruiter-development.toc
 
-  move-folders:
+move-folders:
     Shared: .
     Screens: .
