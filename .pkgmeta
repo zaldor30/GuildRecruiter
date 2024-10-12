@@ -27,5 +27,8 @@ ignore:
   - .github
   - .gitignore
   - .vscode
-  - .README.md
-  - .GuildRecruiter.code-workspace
+  - GuildRecruiter.code-workspace
+
+  move-folders:
+    Shared: .
+    Screens: .

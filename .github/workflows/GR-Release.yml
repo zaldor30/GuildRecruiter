@@ -7,7 +7,7 @@ on:
     paths-ignore:
       - '.github/**'
       - '.vscode/**'
-      - 'GuildRecruiter.code-workspace'
+      - '.gitattributes'
 
 jobs:
   standalone_release:

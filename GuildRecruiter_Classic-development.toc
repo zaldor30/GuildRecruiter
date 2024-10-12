@@ -2,12 +2,12 @@
 ## X-Website: https://www.curseforge.com/wow/addons/guild-recruiter
 
 ## Interface: 11503, 40400
-## Version: 3.1.38
-## Title: Guild Recruiter
+## Version: 4.0.00
+## Title: Guild Recruiter (Development)
 ## Notes: Facilitates guild officers to recruit new members
 ## Author: Moonfury
-## SavedVariables: GuildRecruiterDB
-## IconTexture: Interface\AddOns\GuildRecruiter\Images\GR_Icon
+## SavedVariables: devGuildRecruiterDB
+## IconTexture: Interface\AddOns\GuildRecruiter-development\Images\GR_Icon
 ## OptionalDeps: Ace3
 
 Libs\LibStub\LibStub.lua
@@ -33,20 +33,20 @@ locales\Locales.xml
 
 GR_Init.lua
 
-GR_Code.lua
-GR_Events.lua
-GR_Dataset.lua
-GR_PlayerInvite.lua
-GR_Analytics.lua
+#shared\GR_Code.lua
+#shared\GR_Events.lua
+#shared\GR_Dataset.lua
+#shared\GR_Analytics.lua
+#shared\GR_PlayerInvite.lua
 
-GR_Sync.lua
-GR_Core.lua
-GR_Settings.lua
+#GR_Sync.lua
+#GR_Core.lua
+#GR_Settings.lua
 
-GR_Base.lua
-GR_Home.lua
-GR_About.lua
-GR_Filters.lua
-GR_Scanner.lua
-GR_WhatsNew.lua
-GR_Analytics.lua
+#Screens\GR_Base.lua
+#Screens\GR_Home.lua
+#Screens\GR_About.lua
+#Screens\GR_Filters.lua
+#Screens\GR_Scanner.lua
+#Screens\GR_WhatsNew.lua
+#Screens\GR_Analytics.lua
