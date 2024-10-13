@@ -34,15 +34,15 @@ locales\Locales.xml
 GR_Init.lua
 Shared\GR_Constants.lua
 
-#Shared\GR_Code.lua
+Shared\GR_Code.lua
 #Shared\GR_Events.lua
-#Shared\GR_Dataset.lua
+Shared\GR_Dataset.lua
 #Shared\GR_Analytics.lua
 #Shared\GR_PlayerInvite.lua
 
 #GR_Sync.lua
-#GR_Core.lua
-#GR_Settings.lua
+GR_Core.lua
+GR_Settings.lua
 
 #Screens\GR_Base.lua
 #Screens\GR_Home.lua

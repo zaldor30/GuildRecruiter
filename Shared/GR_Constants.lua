@@ -1,19 +1,22 @@
 local addonName, ns = ... -- Namespace (myaddon, namespace)
 
-ICON_PATH = 'Interface\\AddOns\\GuildRecruiter\\Images\\'
-GR.commPrefix = 'GRSync'
-GR.dbVersion = '3.2'
-GR.versionOut = '(v'..GR.version..(GR.isPreRelease and ' '..GR.preReleaseType or '')..')'
+ICON_PATH = 'Interface\\AddOns\\'..addonName..'\\Images\\'
 
-GR.isPreRelease = false
-GR.preReleaseType = 'Beta'
+GR.commPrefix = 'GRSync'
+GR.dbVersion = 4.0
+
 GR.debug = false
-GR.isTesting = false
+GR.isTesting = true
+GR.isPreRelease = true
+GR.preReleaseType = 'Alpha'
+GR.versionOut = '(v'..GR.version..(GR.isPreRelease and ' '..GR.preReleaseType or '')..')'
 
 C_ChatInfo.RegisterAddonMessagePrefix(GR.commPrefix)
 
 -- Default Colors
 ns.COLOR_GM = 'FFAF640C'
+ns.COLOR_DEBUG = 'FFD845D8'
+ns.COLOR_ERROR = 'FFFF0000'
 ns.COLOR_DEFAULT = 'FF3EB9D8' -- Guild Recruiter Color
 
 -- Icons

@@ -28,6 +28,7 @@ ignore:
   - .gitignore
   - .gitattributes
   - .vscode
+  - NameSpaceVariables.txt
   - GuildRecruiter.code-workspace
   - GuildRecruiter_Classic-development.toc
   - GuildRecruiter-development.toc

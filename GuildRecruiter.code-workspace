@@ -56,7 +56,8 @@
 			"EncounterJournal_LoadUI",
 			"ChatFrame_AddMessageEventFilter",
 			"ChatFrame_RemoveMessageEventFilter",
-			"class"
+			"class",
+			"NOTE"
 		]
 	}
 }
