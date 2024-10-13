@@ -210,6 +210,17 @@ function ds:classes_cata() -- Class list
 
     return tbl
 end
+function ds:GetZones()
+    local tbl = {}
+    for mapID = 1, 20000 do  -- Expanded range to cover all potential maps
+        local mapInfo = C_Map.GetMapInfo(mapID)
+        if mapInfo and mapInfo.name then
+            tbl[strlower(mapInfo.name)] = mapInfo
+        end
+    end
+
+    return tbl
+end
 function ds:GetZoneInfo(tblIDs)
     local instanceList = {}
     if not tblIDs then return end

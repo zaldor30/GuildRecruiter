@@ -33,7 +33,7 @@ function core:Init()
                 showWhispers = true, -- Show Whispers
                 antiSpam = true,
                 antiSpamDays = 7,
-                sendGuildGreeting = false,
+                sendGuildGreeting = true,
                 guildMessage = L['DEFAULT_GUILD_WELCOME'],
                 sendWhisperGreeting = false,
                 obeyBlockInvites = true, -- Obey Block Invites
@@ -100,7 +100,9 @@ function core:Init()
         analytics = {},
     }
 end
-function core:StartGuildRecruiter()
+function core:StartGuildRecruiter(clubID)
+    if not clubID or not core.isEnabled then return end
+
     core:Init()
     GR:RegisterChatCommand('rl', function() ReloadUI() end) -- Set the /rl slash command to reload the UI
 
@@ -108,9 +110,6 @@ function core:StartGuildRecruiter()
     ns.classic = WOW_PROJECT_ID == WOW_PROJECT_CLASSIC or false
     ns.cata = WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC or false
     ns.isRetail = not ns.classic and not ns.cata
-
-    local clubID = self:CheckIfInGuild()
-    if not clubID or not core.isEnabled then return end
 
     self:StartDatabase(clubID)
     self:LoadTables()
@@ -284,39 +283,41 @@ function core:StartupGuild(clubID)
         end
     end
 end
-function core:CheckIfInGuild()
-    local function checkIfInGuild(count) -- Check if the player is in a guild
-        if not count then return end
+function core:CheckIfInGuild(count, callback)
+    count = count or 0
 
-        local clubID = C_Club.GetGuildClubId() -- Get the guild club ID (Guild ID)
+    local clubID = C_Club.GetGuildClubId() or nil -- Get the guild club ID (Guild ID)
 
-        if clubID then
-            core.isEnabled = true
-            return clubID
-        elseif count >= 60 then -- If the player is not in a guild after 30 attempts, then return
-            core.isEnabled = false
-            ns.code:cOut(L['TITLE']..' '..GR.versionOut..' '..L['DISABLED'])
-            ns.code:cOut(L['NOT_IN_GUILD'])
-            ns.code:cOut(L['NOT_IN_GUILD_LINE1'])
-            return
-        elseif IsInGuild() and not CanGuildInvite() then -- If the player is in a guild but cannot invite, then return
-            core.isEnabled = false
-            ns.code:cOut(L['TITLE']..' '..GR.versionOut..' '..L['DISABLED'])
-            ns.code:cOut(L['CANNOT_INVITE'])
-            return
-        elseif not IsInGuild() or not clubID or not select(1, GetGuildInfo('player')) then -- If the player is not in a guild, then check again in 1 second
-            C_Timer.After(1, function() checkIfInGuild(count + 1) end)
-        end
+    if clubID then
+        self.isEnabled = true
+        if callback then callback(clubID) end
+        return clubID
+    elseif count >= 60 then -- If the player is not in a guild after 60 attempts, then return
+        self.isEnabled = false
+        ns.code:cOut(L['TITLE']..' '..GR.versionOut..' '..L['DISABLED'])
+        ns.code:cOut(L['NOT_IN_GUILD'])
+        ns.code:cOut(L['NOT_IN_GUILD_LINE1'])
+        if callback then callback(nil) end
+        return
+    elseif IsInGuild() and not CanGuildInvite() then -- If the player is in a guild but cannot invite, then return
+        self.isEnabled = false
+        ns.code:cOut(L['TITLE']..' '..GR.versionOut..' '..L['DISABLED'])
+        ns.code:cOut(L['CANNOT_INVITE'])
+        if callback then callback(nil) end
+        return
+    elseif not IsInGuild() or not clubID or not GetGuildInfo('player') then -- If the player is not in a guild, then check again in 1 second
+        C_Timer.After(1, function() self:CheckIfInGuild(count + 1, callback) end)
     end
-
-    return checkIfInGuild(0)
 end
 --? End of core Support Functions
 
 --* Start of Guild Recruiter
 local function eventsPLAYER_LOGIN()
     GR:UnregisterEvent('PLAYER_LOGIN', eventsPLAYER_LOGIN)
-    core:StartGuildRecruiter()
+
+    core:CheckIfInGuild(0, function(clubID)
+        if clubID then core:StartGuildRecruiter(clubID) end
+    end)
 end
 GR:RegisterEvent('PLAYER_LOGIN', eventsPLAYER_LOGIN)
 --? End of Guild Recruiter

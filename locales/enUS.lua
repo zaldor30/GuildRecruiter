@@ -21,6 +21,11 @@ L["REMOVE"] = "Remove"
 L["NEW"] = "New"
 L["DELETE"] = "Delete"
 
+--* General Terms
+L['ANTI_SPAM'] = 'Anti-Spam'
+L['BLACKLIST'] = 'Blacklist'
+L['DELETE_CONFIRMATION'] = 'Are you sure you want to delete this record?'
+
 -- * WoW System Message Translations
 --! MUST BE IN LOWERCASE!
 L["PLAYER_NOT_ONLINE"] = "is not online"
@@ -55,7 +60,7 @@ Please report any issues on our Discord server.]]
 
 -- * Settings
 L['GEN_GUILD_WIDE'] = 'Indicates only your current guild will be effected.'
-L['GEN_ACCOUNT_WIDE'] = 'Indicates all your charcters will be effected guild wide.'
+L['GEN_ACCOUNT_WIDE'] = 'Indicates all your charcters will be effected account wide.'
 L['RELOAD_AFTER_CHANGE'] = 'You must reload your UI (/rl) after making changes.'
 L['GEN_WHATS_NEW'] = 'Show What\'s New?'
 L['GEN_WHATS_NEW_DESC'] = 'Show the What\'s New? window when Guild Recruiter is updated.'
@@ -91,8 +96,65 @@ L['KEYBINDING_INVITE_DESC'] = 'Keybinding to invite a player to the guild.'
 L['KEYBINDING_SCAN'] = 'Scan Keybinding'
 L['KEYBINDING_SCAN_DESC'] = 'Keybinding to scan for players looking for a guild.'
 L['KEY_BINDING_NOTE'] = 'Note: Keybinds will not affect WoW keybindings.'
+--* Invite Settings
 L['INVITE_SETTINGS'] = 'Invite Settings'
+L['ENABLED_NOTE'] = 'Note: Disabled items are controlled by GM.'
+-- Anti-Spam is under general terms
+L['ENABLE_ANTI_SPAM_DESC'] = 'Enable the Anti-Spam feature to prevent spamming players.'
+L['ANTI_SPAM_DAYS'] = 'Re-invite Delay'
+L['ANTI_SPAM_DAYS_DESC'] = 'Number of days before inviting a player again.'
+L['GUILD_WELCOME_MSG'] = 'Guild Chat Welcome Message'
+L['GUILD_WELCOME_MSG_DESC'] = 'The message to send to guild chat when a new player joins.'
+L['WHISPER_WELCOME_MSG'] = 'Whisper Welcome Message'
+L['WHISPER_WELCOME_MSG_DESC'] = 'Whispered message sent to a player when they join the guild.'
+L['GUILDLINK'] = 'GUILDLINK'
+L['GUILDNAME'] = 'GUILDNAME'
+L['PLAYERNAME'] = 'PLAYERNAME'
+--* Invite Messages
 L['INVITE_MESSAGES'] = 'Invite Messages'
+L['PLAYER_SETTINGS_DESC'] = 'Orange colored messages are from the GM.'
+L['INVITE_ACTIVE_MESSAGE'] = 'Invite Messages:'
+L['INVITE_ACTIVE_MESSAGE_DESC'] = [[
+The messages that will be sent to potential recruits.
+
+NOTE: You might need to /rl after a sync to see changes.]]
+L['NEW_MESSAGE_DESC'] = 'Add a description of the message to the invite list.'
+L['INVITE_DESC'] = 'Description of the invite message:'
+L['INVITE_DESC_TOOLTIP'] = 'A description of the invite message.'
+
+L['MAX_CHARS'] = '(<sub> characters per message)'
+L['LENGTH_INFO'] = 'Assumes 12 characters when using PLAYERNAME'
+L['MESSAGE_LENGTH'] = 'Message Length'
+
+L['MESSAGE_REPLACEMENT_INSTRUCTIONS'] = [[
+GUILDLINK - Will create a clickable link to your guild.
+GUILDNAME - Will display your guild name.
+PLAYERNAME - Will display the invited player's name.]]
+
+-- * BlackList Settings Window
+L['BLACKLIST_REMOVE'] = 'Remove Selected Blacklist Entries'
+L['ADD_TO_BLACKLIST'] = 'Add player to blacklist.'
+L['BL_PRIVATE_REASON'] = 'Toggle Private Reason'
+L['BL_PRIVATE_REASON_DESC'] = 'Toggle the private reason for blacklisting.'
+L['BL_PRIVATE_REASON_ERROR'] = 'You did not blacklist'
+
+-- * Invalid Settings Window
+L['INVALID_ZONE'] = 'Invalid Zones'
+L['ZONE_NOT_FOUND'] = 'Could not find zone'
+L['ZONE_INSTRUCTIONS'] = 'The zone name must EXACTLY match the zone name in the game.'
+L['ZONE_ID'] = 'Zone ID (Numeric ID)'
+L['ZONE_NAME'] = 'Name of the Zone:'
+L['ZONE_INVALID_REASON'] = 'Reason for being invalid:'
+L['ZONE_ID_DESC'] = [[
+The zone ID for the invalid zone.
+List of instances:
+https://wowpedia.fandom.com/wiki/InstanceID
+Best World Zone IDs I can Find:
+https://wowpedia.fandom.com/wiki/UiMapID
+If you find a zone that should be added, please let me know.]]
+L['ZONE_NOTE'] = 'Zones with |cFF00FF00*|r are the only editable zones.'
+L['ZONE_LIST_NAME'] = 'The following zones will be ignored by the scanner:'
+
 -- * About
 L['ABOUT_LINE'] = 'Thank you for using Guild Recruiter, I hope you find this addon useful!'
 L['ABOUT_DOC_LINKS'] = 'Documentation and Links'
