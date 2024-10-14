@@ -7,6 +7,7 @@ GR.dbVersion = 4.0
 
 GR.debug = false
 GR.isTesting = true
+GR.enableFilter = true
 GR.isPreRelease = true
 GR.preReleaseType = 'Alpha'
 GR.versionOut = '(v'..GR.version..(GR.isPreRelease and ' '..GR.preReleaseType or '')..')'
@@ -26,6 +27,7 @@ ns.BUTTON_UNLOCKED = ns.ICON_PATH..'GR_Unlocked'
 ns.BUTTON_ABOUT = ns.ICON_PATH..'GR_About'
 ns.BUTTON_BACK = ns.ICON_PATH..'GR_Back'
 ns.BUTTON_BLACKLIST = ns.ICON_PATH..'GR_Blacklist'
+ns.BUTTON_FILTER = ns.ICON_PATH..'GR_Filter'
 ns.BUTTON_COMPACT = ns.ICON_PATH..'GR_Compact'
 ns.BUTTONS_EXPAND = ns.ICON_PATH..'GR_Expand'
 ns.BUTTON_EXIT = ns.ICON_PATH..'GR_Exit'
@@ -33,7 +35,7 @@ ns.BUTTON_NEW = ns.ICON_PATH..'GR_New'
 ns.BUTTON_RESET = ns.ICON_PATH..'GR_Reset'
 ns.BUTTON_STATS = ns.ICON_PATH..'GR_Stats'
 ns.BUTTON_SYNC_ON = ns.ICON_PATH..'GR_SyncOn'
-ns.BUTTON_SYNC_OFF = ns.ICON_PATH..'GR_SyncOff'
+ns.BUTTON_SYNC = ns.ICON_PATH..'GR_Sync'
 
 -- Global Variables
 ns.PLAYER_PROFILE = UnitName('player')..'-'..GetRealmName()

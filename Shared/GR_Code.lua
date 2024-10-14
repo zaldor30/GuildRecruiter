@@ -105,7 +105,10 @@ end
 
 -- *Tooltip Routine
 function code:createTooltip(text, body, force, frame)
-    if not force and not ns.gSettings.showToolTips then return end
+    text = text or ''
+    body = body or ''
+
+    if not force and not ns.g.showToolTips then return end
     local uiScale, x, y = UIParent:GetEffectiveScale(), GetCursorPosition()
     if frame then uiScale, x, y = 0, 0, 0 end
     CreateFrame("GameTooltip", nil, nil, "GameTooltipTemplate")
