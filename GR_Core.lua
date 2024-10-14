@@ -172,6 +172,12 @@ function core:StartDatabase(clubID)
     if self.hasGM and ns.gmSettings.forceObey then self.obeyBlockInvites = ns.gmSettings.obeyBlockInvites or false
     elseif ns.pSettings.obeyBlockInvites then self.obeyBlockInvites = ns.pSettings.obeyBlockInvites or false end
 
+    if self.hasGM and ns.gSettings.messageList then
+        if #ns.gSettings.messageList > 0 then ns.gSettings.activeMessage = nil end
+        ns.gSettings.messageList = nil
+        ns.gSettings.messageList = {}
+    end
+
     ns.invite:GetWelcomeMessages() -- Get the welcome messages
 end
 function core:PerformDatabaseMaintenance()
