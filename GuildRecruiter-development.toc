@@ -35,7 +35,8 @@ GR_Init.lua
 Shared\GR_Constants.lua
 
 Shared\GR_Code.lua
-#Shared\GR_Events.lua
+Shared\GR_Frames.lua
+Shared\GR_Events.lua
 Shared\GR_Dataset.lua
 #Shared\GR_Analytics.lua
 #Shared\GR_PlayerInvite.lua
@@ -44,7 +45,7 @@ Shared\GR_Dataset.lua
 GR_Core.lua
 GR_Settings.lua
 
-#Screens\GR_Base.lua
+Screens\GR_Base.lua
 #Screens\GR_Home.lua
 #Screens\GR_About.lua
 #Screens\GR_Filters.lua

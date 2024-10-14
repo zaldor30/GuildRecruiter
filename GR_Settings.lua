@@ -362,7 +362,7 @@ ns.guildRecuriterSettings = {
                     set = function(_, val)
                         local _, len = getMessageLength(val)
                         if len >= MAX_CHARACTERS then
-                            ns.code:AcceptDialog(L['MAX_CHARS']:gsub('<sub>', MAX_CHARACTERS), function() return end)
+                            ns.frames:AcceptDialog(L['MAX_CHARS']:gsub('<sub>', MAX_CHARACTERS), function() return end)
                             return
                         end
                         ns.gSettings.guildMessage = ns.code:capitalKeyWord(val:trim())
@@ -396,7 +396,7 @@ ns.guildRecuriterSettings = {
                     set = function(_, val)
                         local _, len = getMessageLength(val)
                         if len >= MAX_CHARACTERS then
-                            ns.code:AcceptDialog(L['MAX_CHARS']:gsub('<sub>', MAX_CHARACTERS), function() return end)
+                            ns.frames:AcceptDialog(L['MAX_CHARS']:gsub('<sub>', MAX_CHARACTERS), function() return end)
                             return
                         end
                         ns.gSettings.whisperMessage = ns.code:capitalKeyWord(val:trim())
@@ -511,7 +511,7 @@ ns.guildRecuriterSettings = {
 
                         local _, len = getMessageLength(val)
                         if len >= MAX_CHARACTERS then
-                            ns.code:AcceptDialog(L['MAX_CHARS']:gsub('<sub>', MAX_CHARACTERS), function() return end)
+                            ns.frames:AcceptDialog(L['MAX_CHARS']:gsub('<sub>', MAX_CHARACTERS), function() return end)
                             return
                         end
 
@@ -789,7 +789,7 @@ ns.guildRecuriterSettings = {
                         tblZone.name = val
                         tblZoneList = tblZoneList or ns.ds:GetZones()
                         if not tblZoneList[strlower(val)] then
-                            ns.code:AcceptDialog(L['ZONE_NOT_FOUND']..' '..val, function() return end)
+                            ns.frames:AcceptDialog(L['ZONE_NOT_FOUND']..' '..val, function() return end)
                             activeZone = nil
                         else activeZone = tblZoneList[strlower(val)] end
                     end,

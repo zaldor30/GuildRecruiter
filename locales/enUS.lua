@@ -25,6 +25,7 @@ L["DELETE"] = "Delete"
 L['ANTI_SPAM'] = 'Anti-Spam'
 L['BLACKLIST'] = 'Blacklist'
 L['DELETE_CONFIRMATION'] = 'Are you sure you want to delete this record?'
+L['AUTO_LOCKED'] = 'Is now locked.'
 
 -- * WoW System Message Translations
 --! MUST BE IN LOWERCASE!

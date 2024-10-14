@@ -123,6 +123,8 @@ function core:StartGuildRecruiter(clubID)
     self:StartSlashCommands()
     self:StartMiniMapIcon()
 
+    ns.base:SetShown(true, true)
+
     ns.code:fOut(L['TITLE']..' '..GR.versionOut..' '..L['ENABLED'], ns.COLOR_DEFAULT, true)
     if GR.isPreRelease then
         ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.preReleaseType))), 'FFFFFF00', true)
@@ -169,6 +171,15 @@ function core:LoadTables()
     end
 end
 function core:PerformRecordMaintenance()
+    --* Move Player Message List to GM Message List
+    if self.hasGM and #ns.pSettings.messageList > 0 then
+        for _, v in pairs(ns.pSettings.messageList) do
+            table.insert(ns.gmSettings.messageList, v)
+        end
+        ns.pSettings.messageList = {}
+    end
+
+    -- Remove Old Records
     local function removeOldRecords(tbl, days)
         local currentTime = time()
         for name, data in pairs(tbl) do
@@ -182,7 +193,7 @@ function core:PerformRecordMaintenance()
     end
 
     removeOldRecords(ns.tblAntiSpamList, ns.gmSettings.antiSpamDays)
-    removeOldRecords(ns.tblBlackList, ns.gmSettings.antiSpamDays)
+    --removeOldRecords(ns.tblBlackList, ns.gmSettings.antiSpamDays)
 end
 function core:StartSlashCommands() -- Start Slash Commands
     local function slashCommand(msg)
@@ -207,8 +218,8 @@ function core:StartMiniMapIcon() -- Start Mini Map Icon
         type = 'data source',
         icon = ns.GR_ICON,
         OnClick = function(_, button)
-            if button == 'LeftButton' and IsShiftKeyDown() and not ns.win.home:IsShown() then ns.win.scanner:SetShown(true)
-            elseif button == 'LeftButton' and not ns.win.home:IsShown() then ns.win.home:SetShown(true)
+            if button == 'LeftButton' and IsShiftKeyDown() and not ns.win.home:IsShown() then print(ns.base:IsShown()) ns.win.scanner:SetShown(not ns.base:IsShown())
+            elseif button == 'LeftButton' then ns.base:SetShown(not ns.base:IsShown())
             elseif button == 'RightButton' then Settings.OpenToCategory('Guild Recruiter') end
         end,
         OnTooltipShow = function()
@@ -305,7 +316,7 @@ function core:CheckIfInGuild(count, callback)
         ns.code:cOut(L['CANNOT_INVITE'])
         if callback then callback(nil) end
         return
-    elseif not IsInGuild() or not clubID or not GetGuildInfo('player') then -- If the player is not in a guild, then check again in 1 second
+    elseif not CanGuildInvite() or not IsInGuild() or not clubID or not GetGuildInfo('player') then -- If the player is not in a guild, then check again in 1 second
         C_Timer.After(1, function() self:CheckIfInGuild(count + 1, callback) end)
     end
 end
@@ -331,7 +342,6 @@ core:Init()
 --* Hook /ginvite command
 -- Create a custom dropdown frame for the additional options
 local customDropdown = CreateFrame("Frame", "CustomChatDropdown", UIParent, "UIDropDownMenuTemplate")
--- Function to initialize the custom dropdown menu
 local function InitializeDropdownMenu(self, level)
     if not core.isEnabled then return
     elseif not self.chatPlayerName or not ns.pSettings.showContextMenu then return end
@@ -433,9 +443,6 @@ local function PositionCustomDropdown()
 
     return xOffset, 0 -- Keep yOffset as 0 since we want the menus aligned vertically
 end
-
--- Original SetItemRef function
---local originalSetItemRef = SetItemRef
 
 -- Override SetItemRef to capture right-clicks on player names
 hooksecurefunc("SetItemRef", function(link, text, button, chatFrame)

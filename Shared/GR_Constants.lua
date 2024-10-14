@@ -1,6 +1,6 @@
 local addonName, ns = ... -- Namespace (myaddon, namespace)
 
-ICON_PATH = 'Interface\\AddOns\\'..addonName..'\\Images\\'
+ns.ICON_PATH = 'Interface\\AddOns\\'..addonName..'\\Images\\'
 
 GR.commPrefix = 'GRSync'
 GR.dbVersion = 4.0
@@ -20,20 +20,20 @@ ns.COLOR_ERROR = 'FFFF0000'
 ns.COLOR_DEFAULT = 'FF3EB9D8' -- Guild Recruiter Color
 
 -- Icons
-ns.GR_ICON = ICON_PATH..'GR_Icon'
-ns.BUTTON_LOCKED = ICON_PATH..'GR_Locked'
-ns.BUTTON_UNLOCKED = ICON_PATH..'GR_Unlocked'
-ns.BUTTON_ABOUT = ICON_PATH..'GR_About'
-ns.BUTTON_BACK = ICON_PATH..'GR_Back'
-ns.BUTTON_BLACKLIST = ICON_PATH..'GR_Blacklist'
-ns.BUTTON_COMPACT = ICON_PATH..'GR_Compact'
-ns.BUTTONS_EXPAND = ICON_PATH..'GR_Expand'
-ns.BUTTON_EXIT = ICON_PATH..'GR_Exit'
-ns.BUTTON_NEW = ICON_PATH..'GR_New'
-ns.BUTTON_RESET = ICON_PATH..'GR_Reset'
-ns.BUTTON_STATS = ICON_PATH..'GR_Stats'
-ns.BUTTON_SYNC_ON = ICON_PATH..'GR_SyncOn'
-ns.BUTTON_SYNC_OFF = ICON_PATH..'GR_SyncOff'
+ns.GR_ICON = ns.ICON_PATH..'GR_Icon'
+ns.BUTTON_LOCKED = ns.ICON_PATH..'GR_Locked'
+ns.BUTTON_UNLOCKED = ns.ICON_PATH..'GR_Unlocked'
+ns.BUTTON_ABOUT = ns.ICON_PATH..'GR_About'
+ns.BUTTON_BACK = ns.ICON_PATH..'GR_Back'
+ns.BUTTON_BLACKLIST = ns.ICON_PATH..'GR_Blacklist'
+ns.BUTTON_COMPACT = ns.ICON_PATH..'GR_Compact'
+ns.BUTTONS_EXPAND = ns.ICON_PATH..'GR_Expand'
+ns.BUTTON_EXIT = ns.ICON_PATH..'GR_Exit'
+ns.BUTTON_NEW = ns.ICON_PATH..'GR_New'
+ns.BUTTON_RESET = ns.ICON_PATH..'GR_Reset'
+ns.BUTTON_STATS = ns.ICON_PATH..'GR_Stats'
+ns.BUTTON_SYNC_ON = ns.ICON_PATH..'GR_SyncOn'
+ns.BUTTON_SYNC_OFF = ns.ICON_PATH..'GR_SyncOff'
 
 -- Global Variables
 ns.PLAYER_PROFILE = UnitName('player')..'-'..GetRealmName()
