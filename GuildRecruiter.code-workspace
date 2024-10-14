@@ -345,7 +345,8 @@
             "GameTooltip",
             "EncounterJournal_LoadUI",
             "WHISPER",
-            "GameTooltip"
+            "GameTooltip",
+            "Mixin"
         ]
     }
 }
