@@ -16,6 +16,8 @@ local function OnDragStop(self)
     ns.pSettings.screenPos = ns.base.screenPos
 end
 local function buttonAction(button)
+    if button == 'HOME' then ns.home:SetShown(true)
+    end
 end
 
 function base:Init()
@@ -55,6 +57,7 @@ function base:SetShown(val, hideAfter) --! Double Check save
     end
 
     self.tblFrame.frame:SetShown(not hideAfter)
+    buttonAction('HOME')
 end
 function base:CreateBaseFrame()
     local f = ns.frames:CreateFrame('Frame', 'GR_BaseFrame', UIParent, 'BackdropTemplate')
@@ -108,6 +111,7 @@ function base:CreateIconAndStatusFrame()
     fStatus:SetPoint('BOTTOMLEFT', self.tblFrame.frame, 'BOTTOMLEFT', 0, 0)
     fStatus:SetSize(self.tblFrame.frame:GetWidth(), 30)
     fStatus:SetBackdropColor(0, 0, 0, 1)
+    self.tblFrame.status = fStatus
 
     local txtStatus = fStatus:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
     txtStatus:SetPoint('LEFT', fStatus, 'LEFT', 10, 0)
@@ -150,6 +154,8 @@ function base:CreateTopIcons()
             normTexture:SetVertexColor(0, 1, 0, 1)
             lockTimer = GR:ScheduleTimer(function()
                 if not lockTimer then return end
+
+                normTexture:SetVertexColor(1, 1, 1, 1)
                 GR:CancelTimer(lockTimer)
                 lockTimer = nil
 

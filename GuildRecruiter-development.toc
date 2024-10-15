@@ -46,7 +46,7 @@ GR_Core.lua
 GR_Settings.lua
 
 Screens\GR_Base.lua
-#Screens\GR_Home.lua
+Screens\GR_Home.lua
 #Screens\GR_About.lua
 #Screens\GR_Filters.lua
 #Screens\GR_Scanner.lua

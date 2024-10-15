@@ -80,7 +80,11 @@
         "ToggleDropDownMenu",
         "UIDropDownMenu_CreateInfo",
         "ChatFrame_RemoveMessageEventFilter",
-        "EncounterJournal_LoadUI"
+        "EncounterJournal_LoadUI",
+        "UIDropDownMenu_SetWidth",
+        "UIDropDownMenu_SetText",
+        "UIDropDownMenu_SetSelectedValue",
+        "UIDropDownMenu_SetSelectedID"
     ],
     "Lua.diagnostics.disable": [
         "undefined-field",
