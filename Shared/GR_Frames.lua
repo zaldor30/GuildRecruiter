@@ -11,8 +11,10 @@ function frames:ResetFrame(frame)
     local numChildren = select("#", frame:GetChildren())
     for i = 1, numChildren do
         local child = select(i, frame:GetChildren())
-        child:Hide()
-        child:SetParent(nil)
+        if child then
+            child:Hide()
+            child:SetParent(nil)
+        end
     end
 
     -- Clear any scripts

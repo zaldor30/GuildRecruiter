@@ -170,12 +170,28 @@ ns.guildRecuriterSettings = {
                     name = L['GEN_CONTEXT'],
                     desc = L['GEN_CONTEXT_DESC'],
                     type = 'toggle',
-                    width = 'full',
+                    width = 1.5,
                     set = function(_, val) ns.pSettings.showContextMenu = val end,
                     get = function() return ns.pSettings.showContextMenu or false end,
                 },
+                genCompactSize = {
+                    order = 26,
+                    name = bulletAccountWide..'Compact Sizing:',
+                    desc = 'When in compact mode, select the size of the window.',
+                    type = 'select',
+                    style = 'dropdown',
+                    width = 1,
+                    values = function()
+                        return {
+                            [1] = 'Normal',
+                            [2] = 'Compact',
+                        }
+                    end,
+                    set = function(_, val) ns.g.compactSize = tonumber(val) end,
+                    get = function() return ns.g.compactSize or 1 end,
+                },
                 genScanInterval = {
-                    order = 25,
+                    order = 27,
                     name = bulletAccountWide..L['SCAN_WAIT_TIME'],
                     desc = L['SCAN_WAIT_TIME_DESC'],
                     type = 'input',
@@ -209,7 +225,7 @@ ns.guildRecuriterSettings = {
                     end,
                     get = function() return ns.g.keybindings.invite end,
                 },
-                genSpacer4 = {
+                genSpacer5 = {
                     order = 32,
                     name = '',
                     type = 'description',

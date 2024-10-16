@@ -15,11 +15,6 @@ local function OnDragStop(self)
     ns.base.screenPos.point,_,_, ns.base.screenPos.x, ns.base.screenPos.y = self:GetPoint()
     ns.pSettings.screenPos = ns.base.screenPos
 end
-local function buttonAction(button)
-    if button == 'HOME' then ns.home:SetShown(true)
-    elseif button == 'OPEN_SETTINGS' then Settings.OpenToCategory('Guild Recruiter')
-    end
-end
 
 function base:Init()
     self.syncActive = false
@@ -59,7 +54,37 @@ function base:SetShown(val, hideAfter) --! Double Check save
     end
 
     self.tblFrame.frame:SetShown(not hideAfter)
-    buttonAction('HOME')
+    base:buttonAction('HOME')
+end
+local baseHeight = -60
+function base:SwitchToCompactMode(closed, isCompact)
+    if closed then isCompact = false end
+
+    local baseFrame = self.tblFrame.frame
+    local baseX, baseY = ns.scanner.baseX, ns.scanner.baseY
+    local normalX, normalY = 215, ns.scanner.baseY
+    local compactX, compactY = 215, 250
+
+    if not closed and isCompact then
+        if not ns.g.compactSize or ns.g.compactSize == 1 then baseFrame:SetSize(normalX, normalY)
+        elseif isCompact and ns.g.compactSize == 2 then baseFrame:SetSize(compactX, compactY) end
+
+        self.tblFrame.icon:SetPoint('TOPLEFT', self.tblFrame.frame, 'TOPLEFT', 0, 0)
+        self.tblFrame.icon:SetPoint('BOTTOMRIGHT', self.tblFrame.frame, 'TOPRIGHT', 0, -35)
+        self.tblFrame.iconFrame:SetShown(false)
+        self.tblFrame.iconTexture:SetSize(20, 20)
+        self.tblFrame.title:SetShown(false)
+        self.tblFrame.version:SetShown(false)
+    else
+        baseFrame:SetSize(baseX, baseY)
+        self.tblFrame.icon:SetPoint('TOPLEFT', self.tblFrame.frame, 'TOPLEFT', 0, 0)
+        self.tblFrame.icon:SetPoint('BOTTOMRIGHT', self.tblFrame.frame, 'TOPRIGHT', 0, baseHeight)
+        self.tblFrame.iconFrame:SetShown(true)
+        self.tblFrame.iconTexture:SetSize(32, 32)
+        self.tblFrame.title:SetShown(true)
+        self.tblFrame.version:SetShown(true)
+    end
+    ns.scanner:CompactModeChanged()
 end
 function base:CreateBaseFrame()
     local f = ns.frames:CreateFrame('Frame', 'GR_BaseFrame', UIParent)
@@ -87,31 +112,35 @@ function base:CreateIconAndStatusFrame()
     --* Create Icon Frame
     local f = ns.frames:CreateFrame('Frame', 'GR_BaseIconFrame', self.tblFrame.frame)
     f:SetPoint('TOPLEFT', self.tblFrame.frame, 'TOPLEFT', 0, 0)
-    f:SetPoint('BOTTOMRIGHT', self.tblFrame.frame, 'TOPRIGHT', 0, -60)
+    f:SetPoint('BOTTOMRIGHT', self.tblFrame.frame, 'TOPRIGHT', 0, baseHeight)
     f:SetBackdropColor(0, 0, 0, 1)
     self.tblFrame.icon = f
 
     local t = f:CreateTexture(nil, 'ARTWORK')
     t:SetPoint('LEFT', f, 'LEFT', 10, 0)
     t:SetTexture(ns.GR_ICON)
+    self.tblFrame.iconTexture = t
 
     local txt = f:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
     txt:SetPoint('TOPLEFT', t, 'TOPRIGHT', 10, 0)
     txt:SetText(L['TITLE'])
     txt:SetTextColor(1, 1, 1, 1)
     txt:SetFont(ns.DEFAULT_FONT, 16, 'OUTLINE')
+    self.tblFrame.title = txt
 
     local txtVer = f:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
     txtVer:SetPoint('BOTTOMLEFT', t, 'BOTTOMRIGHT', 10, 0)
     txtVer:SetText(GR.versionOut:gsub("[%(%)]", ""))
     txtVer:SetTextColor(1, 1, 1, 1)
     txtVer:SetFont(ns.DEFAULT_FONT, 12, 'OUTLINE')
+    self.tblFrame.version = txtVer
     --? End Icon Frame
 
     --* Create Status Frame
     local fStatus = ns.frames:CreateFrame('Frame', 'GR_BaseStatusFrame', self.tblFrame.frame)
     fStatus:SetPoint('BOTTOMLEFT', self.tblFrame.frame, 'BOTTOMLEFT', 0, 0)
-    fStatus:SetSize(self.tblFrame.frame:GetWidth(), 30)
+    fStatus:SetPoint('BOTTOMRIGHT', self.tblFrame.frame, 'BOTTOMRIGHT', 0, 0)
+    fStatus:SetHeight(30)
     fStatus:SetBackdropColor(0, 0, 0, 1)
     self.tblFrame.status = fStatus
 
@@ -126,6 +155,7 @@ function base:CreateIconAndStatusFrame()
     end
     ns.status = ns.status or {}
     ns.status.frame = fStatus
+    self.tblFrame.status = fStatus
     function ns.status:SetText(text) SetText(text) end
 end
 
@@ -190,95 +220,130 @@ function base:CreateTopIcons()
     btnBack:SetSize(15, 15)
     btnBack:SetNormalTexture(ns.BUTTON_BACK)
     btnBack:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
-    btnBack:SetScript('OnClick', function() highlightButton(btnBack) buttonAction('BACK') end)
-    btnBack:SetScript('OnEnter', function() highlightButton(btnBack, true) ns.code:createTooltip('Back', 'Go back to previous screen.') end)
-    btnBack:SetScript('OnLeave', function() GameTooltip:Hide() end)
+    btnBack:SetScript('OnClick', function() base:buttonAction('BACK') end)
+    btnBack:SetScript('OnEnter', function() highlightButton(btnBack) ns.code:createTooltip('Back', 'Go back to previous screen.') end)
+    btnBack:SetScript('OnLeave', function() highlightButton(btnBack, true) GameTooltip:Hide() end)
     btnBack:SetShown(false)
+    self.tblFrame.back = btnBack
+
+    --* Reset Filter Button
+    local btnReset = ns.frames:CreateFrame('Button', 'GR_ResetButton', self.tblFrame.icon)
+    btnReset:SetPoint('RIGHT', btnBack, 'LEFT', -5, 0)
+    btnReset:SetSize(15, 15)
+    btnReset:SetNormalTexture(ns.BUTTON_RESET)
+    btnReset:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
+    btnReset:SetScript('OnClick', function() base:buttonAction('OPEN_RESET') end)
+    btnReset:SetScript('OnEnter', function(self) highlightButton(btnReset) ns.code:createTooltip('Reset Filter', 'Restart filter.') end)
+    btnReset:SetScript('OnLeave', function(self) highlightButton(btnReset, true) GameTooltip:Hide() end)
+    btnReset:SetShown(false)
+    self.tblFrame.reset = btnReset
+
+    --* Compact Button
+    local btnCompact = ns.frames:CreateFrame('Button', 'GR_CompactButton', self.tblFrame.icon)
+    btnCompact:SetPoint('RIGHT', btnReset, 'LEFT', -5, 0)
+    btnCompact:SetSize(15, 15)
+    btnCompact:SetNormalTexture(ns.BUTTON_COMPACT)
+    btnCompact:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
+    btnCompact:SetScript('OnClick', function() base:buttonAction('OPEN_COMPACT') end)
+    btnCompact:SetScript('OnEnter', function() highlightButton(btnCompact) ns.code:createTooltip('Compact Mode', 'Toggle compact mode.') end)
+    btnCompact:SetScript('OnLeave', function() highlightButton(btnCompact, true) GameTooltip:Hide() end)
+    btnCompact:SetShown(false)
+    self.tblFrame.compact = btnCompact
 end
 function base:CreateBottomIcons()
+    local iconFrame = ns.frames:CreateFrame('Frame', 'GR_IconFrame', self.tblFrame.icon)
+    iconFrame:SetPoint('BOTTOMRIGHT', self.tblFrame.icon, 'BOTTOMRIGHT', 0, 10)
+    iconFrame:SetBackdropColor(0, 0, 0, 0)
+    iconFrame:SetBackdropBorderColor(0, 0, 0, 0)
+    iconFrame:SetSize(6 * iconX, iconY)
+    iconFrame:SetBackdropColor(0, 0, 0, 1)
+    self.tblFrame.iconFrame = iconFrame
+
     --* About Button
-    local btnAbout = ns.frames:CreateFrame('Button', 'GR_AboutButton', self.tblFrame.icon)
-    btnAbout:SetPoint('TOP', btnCloseFrame, 'BOTTOM', 0, -(iconY - 10))
+    local btnAbout = ns.frames:CreateFrame('Button', 'GR_AboutButton', iconFrame)
+    btnAbout:SetPoint('RIGHT', iconFrame, 'RIGHT', -10, 0)
     btnAbout:SetSize(iconX, iconY)
     btnAbout:SetNormalTexture(ns.BUTTON_ABOUT)
     btnAbout:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
-    btnAbout:SetScript('OnClick', function() buttonAction('OPEN_ABOUT') end)
+    btnAbout:SetScript('OnClick', function() base:buttonAction('OPEN_ABOUT') end)
     btnAbout:SetScript('OnEnter', function() highlightButton(btnAbout) ns.code:createTooltip(L["ABOUT"]..' '..L['TITLE'], 'Links to support and contributions.') end)
     btnAbout:SetScript('OnLeave', function() highlightButton(btnAbout, true) GameTooltip:Hide() end)
 
     --* Settings Button
-    local btnSettings = ns.frames:CreateFrame('Button', 'GR_SettingsButton', self.tblFrame.icon)
+    local btnSettings = ns.frames:CreateFrame('Button', 'GR_SettingsButton', iconFrame)
     btnSettings:SetPoint('RIGHT', btnAbout, 'LEFT', -5, 0)
     btnSettings:SetSize(iconX, iconY)
     btnSettings:SetNormalTexture(ns.BUTTON_SETTINGS)
     btnSettings:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
-    btnSettings:SetScript('OnClick', function() buttonAction('OPEN_SETTINGS') end)
+    btnSettings:SetScript('OnClick', function() base:buttonAction('OPEN_SETTINGS') end)
     btnSettings:SetScript('OnEnter', function() highlightButton(btnSettings) ns.code:createTooltip('Settings', 'Change settings.') end)
     btnSettings:SetScript('OnLeave', function() highlightButton(btnSettings, true) GameTooltip:Hide() end)
 
     --* Sync Button
-    local btnSync = ns.frames:CreateFrame('Button', 'GR_SyncButton', self.tblFrame.icon)
+    local btnSync = ns.frames:CreateFrame('Button', 'GR_SyncButton', iconFrame)
     btnSync:SetPoint('RIGHT', btnSettings, 'LEFT', -5, 0)
     btnSync:SetSize(iconX, iconY)
     btnSync:SetNormalTexture(ns.BUTTON_SYNC)
     btnSync:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
-    btnSync:SetScript('OnClick', function() buttonAction('SYNC_TOGGLE') end)
+    btnSync:SetScript('OnClick', function() base:buttonAction('SYNC_TOGGLE') end)
     btnSync:SetScript('OnEnter', function()
         if not self.syncActive then highlightButton(btnSync) end
         ns.code:createTooltip('Toggle Syncing', 'Syncs data with other users.') end)
     btnSync:SetScript('OnLeave', function() highlightButton(btnSync, true) GameTooltip:Hide() end)
 
     --* Stats Button
-    local btnStats = ns.frames:CreateFrame('Button', 'GR_StatsButton', self.tblFrame.icon)
+    local btnStats = ns.frames:CreateFrame('Button', 'GR_StatsButton', iconFrame)
     btnStats:SetPoint('RIGHT', btnSync, 'LEFT', -5, 0)
     btnStats:SetSize(iconX, iconY)
     btnStats:SetNormalTexture(ns.BUTTON_STATS)
     btnStats:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
-    btnStats:SetScript('OnClick', function() buttonAction('OPEN_STATS') end)
+    btnStats:SetScript('OnClick', function() base:buttonAction('OPEN_STATS') end)
     btnStats:SetScript('OnEnter', function() highlightButton(btnStats) ns.code:createTooltip('View Stats', 'View stats and data.') end)
     btnStats:SetScript('OnLeave', function() highlightButton(btnStats, true) GameTooltip:Hide() end)
 
     --* Blacklist Button
-    local btnBlacklist = ns.frames:CreateFrame('Button', 'GR_BlacklistButton', self.tblFrame.icon)
+    local btnBlacklist = ns.frames:CreateFrame('Button', 'GR_BlacklistButton', iconFrame)
     btnBlacklist:SetPoint('RIGHT', btnStats, 'LEFT', -5, 0)
     btnBlacklist:SetSize(iconX, iconY)
     btnBlacklist:SetNormalTexture(ns.BUTTON_BLACKLIST)
     btnBlacklist:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
-    btnBlacklist:SetScript('OnClick', function() buttonAction('OPEN_BLACKLIST') end)
+    btnBlacklist:SetScript('OnClick', function() base:buttonAction('OPEN_BLACKLIST') end)
     btnBlacklist:SetScript('OnEnter', function() highlightButton(btnBlacklist) ns.code:createTooltip(L['BLACKLIST'], 'Manually add players to blacklist.') end)
     btnBlacklist:SetScript('OnLeave', function() highlightButton(btnBlacklist, true) GameTooltip:Hide() end)
 
     --* Filter Button
-    local btnFilter = ns.frames:CreateFrame('Button', 'GR_FilterButton', self.tblFrame.icon)
+    local btnFilter = ns.frames:CreateFrame('Button', 'GR_FilterButton', iconFrame)
     btnFilter:SetPoint('RIGHT', btnBlacklist, 'LEFT', -5, 0)
     btnFilter:SetSize(iconX, iconY)
     btnFilter:SetNormalTexture(ns.BUTTON_FILTER)
     btnFilter:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
-    btnFilter:SetScript('OnClick', function() buttonAction('OPEN_FILTER') end)
+    btnFilter:SetScript('OnClick', function() base:buttonAction('OPEN_FILTER') end)
     btnFilter:SetScript('OnEnter', function(self) highlightButton(btnFilter) ns.code:createTooltip('Custom Filters', 'Create custom filters.') end)
     btnFilter:SetScript('OnLeave', function(self) highlightButton(btnFilter, true) GameTooltip:Hide() end)
     btnFilter:SetShown(GR.enableFilter)
-
-    --* Reset Filter Button
-    local btnReset = ns.frames:CreateFrame('Button', 'GR_ResetButton', self.tblFrame.icon)
-    local btnResetAnchor = btnFilter:IsShown() and btnFilter or btnBlacklist
-    btnReset:SetPoint('RIGHT', btnResetAnchor, 'LEFT', -5, 0)
-    btnReset:SetSize(iconX, iconY)
-    btnReset:SetNormalTexture(ns.BUTTON_RESET)
-    btnReset:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
-    btnReset:SetScript('OnClick', function() buttonAction('OPEN_RESET') end)
-    btnReset:SetScript('OnEnter', function(self) highlightButton(btnReset) ns.code:createTooltip('Reset Filter', 'Restart filter.') end)
-    btnReset:SetScript('OnLeave', function(self) highlightButton(btnReset, true) GameTooltip:Hide() end)
-    btnReset:SetShown(false)
-
-    --* Compact Button
-    local btnCompact = ns.frames:CreateFrame('Button', 'GR_CompactButton', self.tblFrame.icon)
-    btnCompact:SetPoint('RIGHT', btnReset, 'LEFT', -5, 0)
-    btnCompact:SetSize(iconX, iconY)
-    btnCompact:SetNormalTexture(ns.BUTTON_COMPACT)
-    btnCompact:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
-    btnCompact:SetScript('OnClick', function() buttonAction('OPEN_COMPACT') end)
-    btnCompact:SetScript('OnEnter', function() highlightButton(btnCompact) ns.code:createTooltip('Compact Mode', 'Toggle compact mode.') end)
-    btnCompact:SetScript('OnLeave', function() highlightButton(highlightButton, true) GameTooltip:Hide() end)
-    btnCompact:SetShown(false)
+end
+function base:buttonAction(button)
+    if button == 'HOME' then
+        base.tblFrame.back:SetShown(false)
+        base.tblFrame.reset:SetShown(false)
+        base.tblFrame.compact:SetShown(false)
+        ns.home:SetShown(true)
+    elseif button == 'BACK' then
+        ns.observer:Notify('CLOSE_SCREENS')
+        base:buttonAction('HOME')
+    elseif button == 'OPEN_SCANNER' then
+        local valid, msg = ns.home:validate_data_scan_button()
+        ns.status:SetText(msg)
+        if not valid then return end
+        ns.scanner:SetShown(true)
+    elseif button == 'OPEN_ABOUT' then ns.frames:AcceptDialog('About Screen\nUnder Construction!!', function() return end)
+    elseif button == 'OPEN_SETTINGS' then Settings.OpenToCategory('Guild Recruiter')
+    elseif button == 'SYNC_TOGGLE' then ns.frames:AcceptDialog('Sync\nUnder Construction!!', function() return end)
+    elseif button == 'OPEN_STATS' then ns.frames:AcceptDialog('Stats Screen\nUnder Construction!!', function() return end)
+    elseif button == 'OPEN_BLACKLIST' then ns.frames:AcceptDialog('Blacklist\nUnder Construction!!', function() return end)
+    elseif button == 'OPEN_RESET' then ns.frames:AcceptDialog('Reset Filter\nUnder Construction!!', function() return end)
+    elseif button == 'OPEN_COMPACT' then
+        ns.pSettings.isCompact = not ns.pSettings.isCompact
+        ns.scanner:SetCompactMode()
+    end
 end

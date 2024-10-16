@@ -41,12 +41,14 @@ function core:Init()
                 messageList = {},
                 keepOpen = false,
                 inviteFormat = 2,
+                isCompact = false,
             },
             analytics = {},
         },
         global = {
             showWhatsNew = true,
             showToolTips = true, -- Show Tool Tips
+            compactSize = 1,
             ScanWaitTime = 6,
             zoneList = {},
             keybindings = {
@@ -220,7 +222,9 @@ function core:StartMiniMapIcon() -- Start Mini Map Icon
         type = 'data source',
         icon = ns.GR_ICON,
         OnClick = function(_, button)
-            if button == 'LeftButton' and IsShiftKeyDown() and not ns.win.home:IsShown() then ns.win.scanner:SetShown(not ns.base:IsShown())
+            if button == 'LeftButton' and IsShiftKeyDown() then
+                if not ns.base:IsShown() then ns.base:SetShown(true) end
+                ns.base:buttonAction('OPEN_SCANNER')
             elseif button == 'LeftButton' then ns.base:SetShown(not ns.base:IsShown())
             elseif button == 'RightButton' then Settings.OpenToCategory('Guild Recruiter') end
         end,

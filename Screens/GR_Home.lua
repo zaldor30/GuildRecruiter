@@ -4,6 +4,12 @@ local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 ns.home = {}
 local home = ns.home
 
+local function obsCLOSE_SCANNER()
+    ns.observer:Unregister('CLOSE_SCREENS', obsCLOSE_SCANNER)
+    ns.frames:ResetFrame(home.tblFrame.frame)
+    home.tblFrame.frame = nil
+end
+
 function home:Init()
     self.tblFrame = self.tblFrame or {}
 
@@ -34,8 +40,10 @@ end
 function home:IsShown() return (self.tblFrame and self.tblFrame.frame) and self.tblFrame.frame:IsShown() or false end
 function home:SetShown(val)
     if not val and not self:IsShown() then return
-    elseif not val then
-    end
+    elseif not val then self.tblFrame.frame:SetShown(false) end
+
+    ns.observer:Notify('CLOSE_SCREENS')
+    ns.observer:Register('CLOSE_SCREENS', obsCLOSE_SCANNER)
 
     self:Init()
     self:LoadTables()
@@ -58,6 +66,7 @@ function home:CreateBaseFrame()
     f:SetPoint("BOTTOMRIGHT", baseFrame.status, "TOPRIGHT", -5, 0)
     f:SetBackdropColor(0,0,0,0)
     f:SetBackdropBorderColor(0,0,0,0)
+    f:EnableMouse(false)
     self.tblFrame.frame = f
 end
 function home:CreateFilterAndLevel()
@@ -190,14 +199,10 @@ function home:CreateFilterAndLevel()
     buttonScan:SetSize(100, 20)
     buttonScan:SetText("Scan")
     buttonScan:SetScript("OnClick", function(self, button, down)
-        skipValidation = true
+        skipValidation = false
         editMinLevel:ClearFocus()
         editMaxLevel:ClearFocus()
-
-        local valid, msg = home:validate_data_scan_button()
-        ns.status:SetText(msg)
-        if not valid then return end
-        ns.status:SetText("Scanning for players...")
+        ns.base:buttonAction('OPEN_SCANNER')
     end)
     self.tblFrame.buttonScan = buttonScan
 end
@@ -270,7 +275,7 @@ function home:MessagePreview()
 
     local previewLabel = previewFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     previewLabel:SetPoint("TOPLEFT", previewFrame, "TOPLEFT", 10, -10)
-    previewLabel:SetText("Message Preview:")
+    previewLabel:SetText("Selected Message Preview:")
     previewLabel:SetTextColor(1, 1, 1)
     self.tblFrame.previewFrame = {}
     self.tblFrame.previewFrame.frame = previewFrame
@@ -307,7 +312,7 @@ function home:validate_data_scan_button()
     local maxLevel = tonumber(ns.pSettings.maxLevel)
 
     buttonScan:Enable()
-    if minLevel > maxLevel then msg = "Min Level cannot be greater than Max Level."  
+    if minLevel > maxLevel then msg = "Min Level cannot be greater than Max Level."
     elseif minLevel < 1 or minLevel > ns.MAX_CHARACTER_LEVEL then msg = "Min Level must be between 1 and " .. ns.MAX_CHARACTER_LEVEL
     elseif maxLevel < 1 or maxLevel > ns.MAX_CHARACTER_LEVEL then msg = "Max Level must be between 1 and " .. ns.MAX_CHARACTER_LEVEL end
 
@@ -337,11 +342,11 @@ function home:validate_data_scan_button()
     ns.status:SetText(msg)
 
 
-    return true, msg
+    return (msg == '' or false), msg
 end
 function home:UpdatePreviewText()
     local previewFrame = self.tblFrame.previewFrame.previewText
-    local tblMessage = ns.guild.messageList[self.activeMessage]
+    local tblMessage = ns.guild.messageList and ns.guild.messageList[self.activeMessage] or nil
     if not tblMessage then return end
 
     local preview = ns.code:variableReplacement(tblMessage.message, UnitName('player'))
