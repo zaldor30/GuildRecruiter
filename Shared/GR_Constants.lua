@@ -28,6 +28,7 @@ ns.BUTTON_ABOUT = ns.ICON_PATH..'GR_About'
 ns.BUTTON_BACK = ns.ICON_PATH..'GR_Back'
 ns.BUTTON_BLACKLIST = ns.ICON_PATH..'GR_Blacklist'
 ns.BUTTON_FILTER = ns.ICON_PATH..'GR_Filter'
+ns.BUTTON_FILTER_COLOR = ns.ICON_PATH..'GR_FilterColor'
 ns.BUTTON_COMPACT = ns.ICON_PATH..'GR_Compact'
 ns.BUTTONS_EXPAND = ns.ICON_PATH..'GR_Expand'
 ns.BUTTON_EXIT = ns.ICON_PATH..'GR_Exit'
@@ -36,6 +37,7 @@ ns.BUTTON_RESET = ns.ICON_PATH..'GR_Reset'
 ns.BUTTON_STATS = ns.ICON_PATH..'GR_Stats'
 ns.BUTTON_SYNC_ON = ns.ICON_PATH..'GR_SyncOn'
 ns.BUTTON_SYNC = ns.ICON_PATH..'GR_Sync'
+ns.BUTTON_SETTINGS = ns.ICON_PATH..'GR_Settings'
 
 -- Global Variables
 ns.PLAYER_PROFILE = UnitName('player')..'-'..GetRealmName()
@@ -52,3 +54,11 @@ ns.SKURRI_FONT = 'Fonts\\SKURRI.ttf'
 ns.DEFAULT_FONT = 'Fonts\\FRIZQT__.ttf'
 ns.MORPHEUS_FONT = 'Fonts\\MORPHEUS.ttf'
 ns.DEFAULT_FONT_SIZE = 12
+
+-- Enumerations
+ns.InviteFormat = {
+    MESSAGE_ONLY = 1,
+    GUILD_INVITE_ONLY = 2,
+    GUILD_INVITE_AND_MESSAGE = 3,
+    MESSAGE_ONLY_IF_INVITE_DECLINED = 4
+}

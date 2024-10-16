@@ -9,7 +9,6 @@ ns.core = {}
 local core = ns.core
 
 function core:Init()
-    self.hasGM = false
     self.isEnabled = false
     self.fullyStarted = false
     self.ignoreAutoSync = false
@@ -24,6 +23,8 @@ function core:Init()
                 minLevel = ns.MAX_CHARACTER_LEVEL - 4,
                 maxLevel = ns.MAX_CHARACTER_LEVEL,
                 -- General Settings
+                activeFilter = 9999,
+                activeMessage = nil,
                 compactMode = false, -- Scanner Compact Mode
                 minimap = { hide = false }, -- Mini Map Icon
                 showContextMenu = true, -- Show Context Menu
@@ -39,6 +40,7 @@ function core:Init()
                 obeyBlockInvites = true, -- Obey Block Invites
                 messageList = {},
                 keepOpen = false,
+                inviteFormat = 2,
             },
             analytics = {},
         },
@@ -61,21 +63,19 @@ function core:Init()
         },
         gmSettings = {
             -- GM Settings
-            forceObey = false,
+            forceMessageList = false,
+            forceSendWhisper = false,
+            forceGuildMessage = false,
+            forceWhisperMessage = false, -- Force Invite Message
+            forceSendGuildGreeting = false,
             obeyBlockInvites = true, -- Obey Block Invites
-            forceAntiSpam = false,
             antiSpam = true,
             antiSpamDays = 7,
-            forceSendGuildGreeting = false,
             sendGuildGreeting = false,
-            forceGuildMessage = false,
             guildMessage = L['DEFAULT_GUILD_WELCOME'],
-            forceSendWhisper = false,
             sendWhisperGreeting = false,
-            forceWhisperMessage = false,
             whisperMessage = '',
-            forceMessageList = false,
-            messageList = {},
+            
         },
         settings = {
             -- General Settings
@@ -93,11 +93,12 @@ function core:Init()
         },
         isGuildLeader = false,
         guildLeaderToon = nil,
-        blackList = {},
-        blackListRemoved = {},
-        antiSpamList = {},
-        filterList = {},
         analytics = {},
+        blackList = {},
+        filterList = {},
+        messageList = {},
+        antiSpamList = {},
+        blackListRemoved = {},
     }
 end
 function core:StartGuildRecruiter(clubID)
@@ -116,6 +117,7 @@ function core:StartGuildRecruiter(clubID)
     self:PerformRecordMaintenance()
     self:StartupGuild(clubID)
 
+    ns.newSettingsMessage() -- Set blank message record for settings
     AC:RegisterOptionsTable(addonName, ns.guildRecuriterSettings) -- Register the options table
     ns.addonOptions = ACD:AddToBlizOptions(addonName, 'Guild Recruiter') -- Add the options to the Blizzard options
 
@@ -199,7 +201,7 @@ function core:StartSlashCommands() -- Start Slash Commands
     local function slashCommand(msg)
         msg = strlower(msg:trim())
 
-        if not msg or msg == '' and not ns.win.home:IsShown() then return ns.win.home:SetShown(true)
+        if not msg or msg == '' and not ns.base:IsShown() then return ns.base:SetShown(true)
         elseif msg == strlower(L['HELP']) then ns.code:fOut(L['SLASH_COMMANDS'], ns.COLOR_DEFAULT, true)
         elseif strlower(msg) == strlower(L['CONFIG']) then Settings.OpenToCategory('Guild Recruiter')
         elseif strlower(msg):match(strlower(L['BLACKLIST'])) then
@@ -218,7 +220,7 @@ function core:StartMiniMapIcon() -- Start Mini Map Icon
         type = 'data source',
         icon = ns.GR_ICON,
         OnClick = function(_, button)
-            if button == 'LeftButton' and IsShiftKeyDown() and not ns.win.home:IsShown() then print(ns.base:IsShown()) ns.win.scanner:SetShown(not ns.base:IsShown())
+            if button == 'LeftButton' and IsShiftKeyDown() and not ns.win.home:IsShown() then ns.win.scanner:SetShown(not ns.base:IsShown())
             elseif button == 'LeftButton' then ns.base:SetShown(not ns.base:IsShown())
             elseif button == 'RightButton' then Settings.OpenToCategory('Guild Recruiter') end
         end,
@@ -272,13 +274,13 @@ function core:StartupGuild(clubID)
     end
 
     if not IsGuildLeader() then
-        if GetUnitName('player', true) == ns.g.guildLeaderToon then
+        if GetUnitName('player', true) == ns.guild.guildLeaderToon then
             ns.guild.isGuildLeader = false
             ns.guild.guildLeaderToon = nil
             ns.code:fOut(ns.fPlayerName..' '..L['NO_LONGER_GUILD_LEADER'])
         end
     else
-        ns.g.isGuildLeader = true
+        ns.guild.isGuildLeader = true
         ns.guild.guildLeaderToon = GetUnitName('player', true)
     end
 
@@ -373,7 +375,7 @@ local function InitializeDropdownMenu(self, level)
         UIDropDownMenu_AddButton(info, level)
 
         local activeMessage = ns.pSettings.activeMessage or 1
-        local location = ns.core.hasGM and ns.gmSettings or ns.gSettings
+        local location = ns.isGM and ns.gmSettings or ns.gSettings
         local messageList = (location.messageList and location.messageList[activeMessage]) and location.messageList[activeMessage].message or nil
         local msg = (messageList and messageList[activeMessage]) and messageList[activeMessage].messages or nil
 

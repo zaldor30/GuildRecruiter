@@ -84,7 +84,8 @@
         "UIDropDownMenu_SetWidth",
         "UIDropDownMenu_SetText",
         "UIDropDownMenu_SetSelectedValue",
-        "UIDropDownMenu_SetSelectedID"
+        "UIDropDownMenu_SetSelectedID",
+        "UIDropDownMenu_GetSelectedID"
     ],
     "Lua.diagnostics.disable": [
         "undefined-field",

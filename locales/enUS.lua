@@ -27,6 +27,12 @@ L['BLACKLIST'] = 'Blacklist'
 L['DELETE_CONFIRMATION'] = 'Are you sure you want to delete this record?'
 L['AUTO_LOCKED'] = 'Is now locked.'
 
+-- * GR Home Screen
+L['MESSAGE_ONLY'] = 'Message ONLY'
+L['GUILD_INVITE_ONLY'] = 'Guild Invite ONLY'
+L['GUILD_INVITE_AND_MESSAGE'] = 'Guild Invite and Message'
+L['MESSAGE_ONLY_IF_INVITE_DECLINED'] = 'Message Only if Invitation is declined'
+
 -- * WoW System Message Translations
 --! MUST BE IN LOWERCASE!
 L["PLAYER_NOT_ONLINE"] = "is not online"
@@ -97,7 +103,10 @@ L['KEYBINDING_INVITE_DESC'] = 'Keybinding to invite a player to the guild.'
 L['KEYBINDING_SCAN'] = 'Scan Keybinding'
 L['KEYBINDING_SCAN_DESC'] = 'Keybinding to scan for players looking for a guild.'
 L['KEY_BINDING_NOTE'] = 'Note: Keybinds will not affect WoW keybindings.'
+
 --* Invite Settings
+L['ENABLE_BLOCK_INVITE_CHECK'] = 'Enable Check for Blocked Inviting.'
+L['ENABLE_BLOCK_INVITE_CHECK_TOOLTIP'] = 'Attempts to check if the player being invited has Block Guild Invites enabled.'
 L['INVITE_SETTINGS'] = 'Invite Settings'
 L['ENABLED_NOTE'] = 'Note: Disabled items are controlled by GM.'
 -- Anti-Spam is under general terms
@@ -105,12 +114,19 @@ L['ENABLE_ANTI_SPAM_DESC'] = 'Enable the Anti-Spam feature to prevent spamming p
 L['ANTI_SPAM_DAYS'] = 'Re-invite Delay'
 L['ANTI_SPAM_DAYS_DESC'] = 'Number of days before inviting a player again.'
 L['GUILD_WELCOME_MSG'] = 'Guild Chat Welcome Message'
-L['GUILD_WELCOME_MSG_DESC'] = 'The message to send to guild chat when a new player joins.'
+L['GUILD_WELCOME_MSG_DESC'] = 'The message send to guild chat when a new player joins.'
 L['WHISPER_WELCOME_MSG'] = 'Whisper Welcome Message'
 L['WHISPER_WELCOME_MSG_DESC'] = 'Whispered message sent to a player when they join the guild.'
 L['GUILDLINK'] = 'GUILDLINK'
 L['GUILDNAME'] = 'GUILDNAME'
 L['PLAYERNAME'] = 'PLAYERNAME'
+
+--* GM Specific
+L['GM_INVITE_SETTINGS'] = 'GM Settings'
+L['GM_INVITE_MESSAGES'] = 'GM Messages'
+L['SYNC_MESSAGES'] = 'Sync this message.'
+L['SYNC_MESSAGES_DESC'] = 'Sync this message with the guild.'
+
 --* Invite Messages
 L['INVITE_MESSAGES'] = 'Invite Messages'
 L['PLAYER_SETTINGS_DESC'] = 'Orange colored messages are from the GM.'

@@ -26,18 +26,22 @@ function frames:ResetFrame(frame)
     frame:Hide()
 end
 -- Function to get a frame from the pool or create a new one
-function frames:CreateFrame(frameType, name, parent, useBackdrop, backdropTemplate)
-    useBackdrop = type(useBackdrop) == 'string' and true or (useBackdrop or false)
+function frames:CreateFrame(frameType, name, parent, backdropTemplate)
     -- Check if a frame is available in the pool
     local frame = table.remove(FramePool)
 
     if not frame then
+        local template = nil
+        if frameType == 'Frame' then template = backdropTemplate or "BackdropTemplate"
+        elseif frameType == 'Button' and backdropTemplate then template = "UIPanelButtonTemplate"
+        elseif frameType == 'EditBox' and backdropTemplate then template = "InputBoxTemplate"
+        end
         -- No available frames, create a new one
-        frame = CreateFrame(frameType or "Frame", name, parent, useBackdrop and "BackdropTemplate" or nil, frameType)
+        frame = CreateFrame(frameType or "Frame", name, parent, template)
 
         -- If using the BackdropTemplate, set up the backdrop
-        if useBackdrop then
-            frame:SetBackdrop(backdropTemplate or ns.BackdropTemplate())
+        if frameType == 'Frame' then
+            frame:SetBackdrop(ns.BackdropTemplate())
             frame:SetBackdropColor(0, 0, 0, 0.7)
             frame:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
         end
@@ -48,11 +52,11 @@ function frames:CreateFrame(frameType, name, parent, useBackdrop, backdropTempla
         self:ResetFrame(frame)
 
         -- Handle BackdropTemplate logic
-        if useBackdrop then
+        if frameType == 'Frame' then
             if not frame.SetBackdrop then
                 Mixin(frame, BackdropTemplateMixin)  -- Ensure the backdrop is available
             end
-            frame:SetBackdrop(backdropTemplate or ns.BACKDROP_TEMPLATE)
+            frame:SetBackdrop(backdropTemplate or ns.BLANK_BACKGROUND)
             frame:SetBackdropColor(0, 0, 0, 0.7)
             frame:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
         else frame:SetBackdrop(nil) end
@@ -127,80 +131,6 @@ function ns.BackdropTemplate(bgImage, edgeImage, tile, tileSize, edgeSize, inset
 	}
 end
 
---* Single Level Dropdown
--- MyReusableDropdownAddon.lua
-
--- Define the global namespace 'ns' if it doesn't exist
-local ns = ns or {}
-
--- Define 'dropdown' namespace within 'ns'
-ns.dropdown = ns.dropdown or {}
-ns.dropdown.__index = ns.dropdown
-
--- Dropdown class definition
-function ns.dropdown:new(name, parent, width, defaultText, entries, options)
-    -- Create the dropdown frame using WoW's UIDropDownMenuTemplate
-    local dropdownFrame = CreateFrame("Frame", name, parent, "UIDropDownMenuTemplate")
-    dropdownFrame:SetWidth(width or 150)
-    dropdownFrame:SetHeight(30)
-
-    -- Initialize the dropdown menu
-    UIDropDownMenu_SetWidth(dropdownFrame, width or 150)
-    UIDropDownMenu_SetText(dropdownFrame, defaultText or "Select an option")
-
-    -- Store the entries and options in the dropdown object
-    dropdownFrame.entries = entries or {}
-    dropdownFrame.options = options or {}
-
-    -- Function to initialize the dropdown menu
-    local function InitializeDropdown(self, level, menuList)
-        local info = UIDropDownMenu_CreateInfo()
-        for index, entry in ipairs(dropdownFrame.entries) do
-            info.text = entry.description
-            info.value = entry.id
-            info.func = function(_, value)
-                UIDropDownMenu_SetSelectedID(dropdownFrame, index) -- Set by index
-                if dropdownFrame.options.onSelect and type(dropdownFrame.options.onSelect) == "function" then
-                    dropdownFrame.options.onSelect(entry.id, entry.description)
-                end
-            end
-            UIDropDownMenu_AddButton(info, level)
-        end
-    end
-
-    -- Initialize the dropdown with the setup function
-    UIDropDownMenu_Initialize(dropdownFrame, InitializeDropdown)
-
-    -- Method to set the selected value programmatically
-    function dropdownFrame:SetSelectedValue(id)
-        for index, entry in ipairs(self.entries) do
-            if entry.id == id then
-                UIDropDownMenu_SetSelectedID(self, index)
-                break
-            end
-        end
-    end
-
-    -- Method to get the currently selected value
-    function dropdownFrame:GetSelectedValue()
-        local selectedID = UIDropDownMenu_GetSelectedID(dropdownFrame)
-        if selectedID and self.entries[selectedID] then
-            return self.entries[selectedID].id, self.entries[selectedID].description
-        end
-        return nil, nil
-    end
-
-    -- Store the frame reference
-    local obj = {
-        frame = dropdownFrame
-    }
-
-    setmetatable(obj, ns.dropdown)
-
-    return obj
-end
---? End of Single Level Dropdown
-
 --* Frame Stratas
 ns.BACKGROUND_STRATA = 'BACKGROUND'
 ns.LOW_STRATA = 'LOW'
@@ -235,3 +165,132 @@ function frames:AcceptDialog(msg, func)
     }
     StaticPopup_Show("MY_ACCEPT_DIALOG")
 end
+
+--* Single Level Dropdown
+ns.dropdown = ns.dropdown or {}
+ns.dropdown.__index = ns.dropdown
+
+-- Dropdown Class Definition
+function ns.dropdown:new(name, parent, width, defaultText, entries, options)
+    -- Create the dropdown frame using WoW's UIDropDownMenuTemplate
+    local dropdownFrame = CreateFrame("Frame", name, parent, "UIDropDownMenuTemplate")
+    dropdownFrame:SetWidth(width or 150)
+    dropdownFrame:SetHeight(30)
+
+    -- Initialize the dropdown menu
+    UIDropDownMenu_SetWidth(dropdownFrame, width or 150)
+    UIDropDownMenu_SetText(dropdownFrame, defaultText or "Select an option")
+
+    -- Store entries and options for later use
+    dropdownFrame.entries = entries or {}
+    dropdownFrame.options = options or {}
+
+    -- Function to initialize the dropdown menu
+    local function InitializeDropdown(self, level, menuList)
+        local info = UIDropDownMenu_CreateInfo()
+        for index, entry in ipairs(dropdownFrame.entries) do
+            info.text = entry.description
+            info.value = entry.id
+            info.func = function(_, value)
+                UIDropDownMenu_SetSelectedID(dropdownFrame, index) -- Set selection by index
+                if dropdownFrame.options.onSelect and type(dropdownFrame.options.onSelect) == "function" then
+                    dropdownFrame.options.onSelect(entry.id, entry.description)
+                end
+            end
+            UIDropDownMenu_AddButton(info, level)
+        end
+    end
+
+    -- Initialize the dropdown with the setup function
+    UIDropDownMenu_Initialize(dropdownFrame, InitializeDropdown)
+
+    -- Method to set the selected value programmatically
+    function dropdownFrame:SetSelectedValue(id)
+        for index, entry in ipairs(self.entries) do
+            if entry.id == id then
+                UIDropDownMenu_SetSelectedID(self, index)
+                break
+            end
+        end
+    end
+
+    -- Method to get the currently selected value
+    function dropdownFrame:GetSelectedValue()
+        local selectedID = UIDropDownMenu_GetSelectedID(dropdownFrame)
+        if selectedID and self.entries[selectedID] then
+            return self.entries[selectedID].id, self.entries[selectedID].description
+        end
+        return nil, nil
+    end
+
+    -- Store the frame reference in the object
+    local obj = { frame = dropdownFrame }
+
+    setmetatable(obj, ns.dropdown)
+
+    return obj
+end
+-- Dropdown class definition
+function ns.dropdown:new(name, parent, width, defaultText, entries, options)
+    -- Create the dropdown frame using WoW's UIDropDownMenuTemplate
+    local dropdownFrame = CreateFrame("Frame", name, parent, "UIDropDownMenuTemplate")
+    dropdownFrame:SetWidth(width or 150)
+    dropdownFrame:SetHeight(30)
+
+    -- Initialize the dropdown menu
+    UIDropDownMenu_SetWidth(dropdownFrame, width or 150)
+    UIDropDownMenu_SetText(dropdownFrame, defaultText or "Select an option")
+
+    -- Store the entries and options in the dropdown object
+    dropdownFrame.entries = entries or {}
+    dropdownFrame.options = options or {}
+
+    -- Function to initialize the dropdown menu
+    local function InitializeDropdown(self, level, menuList)
+        for index, entry in ipairs(dropdownFrame.entries) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = entry.description
+            info.value = entry.id
+            info.func = function()
+                UIDropDownMenu_SetSelectedID(dropdownFrame, index) -- Set selection by index
+                if dropdownFrame.options.onSelect and type(dropdownFrame.options.onSelect) == "function" then
+                    dropdownFrame.options.onSelect(entry.id, entry.description)
+                end
+            end
+            UIDropDownMenu_AddButton(info, level)
+        end
+    end
+
+    -- Initialize the dropdown with the setup function
+    UIDropDownMenu_Initialize(dropdownFrame, InitializeDropdown)
+    dropdownFrame.Text:SetJustifyH("LEFT")
+
+    -- Method to set the selected value programmatically
+    function dropdownFrame:SetSelectedValue(id)
+        for index, entry in ipairs(self.entries) do
+            if entry.id == id then
+                UIDropDownMenu_SetSelectedID(self, index)
+                break
+            end
+        end
+    end
+
+    -- Method to get the currently selected value
+    function dropdownFrame:GetSelectedValue()
+        local selectedID = UIDropDownMenu_GetSelectedID(dropdownFrame)
+        if selectedID and self.entries[selectedID] then
+            return self.entries[selectedID].id, self.entries[selectedID].description
+        end
+        return nil, nil
+    end
+
+    -- Store the frame reference
+    local obj = {
+        frame = dropdownFrame
+    }
+
+    setmetatable(obj, ns.dropdown)
+
+    return obj
+end
+--? End of Single Level Dropdown

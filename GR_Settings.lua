@@ -14,7 +14,7 @@ local function newMsg()
     return {
         desc = '',
         message = '',
-        gmSync = ns.core.hasGM,
+        gmSync = ns.isGM,
     }
 end
 local getMessageLength = function(msg)
@@ -36,6 +36,7 @@ local getMessageLength = function(msg)
     tMsg = msg:gsub('GUILDLINK', ''):gsub('GUILDNAME', ''):gsub('PLAYERNAME', '')
     return (playerNameFound or false), count + (strlen(tMsg) or 0), count, msg
 end
+function ns.newSettingsMessage() tblMessage = newMsg() end
 
 ns.guildRecuriterSettings = {
     name = L['TITLE']..' '..GR.versionOut,
@@ -252,26 +253,385 @@ ns.guildRecuriterSettings = {
             args = {}
         },
         gmSettings = {
-            name = L['GM_SETTINGS'],
+            name = L['GM_INVITE_SETTINGS'],
             type = 'group',
             order = 11,
-            hidden = function() return not ns.core.hasGM end,
+            hidden = function() return not ns.isGM end,
             args = {
+                invHeader1 = {
+                    name = L['GM_INVITE_SETTINGS'],
+                    type = 'header',
+                    order = 0,
+                },
+                invSettingsDesc1 = {
+                    order = 1,
+                    name = bulletGuildWide..L['GEN_GUILD_WIDE'],
+                    type = 'description',
+                    fontSize = 'medium',
+                },
+                invSettingsDesc2 = {
+                    order = 2,
+                    name = bulletAccountWide..L['GEN_ACCOUNT_WIDE'],
+                    type = 'description',
+                    fontSize = 'medium',
+                },
+                invHeading1 = {
+                    order = 3,
+                    name = '',
+                    type = 'header',
+                },
+                invBlockGuildInvites = {
+                    order = 4,
+                    name = bulletGuildWide..L['ENABLE_BLOCK_INVITE_CHECK'],
+                    desc = L['ENABLE_BLOCK_INVITE_CHECK_TOOLTIP'],
+                    type = 'toggle',
+                    width = 'full',
+                    set = function(_, val) ns.gmSettings.obeyBlockInvites = val end,
+                    get = function() return ns.gmSettings.obeyBlockInvites end,
+                },
+                invAntiSpamEnable = {
+                    order = 5,
+                    name = bulletGuildWide..L["ENABLE"]..' '..L['ANTI_SPAM'],
+                    desc = L['ENABLE_ANTI_SPAM_DESC'],
+                    type = 'toggle',
+                    width = 1,
+                    set = function(_, val) ns.gmSettings.antiSpam = val end,
+                    get = function() return ns.gmSettings.antiSpam end,
+                },
+                invSpacer1 = {
+                    order = 6,
+                    name = '',
+                    type = 'description',
+                    width = .5,
+                },
+                invAntiSpamInterval = {
+                    order = 7,
+                    name = bulletGuildWide..L['ANTI_SPAM_DAYS'],
+                    desc = L['ANTI_SPAM_DAYS_DESC'],
+                    type = 'select',
+                    style = 'dropdown',
+                    width = 1,
+                    values = function()
+                        return {
+                            [7] = '7 days',
+                            [14] = '14 days',
+                            [30] = '30 days (1 month)',
+                            [90] = '90 days (3 months)',
+                            [180] = '180 days (6 months)',
+                        }
+                    end,
+                    set = function(_, val) ns.gmSettings.antiSpamDays = tonumber(val) end,
+                    get = function() return ns.gmSettings.antiSpamDays or 7 end,
+                },
+                invHeader2 = {
+                    name = L['GUILD_WELCOME_MSG'],
+                    type = 'header',
+                    order = 20,
+                },
+                invForceGuildGreeting = {
+                    order = 21,
+                    name = bulletGuildWide..'Force non-GM to use '..L['GUILD_WELCOME_MSG'],
+                    desc = L['GUILD_WELCOME_MSG_DESC'],
+                    type = 'toggle',
+                    width = 'full',
+                    set = function(_, val) ns.gmSettings.forceSendGuildGreeting = val end,
+                    get = function() return ns.gmSettings.forceSendGuildGreeting end,
+                },
+                invGuildGreeting = {
+                    order = 22,
+                    name = bulletGuildWide..L['GUILD_WELCOME_MSG'],
+                    desc = L['GUILD_WELCOME_MSG_DESC'],
+                    type = 'toggle',
+                    width = 'full',
+                    set = function(_, val) ns.gmSettings.sendGuildGreeting = val end,
+                    get = function() return ns.gmSettings.sendGuildGreeting end,
+                },
+                invGuildWelcomeMessage = {
+                    order = 23,
+                    name = bulletGuildWide..L['GUILD_WELCOME_MSG'],
+                    desc = L['GUILD_WELCOME_MSG_DESC'],
+                    type = 'input',
+                    width = 'full',
+                    set = function(_, val)
+                        local _, len = getMessageLength(val)
+                        if len >= MAX_CHARACTERS then
+                            ns.frames:AcceptDialog(L['MAX_CHARS']:gsub('<sub>', MAX_CHARACTERS), function() return end)
+                            return
+                        end
+                        ns.gmSettings.guildMessage = ns.code:capitalKeyWord(val:trim())
+                        ns.invite:GetWelcomeMessages()
+                    end,
+                    get = function() return ns.gmSettings.guildMessage end,
+                },
+                invHeader3 = {
+                    name = L['WHISPER_WELCOME_MSG'],
+                    type = 'header',
+                    order = 24,
+                },
+                gmForceWelcomeWhisper = {
+                    order = 25,
+                    name = bulletGuildWide..'Force non-GM to use '..L['WHISPER_WELCOME_MSG'],
+                    desc = L['WHISPER_WELCOME_MSG_DESC'],
+                    type = 'toggle',
+                    width = 'full',
+                    set = function(_, val) ns.gmSettings.forceSendWhisper = val end,
+                    get = function() return ns.gmSettings.forceSendWhisper end,
+                },
+                gmWelcomeWhisper = {
+                    order = 26,
+                    name = bulletGuildWide..L['WHISPER_WELCOME_MSG'],
+                    desc = L['WHISPER_WELCOME_MSG_DESC'],
+                    type = 'toggle',
+                    width = 'full',
+                    set = function(_, val) ns.gmSettings.sendWhisperGreeting = val end,
+                    get = function() return ns.gmSettings.sendWhisperGreeting end,
+                },
+                gmWelcomeWhisperMessage = {
+                    order = 27,
+                    name = bulletGuildWide..L['WHISPER_WELCOME_MSG'],
+                    desc = L['WHISPER_WELCOME_MSG_DESC'],
+                    type = 'input',
+                    multiline = 3,
+                    width = 'full',
+                    set = function(_, val)
+                        local _, len = getMessageLength(val)
+                        if len >= MAX_CHARACTERS then
+                            ns.frames:AcceptDialog(L['MAX_CHARS']:gsub('<sub>', MAX_CHARACTERS), function() return end)
+                            return
+                        end
+                        ns.gmSettings.whisperMessage = ns.code:capitalKeyWord(val:trim())
+                        ns.invite:GetWelcomeMessages()
+                    end,
+                    get = function() return ns.gmSettings.whisperMessage end,
+                },
+                invHeader4 = {
+                    name = 'Message Instructions',
+                    type = 'header',
+                    order = 90,
+                },
+                GMMessageListInstructions = {
+                    order = 91,
+                    name = function()
+                        local msg = L['MESSAGE_REPLACEMENT_INSTRUCTIONS']
+                        msg = msg:gsub('GUILDLINK', ns.code:cText('FFFFFF00', L['GUILDLINK']))
+                        msg = msg:gsub('GUILDNAME', ns.code:cText('FFFFFF00', L['GUILDNAME']))
+                        msg = msg:gsub('PLAYERNAME', ns.code:cText('FFFFFF00', L['PLAYERNAME']))
+
+                        return msg
+                    end,
+                    type = 'description',
+                    fontSize = 'medium',
+                },
             }
         },
         gmInviteMessageList = {
-            name = L['GM_INVITE'],
+            name = L['GM_INVITE_MESSAGES'],
             type = 'group',
             order = 12,
-            hidden = function() return not ns.core.hasGM end,
+            hidden = function() return not ns.isGM end,
             args = {
+                gmMessageListHeading = {
+                    order = 0,
+                    name = L['GM_INVITE_MESSAGES'],
+                    type = 'header',
+                },
+                gmDropdownList = {
+                    order = 1,
+                    name = L['GM_INVITE_MESSAGES'],
+                    desc = L['INVITE_ACTIVE_MESSAGE_DESC'],
+                    type = 'select',
+                    style = 'dropdown',
+                    width = 2,
+                    values = function()
+                        local tbl, recordFound = {}, false
+                        tblMessage = tblMessage or newMsg()
+                        for k, r in pairs(ns.guild.messageList or {}) do
+                            tbl[k] = r.desc
+                            recordFound = true
+                        end
+                        if recordFound then tbl['default'] = 'Select a message or create a new one.'
+                        else tbl['default'] = 'Create new message by entering a description.' end
+
+                        return tbl
+                    end,
+                    set = function(_, val)
+                        activeMessage = val
+                        tblMessage = ns.guild.messageList[val] or newMsg()
+                    end,
+                    get = function()
+                        local msg = ns.guild.messageList or nil
+                        local active = activeMessage or nil
+
+                        return active or 'default'
+                    end,
+                },
+                gmNewButton = {
+                    order = 2,
+                    name = L['NEW'],
+                    desc = L['NEW_MESSAGE_DESC'],
+                    type = 'execute',
+                    width = .5,
+                    hidden = function() return not activeMessage end,
+                    func = function()
+                        isGMMessage = false
+                        activeMessage = nil
+                        tblMessage = newMsg()
+                    end,
+                },
+                gmInviteDesc = {
+                    order = 3,
+                    name = L['INVITE_DESC'],
+                    desc = L['INVITE_DESC_TOOLTIP'],
+                    type = 'input',
+                    multiline = false,
+                    width = 1.5,
+                    set = function(_, val)
+                        if not tblMessage then tblMessage = newMsg() end
+
+                        local _, len = getMessageLength(val)
+                        if len >= MAX_CHARACTERS then
+                            ns.frames:AcceptDialog(L['MAX_CHARS']:gsub('<sub>', MAX_CHARACTERS), function() return end)
+                            return
+                        end
+
+                        tblMessage.desc = val end,
+                    get = function() return tblMessage and tblMessage.desc or '' end,
+                },
+                gmSync = {
+                    order = 4,
+                    name = L['SYNC_MESSAGES'],
+                    desc = L['SYNC_MESSAGES_DESC'],
+                    type = 'toggle',
+                    width = 1,
+                    set = function(_, val) tblMessage.gmSync = val end,
+                    get = function() return tblMessage.gmSync end,
+                },
+                gmInviteMessage = {
+                    order = 6,
+                    name = L['INVITE_MESSAGES']..':',
+                    type = 'input',
+                    multiline = 7,
+                    width = 'full',
+                    set = function(_, val)
+                        if not tblMessage then tblMessage = newMsg() end
+                        tblMessage.message = ns.code:capitalKeyWord(val:trim()) end,
+                    get = function() return tblMessage and tblMessage.message or '' end,
+                },
+                gmPreview = {
+                    order = 7,
+                    name = function()
+                        if not tblMessage then return '' end
+
+                        local preview = ns.code:variableReplacement(tblMessage.message, UnitName('player'))
+                        if tblMessage.message == '' then return '' end
+
+                        local msg = (ns.code:cText('FFFF80FF', 'To [')..ns.fPlayerName..ns.code:cText('FFFF80FF', ']: '..(preview or ''))) or ''
+                        msg = msg:gsub(L['GUILD_LINK_NOT_FOUND'], ns.code:cText('FFFF0000', L['GUILD_LINK_NOT_FOUND']))
+                        msg = msg:gsub(L['NO_GUILD_NAME'], ns.code:cText('FFFF0000', L['NO_GUILD_NAME']))
+
+                        return msg
+                    end,
+                    hidden = function() return not tblMessage or not tblMessage.message end,
+                    type = 'description',
+                    width = 'full',
+                    fontSize = 'medium',
+                },
+                gmPreviewCount = {
+                    order = 8,
+                    name = function()
+                        if not tblMessage then return '' end
+
+                        local playerNameFound, count = getMessageLength(tblMessage.message)
+
+                        local msg = L['MAX_CHARS']
+                        local color = count < MAX_CHARACTERS and 'FF00FF00' or 'FFFF0000'
+                        return L['MESSAGE_LENGTH']..': '..ns.code:cText(color, count)..' '..msg:gsub('<sub>', MAX_CHARACTERS)..(playerNameFound and '\n'..L['LENGTH_INFO'] or '')
+                    end,
+                    type = 'description',
+                    width = 'full',
+                    fontSize = 'medium',
+                },
+                gmHeader5 = {
+                    order = 20,
+                    name = '',
+                    type = 'header',
+                    hidden = function()
+                        if not tblMessage then return true end
+                        return isGMMessage or (not ((tblMessage.desc and strlen(tblMessage.desc) > 0) and (tblMessage.message and strlen(tblMessage.message) > 0))) end,
+                },
+                gmInviteSave = {
+                    order = 21,
+                    name = L['SAVE'],
+                    type = 'execute',
+                    width = .5,
+                    hidden = function()
+                        if not tblMessage then return true end
+                        return isGMMessage or (not ((tblMessage.desc and strlen(tblMessage.desc) > 0) and (tblMessage.message and strlen(tblMessage.message) > 0))) end,
+                    func = function()
+                        local tbl = ns.guild.messageList or {}
+                        local active = activeMessage
+
+                        if not active then
+                            tinsert(tbl, tblMessage)
+                            active = #tbl
+                        else tbl[active] = tblMessage end
+                        ns.guild.messageList = tbl
+
+                        tblMessage = newMsg()
+                        activeMessage = nil
+                        UIErrorsFrame:AddMessage('Message Saved', 0, 1, 0, 1)
+                    end,
+                },
+                gmSpacer = {
+                    order = 22,
+                    name = '',
+                    type = 'description',
+                    width = .5,
+                },
+                gmInviteDel = {
+                    order = 23,
+                    name = L['DELETE'],
+                    type = 'execute',
+                    confirm = function() return L['DELETE_CONFIRMATION'] end,
+                    width = .5,
+                    hidden = function() return isGMMessage or not activeMessage end,
+                    func = function()
+                        local msg = ns.guild.messageList or nil
+                        local active = activeMessage or nil
+                        if active and msg and msg[active] then
+                            msg[active] = nil
+                            tblMessage = newMsg()
+                        end
+
+                        activeMessage = nil
+                        if ns.pSettings.activeMessage then ns.pSettings.activeMessage = nil end
+                    end,
+                },
+                gmHeader4 = {
+                    name = 'Message Instructions',
+                    type = 'header',
+                    order = 90,
+                },
+                gmMessageListInstructions = {
+                    order = 91,
+                    name = function()
+                        local msg = L['MESSAGE_REPLACEMENT_INSTRUCTIONS']
+                        msg = msg:gsub('GUILDLINK', ns.code:cText('FFFFFF00', L['GUILDLINK']))
+                        msg = msg:gsub('GUILDNAME', ns.code:cText('FFFFFF00', L['GUILDNAME']))
+                        msg = msg:gsub('PLAYERNAME', ns.code:cText('FFFFFF00', L['PLAYERNAME']))
+
+                        return msg
+                    end,
+                    type = 'description',
+                    fontSize = 'medium',
+                },
             }
         },
         playerInviteSettings = {
             name = L['INVITE_SETTINGS'],
             type = 'group',
             order = 11,
-            hidden = function() return ns.core.hasGM end,
+            hidden = function() return ns.isGM end,
             args = {
                 invHeader1 = {
                     name = L['INVITE_SETTINGS'],
@@ -301,30 +661,40 @@ ns.guildRecuriterSettings = {
                     name = '',
                     type = 'header',
                 },
-                invAntiSpamEnable = {
+                invBlockGuildInvites = {
                     order = 5,
-                    name = bulletGuildWide..L['ANTI_SPAM'],
+                    name = bulletGuildWide..L['ENABLE_BLOCK_INVITE_CHECK'],
+                    desc = L['ENABLE_BLOCK_INVITE_CHECK_TOOLTIP'],
+                    type = 'toggle',
+                    width = 'full',
+                    disabled = function() return ns.gmSettings.obeyBlockInvites end,
+                    set = function(_, val) ns.gSettings.obeyBlockInvites = val end,
+                    get = function() return ns.gmSettings.obeyBlockInvites and ns.gmSettings.obeyBlockInvites or ns.gSettings.obeyBlockInvites end,
+                },
+                invAntiSpamEnable = {
+                    order = 6,
+                    name = bulletGuildWide..L["ENABLE"]..' '..L['ANTI_SPAM'],
                     desc = L['ENABLE_ANTI_SPAM_DESC'],
                     type = 'toggle',
                     width = 1,
-                    disabled = function() return ns.gmSettings.forceAntiSpam end,
+                    disabled = function() return ns.gmSettings.antiSpam end,
                     set = function(_, val) ns.gSettings.antiSpam = val end,
-                    get = function() return (ns.gmSettings and ns.gmSettings.forceAntiSpam) and ns.gmSettings.AntiSpam or ns.gSettings.antiSpam end,
+                    get = function() return (ns.gmSettings and ns.gmSettings.antiSpam) and ns.gmSettings.antiSpam or ns.gSettings.antiSpam end,
                 },
                 invSpacer1 = {
-                    order = 6,
+                    order = 7,
                     name = '',
                     type = 'description',
                     width = .5,
                 },
                 invAntiSpamInterval = {
-                    order = 7,
+                    order = 8,
                     name = bulletGuildWide..L['ANTI_SPAM_DAYS'],
                     desc = L['ANTI_SPAM_DAYS_DESC'],
                     type = 'select',
                     style = 'dropdown',
                     width = 1,
-                    disabled = function() return ns.gmSettings.forceAntiSpam end,
+                    disabled = function() return ns.gmSettings.antiSpam end,
                     values = function()
                         return {
                             [7] = '7 days',
@@ -335,7 +705,7 @@ ns.guildRecuriterSettings = {
                         }
                     end,
                     set = function(_, val) ns.gSettings.antiSpamDays = tonumber(val) end,
-                    get = function() return ns.gmSettings.forceAntiSpam and ns.gmSettings.antiSpamDays or (ns.gSettings.antiSpamDays or 7) end,
+                    get = function() return ns.gmSettings.antiSpam and (ns.gmSettings.antiSpamDays or 7) or (ns.gSettings.antiSpamDays or 7) end,
                 },
                 invHeader2 = {
                     name = L['GUILD_WELCOME_MSG'],
@@ -354,7 +724,7 @@ ns.guildRecuriterSettings = {
                 },
                 invGuildWelcomeMessage = {
                     order = 23,
-                    name = bulletAccountWide..L['GUILD_WELCOME_MSG'],
+                    name = bulletGuildWide..L['GUILD_WELCOME_MSG'],
                     desc = L['GUILD_WELCOME_MSG_DESC'],
                     type = 'input',
                     width = 'full',
@@ -375,9 +745,9 @@ ns.guildRecuriterSettings = {
                     type = 'header',
                     order = 24,
                 },
-                gmWelcomeWhisper = {
+                invWelcomeWhisper = {
                     order = 25,
-                    name = bulletAccountWide..L['WHISPER_WELCOME_MSG'],
+                    name = bulletGuildWide..L['WHISPER_WELCOME_MSG'],
                     desc = L['WHISPER_WELCOME_MSG_DESC'],
                     type = 'toggle',
                     width = 'full',
@@ -385,9 +755,9 @@ ns.guildRecuriterSettings = {
                     set = function(_, val) ns.gSettings.sendWhisperGreeting = val end,
                     get = function() return ns.gmSettings.forceSendWhisper or ns.gSettings.sendWhisperGreeting end,
                 },
-                gmWelcomeWhisperMessage = {
+                invWelcomeWhisperMessage = {
                     order = 26,
-                    name = bulletAccountWide..L['WHISPER_WELCOME_MSG'],
+                    name = bulletGuildWide..L['WHISPER_WELCOME_MSG'],
                     desc = L['WHISPER_WELCOME_MSG_DESC'],
                     type = 'input',
                     multiline = 3,
@@ -428,7 +798,7 @@ ns.guildRecuriterSettings = {
             name = L['INVITE_MESSAGES'],
             type = 'group',
             order = 12,
-            hidden = function() return ns.core.hasGM end,
+            hidden = function() return ns.isGM end,
             args = {
                 invMessageListHeading = {
                     order = 0,
@@ -457,23 +827,22 @@ ns.guildRecuriterSettings = {
                     values = function()
                         local tbl, recordFound = {}, false
                         tblMessage = tblMessage or newMsg()
-                        for k, r in pairs(ns.gmSettings and ns.gmSettings.messageList or {}) do
+                        for k, r in pairs(ns.guild and ns.guild.messageList or {}) do
                             local desc = (r.gmSync or r.gmSync == nil) and ns.code:cText(ns.COLOR_GM, r.desc) or r.desc
                             recordFound = true
                             tbl[k] = desc
-                        end
-                        for k, r in pairs(ns.gSettings.messageList or {}) do
-                            tbl[k] = r.desc
-                            recordFound = true
                         end
                         if recordFound then tbl['default'] = 'Select a message or create a new one.'
                         else tbl['default'] = 'Create new message by entering a description.' end
 
                         return tbl
                     end,
-                    set = function(_, val) activeMessage = val end,
+                    set = function(_, val)
+                        activeMessage = val
+                        tblMessage = ns.guild.messageList[val] or newMsg()
+                    end,
                     get = function()
-                        local msg = ns.gSettings.messageList or nil
+                        local msg = ns.guild.messageList or nil
                         local active = activeMessage or nil
 
                         if active and msg then
@@ -547,9 +916,10 @@ ns.guildRecuriterSettings = {
                     type = 'description',
                     width = 'full',
                     fontSize = 'medium',
+                    hidden = function() return not tblMessage or not tblMessage.message end,
                 },
                 invPreviewCount = {
-                    order = 7,
+                    order = 8,
                     name = function()
                         if not tblMessage then return '' end
 
@@ -580,14 +950,14 @@ ns.guildRecuriterSettings = {
                         if not tblMessage then return true end
                         return isGMMessage or (not ((tblMessage.desc and strlen(tblMessage.desc) > 0) and (tblMessage.message and strlen(tblMessage.message) > 0))) end,
                     func = function()
-                        local tbl = ns.gSettings.messageList or {}
+                        local tbl = ns.guild.messageList or {}
                         local active = activeMessage
 
                         if not active then
                             tinsert(tbl, tblMessage)
                             active = #tbl
                         else tbl[active] = tblMessage end
-                        ns.gSettings.messageList = tbl
+                        ns.guild.messageList = tbl
 
                         tblMessage = newMsg()
                         activeMessage = nil
@@ -608,7 +978,7 @@ ns.guildRecuriterSettings = {
                     width = .5,
                     hidden = function() return isGMMessage or not activeMessage end,
                     func = function()
-                        local msg = ns.gSettings.messageList or nil
+                        local msg = ns.guild.messageList or nil
                         local active = activeMessage or nil
                         if active and msg and msg[active] then
                             msg[active] = nil
