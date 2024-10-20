@@ -20,7 +20,7 @@ function core:Init()
         profile = {
             settings = {
                 -- Starting Levels
-                minLevel = ns.MAX_CHARACTER_LEVEL - 4,
+                minLevel = ns.MAX_CHARACTER_LEVEL - 5,
                 maxLevel = ns.MAX_CHARACTER_LEVEL,
                 -- General Settings
                 activeFilter = 9999,
@@ -50,7 +50,7 @@ function core:Init()
             showWhatsNew = true,
             showToolTips = true, -- Show Tool Tips
             compactSize = 1,
-            ScanWaitTime = 6,
+            ScanWaitTime = 5,
             zoneList = {},
             keybindings = {
                 scan = 'CTRL-SHIFT-S',
@@ -74,11 +74,10 @@ function core:Init()
             obeyBlockInvites = true, -- Obey Block Invites
             antiSpam = true,
             antiSpamDays = 7,
-            sendGuildGreeting = false,
+            sendGuildGreeting = true,
             guildMessage = L['DEFAULT_GUILD_WELCOME'],
             sendWhisperGreeting = false,
             whisperMessage = '',
-            
         },
         settings = {
             -- General Settings
@@ -87,7 +86,7 @@ function core:Init()
             -- Invite Settings
             antiSpam = true,
             antiSpamDays = 7,
-            sendGuildGreeting = false,
+            sendGuildGreeting = true,
             guildMessage = L['DEFAULT_GUILD_WELCOME'],
             sendWhisperGreeting = false,
             whisperMessage = '',
@@ -96,6 +95,7 @@ function core:Init()
         },
         isGuildLeader = false,
         guildLeaderToon = nil,
+        gmActive = false,
         analytics = {},
         blackList = {},
         filterList = {},
@@ -115,7 +115,12 @@ function core:StartGuildRecruiter(clubID)
     ns.cata = WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC or false
     ns.isRetail = not ns.classic and not ns.cata
 
-    self:StartDatabase(clubID)
+    if self:StartDatabase(clubID) then
+        self.isEnabled = false
+        GR:UnregisterAllEvents()
+        ns.code:fOut(L['TITLE']..' '..GR.versionOut..' '..L['DISABLED'], ns.COLOR_DEFAULT, true)
+        return
+    end
     self:LoadTables()
     self:PerformRecordMaintenance()
     self:StartupGuild(clubID)
@@ -137,7 +142,24 @@ function core:StartGuildRecruiter(clubID)
     end
 end
 function core:StartDatabase(clubID)
+    local wasReset = false
     local db = DB:New(GR.db, self.fileStructure) -- Initialize the database
+
+    local function resetDatabase()
+        db.global = db.global and table.wipe(db.global) or {} -- Reset the global database
+        db:ResetProfile() -- Reset current profile
+
+        -- Optionally, delete all other profiles by iterating through them
+        for profileName in pairs(db.profiles) do
+            db.profiles[profileName] = nil  -- Delete profile data
+        end
+
+        wasReset = true
+        db.global.dbVer = GR.dbVersion -- Set the database version
+        ns.code:fOut(L['DATABASE_RESET'], ns.COLOR_ERROR)
+    end
+
+    if not db.global.dbVer or (db.global.dbVer < 4 and db.global.dbVer ~= GR.dbVersion) then resetDatabase() end -- Reset the database if the version is different
 
     if not db.global[clubID] then
         db.global[clubID] = self.guildFileStructure -- Set the guild defaults
@@ -153,6 +175,7 @@ function core:StartDatabase(clubID)
     ns.gFilterList = ns.guild.filterList -- Set the filter list database
 
     GR.debug = GR.isTesting or ns.pSettings.debugMode -- Set the debug modes
+    return wasReset
 end
 function core:LoadTables()
     ns.tblBlackList, ns.antiSpamList = {}, {}
@@ -266,13 +289,13 @@ function core:StartupGuild(clubID)
 
     if ns.isRetail then
         local club = clubID and C_ClubFinder.GetRecruitingClubInfoFromClubID(clubID) or nil
-        if (not ns.guildInfo.guildLink or ns.guildInfo.guildLink == '') and club then
-            local guildLink = "|cffffd200|HclubFinder:"..club.clubFinderGUID.."|h[Guild: "..club.name.."]|h|r"
+        if not ns.classic and (not ns.guildInfo.guildLink or ns.guildInfo.guildLink == '') and club then
+            local guildLink = string.format("|Hguild:%s|h[%s]|h", guildName, guildName)
             ns.guildInfo.guildLink = guildLink or nil
         end
     else
-        if guildName and (not ns.guildInfo.guildLink or ns.guildInfo.guildLink == '') then
-            local guildLink = "|cffffff00|Hmyguildlink:" .. guildName .. "|h[" .. guildName .. "]|h|r"
+        if guildName and not ns.classic and (not ns.guildInfo.guildLink or ns.guildInfo.guildLink == '') then
+            local guildLink = string.format("|Hguild:%s|h[%s]|h", guildName, guildName)
             ns.guildInfo.guildLink = guildLink or nil
         end
     end
@@ -296,6 +319,7 @@ function core:StartupGuild(clubID)
 
     ns.isGM = ns.guild.isGuildLeader
     if not ns.isGM then
+        ns.gmActive = ns.guild.gmActive or false
         ns.obeyBlockInvites = ns.gmSettings.obeyBlockInvites and ns.gmSettings.obeyBlockInvites or ns.gSettings.obeyBlockInvites
         if not not ns.gmSettings.antiSpam and not ns.pSettings.antiSpam then
             ns.code:fOut(L['NO_ANTI_SPAM'], ns.COLOR_ERROR)

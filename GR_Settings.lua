@@ -5,6 +5,7 @@ local MAX_CHARACTERS = 255
 local bulletAccountWide = ns.code:cText('ff00ff00', '* ')
 local bulletGuildWide = ns.code:cText('ffffff00', '* ')
 
+local disableSaveButton = false
 local tblAntiSpamSorted, tblBlackListSorted = nil, nil
 local activeZone, checkedZones, tblPlayerZone = nil, false, nil
 local tblZoneList, tblZone = nil, {}
@@ -37,6 +38,14 @@ local getMessageLength = function(msg)
     return (playerNameFound or false), count + (strlen(tMsg) or 0), count, msg
 end
 function ns.newSettingsMessage() tblMessage = newMsg() end
+local function GetInstructions()
+    local msg = (ns.classic and L['MESSAGE_REPLACEMENT_INSTRUCTIONS_CLASSIC'] or L['MESSAGE_REPLACEMENT_INSTRUCTIONS_PART_1'])..'\n'..L['MESSAGE_REPLACEMENT_INSTRUCTIONS_PART_2']
+    msg = msg:gsub('GUILDLINK', ns.code:cText(ns.classic and 'FFFF0000' or 'FFFFFF00', L['GUILDLINK']))
+    msg = msg:gsub('GUILDNAME', ns.code:cText('FFFFFF00', L['GUILDNAME']))
+    msg = msg:gsub('PLAYERNAME', ns.code:cText('FFFFFF00', L['PLAYERNAME']))
+
+    return msg
+end
 
 ns.guildRecuriterSettings = {
     name = L['TITLE']..' '..GR.versionOut,
@@ -422,14 +431,7 @@ ns.guildRecuriterSettings = {
                 },
                 GMMessageListInstructions = {
                     order = 91,
-                    name = function()
-                        local msg = L['MESSAGE_REPLACEMENT_INSTRUCTIONS']
-                        msg = msg:gsub('GUILDLINK', ns.code:cText('FFFFFF00', L['GUILDLINK']))
-                        msg = msg:gsub('GUILDNAME', ns.code:cText('FFFFFF00', L['GUILDNAME']))
-                        msg = msg:gsub('PLAYERNAME', ns.code:cText('FFFFFF00', L['PLAYERNAME']))
-
-                        return msg
-                    end,
+                    name = function() return GetInstructions() end,
                     type = 'description',
                     fontSize = 'medium',
                 },
@@ -556,6 +558,7 @@ ns.guildRecuriterSettings = {
 
                         local msg = L['MAX_CHARS']
                         local color = count < MAX_CHARACTERS and 'FF00FF00' or 'FFFF0000'
+                        disableSaveButton = count >= MAX_CHARACTERS or false
                         return L['MESSAGE_LENGTH']..': '..ns.code:cText(color, count)..' '..msg:gsub('<sub>', MAX_CHARACTERS)..(playerNameFound and '\n'..L['LENGTH_INFO'] or '')
                     end,
                     type = 'description',
@@ -575,6 +578,7 @@ ns.guildRecuriterSettings = {
                     name = L['SAVE'],
                     type = 'execute',
                     width = .5,
+                    disabled = function() return disableSaveButton end,
                     hidden = function()
                         if not tblMessage then return true end
                         return isGMMessage or (not ((tblMessage.desc and strlen(tblMessage.desc) > 0) and (tblMessage.message and strlen(tblMessage.message) > 0))) end,
@@ -625,14 +629,7 @@ ns.guildRecuriterSettings = {
                 },
                 gmMessageListInstructions = {
                     order = 91,
-                    name = function()
-                        local msg = L['MESSAGE_REPLACEMENT_INSTRUCTIONS']
-                        msg = msg:gsub('GUILDLINK', ns.code:cText('FFFFFF00', L['GUILDLINK']))
-                        msg = msg:gsub('GUILDNAME', ns.code:cText('FFFFFF00', L['GUILDNAME']))
-                        msg = msg:gsub('PLAYERNAME', ns.code:cText('FFFFFF00', L['PLAYERNAME']))
-
-                        return msg
-                    end,
+                    name = function() return GetInstructions() end,
                     type = 'description',
                     fontSize = 'medium',
                 },
@@ -678,9 +675,9 @@ ns.guildRecuriterSettings = {
                     desc = L['ENABLE_BLOCK_INVITE_CHECK_TOOLTIP'],
                     type = 'toggle',
                     width = 'full',
-                    disabled = function() return ns.gmSettings.obeyBlockInvites end,
+                    disabled = function() return ns.gmActive and ns.gmSettings.obeyBlockInvites or false end,
                     set = function(_, val) ns.gSettings.obeyBlockInvites = val end,
-                    get = function() return ns.gmSettings.obeyBlockInvites and ns.gmSettings.obeyBlockInvites or ns.gSettings.obeyBlockInvites end,
+                    get = function() return (ns.gmActive and ns.gmSettings.obeyBlockInvites) and ns.gmSettings.obeyBlockInvites or ns.gSettings.obeyBlockInvites end,
                 },
                 invAntiSpamEnable = {
                     order = 6,
@@ -688,9 +685,9 @@ ns.guildRecuriterSettings = {
                     desc = L['ENABLE_ANTI_SPAM_DESC'],
                     type = 'toggle',
                     width = 1,
-                    disabled = function() return ns.gmSettings.antiSpam end,
+                    disabled = function() return ns.gmActive and ns.gmSettings.antiSpam or false end,
                     set = function(_, val) ns.gSettings.antiSpam = val end,
-                    get = function() return (ns.gmSettings and ns.gmSettings.antiSpam) and ns.gmSettings.antiSpam or ns.gSettings.antiSpam end,
+                    get = function() return (ns.gmActive and ns.gmSettings and ns.gmSettings.antiSpam) and ns.gmSettings.antiSpam or ns.gSettings.antiSpam end,
                 },
                 invSpacer1 = {
                     order = 7,
@@ -705,7 +702,7 @@ ns.guildRecuriterSettings = {
                     type = 'select',
                     style = 'dropdown',
                     width = 1,
-                    disabled = function() return ns.gmSettings.antiSpam end,
+                    disabled = function() return ns.gmActive and ns.gmSettings.antiSpam or false end,
                     values = function()
                         return {
                             [7] = '7 days',
@@ -716,7 +713,7 @@ ns.guildRecuriterSettings = {
                         }
                     end,
                     set = function(_, val) ns.gSettings.antiSpamDays = tonumber(val) end,
-                    get = function() return ns.gmSettings.antiSpam and (ns.gmSettings.antiSpamDays or 7) or (ns.gSettings.antiSpamDays or 7) end,
+                    get = function() return (ns.gmActive and ns.gmSettings.antiSpam) and (ns.gmSettings.antiSpamDays or 7) or (ns.gSettings.antiSpamDays or 7) end,
                 },
                 invHeader2 = {
                     name = L['GUILD_WELCOME_MSG'],
@@ -791,14 +788,7 @@ ns.guildRecuriterSettings = {
                 },
                 GMMessageListInstructions = {
                     order = 91,
-                    name = function()
-                        local msg = L['MESSAGE_REPLACEMENT_INSTRUCTIONS']
-                        msg = msg:gsub('GUILDLINK', ns.code:cText('FFFFFF00', L['GUILDLINK']))
-                        msg = msg:gsub('GUILDNAME', ns.code:cText('FFFFFF00', L['GUILDNAME']))
-                        msg = msg:gsub('PLAYERNAME', ns.code:cText('FFFFFF00', L['PLAYERNAME']))
-
-                        return msg
-                    end,
+                    name = function() return GetInstructions() end,
                     type = 'description',
                     fontSize = 'medium',
                 },
@@ -937,6 +927,7 @@ ns.guildRecuriterSettings = {
 
                         local msg = L['MAX_CHARS']
                         local color = count < MAX_CHARACTERS and 'FF00FF00' or 'FFFF0000'
+                        disableSaveButton = count >= MAX_CHARACTERS or false
                         return L['MESSAGE_LENGTH']..': '..ns.code:cText(color, count)..' '..msg:gsub('<sub>', MAX_CHARACTERS)..(playerNameFound and '\n'..L['LENGTH_INFO'] or '')
                     end,
                     type = 'description',
@@ -951,11 +942,12 @@ ns.guildRecuriterSettings = {
                         if not tblMessage then return true end
                         return isGMMessage or (not ((tblMessage.desc and strlen(tblMessage.desc) > 0) and (tblMessage.message and strlen(tblMessage.message) > 0))) end,
                 },
-                invGMInviteSave = {
+                invInviteSave = {
                     order = 21,
                     name = L['SAVE'],
                     type = 'execute',
                     width = .5,
+                    disabled = function() return disableSaveButton end,
                     hidden = function()
                         if not tblMessage then return true end
                         return isGMMessage or (not ((tblMessage.desc and strlen(tblMessage.desc) > 0) and (tblMessage.message and strlen(tblMessage.message) > 0))) end,
@@ -1006,14 +998,7 @@ ns.guildRecuriterSettings = {
                 },
                 invMessageListInstructions = {
                     order = 91,
-                    name = function()
-                        local msg = L['MESSAGE_REPLACEMENT_INSTRUCTIONS']
-                        msg = msg:gsub('GUILDLINK', ns.code:cText('FFFFFF00', L['GUILDLINK']))
-                        msg = msg:gsub('GUILDNAME', ns.code:cText('FFFFFF00', L['GUILDNAME']))
-                        msg = msg:gsub('PLAYERNAME', ns.code:cText('FFFFFF00', L['PLAYERNAME']))
-
-                        return msg
-                    end,
+                    name = function() return GetInstructions() end,
                     type = 'description',
                     fontSize = 'medium',
                 },

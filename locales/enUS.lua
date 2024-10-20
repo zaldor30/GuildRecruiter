@@ -45,6 +45,12 @@ L["PLAYER_JOINED_GUILD"] = "has joined the guild"
 L["PLAYER_DECLINED_INVITE"] = "declines your guild invitation"
 
 --* v4.0
+L['DATABASE_RESET'] = [[
+The database has been reset.
+Due to integration of classic and cata, all data has been reset.
+I apologize for the inconvenience.
+|cFFFFFFFFPlease reload your UI (/rl or /reload).|r]]
+
 L["NOT_IN_GUILD"] = "Guild Recruiter is disabled because you are not in a guild."
 L["NOT_IN_GUILD_LINE1"] = "If you join a guild type /rl to reload."
 L["CANNOT_INVITE"] = "Guild Recruiter is disabled, because you do not have permission to invite."
@@ -156,8 +162,10 @@ L['MAX_CHARS'] = '(<sub> characters per message)'
 L['LENGTH_INFO'] = 'Assumes 12 characters when using PLAYERNAME'
 L['MESSAGE_LENGTH'] = 'Message Length'
 
-L['MESSAGE_REPLACEMENT_INSTRUCTIONS'] = [[
-GUILDLINK - Will create a clickable link to your guild.
+--* Invite Message Instructions
+L['MESSAGE_REPLACEMENT_INSTRUCTIONS_CLASSIC'] = 'GUILDLINK - Is not supported in classic.'
+L['MESSAGE_REPLACEMENT_INSTRUCTIONS_PART_1'] = 'GUILDLINK - Will create a clickable link to your guild.'
+L['MESSAGE_REPLACEMENT_INSTRUCTIONS_PART_2'] = [[
 GUILDNAME - Will display your guild name.
 PLAYERNAME - Will display the invited player's name.]]
 

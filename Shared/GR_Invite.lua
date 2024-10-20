@@ -59,7 +59,7 @@ end
 --* Player Invite Routines
 function invite:AutoInvite(fullName, justName, inviteFormat)
     justName = (not justName or justName:match('-')) and fullName:gsub('%-.*', '') or justName
-    local sendInvite = inviteFormat == ns.InviteFormat.MESSAGE_ONLY and false or true
+    local sendInvite = inviteFormat ~= ns.InviteFormat.MESSAGE_ONLY or false
     return self:InvitePlayer(fullName, justName, sendInvite, not self.mInvite, not self.mGuild, not self.mWhisper)
 end
 function invite:ManualInvite(fullName, justName, sendGuildInvite, skipInviteMessage, skipWelcomeGuild, skipWelcomeWhisper)
@@ -67,7 +67,7 @@ function invite:ManualInvite(fullName, justName, sendGuildInvite, skipInviteMess
     return self:InvitePlayer(fullName, justName, sendGuildInvite, skipInviteMessage, skipWelcomeGuild, skipWelcomeWhisper)
 end
 function invite:InvitePlayer(fullName, justName, sendGuildInvite, skipInviteMessage, skipWelcomeGuild, skipWelcomeWhisper)
-    fullName = GR.isTesting and 'Hideme' or fullName
+    fullName = GR.isTesting and 'Pokypoke' or fullName
     local nameRealm = fullName:match('-') and fullName or fullName..'-'..GetRealmName()
     nameRealm = strlower(nameRealm)
 
@@ -76,7 +76,7 @@ function invite:InvitePlayer(fullName, justName, sendGuildInvite, skipInviteMess
 
     local timeOutTimer = GR:ScheduleTimer(function()
         self.tblQueue[fullName] = nil
-        self:UpdateAnalytics('declined')
+        ns.analytics:Reception('declined')
     end, 120)
     local newInvite = {
         sentInvite = sendGuildInvite,
@@ -88,47 +88,54 @@ function invite:InvitePlayer(fullName, justName, sendGuildInvite, skipInviteMess
 
     ns.list:AddToAntiSpam(fullName)
 
-    self:UpdateAnalytics('queued')
-    self:UpdateAnalytics('invited')
+    ns.analytics:Reception('queued')
+    ns.analytics:Reception('invited')
 
     if sendGuildInvite then
         C_GuildInfo.Invite(fullName)
-        ns.code:fOut(L['GUILD_INVITE_SENT']..' '..fullName, ns.COLOR_SYSTEM)
+        ns.code:fOut(L['GUILD_INVITE_SENT']..' '..fullName, ns.COLOR_SYSTEM, true)
     end
     if not skipInviteMessage and self.mInvite and self.tblQueue[fullName] then
         local msg = ns.code:variableReplacement(self.mInvite, justName)
         if ns.gmSettings.obeyBlockInvites or ns.gSettings.obeyBlockInvites then
             C_Timer.After(1, function()
-                if self.tblQueue[fullName] then tinsert(self.tblQueueMessages,  { name = fullName, msg = msg })
+                if self.tblQueue[fullName] then
+                    tinsert(self.tblQueueMessages,  { name = fullName, msg = msg })
+                    self:RunInviteQueue()
                 else ns.code:fOut('Message skipped for '..fullName..' due to blocked guild invites.') end
             end)
-        else tinsert(self.tblQueueMessages,  { name = fullName, msg = msg }) end
-
-        if not self.inviteQueueRunning then
-            self.inviteQueueRunning = true
-            self:RunInviteQueue(#self.tblQueueMessages)
+        else
+            tinsert(self.tblQueueMessages,  { name = fullName, msg = msg })
+            self:RunInviteQueue()
         end
     end
 end
 
 --* Send Message Queue
-function invite:RunInviteQueue(remaining)
-    remaining = (remaining and remaining > 0) and remaining or 0
-    if remaining == 0 then self.inviteQueueRunning = false return end
+function invite:RunInviteQueue()
+    local function sendQueue(remaining)
+        remaining = (remaining and remaining > 0) and remaining or 0
+        if remaining == 0 then self.inviteQueueRunning = false return end
 
-    local rec = tremove(self.tblQueueMessages, 1)
+        local rec = tremove(self.tblQueueMessages, 1)
 
-    local message = rec.msg
-    if not ns.pSettings.showWhispers then
-        ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER', function(_, _, msg) return msg == message end, message)
-        ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER_INFORM', function(_, _, msg) return msg == message end, message)
-        SendChatMessage(message, 'WHISPER', nil, rec.name)
-        ns.code:fOut(L['INVITE_MESSAGE_SENT']..' '..rec.name, ns.COLOR_SYSTEM)
-        ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER', message)
-        ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER_INFORM', message)
-    else SendChatMessage(message, 'WHISPER', nil, rec.name) end
+        local message = rec.msg
+        if not ns.pSettings.showWhispers then
+            ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER', function(_, _, msg) return msg == message end, message)
+            ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER_INFORM', function(_, _, msg) return msg == message end, message)
+            SendChatMessage(message, 'WHISPER', nil, rec.name)
+            ns.code:fOut(L['INVITE_MESSAGE_SENT']..' '..rec.name, ns.COLOR_SYSTEM)
+            ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER', message)
+            ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER_INFORM', message)
+        else SendChatMessage(message, 'WHISPER', nil, rec.name) end
 
-    C_Timer.After(0.2, function() self:RunInviteQueue(#self.tblQueueMessages or 0) end)
+        C_Timer.After(0.2, function() sendQueue(#self.tblQueueMessages or 0) end)
+    end
+
+    if not self.inviteQueueRunning and #self.tblQueueMessages > 0 then
+        self.inviteQueueRunning = true
+        sendQueue(#self.tblQueueMessages)
+    end
 end
 
 --* System Chat Obersvers

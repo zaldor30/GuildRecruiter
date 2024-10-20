@@ -74,11 +74,6 @@ function analytics:BuildAnalytics()
     ns.analytics.queued = queued
 end
 function analytics:SaveAnalytics()
-    for k,v in pairs(ns.analytics) do
-        if v.pAmt then ns.pAnalytics[k] = {amt = v.pAmt} end
-        if v.gAmt then ns.gAnalytics[k] = {amt = v.gAmt} end
-        if v.sAmt then ns.pAnalytics['s'..k] = {amt = v.sAmt} end
-    end
 end
 local function updateAmount(field, amt)
     if ns.analytics[field] then
