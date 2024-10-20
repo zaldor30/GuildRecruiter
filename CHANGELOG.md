@@ -1,6 +1,8 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
+### 3.2.71
+    - Update version for 11.05
 ### 3.2.70
     - Fixed nil issues.
     - Possible fix for wrong message being sent.
