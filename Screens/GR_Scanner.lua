@@ -14,8 +14,14 @@ end
 local function CallBackWhoListUpdate()
     GR:UnregisterEvent('WHO_LIST_UPDATE', CallBackWhoListUpdate)
 
-    scanner.UpdateAnalytics('PlayersScanned', C_FriendList.GetNumWhoResults())
+    ns.analytics:Reception('scanned', C_FriendList.GetNumWhoResults())
     scanner:ProcessWhoResults(C_FriendList.GetNumWhoResults())
+end
+
+local function updateFilterProgress(skipInc)
+    -- Progress in filter
+    if not skipInc then scanner.filterCount = scanner.filterCount + 1 end
+    ns.status:SetText(L['FILTER_PROGRESS']..': '..FormatPercentage(scanner.filterCount/scanner.filterTotal, 2))
 end
 
 function scanner:Init()
@@ -29,12 +35,12 @@ function scanner:Init()
 
     self.scanReset = ns.g.scanWaitTime -- Otherwise doesn't work
     self.tblFrame = {}
-    self.tblFilter = nil
-    self.tblFilterActive = {}
-    self.filterCount, self.filterTotal = 0, 0
+    self.tblFilter = self.tblFilter or nil
+    self.filterCount = self.filterCount or 0
+    self.filterTotal = self.filterTotal or 0
 
-    self.tblWho = {}
-    self.tblToInivite = {}
+    self.tblWho = self.tblWho or {}
+    self.tblToInivite = self.tblToInivite or {}
 
     self.minLevel, self.maxLevel = (ns.pSettings.minLevel or ns.MAX_CHARACTER_LEVEL - 5), ns.pSettings.maxLevel or ns.MAX_CHARACTER_LEVEL
     self.minLevel = type(self.minLevel) == 'string' and tonumber(self.minLevel) or self.minLevel
@@ -66,9 +72,14 @@ function scanner:SetShown(val)
     if not self.tblFilter then self:BuildFilters() end
 
     ns.invite:Init()
+    self:UpdateButtons()
     self:DisplayWhoList()
-    self:SetText(self.tblFrame.scannerFrame.nextFilterText, self:DisplayNextFilter())
+    self:DisplayInviteList()
+
     self.tblFrame.frame:SetShown(val)
+
+    self:SetText(self.tblFrame.scannerFrame.nextFilterText, self:DisplayNextFilter())
+    if self.filterTotal > 0 and self.filterCount > 0 then updateFilterProgress(true) end
 end
 function scanner:CreateScannerBaseFrame()
     local baseFrame = ns.base.tblFrame
@@ -112,15 +123,7 @@ function scanner:CreateInviteFrame()
     buttonInvite:SetPoint("TOPLEFT", scrollFrame, "BOTTOMLEFT", 0, -3)
     buttonInvite:SetText(self.inviteFormat == ns.InviteFormat.MESSAGE_ONLY and 'Send Message' or (self.inviteFormat == ns.InviteFormat.GUILD_INVITE_AND_MESSAGE and 'Send Invite and Message' or 'Send Invite'))
     buttonInvite:SetSize(f:GetWidth() - 20, 30)
-    buttonInvite:SetScript("OnClick", function(self, button, down)
-        if not scanner.tblToInivite then return end
-
-        local tbl = tremove(scanner.tblToInivite, 1)
-        if not tbl then return end
-
-        ns.invite:AutoInvite(tbl.fullName, tbl.pName, self.inviteFormat)
-        scanner:DisplayInviteList()
-    end)
+    buttonInvite:SetScript("OnClick", function(self, button, down) scanner:InvitePlayer() end)
     buttonInvite:SetScript("OnEnter", function(self) ns.code:createTooltip('Invite Player', 'Do not check boxes to send invites.') end)
     buttonInvite:SetScript("OnLeave", function(self) GameTooltip:Hide() end)
     self.tblFrame.buttonInvite = buttonInvite
@@ -129,12 +132,18 @@ function scanner:CreateInviteFrame()
     buttonBlacklist:SetPoint("TOPLEFT", buttonInvite, "BOTTOMLEFT", 0, 0)
     buttonBlacklist:SetText('Blacklist')
     buttonBlacklist:SetSize((buttonInvite:GetWidth() /2) - 3, 30)
+    buttonBlacklist:SetScript("OnClick", function(self, button, down) scanner:BlacklistPlayer() end)
+    buttonBlacklist:SetScript("OnEnter", function(self) ns.code:createTooltip('Add Selected Player(s) to Blacklist', 'Will add selected players to Blacklist.') end)
+    buttonBlacklist:SetScript("OnLeave", function(self) GameTooltip:Hide() end)
     self.tblFrame.buttonBlacklist = buttonBlacklist
 
     local buttonSkip = ns.frames:CreateFrame('Button', 'SkipButton', f, 'UIPanelButtonTemplate')
     buttonSkip:SetPoint("LEFT", buttonBlacklist, "RIGHT", 5, 0)
     buttonSkip:SetText('Skip Player')
     buttonSkip:SetSize((buttonInvite:GetWidth() /2) - 3, 30)
+    buttonSkip:SetScript("OnClick", function(self, button, down) scanner:AntiSpam() end)
+    buttonSkip:SetScript("OnEnter", function(self) ns.code:createTooltip('Add Selected Player(s) to Anti-Spam List', 'Will add selected players to Anti-Spam list.') end)
+    buttonSkip:SetScript("OnLeave", function(self) GameTooltip:Hide() end)
     self.tblFrame.buttonSkip = buttonSkip
 end
 function scanner:CreateWhoFrame()
@@ -237,25 +246,15 @@ function scanner:ProcessWhoResults()
             failed = '',
             isChecked = false,
         }
-
-        local inviteOk, reason = ns.invite:CheckWhoList(info.fullName, info.area)
-        if inviteOk and rec.guild == '' then tinsert(self.tblToInivite, rec)
-        elseif not inviteOk then
-            rec.level = ns.code:cText('FFFF0000', rec.level)
-            rec.failed = ns.code:cText('FFFF0000', reason)
-         end
         tinsert(self.tblWho, rec)
     end
     self.tblFrame.whoText:SetText('Who Results: '..#self.tblWho..' Players Found')
 
     if self.tblWho then
-        table.sort(self.tblWho, function(a, b) return a.fullName < b.fullName end) end
-    if self.tblToInivite then
-        table.sort(self.tblToInivite, function(a, b) return a.fullName < b.fullName end) end
+        self.tblWho = ns.code:sortTableByField(self.tblWho, 'fullName') end
 
     self:UpdateButtons()
     self:DisplayWhoList()
-    self:DisplayInviteList()
 end
 function scanner:DisplayWhoList()
     local tblWho = self.tblWho
@@ -316,7 +315,23 @@ function scanner:DisplayWhoList()
         return row
     end
 
+    local function findPlayer(name)
+        for _, v in ipairs(self.tblToInivite) do
+            if v.fullName == name then return true end
+        end
+
+        return false
+    end
+
     for i, result in ipairs(tblWho) do
+        local inviteOk, reason = ns.invite:CheckWhoList(result.fullName, result.area)
+        if inviteOk and not findPlayer(result.fullName) and result.guild == '' then
+            tinsert(self.tblToInivite, result)
+        elseif not inviteOk then
+            result.level = ns.code:cText('FFFF0000', result.level)
+            result.failed = ns.code:cText('FFFF0000', reason)
+        end
+
         local row = createWhoEntry(content, result)
         if row then
             row:SetPoint("TOPLEFT", 0, -(i - 1) * rowHeight) end
@@ -326,9 +341,13 @@ function scanner:DisplayWhoList()
 
     scrollFrame:SetVerticalScroll(0)
     scrollFrame:UpdateScrollChildRect()
+
+    if self.tblToInivite then
+        self.tblToInivite = ns.code:sortTableByField(self.tblToInivite, 'fullName') end
+
+    self:DisplayInviteList()
 end
 function scanner:DisplayInviteList()
-    local tblInvite = self.tblToInivite
     local rowHeight = 20
     local sFrame = self.tblFrame.scannerFrame
     local scrollFrame = self.tblFrame.inviteScroll
@@ -388,19 +407,22 @@ function scanner:DisplayInviteList()
         return row
     end
 
-    for i, result in ipairs(tblInvite) do
+    local rowCount = 0
+    for _, result in pairs(self.tblToInivite) do
         local row = createInviteEntry(content, result)
         if row then
-            row:SetPoint("TOPLEFT", 0, -(i - 1) * rowHeight) end
+            rowCount = rowCount + 1
+            row:SetPoint("TOPLEFT", 0, -(rowCount - 1) * rowHeight)
+        end
     end
-    self.tblFrame.scannerFrame.playerCountText:SetText('Players Queued: '..#tblInvite)
+    self.tblFrame.scannerFrame.playerCountText:SetText('Players Queued: '..#self.tblToInivite)
     if sFrame.nextText then
-        sFrame.nextText:SetText('Next Player to Invite (Queued: '..#tblInvite..'):')
-        if #tblInvite > 0 then sFrame.nextPlayerText:SetText(tblInvite[1].name)
+        sFrame.nextText:SetText('Next Player to Invite (Queued: '..#self.tblToInivite..'):')
+        if #self.tblToInivite > 0 then sFrame.nextPlayerText:SetText(self.tblToInivite[1].name)
         else sFrame.nextPlayerText:SetText('No players in queue.') end
     end
 
-    content:SetHeight(#tblInvite * rowHeight)
+    content:SetHeight(#self.tblToInivite * rowHeight)
     scrollFrame:SetScrollChild(content)
 
     scrollFrame:SetVerticalScroll(0)
@@ -479,6 +501,11 @@ function scanner:CompactModeChanged(startCompact, closed)
         buttonInvite:SetSize((sFrame.frame:GetWidth() /2) - 5, 20)
         buttonInvite:SetText('Invite')
         buttonInvite:SetShown(true)
+        buttonInvite:SetScript("OnClick", function(self, button, down) scanner:InvitePlayer() end)
+        buttonInvite:SetScript("OnEnter", function(self)
+            local nextPlayer = txtNextPlayer:GetText():match('No players in queue.') and 'Next Found Player.' or txtNextPlayer:GetText()
+            ns.code:createTooltip('Invite '..nextPlayer, 'Invite this player to the guild.') end)
+        buttonInvite:SetScript("OnLeave", function(self) GameTooltip:Hide() end)
         sFrame.buttonInvite = buttonInvite
 
         local buttonSkip = sFrame.buttonSkip or ns.frames:CreateFrame('Button', 'InviteButton', sFrame.frame, 'UIPanelButtonTemplate')
@@ -486,6 +513,9 @@ function scanner:CompactModeChanged(startCompact, closed)
         buttonSkip:SetSize((sFrame.frame:GetWidth() /2) - 15, 20)
         buttonSkip:SetText('Skip')
         buttonSkip:SetShown(true)
+        buttonSkip:SetScript("OnClick", function(self, button, down) scanner:AntiSpam() end)
+        buttonSkip:SetScript("OnEnter", function(self) ns.code:createTooltip('Add Player to Anti-Spam', 'Will add the queued player to Anti-Spam list.') end)
+        buttonSkip:SetScript("OnLeave", function(self) GameTooltip:Hide() end)
         sFrame.buttonSkip = buttonSkip
 
         self:DisplayInviteList()
@@ -494,7 +524,7 @@ end
 function scanner:BuildFilters()
     local filter = ns.pSettings.filterList or {}
     local filterID = ns.pSettings.activeFilter or 9999
-    self.tblFilter, self.tblFilterActive = {}, {}
+    self.tblFilter = {}
 
     local min, max = self.minLevel, self.maxLevel
     local function createQuery(desc, criteria)
@@ -526,6 +556,7 @@ function scanner:BuildFilters()
     end
 
     self.filterCount, self.filterTotal = 0, #self.tblFilter or 0
+    self:SetText(self.tblFrame.scannerFrame.nextFilterText, self:DisplayNextFilter())
 end
 function scanner:DisplayNextFilter() return 'Next Query: '..self.tblFilter[1].desc end
 function scanner:PerformSearch()
@@ -538,9 +569,7 @@ function scanner:PerformSearch()
         return
     end
 
-    -- Progress in filter
-    self.filterCount = self.filterCount + 1
-    ns.status:SetText(L['FILTER_PROGRESS']..': '..FormatPercentage(self.filterCount/self.filterTotal, 2))
+    updateFilterProgress()
 
     FriendsFrame:UnregisterEvent("WHO_LIST_UPDATE")
     GR:RegisterEvent('WHO_LIST_UPDATE', CallBackWhoListUpdate)
@@ -590,7 +619,46 @@ function scanner:UpdateButtons()
     end
 end
 
---* Scanner Analytics
-function scanner:UpdateAnalytics(which, amt)
-    amt = amt or 1
+--* Invite Functions
+function scanner:InvitePlayer()
+    if not scanner.tblToInivite then return
+    elseif #scanner.tblToInivite == 0 then
+        ns.code:fOut('You must first click on Search for Players button.') return
+    end
+
+    local tbl = tremove(scanner.tblToInivite, 1)
+    if not tbl then return end
+
+    ns.invite:AutoInvite(tbl.fullName, tbl.pName, self.inviteFormat)
+    scanner:DisplayInviteList()
+end
+function scanner:AntiSpam()
+    if not self.tblToInivite then return end
+
+    local count = 0
+    for k, v in pairs(self.tblToInivite) do
+        if v.isChecked and not ns.list:CheckAntiSpam(v.fullName) then
+            ns.list:AddToAntiSpam(v.fullName)
+            self.tblToInivite[k] = nil
+            count = count + 1
+        end
+    end
+    ns.code:fOut(string.format('Added %d players to Anti-Spam list.', count))
+
+    self:DisplayWhoList() -- Displays invite inside of function
+end
+function scanner:BlacklistPlayer()
+    if not self.tblToInivite then return end
+
+    local count = 0
+    for k, v in pairs(self.tblToInivite) do
+        if v.isChecked and not ns.list:CheckBlacklist(v.fullName) then
+            ns.list:AddToBlackList(v.fullName, 'Blacklisted during invite process.')
+            self.tblToInivite[k] = nil
+            count = count + 1
+        end
+    end
+    ns.code:fOut(string.format('Added %d players to Blacklist.', count))
+
+    self:DisplayWhoList() -- Displays invite inside of function
 end

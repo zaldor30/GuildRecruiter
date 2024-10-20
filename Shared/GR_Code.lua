@@ -85,6 +85,13 @@ function code:capitalKeyWord(input)
 
     return input
 end
+function code:capitalizeAfterHyphen(str)
+    return str:gsub("(%a)(%w*)", function(first, rest)
+        return string.upper(first) .. string.lower(rest)
+    end):gsub("-(%a)", function(first)
+        return "-" .. string.upper(first)
+    end)
+end
 function code:variableReplacement(msg, playerName, removeGT)
     local gi = ns.guildInfo
     if not gi or not msg or msg == '' then return end
@@ -132,15 +139,13 @@ function code:saveTables(whichOne)
         --if ns.guildSession then ns.gAnalytics.session = ns.code:compressData(ns.guildSession) end
     end
 end
-function code:sortTableByField(tbl, sortField, reverse, showit)
+function code:sortTableByField(tbl, sortField, reverse)
     if not tbl or not sortField then return end
 
     local keyArray = {}
     for key, rec in pairs(tbl) do
-        if type(key) == 'string' then
-            rec.key = key
-            table.insert(keyArray, rec)
-        end
+        if type(key) == 'string' then rec.key = key end
+        table.insert(keyArray, rec)
     end
 
     reverse = reverse or false

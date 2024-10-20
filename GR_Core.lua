@@ -147,6 +147,8 @@ function core:StartDatabase(clubID)
     ns.pSettings, ns.gSettings = ns.p.settings, ns.guild.settings -- Set the settings database
     ns.guildInfo, ns.gmSettings = ns.guild.guildInfo, ns.guild.gmSettings -- Set the guild info and GM settings database
 
+    ns.p.analytics = ns.p.analytics or {} -- Set the analytics database
+    ns.guild.analytics = ns.guild.analytics or {} -- Set the analytics database
     ns.pAnalytics, ns.gAnalytics = ns.p.analytics, ns.guild.analytics -- Set the analytics database
     ns.gFilterList = ns.guild.filterList -- Set the filter list database
 
@@ -175,6 +177,8 @@ function core:LoadTables()
         ns.classes = ns.ds:classes_cata()
         ns.invalidZones = ns.ds:invalidZones_Cata()
     end
+
+    ns.analytics:BuildAnalytics()
 end
 function core:PerformRecordMaintenance()
     --* Move Player Message List to GM Message List

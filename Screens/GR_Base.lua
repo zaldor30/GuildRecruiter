@@ -150,7 +150,7 @@ function base:CreateIconAndStatusFrame()
     local txtStatus = fStatus:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
     txtStatus:SetPoint('LEFT', fStatus, 'LEFT', 10, 0)
     txtStatus:SetTextColor(1, 1, 1, 1)
-    txtStatus:SetFont(ns.DEFAULT_FONT, 16, 'OUTLINE')
+    txtStatus:SetFont(ns.DEFAULT_FONT, 14, 'OUTLINE')
     local function SetText(text)
         if not text then return end
 
@@ -159,10 +159,11 @@ function base:CreateIconAndStatusFrame()
     ns.status = ns.status or {}
     ns.status.frame = fStatus
     self.tblFrame.status = fStatus
+    ns.status.text = txtStatus
     function ns.status:SetText(text) SetText(text) end
 end
 
-local btnCloseFrame, lockTimer, iconX, iconY = nil, nil, 18, 18
+local lockTimer, iconX, iconY = nil, 18, 18
 local function highlightButton(btn, normal)
     if not btn then return end
 
@@ -343,8 +344,13 @@ function base:buttonAction(button)
     elseif button == 'OPEN_SETTINGS' then Settings.OpenToCategory('Guild Recruiter')
     elseif button == 'SYNC_TOGGLE' then ns.frames:AcceptDialog('Sync\nUnder Construction!!', function() return end)
     elseif button == 'OPEN_STATS' then ns.frames:AcceptDialog('Stats Screen\nUnder Construction!!', function() return end)
-    elseif button == 'OPEN_BLACKLIST' then ns.frames:AcceptDialog('Blacklist\nUnder Construction!!', function() return end)
-    elseif button == 'OPEN_RESET' then ns.frames:AcceptDialog('Reset Filter\nUnder Construction!!', function() return end)
+    elseif button == 'OPEN_BLACKLIST' then
+        ns.list:ManualBlackList(nil, L['BLACKLIST_NAME_PROMPT'], true)
+    elseif button == 'OPEN_RESET' then
+        local oldStatus = ns.status.text:GetText()
+        ns.status:SetText('Filter was reset.')
+        ns.scanner:BuildFilters()
+        C_Timer.After(2.5, function() ns.status:SetText(oldStatus) end)
     elseif button == 'OPEN_COMPACT' then
         ns.pSettings.isCompact = not ns.pSettings.isCompact
         ns.scanner:CompactModeChanged(true)

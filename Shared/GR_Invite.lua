@@ -47,11 +47,10 @@ function invite:CheckAutoInvite(player) return self:CheckInvite(player, false, t
 function invite:CheckManualInvite(player) return self:CheckInvite(player, false, true, false) end
 function invite:CheckInvite(player, antispam, blacklist, zones, zoneName)
     if not player then ns.code:cOut('CheckInvie: No name provided.') return end
-    local fName = player:match('-') and player or player..'-'..GetRealmName()
-    fName = strlower(fName)
 
-    if antispam and ns.tblAntiSpamList[fName] then return false, L["ANTI_SPAM"] end
-    if blacklist and ns.tblBlackList[fName] then return false, L["BLACKLIST"] end
+    local blReason = ns.list:BlacklistReason(player) or nil
+    if antispam and ns.list:CheckAntiSpam(player) then return false, L["ANTI_SPAM"] end
+    if blacklist and ns.list:CheckBlacklist(player) then return false, (blReason or L["BLACKLIST"]) end
     if zones and zoneName and ns.invalidZones[strlower(zoneName)] then return false, L['INVALID_ZONE'] end
 
     return true, ''
@@ -87,12 +86,7 @@ function invite:InvitePlayer(fullName, justName, sendGuildInvite, skipInviteMess
     }
     self.tblQueue[fullName] = newInvite
 
-    local newAntiSpam = {
-        time = time(),
-        name = fullName,
-        realm = GetRealmName()
-    }
-    ns.tblAntiSpamList[nameRealm] = newAntiSpam
+    ns.list:AddToAntiSpam(fullName)
 
     self:UpdateAnalytics('queued')
     self:UpdateAnalytics('invited')
@@ -159,7 +153,7 @@ function invite:RegisterInviteObservers()
 
         GR:CancelTimer(self.tblQueue[playerName].timeOutTimer)
         C_Timer.Afer(3, function() sendMessages(self.tblQueue[playerName]) end)
-        invite:UpdateAnalytics('accepted')
+        ns.analytics:Reception('accepted')
         self.tblQueue[playerName] = nil
     end
     local function eventPLAYER_DECLINED_INVITE(...)
@@ -169,7 +163,7 @@ function invite:RegisterInviteObservers()
 
         GR:CancelTimer(self.tblQueue[playerName].timeOutTimer)
         self.tblQueue[playerName] = nil
-        invite:UpdateAnalytics('declined')
+        ns.analytics:Reception('timeout')
     end
     local function eventPLAYER_NOT_ONLINE(...)
         local _, msg = ...
@@ -178,7 +172,7 @@ function invite:RegisterInviteObservers()
 
         GR:CancelTimer(self.tblQueue[playerName].timeOutTimer)
         self.tblQueue[playerName] = nil
-        invite:UpdateAnalytics('offline')
+        ns.analytics:Reception('offline')
     end
     local function eventPLAYER_NOT_PLAYING(...)
         local _, msg = ...
@@ -187,7 +181,7 @@ function invite:RegisterInviteObservers()
 
         GR:CancelTimer(self.tblQueue[playerName].timeOutTimer)
         self.tblQueue[playerName] = nil
-        invite:UpdateAnalytics('playing')
+        ns.analytics:Reception('notplaying')
     end
     local function eventPLAYER_NOT_FOUND(...)
         local _, msg = ...
@@ -196,7 +190,7 @@ function invite:RegisterInviteObservers()
 
         GR:CancelTimer(self.tblQueue[playerName].timeOutTimer)
         self.tblQueue[playerName] = nil
-        invite:UpdateAnalytics('notfound')
+        ns.analytics:Reception('notfound')
     end
     local function eventPLAYER_IN_GUILD(...)
         local _, msg = ...
@@ -205,7 +199,7 @@ function invite:RegisterInviteObservers()
 
         GR:CancelTimer(self.tblQueue[playerName].timeOutTimer)
         self.tblQueue[playerName] = nil
-        invite:UpdateAnalytics('alreadyinguild')
+        ns.analytics:Reception('alreadyinguild')
     end
     local function eventPLAYER_ALREADY_IN_GUILD(...)
         local _, msg = ...
@@ -214,7 +208,7 @@ function invite:RegisterInviteObservers()
 
         GR:CancelTimer(self.tblQueue[playerName].timeOutTimer)
         self.tblQueue[playerName] = nil
-        invite:UpdateAnalytics('alreadyinguild')
+        ns.analytics:Reception('alreadyinguild')
     end
 
     ns.observer:Register('PLAYER_JOINED_GUILD', eventPLAYER_JOINED_GUILD)
@@ -225,8 +219,3 @@ function invite:RegisterInviteObservers()
     ns.observer:Register('PLAYER_IN_GUILD', eventPLAYER_IN_GUILD)
     ns.observer:Register('PLAYER_ALREADY_IN_GUILD', eventPLAYER_ALREADY_IN_GUILD)
 end -- System Chat Observers
-
-function invite:UpdateAnalytics(field, amt)
-    if not field then return end
-    amt = amt or 1
-end

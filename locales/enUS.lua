@@ -51,6 +51,12 @@ L["CANNOT_INVITE"] = "Guild Recruiter is disabled, because you do not have permi
 L['GUILD_INVITE_SENT'] = 'Guild invite sent to'
 L['INVITE_MESSAGE_SENT'] = 'Invite message sent to'
 
+L['BLACKLIST_NAME_PROMPT'] = 'Name of the player you want to blacklist.\nMust include server name if diffrent server.\nExample: Playername-Servername'
+L['BLACK_LIST_REASON_INPUT'] = 'Why do you want to blacklist?'
+L['NO_REASON_GIVEN'] = 'No reason given.'
+L['ADDED_TO_BLACK_LIST'] = 'was added to the blacklist with %s as a reason.'
+L['BL_NAME_NOT_ADDED'] = 'Black list name not added.'
+L['BL_NO_ONE_ADDED'] = 'No one was added to the blacklist.'
 
 L["GUILD_LINK_NOT_FOUND"] = "No guild link found"
 L["GUILD_LINK_NOT_FOUND_LINE1"] = "Try /rl or relogging (It may take a few attempts)"
@@ -68,6 +74,9 @@ Shift+Left Click: Open Scanner
 %BlackList in blacklisted list.]]
 L['BETA_INFORMATION'] = [[This is a VER version of Guild Recruiter.
 Please report any issues on our Discord server.]]
+
+--* Analytics
+L['PLAYERS_SCANNED'] = 'Players Scanned'
 
 -- * Settings
 L['GEN_GUILD_WIDE'] = 'Indicates only your current guild will be effected.'

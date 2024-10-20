@@ -6,6 +6,15 @@ local events, observer = ns.events, ns.observer
 
 -- * Event Routines
 function events:StartBaseEvents()
+    local function eventPLAYER_LOGOUT()
+        ns.code:saveTables()
+        ns.analytics:SaveAnalytics()
+    end
+    local function eventCHAT_MSG_ADDON(...)
+        local prefix = ...
+        if prefix:match(GR.commPrefix) then
+            observer:Notify('eventCHAT_MSG_ADDON', ...) end
+    end
     local function eventCHAT_MSG_SYSTEM(...)
         local _, msg = ...
 
@@ -20,6 +29,8 @@ function events:StartBaseEvents()
         end
     end
 
+    GR:RegisterEvent('PLAYER_LOGOUT', eventPLAYER_LOGOUT)
+    GR:RegisterEvent('CHAT_MSG_ADDON', eventCHAT_MSG_ADDON)
     GR:RegisterEvent('CHAT_MSG_SYSTEM', eventCHAT_MSG_SYSTEM)
 end
 
