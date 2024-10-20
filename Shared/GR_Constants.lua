@@ -18,6 +18,7 @@ C_ChatInfo.RegisterAddonMessagePrefix(GR.commPrefix)
 ns.COLOR_GM = 'FFAF640C'
 ns.COLOR_DEBUG = 'FFD845D8'
 ns.COLOR_ERROR = 'FFFF0000'
+ns.COLOR_SYSTEM = 'FFFFFFE6'
 ns.COLOR_DEFAULT = 'FF3EB9D8' -- Guild Recruiter Color
 
 -- Icons
@@ -30,7 +31,7 @@ ns.BUTTON_BLACKLIST = ns.ICON_PATH..'GR_Blacklist'
 ns.BUTTON_FILTER = ns.ICON_PATH..'GR_Filter'
 ns.BUTTON_FILTER_COLOR = ns.ICON_PATH..'GR_FilterColor'
 ns.BUTTON_COMPACT = ns.ICON_PATH..'GR_Compact'
-ns.BUTTONS_EXPAND = ns.ICON_PATH..'GR_Expand'
+ns.BUTTON_EXPAND = ns.ICON_PATH..'GR_Expand'
 ns.BUTTON_EXIT = ns.ICON_PATH..'GR_Exit'
 ns.BUTTON_NEW = ns.ICON_PATH..'GR_New'
 ns.BUTTON_RESET = ns.ICON_PATH..'GR_Reset'

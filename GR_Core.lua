@@ -42,6 +42,7 @@ function core:Init()
                 keepOpen = false,
                 inviteFormat = 2,
                 isCompact = false,
+                whisperMessage = '',
             },
             analytics = {},
         },
@@ -67,7 +68,7 @@ function core:Init()
             -- GM Settings
             forceMessageList = false,
             forceSendWhisper = false,
-            forceGuildMessage = false,
+            forceInviteMessage = false,
             forceWhisperMessage = false, -- Force Invite Message
             forceSendGuildGreeting = false,
             obeyBlockInvites = true, -- Obey Block Invites
@@ -126,6 +127,7 @@ function core:StartGuildRecruiter(clubID)
     --ns.invite:GetWelcomeMessages() -- Get the welcome messages
     self:StartSlashCommands()
     self:StartMiniMapIcon()
+    ns.events:StartBaseEvents() -- Start the base events
 
     ns.base:SetShown(true, true)
 
@@ -224,7 +226,7 @@ function core:StartMiniMapIcon() -- Start Mini Map Icon
         OnClick = function(_, button)
             if button == 'LeftButton' and IsShiftKeyDown() then
                 if not ns.base:IsShown() then ns.base:SetShown(true) end
-                ns.base:buttonAction('OPEN_SCANNER')
+                if not ns.scanner:IsShown() then ns.base:buttonAction('OPEN_SCANNER') end
             elseif button == 'LeftButton' then ns.base:SetShown(not ns.base:IsShown())
             elseif button == 'RightButton' then Settings.OpenToCategory('Guild Recruiter') end
         end,
@@ -305,21 +307,19 @@ function core:CheckIfInGuild(count, callback)
 
     local clubID = C_Club.GetGuildClubId() or nil -- Get the guild club ID (Guild ID)
 
-    if clubID then
+    if clubID and CanGuildInvite() then
         self.isEnabled = true
         if callback then callback(clubID) end
         return clubID
-    elseif count >= 60 then -- If the player is not in a guild after 60 attempts, then return
+    elseif count >= 30 then -- If the player is not in a guild after 60 attempts, then return
         self.isEnabled = false
+
         ns.code:cOut(L['TITLE']..' '..GR.versionOut..' '..L['DISABLED'])
-        ns.code:cOut(L['NOT_IN_GUILD'])
-        ns.code:cOut(L['NOT_IN_GUILD_LINE1'])
-        if callback then callback(nil) end
-        return
-    elseif IsInGuild() and not CanGuildInvite() then -- If the player is in a guild but cannot invite, then return
-        self.isEnabled = false
-        ns.code:cOut(L['TITLE']..' '..GR.versionOut..' '..L['DISABLED'])
-        ns.code:cOut(L['CANNOT_INVITE'])
+        if not CanGuildInvite() then ns.code:cOut(L['CANNOT_INVITE'])
+        else
+            ns.code:cOut(L['NOT_IN_GUILD'])
+            ns.code:cOut(L['NOT_IN_GUILD_LINE1'])
+        end
         if callback then callback(nil) end
         return
     elseif not CanGuildInvite() or not IsInGuild() or not clubID or not GetGuildInfo('player') then -- If the player is not in a guild, then check again in 1 second

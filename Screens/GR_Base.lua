@@ -62,19 +62,21 @@ function base:SwitchToCompactMode(closed, isCompact)
 
     local baseFrame = self.tblFrame.frame
     local baseX, baseY = ns.scanner.baseX, ns.scanner.baseY
-    local normalX, normalY = 215, ns.scanner.baseY
-    local compactX, compactY = 215, 250
+    local normalX, normalY = 217, ns.scanner.baseY - 25
+    local compactX, compactY = 217, 195
 
     if not closed and isCompact then
         if not ns.g.compactSize or ns.g.compactSize == 1 then baseFrame:SetSize(normalX, normalY)
         elseif isCompact and ns.g.compactSize == 2 then baseFrame:SetSize(compactX, compactY) end
 
+        ns.frames:FixScrollBar("Invite_ScrollFrameScrollBar")
         self.tblFrame.icon:SetPoint('TOPLEFT', self.tblFrame.frame, 'TOPLEFT', 0, 0)
         self.tblFrame.icon:SetPoint('BOTTOMRIGHT', self.tblFrame.frame, 'TOPRIGHT', 0, -35)
         self.tblFrame.iconFrame:SetShown(false)
         self.tblFrame.iconTexture:SetSize(20, 20)
         self.tblFrame.title:SetShown(false)
         self.tblFrame.version:SetShown(false)
+        self.tblFrame.compact:SetNormalTexture(ns.BUTTON_EXPAND)
     else
         baseFrame:SetSize(baseX, baseY)
         self.tblFrame.icon:SetPoint('TOPLEFT', self.tblFrame.frame, 'TOPLEFT', 0, 0)
@@ -83,6 +85,7 @@ function base:SwitchToCompactMode(closed, isCompact)
         self.tblFrame.iconTexture:SetSize(32, 32)
         self.tblFrame.title:SetShown(true)
         self.tblFrame.version:SetShown(true)
+        self.tblFrame.compact:SetNormalTexture(ns.BUTTON_COMPACT)
     end
     ns.scanner:CompactModeChanged()
 end
@@ -344,6 +347,6 @@ function base:buttonAction(button)
     elseif button == 'OPEN_RESET' then ns.frames:AcceptDialog('Reset Filter\nUnder Construction!!', function() return end)
     elseif button == 'OPEN_COMPACT' then
         ns.pSettings.isCompact = not ns.pSettings.isCompact
-        ns.scanner:SetCompactMode()
+        ns.scanner:CompactModeChanged(true)
     end
 end

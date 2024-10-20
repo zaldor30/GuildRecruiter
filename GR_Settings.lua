@@ -197,13 +197,9 @@ ns.guildRecuriterSettings = {
                     type = 'input',
                     width = 1,
                     set = function(_, val)
-                        if tonumber(val) >=2 and tonumber(val) < 10 then ns.g.scanWaitTime = tonumber(val)
-                        else return tostring(ns.g.scanWaitTime) end
+                        if tonumber(val) >= 2 and tonumber(val) <= 10 then ns.g.scanWaitTime = tonumber(val) end
                     end,
-                    get = function()
-                        ns.g.scanWaitTime = ns.g.scanWaitTime and ns.g.scanWaitTime or 6
-                        return tostring(ns.g.scanWaitTime)
-                    end,
+                    get = function() return tostring(ns.g.scanWaitTime or 6) end,
                 },
                 genHeading4 = {
                     order = 30,
@@ -416,7 +412,6 @@ ns.guildRecuriterSettings = {
                             return
                         end
                         ns.gmSettings.whisperMessage = ns.code:capitalKeyWord(val:trim())
-                        ns.invite:GetWelcomeMessages()
                     end,
                     get = function() return ns.gmSettings.whisperMessage end,
                 },
@@ -786,7 +781,6 @@ ns.guildRecuriterSettings = {
                             return
                         end
                         ns.gSettings.whisperMessage = ns.code:capitalKeyWord(val:trim())
-                        ns.invite:GetWelcomeMessages()
                     end,
                     get = function() return ns.gmSettings.forceWhisperMessage and ns.gmSettings.whisperMessage or ns.gSettings.whisperMessage end,
                 },
@@ -1269,7 +1263,7 @@ ns.guildRecuriterSettings = {
                         end
                     end,
                     get = function(_, key)
-                        if not tblPlayerZone then print('tblPlayerZone missing') return false end
+                        if not tblPlayerZone then return false end
 
                         return tblPlayerZone[key].selected
                     end,

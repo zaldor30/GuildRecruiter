@@ -6,25 +6,34 @@ local frames = ns.frames
 --* Frame Pooling
 local FramePool = {} -- Pool of frames to reuse
 -- Function to reset a frame and all of its children
-function frames:ResetFrame(frame)
+function frames:ResetFrame(frame, childrenOnly)
+    if not frame then return end
+
+    local function clearScripts(frameToClear)
+        if not frameToClear then return end
+
+        if frameToClear:IsObjectType("Button") and frameToClear:GetScript("OnClick") then frameToClear:SetScript("OnClick", nil) end
+        if frameToClear:GetScript("OnEnter") then frameToClear:SetScript("OnEnter", nil) end
+        if frameToClear:GetScript("OnLeave") then frameToClear:SetScript("OnLeave", nil) end
+        if frameToClear:GetScript("OnEvent") then frameToClear:SetScript("OnEvent", nil) end
+        if frameToClear:GetScript("OnShow") then frameToClear:SetScript("OnShow", nil) end
+        if frameToClear:GetScript("OnHide") then frameToClear:SetScript("OnHide", nil) end
+    end
     -- Clear all children
     local numChildren = select("#", frame:GetChildren())
     for i = 1, numChildren do
         local child = select(i, frame:GetChildren())
         if child then
             child:Hide()
+            clearScripts(child)
             child:SetParent(nil)
         end
     end
+    if childrenOnly then return end
 
     -- Clear any scripts
-    frame:SetScript("OnUpdate", nil)
-    frame:SetScript("OnEvent", nil)
-
-    -- Reset position
+    clearScripts(frame)
     frame:ClearAllPoints()
-
-    -- Hide the frame
     frame:Hide()
 end
 -- Function to get a frame from the pool or create a new one
@@ -37,12 +46,13 @@ function frames:CreateFrame(frameType, name, parent, backdropTemplate)
         if frameType == 'Frame' then template = backdropTemplate or "BackdropTemplate"
         elseif frameType == 'Button' and backdropTemplate then template = "UIPanelButtonTemplate"
         elseif frameType == 'EditBox' and backdropTemplate then template = "InputBoxTemplate"
+        elseif frameType == 'ScrollFrame' then template = "UIPanelScrollFrameTemplate"
         end
         -- No available frames, create a new one
         frame = CreateFrame(frameType or "Frame", name, parent, template)
 
         -- If using the BackdropTemplate, set up the backdrop
-        if frameType == 'Frame' then
+        if frameType == 'Frame' and template == "BackdropTemplate" then
             frame:SetBackdrop(ns.BackdropTemplate())
             frame:SetBackdropColor(0, 0, 0, 0.7)
             frame:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
@@ -113,6 +123,14 @@ function frames:CreateAnimation(fontString, newData, type)
 
     -- Immediately trigger fade-out and fade-in for the new text
     fadeOutGroup:Play()
+end
+
+--* Fix ScrollBar
+function frames:FixScrollBar(scrollFrame, size)
+    if not scrollFrame or not scrollFrame.ScrollBar then return end
+
+    local scrollBar = scrollFrame.ScrollBar
+    scrollBar:SetWidth(size or 12)
 end
 
 --** Frame Constants **--

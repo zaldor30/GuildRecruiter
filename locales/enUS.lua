@@ -26,6 +26,7 @@ L['ANTI_SPAM'] = 'Anti-Spam'
 L['BLACKLIST'] = 'Blacklist'
 L['DELETE_CONFIRMATION'] = 'Are you sure you want to delete this record?'
 L['AUTO_LOCKED'] = 'Is now locked.'
+L['FILTER_PROGRESS'] = 'Filter Progress'
 
 -- * GR Home Screen
 L['MESSAGE_ONLY'] = 'Message ONLY'
@@ -47,6 +48,9 @@ L["PLAYER_DECLINED_INVITE"] = "declines your guild invitation"
 L["NOT_IN_GUILD"] = "Guild Recruiter is disabled because you are not in a guild."
 L["NOT_IN_GUILD_LINE1"] = "If you join a guild type /rl to reload."
 L["CANNOT_INVITE"] = "Guild Recruiter is disabled, because you do not have permission to invite."
+L['GUILD_INVITE_SENT'] = 'Guild invite sent to'
+L['INVITE_MESSAGE_SENT'] = 'Invite message sent to'
+
 
 L["GUILD_LINK_NOT_FOUND"] = "No guild link found"
 L["GUILD_LINK_NOT_FOUND_LINE1"] = "Try /rl or relogging (It may take a few attempts)"

@@ -34,7 +34,7 @@ end
 
 -- *Console Text Output Routines
 function code:cText(color, text)
-    if text == '' then return end
+    if not text or text == '' then return end
 
     color = color == '' and 'FFFFFFFF' or color
     return '|c'..color..text..'|r'

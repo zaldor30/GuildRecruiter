@@ -1,7 +1,27 @@
-local _, ns = ... -- Namespace (myaddon, namespace)
+local addonName, ns = ... -- Namespace (myaddon, namespace)
+local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
 ns.events, ns.observer = {}, {}
 local events, observer = ns.events, ns.observer
+
+-- * Event Routines
+function events:StartBaseEvents()
+    local function eventCHAT_MSG_SYSTEM(...)
+        local _, msg = ...
+
+        if not msg then return
+        elseif msg:find(L["PLAYER_JOINED_GUILD"]) then observer:Notify('PLAYER_JOINED_GUILD', ...)
+        elseif msg:find(L["PLAYER_DECLINED_INVITE"]) then observer:Notify('PLAYER_DECLINED_INVITE', ...)
+        elseif msg:find(L["PLAYER_NOT_ONLINE"]) then observer:Notify('PLAYER_NOT_ONLINE', ...)
+        elseif msg:find(L["PLAYER_NOT_PLAYING"]) then observer:Notify('PLAYER_NOT_PLAYING', ...)
+        elseif msg:find(L["PLAYER_NOT_FOUND"]) then observer:Notify('PLAYER_NOT_FOUND', ...)
+        elseif msg:find(L["PLAYER_IN_GUILD"]) then observer:Notify('PLAYER_IN_GUILD', ...)
+        elseif msg:find(L["PLAYER_ALREADY_IN_GUILD"]) then observer:Notify('PLAYER_ALREADY_IN_GUILD', ...)
+        end
+    end
+
+    GR:RegisterEvent('CHAT_MSG_SYSTEM', eventCHAT_MSG_SYSTEM)
+end
 
 -- * Observer Routines
 function observer:Init()

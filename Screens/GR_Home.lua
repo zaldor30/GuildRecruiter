@@ -7,6 +7,7 @@ local home = ns.home
 local function obsCLOSE_SCANNER()
     ns.observer:Unregister('CLOSE_SCREENS', obsCLOSE_SCANNER)
     ns.frames:ResetFrame(home.tblFrame.frame)
+    ns.frames:ResetFrame(home.tblFrame.previewFrame.frame)
     home.tblFrame.frame = nil
 end
 

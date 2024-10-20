@@ -37,9 +37,9 @@ Shared\GR_Constants.lua
 Shared\GR_Code.lua
 Shared\GR_Frames.lua
 Shared\GR_Events.lua
+Shared\GR_Invite.lua
 Shared\GR_Dataset.lua
 #Shared\GR_Analytics.lua
-#Shared\GR_PlayerInvite.lua
 
 #GR_Sync.lua
 GR_Core.lua
