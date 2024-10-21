@@ -124,7 +124,7 @@ function invite:RunInviteQueue()
             ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER', function(_, _, msg) return msg == message end, message)
             ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER_INFORM', function(_, _, msg) return msg == message end, message)
             SendChatMessage(message, 'WHISPER', nil, rec.name)
-            ns.code:fOut(L['INVITE_MESSAGE_SENT']..' '..rec.name, ns.COLOR_SYSTEM)
+            ns.code:fOut(L['INVITE_MESSAGE_SENT']..' '..rec.name, ns.COLOR_SYSTEM, true)
             ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER', message)
             ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER_INFORM', message)
         else SendChatMessage(message, 'WHISPER', nil, rec.name) end

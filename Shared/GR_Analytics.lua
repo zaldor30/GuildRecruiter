@@ -6,6 +6,7 @@ local analytics = ns.analytics
 
 function analytics:BuildAnalytics()
     local dNow = date("*t", GetServerTime())
+    if dNow then return end
     ns.pAnalytics.start = ns.pAnalytics.start or time()
     ns.gAnalytics.start = ns.gAnalytics.start or time()
     ns.pAnalytics.sStart = ns.pAnalytics.sStart or dNow.yday

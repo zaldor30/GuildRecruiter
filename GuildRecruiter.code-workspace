@@ -62,7 +62,27 @@
 			"UIDropDownMenu_SetText",
 			"UIDropDownMenu_SetSelectedValue",
 			"UIDropDownMenu_SetSelectedID",
-			"UIDropDownMenu_GetSelectedID"
+			"UIDropDownMenu_GetSelectedID",
+			"ChatFrame_SendTell",
+			"UnitPopupMenus",
+			"ChatFrame_OpenChat",
+			"Event",
+			"Add",
+			"Menu",
+			"ToggleFrame",
+			"MenuUtil",
+			"ToggleCharacter",
+			"FriendsFrame_ShowDropdown",
+			"SetItemRef",
+			"UIDROPDOWNMENU_MAXLEVELS",
+			"ExecuteFrameScript",
+			"DropDownMenuButtonMixin",
+			"VIDEO_QUALITY_LABEL6",
+			"TooltipBackdropTemplateMixin",
+			"SharedTooltip_SetBackdropStyle",
+			"GameTooltip_Hide",
+			"GameTooltip_AddErrorLine",
+			"UIDropDownMenu_HandleGlobalMouseEvent"
 		]
 	}
 }
