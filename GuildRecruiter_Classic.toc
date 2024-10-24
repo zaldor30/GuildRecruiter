@@ -8,7 +8,7 @@
 ## Author: Moonfury
 ## SavedVariables: GuildRecruiterDB
 ## IconTexture: Interface\AddOns\GuildRecruiter\Images\GR_Icon
-## OptionalDeps: Ace3
+## OptionalDeps: Ace3, Blizzard_UnitPopup
 
 Libs\LibStub\LibStub.lua
 Libs\CallbackHandler-1.0\CallbackHandler-1.0.xml

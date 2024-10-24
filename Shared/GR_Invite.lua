@@ -62,17 +62,19 @@ function invite:AutoInvite(fullName, justName, inviteFormat)
     local sendInvite = inviteFormat ~= ns.InviteFormat.MESSAGE_ONLY or false
     return self:InvitePlayer(fullName, justName, sendInvite, not self.mInvite, not self.mGuild, not self.mWhisper)
 end
-function invite:ManualInvite(fullName, justName, sendGuildInvite, skipInviteMessage, skipWelcomeGuild, skipWelcomeWhisper)
+function invite:ManualInvite(fullName, justName, sendGuildInvite, sendInviteMessage, sendWelcomeMessage, sendWelcomeWhisper)
     justName = (not justName or justName:match('-')) and fullName:gsub('%-.*', '') or justName
-    return self:InvitePlayer(fullName, justName, sendGuildInvite, skipInviteMessage, skipWelcomeGuild, skipWelcomeWhisper)
+    return self:InvitePlayer(fullName, justName, sendGuildInvite or false, not (sendInviteMessage or false), not (sendWelcomeMessage or false), not (sendWelcomeWhisper or false))
 end
 function invite:InvitePlayer(fullName, justName, sendGuildInvite, skipInviteMessage, skipWelcomeGuild, skipWelcomeWhisper)
-    fullName = GR.isTesting and 'Pokypoke' or fullName
+    fullName = (GR.isTesting and ns.classic) and 'Pokypoke' or (ns.retail and 'Monkstrife' or fullName)
     local nameRealm = fullName:match('-') and fullName or fullName..'-'..GetRealmName()
     nameRealm = strlower(nameRealm)
 
     local queueTable = self.tblQueue[fullName] or nil
     if queueTable and queueTable.sentInvite then return end
+
+    ns.invite:GetMessage()
 
     local timeOutTimer = GR:ScheduleTimer(function()
         self.tblQueue[fullName] = nil
@@ -80,10 +82,11 @@ function invite:InvitePlayer(fullName, justName, sendGuildInvite, skipInviteMess
     end, 120)
     local newInvite = {
         sentInvite = sendGuildInvite,
-        welcomeGuild = (skipWelcomeGuild or not self.mGuild) and nil or ns.code:variableReplacement(self.mGuild, justName, 'Remove <>'),
-        welcomeWhisper = (skipWelcomeWhisper or not self.mWhisper) and nil or ns.code:variableReplacement(self.mWhisper, justName, 'Remove <>'),
+        welcomeGuild = (not skipWelcomeGuild and self.mGuild) and ns.code:variableReplacement(self.mGuild, justName, 'Remove <>') or nil,
+        welcomeWhisper = (not skipWelcomeWhisper and self.mWhisper) and nil or ns.code:variableReplacement(self.mWhisper, justName, 'Remove <>'),
         timeOutTimer = timeOutTimer
     }
+
     self.tblQueue[fullName] = newInvite
 
     ns.list:AddToAntiSpam(fullName)
@@ -95,6 +98,9 @@ function invite:InvitePlayer(fullName, justName, sendGuildInvite, skipInviteMess
         C_GuildInfo.Invite(fullName)
         ns.code:fOut(L['GUILD_INVITE_SENT']..' '..fullName, ns.COLOR_SYSTEM, true)
     end
+
+    self.mInvite = self.mInvite:gsub('/', '')
+    print(self.mInvite, skipInviteMessage, self.tblQueue[fullName])
     if not skipInviteMessage and self.mInvite and self.tblQueue[fullName] then
         local msg = ns.code:variableReplacement(self.mInvite, justName)
         if ns.gmSettings.obeyBlockInvites or ns.gSettings.obeyBlockInvites then
@@ -142,15 +148,8 @@ end
 function invite:RegisterInviteObservers()
     local function getPlayerName(msg)
         for k in pairs(self.tblQueue) do
-            if msg:match(k) then return k end
-        end
-    end
-    local function sendMessages(r)
-        if r.welcomeGuild then
-            SendChatMessage(r.welcomeGuild, 'GUILD')
-        end
-        if r.welcomeWhisper then
-            SendChatMessage(r.welcomeWhisper, 'WHISPER', nil, r.fullName)
+            if msg:match(k) then return k
+            elseif msg:match(k:gsub('%-.*', '')) then return k end
         end
     end
     local function eventPLAYER_JOINED_GUILD(...)
@@ -158,13 +157,21 @@ function invite:RegisterInviteObservers()
         local playerName = getPlayerName(msg)
         if not playerName then return end
 
-        GR:CancelTimer(self.tblQueue[playerName].timeOutTimer)
-        C_Timer.Afer(3, function() sendMessages(self.tblQueue[playerName]) end)
+        local r = self.tblQueue[playerName]
+        GR:CancelTimer(r.timeOutTimer)
+        C_Timer.After(3, function()
+            if r.welcomeGuild then
+                SendChatMessage(r.welcomeGuild, 'GUILD')
+            end
+            if r.welcomeWhisper then
+                SendChatMessage(r.welcomeWhisper, 'WHISPER', nil, r.fullName)
+            end
+        end)
         ns.analytics:Reception('accepted')
         self.tblQueue[playerName] = nil
     end
     local function eventPLAYER_DECLINED_INVITE(...)
-        local _, msg = ...
+        local msg = ...
         local playerName = getPlayerName(msg)
         if not playerName then return end
 

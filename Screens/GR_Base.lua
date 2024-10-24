@@ -18,7 +18,6 @@ end
 
 function base:Init()
     self.syncActive = false
-    self.isFGILoaded = false
     self.inviteMessage = nil
     self.isMoveLocked = true
 
@@ -41,8 +40,6 @@ function base:SetShown(val, hideAfter) --! Double Check save
         self.tblFrame.frame:SetShown(val)
         return
     end
-
-    self.isFGILoaded = C_AddOns.IsAddOnLoaded('FastGuildInvite')
 
     if not self.tblFrame then
         self:Init()
@@ -188,7 +185,6 @@ function base:CreateTopIcons()
     btnClose:SetScript('OnClick', function() base:SetShown(false) end)
     btnClose:SetScript('OnEnter', function() highlightButton(btnClose) ns.code:createTooltip(L["CLOSE"]..' '..L['TITLE']) end)
     btnClose:SetScript('OnLeave', function() highlightButton(btnClose, true) GameTooltip:Hide() end)
-    btnCloseFrame = btnClose
 
     local btnLock = ns.frames:CreateFrame('Button', 'GR_LockButton', self.tblFrame.icon)
     btnLock:SetPoint('RIGHT', btnClose, 'LEFT', -5, 0)
@@ -216,7 +212,7 @@ function base:CreateTopIcons()
             end, 10)
         end
     end)
-    btnLock:SetScript('OnEnter', function() highlightButton(btnLock) ns.code:createTooltip('Toggle moving of window') end)
+    btnLock:SetScript('OnEnter', function() highlightButton(btnLock) ns.code:createTooltip(L['LOCK_TOOLTIP']) end)
     btnLock:SetScript('OnLeave', function() highlightButton(btnLock, true) GameTooltip:Hide() end)
 
     local btnBack = ns.frames:CreateFrame('Button', 'GR_BackButton', self.tblFrame.icon)
@@ -225,7 +221,7 @@ function base:CreateTopIcons()
     btnBack:SetNormalTexture(ns.BUTTON_BACK)
     btnBack:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
     btnBack:SetScript('OnClick', function() base:buttonAction('BACK') end)
-    btnBack:SetScript('OnEnter', function() highlightButton(btnBack) ns.code:createTooltip('Back', 'Go back to previous screen.') end)
+    btnBack:SetScript('OnEnter', function() highlightButton(btnBack) ns.code:createTooltip(L['BACK'], L['BACK_TOOLTIP']) end)
     btnBack:SetScript('OnLeave', function() highlightButton(btnBack, true) GameTooltip:Hide() end)
     btnBack:SetShown(false)
     self.tblFrame.back = btnBack
@@ -237,7 +233,7 @@ function base:CreateTopIcons()
     btnReset:SetNormalTexture(ns.BUTTON_RESET)
     btnReset:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
     btnReset:SetScript('OnClick', function() base:buttonAction('OPEN_RESET') end)
-    btnReset:SetScript('OnEnter', function(self) highlightButton(btnReset) ns.code:createTooltip('Reset Filter', 'Restart filter.') end)
+    btnReset:SetScript('OnEnter', function(self) highlightButton(btnReset) ns.code:createTooltip(L['RESET_FILTER'], L['RESET_FILTER_TOOLTIP']) end)
     btnReset:SetScript('OnLeave', function(self) highlightButton(btnReset, true) GameTooltip:Hide() end)
     btnReset:SetShown(false)
     self.tblFrame.reset = btnReset
@@ -249,7 +245,7 @@ function base:CreateTopIcons()
     btnCompact:SetNormalTexture(ns.BUTTON_COMPACT)
     btnCompact:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
     btnCompact:SetScript('OnClick', function() base:buttonAction('OPEN_COMPACT') end)
-    btnCompact:SetScript('OnEnter', function() highlightButton(btnCompact) ns.code:createTooltip('Compact Mode', 'Toggle compact mode.') end)
+    btnCompact:SetScript('OnEnter', function() highlightButton(btnCompact) ns.code:createTooltip(L['COMPACT_MODE'], 'Toggle compact mode.') end)
     btnCompact:SetScript('OnLeave', function() highlightButton(btnCompact, true) GameTooltip:Hide() end)
     btnCompact:SetShown(false)
     self.tblFrame.compact = btnCompact
@@ -270,7 +266,7 @@ function base:CreateBottomIcons()
     btnAbout:SetNormalTexture(ns.BUTTON_ABOUT)
     btnAbout:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
     btnAbout:SetScript('OnClick', function() base:buttonAction('OPEN_ABOUT') end)
-    btnAbout:SetScript('OnEnter', function() highlightButton(btnAbout) ns.code:createTooltip(L["ABOUT"]..' '..L['TITLE'], 'Links to support and contributions.') end)
+    btnAbout:SetScript('OnEnter', function() highlightButton(btnAbout) ns.code:createTooltip(L["ABOUT"]..' '..L['TITLE'], L['ABOUT_TOOLTIP']) end)
     btnAbout:SetScript('OnLeave', function() highlightButton(btnAbout, true) GameTooltip:Hide() end)
 
     --* Settings Button
@@ -280,7 +276,7 @@ function base:CreateBottomIcons()
     btnSettings:SetNormalTexture(ns.BUTTON_SETTINGS)
     btnSettings:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
     btnSettings:SetScript('OnClick', function() base:buttonAction('OPEN_SETTINGS') end)
-    btnSettings:SetScript('OnEnter', function() highlightButton(btnSettings) ns.code:createTooltip('Settings', 'Change settings.') end)
+    btnSettings:SetScript('OnEnter', function() highlightButton(btnSettings) ns.code:createTooltip(L['SETTINGS'], L['SETTINGS_TOOLTIP']) end)
     btnSettings:SetScript('OnLeave', function() highlightButton(btnSettings, true) GameTooltip:Hide() end)
 
     --* Sync Button
@@ -292,7 +288,7 @@ function base:CreateBottomIcons()
     btnSync:SetScript('OnClick', function() base:buttonAction('SYNC_TOGGLE') end)
     btnSync:SetScript('OnEnter', function()
         if not self.syncActive then highlightButton(btnSync) end
-        ns.code:createTooltip('Toggle Syncing', 'Syncs data with other users.') end)
+        ns.code:createTooltip(L['MANUAL_SYNC'], L['MANUAL_SYNC_TOOLTIP']) end)
     btnSync:SetScript('OnLeave', function() highlightButton(btnSync, true) GameTooltip:Hide() end)
 
     --* Stats Button
@@ -302,7 +298,7 @@ function base:CreateBottomIcons()
     btnStats:SetNormalTexture(ns.BUTTON_STATS)
     btnStats:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
     btnStats:SetScript('OnClick', function() base:buttonAction('OPEN_STATS') end)
-    btnStats:SetScript('OnEnter', function() highlightButton(btnStats) ns.code:createTooltip('View Stats', 'View stats and data.') end)
+    btnStats:SetScript('OnEnter', function() highlightButton(btnStats) ns.code:createTooltip(L['VIEW_ANALYTICS'], L['VIEW_ANALYTICS_TOOLTIP']) end)
     btnStats:SetScript('OnLeave', function() highlightButton(btnStats, true) GameTooltip:Hide() end)
 
     --* Blacklist Button
@@ -312,7 +308,7 @@ function base:CreateBottomIcons()
     btnBlacklist:SetNormalTexture(ns.BUTTON_BLACKLIST)
     btnBlacklist:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
     btnBlacklist:SetScript('OnClick', function() base:buttonAction('OPEN_BLACKLIST') end)
-    btnBlacklist:SetScript('OnEnter', function() highlightButton(btnBlacklist) ns.code:createTooltip(L['BLACKLIST'], 'Manually add players to blacklist.') end)
+    btnBlacklist:SetScript('OnEnter', function() highlightButton(btnBlacklist) ns.code:createTooltip(L['BLACKLIST'], L['BLACKLIST_TOOLTIP']) end)
     btnBlacklist:SetScript('OnLeave', function() highlightButton(btnBlacklist, true) GameTooltip:Hide() end)
 
     --* Filter Button
@@ -322,7 +318,7 @@ function base:CreateBottomIcons()
     btnFilter:SetNormalTexture(ns.BUTTON_FILTER)
     btnFilter:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
     btnFilter:SetScript('OnClick', function() base:buttonAction('OPEN_FILTER') end)
-    btnFilter:SetScript('OnEnter', function(self) highlightButton(btnFilter) ns.code:createTooltip('Custom Filters', 'Create custom filters.') end)
+    btnFilter:SetScript('OnEnter', function(self) highlightButton(btnFilter) ns.code:createTooltip(L['CUSTOM_FILTERS'], L['CUSTOM_FILTERS_TOOLTIP']) end)
     btnFilter:SetScript('OnLeave', function(self) highlightButton(btnFilter, true) GameTooltip:Hide() end)
     btnFilter:SetShown(GR.enableFilter)
 end

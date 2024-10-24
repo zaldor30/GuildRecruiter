@@ -94,7 +94,7 @@ function home:CreateFilterAndLevel()
 
     local dropLabel = self.tblFrame.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     dropLabel:SetPoint("BOTTOMLEFT", dropFilters.frame, "TOPLEFT", 20, 0)
-    dropLabel:SetText("Select a filter:")
+    dropLabel:SetText(L['SELECT_A_FILTER']..":")
     dropLabel:SetTextColor(1, 1, 1)
 
     local oldValue = nil
@@ -109,7 +109,7 @@ function home:CreateFilterAndLevel()
 
     local minLabel = self.tblFrame.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     minLabel:SetPoint("BOTTOM", editMinLevel, "TOP", 0, 0)
-    minLabel:SetText("Min Level:")
+    minLabel:SetText(L['MIN_LEVEL']..":")
     minLabel:SetTextColor(1, 1, 1)
 
     local editMaxLevel = ns.frames:CreateFrame("EditBox", "GR_MaxLevel", self.tblFrame.frame, "InputBoxTemplate")
@@ -123,7 +123,7 @@ function home:CreateFilterAndLevel()
 
     local maxLabel = self.tblFrame.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     maxLabel:SetPoint("BOTTOM", editMaxLevel, "TOP", 0, 0)
-    maxLabel:SetText("Max Level:")
+    maxLabel:SetText(L['MAX_LEVEL']..":")
     maxLabel:SetTextColor(1, 1, 1)
 
     local function HandleTabNavigation(self, key)
@@ -165,7 +165,7 @@ function home:CreateFilterAndLevel()
             HandleTabNavigation(self, "TAB")
         else
             self:SetText(oldValue)
-            ns.status:SetText("Please enter a number between 1 and " .. ns.MAX_CHARACTER_LEVEL)
+            ns.status:SetText(L['MAX_LEVEL_ERROR'] .. ns.MAX_CHARACTER_LEVEL)
         end
 
         home:validate_data_scan_button()
@@ -198,7 +198,7 @@ function home:CreateFilterAndLevel()
     local buttonScan = ns.frames:CreateFrame('Button', 'GR_Start_Invite', self.tblFrame.frame, 'UIPanelButtonTemplate')
     buttonScan:SetPoint("LEFT", editMaxLevel, "RIGHT", 10, 0)
     buttonScan:SetSize(100, 20)
-    buttonScan:SetText("Scan")
+    buttonScan:SetText(L['SCAN'])
     buttonScan:SetScript("OnClick", function(self, button, down)
         skipValidation = false
         editMinLevel:ClearFocus()
@@ -234,7 +234,7 @@ function home:CreateInviteTypeAndMessage()
 
     local dropLabel = self.tblFrame.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     dropLabel:SetPoint("BOTTOMLEFT", dropInvite.frame, "TOPLEFT", 20, 0)
-    dropLabel:SetText("Select type of invite:")
+    dropLabel:SetText(L['SELECT_INVITE_TYPE']..":")
     dropLabel:SetTextColor(1, 1, 1)
 
     local messageReturn = { -- Callback when filter is selected
@@ -262,7 +262,7 @@ function home:CreateInviteTypeAndMessage()
 
     local dropMsgLabel = self.tblFrame.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     dropMsgLabel:SetPoint("BOTTOMLEFT", dropMessages.frame, "TOPLEFT", 20, 0)
-    dropMsgLabel:SetText("Select Invite Message:")
+    dropMsgLabel:SetText(L['SELECT_INVITE_MESASAGE']..":")
     dropMsgLabel:SetTextColor(1, 1, 1)
     self.tblFrame.dropMessages = dropMessages
     self.tblFrame.dropMessages.text = dropMsgLabel
@@ -276,7 +276,7 @@ function home:MessagePreview()
 
     local previewLabel = previewFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     previewLabel:SetPoint("TOPLEFT", previewFrame, "TOPLEFT", 10, -10)
-    previewLabel:SetText("Selected Message Preview:")
+    previewLabel:SetText(L['PREVIEW_TITLE']..":")
     previewLabel:SetTextColor(1, 1, 1)
     self.tblFrame.previewFrame = {}
     self.tblFrame.previewFrame.frame = previewFrame

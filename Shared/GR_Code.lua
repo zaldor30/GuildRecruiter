@@ -103,7 +103,12 @@ function code:variableReplacement(msg, playerName, removeGT)
 
     local gLink, gName = gi.guildLink or nil, gi.guildName or nil
 
-    msg = msg:gsub(L['GUILDLINK'], ((not ns.classic and gLink and gi.guildLink) and gLink or (not ns.classic and (removeGT and gName or '<'..gName..'>') or L['GUILD_LINK_NOT_FOUND'])))
+    local guildName = "Shadowbound"
+local guildLink = string.format("|Hguild:%s|h[%s]|h", guildName, guildName)
+
+-- Escape '|' by doubling it to avoid the "Invalid escape code" error
+guildLink = guildLink:gsub("|", "||")
+    msg = msg:gsub(L['GUILDLINK'], (not ns.classic and gLink or (not ns.classic and (removeGT and gName or '<'..gName..'>') or L['GUILD_LINK_NOT_FOUND'])))
     msg = msg:gsub(L['GUILDNAME'], (gName and (removeGT and gName or '<'..gName..'>') or L['NO_GUILD_NAME']))
     msg = msg:gsub(L['PLAYERNAME'], (playerName or 'player'))
 
@@ -158,4 +163,30 @@ function code:sortTableByField(tbl, sortField, reverse)
 
     table.sort(keyArray, sortFunc)
     return keyArray
+end
+
+--* Guild checks
+function code:isInMyGuild(name)
+    local realmName = name:find('-') and name or name..'-'..GetRealmName()
+    local noRealmName = name:gsub('*-', '')
+
+    C_FriendList.ShowFriends()
+    local isFriend = false
+    local numFriends = C_FriendList.GetNumFriends()
+    for i = 1, numFriends do
+        local friendInfo = C_FriendList.GetFriendInfo(i)
+        if friendInfo and friendInfo.name == name then
+            isFriend = true -- Player is on the friends list
+            break
+        end
+    end
+
+    local totalMembers = GetNumGuildMembers()
+    for i = 1, totalMembers do
+        local gName = GetGuildRosterInfo(i)
+        if strlower(gName) == strlower(noRealmName) then return true
+        elseif strlower(gName) == strlower(realmName) then return true end
+    end
+    if not isFriend and UnitFactionGroup('player') ~= UnitFactionGroup(name) then
+        return false, 'WRONG_FACTION' else return false end
 end

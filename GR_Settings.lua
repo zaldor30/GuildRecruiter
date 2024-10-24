@@ -46,19 +46,26 @@ local function GetInstructions()
 
     return msg
 end
+local tblASDays = {
+    [7] = '7 days',
+    [14] = '14 days',
+    [30] = '30 days (1 month)',
+    [90] = '90 days (3 months)',
+    [180] = '180 days (6 months)',
+}
 
 ns.guildRecuriterSettings = {
     name = L['TITLE']..' '..GR.versionOut,
     type = 'group',
     args = {
         generalSettings = {
-            name = 'GR Settings',
+            name = L['GR_SETTINGS'],
             type = 'group',
             order = 1,
             args = {
                 genHeading1 = {
                     order = 0,
-                    name = 'GR Settings',
+                    name = L['GR_SETTINGS'],
                     type = 'header',
                 },
                 genNoteGuildwide = {
@@ -185,7 +192,7 @@ ns.guildRecuriterSettings = {
                 },
                 genCompactSize = {
                     order = 26,
-                    name = bulletAccountWide..'Compact Sizing:',
+                    name = bulletAccountWide..L['COMPACT_SIZE']..':',
                     desc = 'When in compact mode, select the size of the window.',
                     type = 'select',
                     style = 'dropdown',
@@ -206,9 +213,10 @@ ns.guildRecuriterSettings = {
                     type = 'input',
                     width = 1,
                     set = function(_, val)
-                        if tonumber(val) >= 2 and tonumber(val) <= 10 then ns.g.scanWaitTime = tonumber(val) end
+                        if tonumber(val) >= 2 and tonumber(val) <= 10 then ns.g.scanWaitTime = tonumber(val)
+                        else ns.frames:AcceptDialog('Enter value of 1 to 10.', function() return end) end
                     end,
-                    get = function() return tostring(ns.g.scanWaitTime or 6) end,
+                    get = function() return tostring(ns.g.scanWaitTime or 5) end,
                 },
                 genHeading4 = {
                     order = 30,
@@ -332,15 +340,7 @@ ns.guildRecuriterSettings = {
                     type = 'select',
                     style = 'dropdown',
                     width = 1,
-                    values = function()
-                        return {
-                            [7] = '7 days',
-                            [14] = '14 days',
-                            [30] = '30 days (1 month)',
-                            [90] = '90 days (3 months)',
-                            [180] = '180 days (6 months)',
-                        }
-                    end,
+                    values = function() return tblASDays end,
                     set = function(_, val) ns.gmSettings.antiSpamDays = tonumber(val) end,
                     get = function() return ns.gmSettings.antiSpamDays or 7 end,
                 },
@@ -351,7 +351,7 @@ ns.guildRecuriterSettings = {
                 },
                 invForceGuildGreeting = {
                     order = 21,
-                    name = bulletGuildWide..'Force non-GM to use '..L['GUILD_WELCOME_MSG'],
+                    name = bulletGuildWide..L['FORCE_OPTION']..' '..L['GUILD_WELCOME_MSG'],
                     desc = L['GUILD_WELCOME_MSG_DESC'],
                     type = 'toggle',
                     width = 'full',
@@ -391,7 +391,7 @@ ns.guildRecuriterSettings = {
                 },
                 gmForceWelcomeWhisper = {
                     order = 25,
-                    name = bulletGuildWide..'Force non-GM to use '..L['WHISPER_WELCOME_MSG'],
+                    name = bulletGuildWide..L['FORCE_OPTION']..' '..L['WHISPER_WELCOME_MSG'],
                     desc = L['WHISPER_WELCOME_MSG_DESC'],
                     type = 'toggle',
                     width = 'full',
@@ -703,15 +703,7 @@ ns.guildRecuriterSettings = {
                     style = 'dropdown',
                     width = 1,
                     disabled = function() return ns.gmActive and ns.gmSettings.antiSpam or false end,
-                    values = function()
-                        return {
-                            [7] = '7 days',
-                            [14] = '14 days',
-                            [30] = '30 days (1 month)',
-                            [90] = '90 days (3 months)',
-                            [180] = '180 days (6 months)',
-                        }
-                    end,
+                    values = function() return tblASDays end,
                     set = function(_, val) ns.gSettings.antiSpamDays = tonumber(val) end,
                     get = function() return (ns.gmActive and ns.gmSettings.antiSpam) and (ns.gmSettings.antiSpamDays or 7) or (ns.gSettings.antiSpamDays or 7) end,
                 },

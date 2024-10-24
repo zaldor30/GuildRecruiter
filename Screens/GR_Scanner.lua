@@ -71,7 +71,6 @@ function scanner:SetShown(val)
 
     if not self.tblFilter then self:BuildFilters() end
 
-    ns.invite:Init()
     self:UpdateButtons()
     self:DisplayWhoList()
     self:DisplayInviteList()
@@ -98,8 +97,8 @@ function scanner:CreateInviteFrame()
     self.tblFrame.inviteFrame = f
 
     local InviteText = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    InviteText:SetPoint("TOPLEFT", f, "TOPLEFT", 10, 5)
-    InviteText:SetText("Players Found:")
+    InviteText:SetPoint("TOPLEFT", f, "TOPLEFT", 10, 3)
+    InviteText:SetText(L['PLAYERS_FOUND']..':')
     InviteText:SetTextColor(1, 1, 1, 1)
 
     local scrollFrame = ns.frames:CreateFrame('ScrollFrame', 'Invite_ScrollFrame', f, 'UIPanelScrollFrameTemplate')
@@ -121,7 +120,7 @@ function scanner:CreateInviteFrame()
 
     local buttonInvite = ns.frames:CreateFrame('Button', 'InviteButton', f, 'UIPanelButtonTemplate')
     buttonInvite:SetPoint("TOPLEFT", scrollFrame, "BOTTOMLEFT", 0, -3)
-    buttonInvite:SetText(self.inviteFormat == ns.InviteFormat.MESSAGE_ONLY and 'Send Message' or (self.inviteFormat == ns.InviteFormat.GUILD_INVITE_AND_MESSAGE and 'Send Invite and Message' or 'Send Invite'))
+    buttonInvite:SetText(self.inviteFormat == ns.InviteFormat.MESSAGE_ONLY and L['SEND_MESSAGE'] or (self.inviteFormat == ns.InviteFormat.GUILD_INVITE_AND_MESSAGE and L['SEND_INVITE_AND_MESSAGE'] or L['SEND_INVITE']))
     buttonInvite:SetSize(f:GetWidth() - 20, 30)
     buttonInvite:SetScript("OnClick", function(self, button, down) scanner:InvitePlayer() end)
     buttonInvite:SetScript("OnEnter", function(self) ns.code:createTooltip('Invite Player', 'Do not check boxes to send invites.') end)
@@ -130,19 +129,19 @@ function scanner:CreateInviteFrame()
 
     local buttonBlacklist = ns.frames:CreateFrame('Button', 'BlacklistButton', f, 'UIPanelButtonTemplate')
     buttonBlacklist:SetPoint("TOPLEFT", buttonInvite, "BOTTOMLEFT", 0, 0)
-    buttonBlacklist:SetText('Blacklist')
+    buttonBlacklist:SetText(L['BLACKLIST'])
     buttonBlacklist:SetSize((buttonInvite:GetWidth() /2) - 3, 30)
     buttonBlacklist:SetScript("OnClick", function(self, button, down) scanner:BlacklistPlayer() end)
-    buttonBlacklist:SetScript("OnEnter", function(self) ns.code:createTooltip('Add Selected Player(s) to Blacklist', 'Will add selected players to Blacklist.') end)
+    buttonBlacklist:SetScript("OnEnter", function(self) ns.code:createTooltip(L['BLACKLIST_TITLE'], L['BLACKLIST_SCANNER_TOOLTIP']) end)
     buttonBlacklist:SetScript("OnLeave", function(self) GameTooltip:Hide() end)
     self.tblFrame.buttonBlacklist = buttonBlacklist
 
     local buttonSkip = ns.frames:CreateFrame('Button', 'SkipButton', f, 'UIPanelButtonTemplate')
     buttonSkip:SetPoint("LEFT", buttonBlacklist, "RIGHT", 5, 0)
-    buttonSkip:SetText('Skip Player')
+    buttonSkip:SetText(L['SKIP_PLAYER'])
     buttonSkip:SetSize((buttonInvite:GetWidth() /2) - 3, 30)
     buttonSkip:SetScript("OnClick", function(self, button, down) scanner:AntiSpam() end)
-    buttonSkip:SetScript("OnEnter", function(self) ns.code:createTooltip('Add Selected Player(s) to Anti-Spam List', 'Will add selected players to Anti-Spam list.') end)
+    buttonSkip:SetScript("OnEnter", function(self) ns.code:createTooltip(L['ANTISPAM_TITLE'], L['ANTISPAM_SCANNER_TOOLTIP']) end)
     buttonSkip:SetScript("OnLeave", function(self) GameTooltip:Hide() end)
     self.tblFrame.buttonSkip = buttonSkip
 end
@@ -153,8 +152,8 @@ function scanner:CreateWhoFrame()
     self.tblFrame.whoFrame = f
 
     local whoText = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    whoText:SetPoint("TOPLEFT", f, "TOPLEFT", 10, 5)
-    whoText:SetText("Who Results:")
+    whoText:SetPoint("TOPLEFT", f, "TOPLEFT", 10, 3)
+    whoText:SetText(string.format(L['WHO_RESULTS'], 0))
     whoText:SetTextColor(1, 1, 1, 1)
     self.tblFrame.whoText = whoText
 
@@ -175,7 +174,7 @@ function scanner:CreateWhoFrame()
     scrollBar:SetPoint("TOPRIGHT", scrollFrame, "TOPRIGHT", 0, -16)
     scrollBar:SetPoint("BOTTOMRIGHT", scrollFrame, "BOTTOMRIGHT", 0, 16)
 end
-local defaultButtonText = 'Search for Players'
+local defaultButtonText = L['SCAN_FOR_PLAYERS']
 function scanner:StartScanFrame()
     local f = ns.frames:CreateFrame('Frame', 'Scanner_ScanFrame', self.tblFrame.frame)
     f:SetPoint("TOPLEFT", self.tblFrame.inviteFrame, "BOTTOMLEFT", 0, 0)
@@ -184,14 +183,14 @@ function scanner:StartScanFrame()
     self.tblFrame.scannerFrame.frame = f
 
     local ScanText = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    ScanText:SetPoint("TOPLEFT", f, "TOPLEFT", 10, 5)
-    ScanText:SetText("Scan for Players:")
+    ScanText:SetPoint("TOPLEFT", f, "TOPLEFT", 10, 3)
+    ScanText:SetText(L['SCAN_FOR_PLAYERS']..':')
     ScanText:SetTextColor(1, 1, 1, 1)
 
     local nextFilterLabel = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     nextFilterLabel:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -30)
     nextFilterLabel:SetFont(ns.DEFAULT_FONT, 10, "OUTLINE")
-    nextFilterLabel:SetText("Next Query: None")
+    nextFilterLabel:SetText(string.format(L['NEXT_QUERY'], 'none'))
     nextFilterLabel:SetTextColor(1, 1, 1, 1)
     self.tblFrame.scannerFrame.nextFilterText = nextFilterLabel
 
@@ -208,7 +207,7 @@ function scanner:StartScanFrame()
     playerCountText:SetPoint("TOPLEFT", buttonScan, "BOTTOMLEFT", 0, 0)
     playerCountText:SetPoint("TOPRIGHT", buttonScan, "BOTTOMRIGHT", 0, 0)
     playerCountText:SetHeight(20)
-    playerCountText:SetText("Players Queued: 0")
+    playerCountText:SetText(string.format(L['PLAYERS_QUEUED'], 0))
     playerCountText:SetTextColor(1, 1, 1, 1)
     self.tblFrame.scannerFrame.playerCountText = playerCountText
 end
@@ -219,7 +218,7 @@ function scanner:CreateAnalyticsFrame()
     self.tblFrame.analytics = f
 
     local analText = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    analText:SetPoint("TOPLEFT", f, "TOPLEFT", 10, 5)
+    analText:SetPoint("TOPLEFT", f, "TOPLEFT", 10, 3)
     analText:SetText("Session Analytics:")
     analText:SetTextColor(1, 1, 1, 1)
 end
@@ -248,7 +247,7 @@ function scanner:ProcessWhoResults()
         }
         tinsert(self.tblWho, rec)
     end
-    self.tblFrame.whoText:SetText('Who Results: '..#self.tblWho..' Players Found')
+    self.tblFrame.whoText:SetText(string.format(L['WHO_RESULTS'], #self.tblWho))
 
     if self.tblWho then
         self.tblWho = ns.code:sortTableByField(self.tblWho, 'fullName') end
@@ -415,11 +414,11 @@ function scanner:DisplayInviteList()
             row:SetPoint("TOPLEFT", 0, -(rowCount - 1) * rowHeight)
         end
     end
-    self.tblFrame.scannerFrame.playerCountText:SetText('Players Queued: '..#self.tblToInivite)
+    self.tblFrame.scannerFrame.playerCountText:SetText(string.format(L['PLAYERS_QUEUED'], #self.tblToInivite))
     if sFrame.nextText then
-        sFrame.nextText:SetText('Next Player to Invite (Queued: '..#self.tblToInivite..'):')
-        if #self.tblToInivite > 0 then sFrame.nextPlayerText:SetText(self.tblToInivite[1].name)
-        else sFrame.nextPlayerText:SetText('No players in queue.') end
+        local nextPlayer = #self.tblToInivite > 0 and self.tblToInivite[1].name or L['NO_QUEUED_PLAYERS']
+        sFrame.nextText:SetText(string.format(L['NEXT_PLAYER_INVITE'], #self.tblToInivite))
+        sFrame.nextPlayerText:SetText(nextPlayer)
     end
 
     content:SetHeight(#self.tblToInivite * rowHeight)
@@ -484,22 +483,24 @@ function scanner:CompactModeChanged(startCompact, closed)
         local txtNext = sFrame.nextText or sFrame.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         txtNext:SetFont(ns.DEFAULT_FONT, 10, "OUTLINE")
         txtNext:SetPoint("TOPLEFT", sFrame.buttonScan, "BOTTOMLEFT", -2, -5)
-        txtNext:SetText("Next Player to Invite (Queued: 0):")
+        txtNext:SetText(L['NEXT_PLAYER_INVITE'], 0)
+        txtNext:SetJustifyH('CENTER')
         txtNext:SetTextColor(1, 1, 1, 1)
         sFrame.nextText = txtNext
         sFrame.nextText:SetShown(true)
 
         local txtNextPlayer = sFrame.nextPlayerText or sFrame.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         txtNextPlayer:SetPoint("TOPLEFT", txtNext, "BOTTOMLEFT", 2, -5)
-        txtNextPlayer:SetText("No players in queue.")
+        txtNextPlayer:SetText(L['NO_QUEUED_PLAYERS'])
         txtNextPlayer:SetTextColor(1, 1, 1, 1)
+        txtNextPlayer:SetJustifyH('CENTER')
         sFrame.nextPlayerText = txtNextPlayer
         sFrame.nextPlayerText:SetShown(true)
 
         local buttonInvite = sFrame.buttonInvite or ns.frames:CreateFrame('Button', 'InviteButton', sFrame.frame, 'UIPanelButtonTemplate')
         buttonInvite:SetPoint("BOTTOMLEFT", sFrame.frame, "BOTTOMLEFT", 5, 5)
         buttonInvite:SetSize((sFrame.frame:GetWidth() /2) - 5, 20)
-        buttonInvite:SetText('Invite')
+        buttonInvite:SetText(L["INVITE"])
         buttonInvite:SetShown(true)
         buttonInvite:SetScript("OnClick", function(self, button, down) scanner:InvitePlayer() end)
         buttonInvite:SetScript("OnEnter", function(self)
@@ -511,7 +512,7 @@ function scanner:CompactModeChanged(startCompact, closed)
         local buttonSkip = sFrame.buttonSkip or ns.frames:CreateFrame('Button', 'InviteButton', sFrame.frame, 'UIPanelButtonTemplate')
         buttonSkip:SetPoint("LEFT", buttonInvite, "RIGHT", 3, 0)
         buttonSkip:SetSize((sFrame.frame:GetWidth() /2) - 15, 20)
-        buttonSkip:SetText('Skip')
+        buttonSkip:SetText(L['SKIP'])
         buttonSkip:SetShown(true)
         buttonSkip:SetScript("OnClick", function(self, button, down) scanner:AntiSpam() end)
         buttonSkip:SetScript("OnEnter", function(self) ns.code:createTooltip('Add Player to Anti-Spam', 'Will add the queued player to Anti-Spam list.') end)
@@ -558,7 +559,7 @@ function scanner:BuildFilters()
     self.filterCount, self.filterTotal = 0, #self.tblFilter or 0
     self:SetText(self.tblFrame.scannerFrame.nextFilterText, self:DisplayNextFilter())
 end
-function scanner:DisplayNextFilter() return 'Next Query: '..self.tblFilter[1].desc end
+function scanner:DisplayNextFilter() return string.format(L['NEXT_QUERY'], self.tblFilter[1].desc) end
 function scanner:PerformSearch()
     local sFrame = self.tblFrame.scannerFrame
     local tblNext = tremove(self.tblFilter, 1)
@@ -588,7 +589,7 @@ function scanner:PerformSearch()
         elseif remain > 0 then
             self.waitTimer = remain
             sFrame.buttonScan:Disable()
-            sFrame.buttonScan:SetText('Wait '..remain..'s')
+            sFrame.buttonScan:SetText(L['WAIT']..' '..remain..'s')
             C_Timer.After(1, function() waitTimer(remain - 1) end)
         else
             self.waitTimer = 0
@@ -623,7 +624,7 @@ end
 function scanner:InvitePlayer()
     if not scanner.tblToInivite then return
     elseif #scanner.tblToInivite == 0 then
-        ns.code:fOut('You must first click on Search for Players button.') return
+        ns.code:fOut(L['INVITE_FIRST_STEP']) return
     end
 
     local tbl = tremove(scanner.tblToInivite, 1)
@@ -643,7 +644,7 @@ function scanner:AntiSpam()
             count = count + 1
         end
     end
-    ns.code:fOut(string.format('Added %d players to Anti-Spam list.', count))
+    ns.code:fOut(string.format(L['ADD_TO_ANTISPAM'], count))
 
     self:DisplayWhoList() -- Displays invite inside of function
 end
@@ -658,7 +659,7 @@ function scanner:BlacklistPlayer()
             count = count + 1
         end
     end
-    ns.code:fOut(string.format('Added %d players to Blacklist.', count))
+    ns.code:fOut(string.format(L['ADD_TO_BLACKLIST'], count))
 
     self:DisplayWhoList() -- Displays invite inside of function
 end

@@ -113,7 +113,7 @@ function core:StartGuildRecruiter(clubID)
     ns.fPlayerName = ns.code:cPlayer(GetUnitName('player', false), UnitClassBase('player')) -- Set the player name
     ns.classic = WOW_PROJECT_ID == WOW_PROJECT_CLASSIC or false
     ns.cata = WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC or false
-    ns.isRetail = not ns.classic and not ns.cata
+    ns.retail = not ns.classic and not ns.cata
 
     if self:StartDatabase(clubID) then
         self.isEnabled = false
@@ -135,6 +135,20 @@ function core:StartGuildRecruiter(clubID)
     ns.events:StartBaseEvents() -- Start the base events
 
     ns.base:SetShown(true, true)
+
+    local function checkForFGI(retry)
+        retry = retry + 1
+        local isFGILoaded = C_AddOns.IsAddOnLoaded('FastGuildInvite')
+        if isFGILoaded then ns.code:fOut(L['FGI_LOADED'], ns.COLOR_ERROR) return
+        elseif retry > 5 then return
+        elseif retry <= 5 then C_Timer.After(1, function() checkForFGI(retry + 1) end) end
+    end
+    checkForFGI(0)
+
+    local c=ClubFinderGetCurrentClubListingInfo(C_Club.GetGuildClubId())
+    for k, v in pairs(c) do print(k,v) end
+    local club = C_Club.GetGuildClubId() or c.clubId
+    print(GetClubFinderLink(club.clubFinderGUID, club.name))
 
     ns.code:fOut(L['TITLE']..' '..GR.versionOut..' '..L['ENABLED'], ns.COLOR_DEFAULT, true)
     if GR.isPreRelease then
@@ -187,7 +201,7 @@ function core:LoadTables()
     ns.tblAntiSpamList = asSuccess and tblAS or {}
 
     --* Load Class/Race and Invalid Zones Table
-    if ns.isRetail then
+    if ns.retail then
         ns.races = ns.ds:races_retail()
         ns.classes = ns.ds:classes_retail()
         ns.invalidZones = ns.ds:invalidZones_Retail()
@@ -200,6 +214,10 @@ function core:LoadTables()
         ns.classes = ns.ds:classes_cata()
         ns.invalidZones = ns.ds:invalidZones_Cata()
     end
+
+    ns.invite:Init()
+    ns.invite:GetMessage()
+    ns.invite:RegisterInviteObservers()
 
     ns.analytics:BuildAnalytics()
 end
@@ -287,7 +305,7 @@ function core:StartupGuild(clubID)
     ns.guildInfo.clubID = clubID
     ns.guildInfo.guildName = guildName
 
-    if ns.isRetail then
+    if ns.retail then
         local club = clubID and C_ClubFinder.GetRecruitingClubInfoFromClubID(clubID) or nil
         if not ns.classic and (not ns.guildInfo.guildLink or ns.guildInfo.guildLink == '') and club then
             local guildLink = string.format("|Hguild:%s|h[%s]|h", guildName, guildName)

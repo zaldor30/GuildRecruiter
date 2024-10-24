@@ -20,7 +20,7 @@ function events:StartBaseEvents()
 
         if not msg then return
         elseif msg:find(L["PLAYER_JOINED_GUILD"]) then observer:Notify('PLAYER_JOINED_GUILD', ...)
-        elseif msg:find(L["PLAYER_DECLINED_INVITE"]) then observer:Notify('PLAYER_DECLINED_INVITE', ...)
+        elseif msg:find(L["PLAYER_DECLINED_INVITE"]) then observer:Notify('PLAYER_DECLINED_INVITE', msg)
         elseif msg:find(L["PLAYER_NOT_ONLINE"]) then observer:Notify('PLAYER_NOT_ONLINE', ...)
         elseif msg:find(L["PLAYER_NOT_PLAYING"]) then observer:Notify('PLAYER_NOT_PLAYING', ...)
         elseif msg:find(L["PLAYER_NOT_FOUND"]) then observer:Notify('PLAYER_NOT_FOUND', ...)

@@ -1,132 +1,123 @@
--- Create the custom menu frame
-local myMenuFrame = CreateFrame("Frame", "MyCustomMenuFrame", UIParent, "UIDropDownMenuTemplate")
+local addonName, ns = ... -- Namespace (myaddon, namespace)
+local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
--- Ensure EasyMenu is defined (if not already)
-if not EasyMenu then
-    function EasyMenu(menuList, menuFrame, anchor, x, y, displayMode)
-        if not menuFrame then
-            menuFrame = CreateFrame("Frame", "EasyMenuFrame", UIParent, "UIDropDownMenuTemplate")
-        end
-        UIDropDownMenu_Initialize(menuFrame, function(self, level, menuList)
-            for _, item in ipairs(menuList) do
-                UIDropDownMenu_AddButton(item, level)
-            end
-        end, displayMode, nil, menuList)
-        menuFrame.displayMode = displayMode
-        ToggleDropDownMenu(1, nil, menuFrame, anchor, x, y, menuList)
-    end
-end
+-- Create a custom dropdown menu frame
+local customMenuFrame = CreateFrame("Frame", "CustomChatDropdownMenu", UIParent, "UIDropDownMenuTemplate")
 
--- Create a frame to catch clicks outside the menu
-local clickCatcher = CreateFrame("Button", nil, UIParent)
-clickCatcher:SetFrameStrata("DIALOG")
-clickCatcher:SetAllPoints(UIParent)
-clickCatcher:EnableMouse(true)
-clickCatcher:Hide()
-clickCatcher:SetScript("OnClick", function(self, button)
-    if myMenuFrame then
-        myMenuFrame:SetShown(false)
-    end
-    self:SetShown(false)
-end)
+-- Function to initialize the custom dropdown menu
+local function InitializeCustomMenu(frame, level, menuList)
+    if not level or level ~= 1 then return end
 
--- Function to adjust menu position
-local function AdjustMenuPosition()
-    local dropdownList = _G["DropDownList1"]
-    if dropdownList and dropdownList:IsShown() then
-        -- Get the menu's width and height
-        local menuWidth = dropdownList:GetWidth()
-        local menuHeight = dropdownList:GetHeight()
-        local screenHeight = UIParent:GetHeight()
+    local playerName = frame.targetName
+    if not playerName then return end
 
-        -- Get the cursor position
-        local cursorX, cursorY = GetCursorPosition()
-        local uiScale = UIParent:GetEffectiveScale()
-        cursorX = cursorX / uiScale
-        cursorY = cursorY / uiScale
+    local isInGuild, faction = ns.code:isInMyGuild(playerName)
+    if faction then return end
 
-        -- Adjust the position
-        dropdownList:ClearAllPoints()
-        if (cursorX - menuWidth) < 0 then
-            -- Menu would go off the left side, so move it up by the height of the menu
-            local newY = cursorY + menuHeight
-
-            -- Ensure the menu doesn't go off the top of the screen
-            if newY > screenHeight then
-                newY = screenHeight
-            end
-
-            dropdownList:SetPoint("TOPRIGHT", UIParent, "BOTTOMLEFT", cursorX, newY)
-        else
-            -- Normal position
-            dropdownList:SetPoint("TOPRIGHT", UIParent, "BOTTOMLEFT", cursorX, cursorY)
-        end
-
-        -- Ensure the menu stays on screen
-        dropdownList:SetClampedToScreen(true)
-
-        -- Remove the OnUpdate script after adjusting position
-        myMenuFrame:SetScript("OnUpdate", nil)
-    end
-end
-
--- Function to show the custom menu at the cursor position
-local function ShowCustomMenu(name)
-    local myMenu = {
-        {
-            text = "My Custom Option",
-            func = function()
-                print("Custom option clicked for " .. name)
-                myMenuFrame:Hide()
-                clickCatcher:Hide()
-            end,
-            notCheckable = true,
-        },
-        {
-            text = "Invite to Group",
-            func = function()
-                InviteUnit(name)
-                myMenuFrame:Hide()
-                clickCatcher:Hide()
-            end,
-            notCheckable = true,
-        },
-        {
-            text = "Cancel",
-            func = function()
-                myMenuFrame:Hide()
-                clickCatcher:Hide()
-            end,
-            notCheckable = true,
-        },
+    local title = UIDropDownMenu_CreateInfo()
+    title = {
+        text = playerName,
+        isTitle = true,
+        fontObject = GameFontHighlightLarge,
+        notCheckable = true,
+        justifyH = "CENTER"
     }
+    UIDropDownMenu_AddButton(title, level)
 
-    -- Initialize and display your custom menu at the cursor position
-    EasyMenu(myMenu, myMenuFrame, "cursor", 0, 0, "MENU")
+    -- Add a separator line
+    local separator = UIDropDownMenu_CreateInfo()
+    separator.text = " " -- No text for the separator
+    separator.notCheckable = true
+    separator.isTitle = true
+    separator.disabled = true
+    separator.iconOnly = true
+    separator.icon = "Interface\\Common\\UI-TooltipDivider-Transparent" -- Use a built-in divider texture
+    separator.iconInfo = {
+        tCoordLeft = 0,
+        tCoordRight = 1,
+        tCoordTop = 0,
+        tCoordBottom = 1,
+        tSizeX = 0,
+        tSizeY = 8,
+        tFitDropDownSizeX = true
+    }
+    UIDropDownMenu_AddButton(separator, level)
 
-    -- Adjust the menu position immediately
-    myMenuFrame:SetScript("OnUpdate", AdjustMenuPosition)
+    if not isInGuild and faction ~= 'differentFaction' then
+        local invNoMessage = UIDropDownMenu_CreateInfo()
+        invNoMessage = {
+            text = L['GUILD_INVITE_NO_MESSAGE'],
+            notCheckable = true,
+            func = function()
+            end,
+        }
+        UIDropDownMenu_AddButton(invNoMessage, level)
+        local invWelcomeMessage = UIDropDownMenu_CreateInfo()
+        invWelcomeMessage = {
+            text = L['GUILD_INVITE_WELCOME_MESSAGE'],
+            notCheckable = true,
+            func = function()
+            end,
+        }
+        UIDropDownMenu_AddButton(invWelcomeMessage, level)
 
-    -- Show the click catcher frame
-    clickCatcher:Show()
-end
+        UIDropDownMenu_AddButton(separator, level)
 
--- Function to handle right-clicking player names in chat
-local function OnHyperlinkShow(self, link, text, button)
-    local linkType, name = link:match("^(.-):(.*)")
-    if button == "RightButton" and linkType == "player" then
-        -- Show your custom menu
-        ShowCustomMenu(name)
-        -- Call the default handler to show the Blizzard menu
-        SetItemRef(link, text, button, self)
-    else
-        -- Call the default handler for other clicks
-        SetItemRef(link, text, button, self)
+        local blacklistPlayer = UIDropDownMenu_CreateInfo()
+        blacklistPlayer = {
+            text = L['BLACKLIST_PLAYER'],
+            notCheckable = true,
+            func = function()
+            end,
+        }
+        UIDropDownMenu_AddButton(blacklistPlayer, level)
+    elseif isInGuild then
+        print("Player is in a different guild.")
+        local kickPlayerOut = UIDropDownMenu_CreateInfo()
+        kickPlayerOut = {
+            text = L['KICK_PLAYER_FROM_GUILD'],
+            notCheckable = true,
+            func = function()
+            end,
+        }
+        UIDropDownMenu_AddButton(kickPlayerOut, level)
     end
 end
 
--- Hook into all chat frames to handle hyperlink clicks
+-- Function to show the custom dropdown menu
+local function ShowCustomMenu(name)
+    -- Set the name for the menu frame
+    customMenuFrame.targetName = name
+    UIDropDownMenu_Initialize(customMenuFrame, InitializeCustomMenu, "MENU")
+
+    -- Determine screen width and cursor position to adjust menu placement
+    local screenWidth = GetScreenWidth()
+    local menuWidth = 150 -- Approximate width of the dropdown menu
+    local cursorX, cursorY = GetCursorPosition()
+    local uiScale = UIParent:GetEffectiveScale()
+    cursorX = cursorX / uiScale
+
+    local xOffset = 175
+    if (cursorX + xOffset + menuWidth) > screenWidth then
+        xOffset = -185 -- Position the menu to the left if it would go off the screen
+    end
+
+    -- Set the dropdown menu position explicitly and display it
+    ToggleDropDownMenu(1, nil, customMenuFrame, "cursor", xOffset, 0)
+end
+
+-- Hook the right-click event in chat frames to display the custom menu
 for i = 1, NUM_CHAT_WINDOWS do
-    local frame = _G["ChatFrame" .. i]
-    frame:SetScript("OnHyperlinkClick", OnHyperlinkShow)
+    local chatFrame = _G["ChatFrame" .. i]
+    if chatFrame then
+        chatFrame:HookScript("OnHyperlinkClick", function(self, link, text, button)
+            if button == "RightButton" then
+                local linkType, playerName = strsplit(":", link)
+                if linkType == "player" and playerName then ShowCustomMenu(playerName)
+                else
+                    ns.code:dOut("Link type or player name not valid:", linkType, playerName) -- Debug message
+                end
+            end
+        end)
+    end
 end
