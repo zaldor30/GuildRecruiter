@@ -53,7 +53,7 @@ end
 function list:ManualBlackList(blName, blMsg, POPUP_NAME)
     if blName then
         blName = strupper(blName:sub(1, 1))..strlower(blName:sub(2)) -- Capitalize first letter
-        if list:CheckAntiSpam(blName) then
+        if list:CheckBlacklist(blName) then
             ns.code:fOut(blName..' '..L['IS_ON_BLACK_LIST'], 'FFFFFF00')
             return
         end

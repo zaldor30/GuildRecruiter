@@ -6,7 +6,7 @@ GR.commPrefix = 'GRSync'
 GR.dbVersion = 4
 
 GR.debug = false
-GR.isTesting = true
+GR.isTesting = false
 GR.enableFilter = false
 GR.isPreRelease = true
 GR.preReleaseType = 'Alpha'
