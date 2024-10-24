@@ -48,16 +48,14 @@ local function InitializeCustomMenu(frame, level, menuList)
         invNoMessage = {
             text = L['GUILD_INVITE_NO_MESSAGE'],
             notCheckable = true,
-            func = function()
-            end,
+            func = function() ns.invite:ManualInvite(playerName, nil, true) end,
         }
         UIDropDownMenu_AddButton(invNoMessage, level)
         local invWelcomeMessage = UIDropDownMenu_CreateInfo()
         invWelcomeMessage = {
             text = L['GUILD_INVITE_WELCOME_MESSAGE'],
             notCheckable = true,
-            func = function()
-            end,
+            func = function() ns.invite:ManualInvite(playerName, nil, true, false, true, true) end,
         }
         UIDropDownMenu_AddButton(invWelcomeMessage, level)
 
@@ -68,11 +66,11 @@ local function InitializeCustomMenu(frame, level, menuList)
             text = L['BLACKLIST_PLAYER'],
             notCheckable = true,
             func = function()
+                ns.list:ManualBlackList(playerName, 'Add a reason for blacklisting: \n' .. playerName, true)
             end,
         }
         UIDropDownMenu_AddButton(blacklistPlayer, level)
     elseif isInGuild then
-        print("Player is in a different guild.")
         local kickPlayerOut = UIDropDownMenu_CreateInfo()
         kickPlayerOut = {
             text = L['KICK_PLAYER_FROM_GUILD'],

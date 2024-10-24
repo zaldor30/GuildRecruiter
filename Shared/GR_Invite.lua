@@ -100,7 +100,6 @@ function invite:InvitePlayer(fullName, justName, sendGuildInvite, skipInviteMess
     end
 
     self.mInvite = self.mInvite:gsub('/', '')
-    print(self.mInvite, skipInviteMessage, self.tblQueue[fullName])
     if not skipInviteMessage and self.mInvite and self.tblQueue[fullName] then
         local msg = ns.code:variableReplacement(self.mInvite, justName)
         if ns.gmSettings.obeyBlockInvites or ns.gSettings.obeyBlockInvites then

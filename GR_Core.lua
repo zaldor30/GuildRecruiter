@@ -145,11 +145,6 @@ function core:StartGuildRecruiter(clubID)
     end
     checkForFGI(0)
 
-    local c=ClubFinderGetCurrentClubListingInfo(C_Club.GetGuildClubId())
-    for k, v in pairs(c) do print(k,v) end
-    local club = C_Club.GetGuildClubId() or c.clubId
-    print(GetClubFinderLink(club.clubFinderGUID, club.name))
-
     ns.code:fOut(L['TITLE']..' '..GR.versionOut..' '..L['ENABLED'], ns.COLOR_DEFAULT, true)
     if GR.isPreRelease then
         ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.preReleaseType))), 'FFFFFF00', true)
@@ -306,17 +301,14 @@ function core:StartupGuild(clubID)
     ns.guildInfo.guildName = guildName
 
     if ns.retail then
-        local club = clubID and C_ClubFinder.GetRecruitingClubInfoFromClubID(clubID) or nil
-        if not ns.classic and (not ns.guildInfo.guildLink or ns.guildInfo.guildLink == '') and club then
-            local guildLink = string.format("|Hguild:%s|h[%s]|h", guildName, guildName)
+        local club = clubID and ClubFinderGetCurrentClubListingInfo(clubID) or nil
+        if not ns.classic and club and
+            (not ns.guildInfo.guildLink or ns.guildInfo.guildLink == '' or
+            not ns.guildInfo.guildLink:match(club.clubFinderGUID)) then
+            local guildLink = "|cffffd200|HclubFinder:"..club.clubFinderGUID.."|h["..club.name.."]|h|r"
             ns.guildInfo.guildLink = guildLink or nil
         end
-    else
-        if guildName and not ns.classic and (not ns.guildInfo.guildLink or ns.guildInfo.guildLink == '') then
-            local guildLink = string.format("|Hguild:%s|h[%s]|h", guildName, guildName)
-            ns.guildInfo.guildLink = guildLink or nil
-        end
-    end
+    else ns.guildInfo.guildLink = nil end
 
     if not ns.classic and (not ns.guildInfo.guildLink or ns.guildInfo.guildLink == '') then
         ns.code:fOut(ns.code:cText(ns.COLOR_ERROR, L['GUILD_LINK_NOT_FOUND']))

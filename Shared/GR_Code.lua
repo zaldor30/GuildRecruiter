@@ -102,12 +102,6 @@ function code:variableReplacement(msg, playerName, removeGT)
     if not msg then return end
 
     local gLink, gName = gi.guildLink or nil, gi.guildName or nil
-
-    local guildName = "Shadowbound"
-local guildLink = string.format("|Hguild:%s|h[%s]|h", guildName, guildName)
-
--- Escape '|' by doubling it to avoid the "Invalid escape code" error
-guildLink = guildLink:gsub("|", "||")
     msg = msg:gsub(L['GUILDLINK'], (not ns.classic and gLink or (not ns.classic and (removeGT and gName or '<'..gName..'>') or L['GUILD_LINK_NOT_FOUND'])))
     msg = msg:gsub(L['GUILDNAME'], (gName and (removeGT and gName or '<'..gName..'>') or L['NO_GUILD_NAME']))
     msg = msg:gsub(L['PLAYERNAME'], (playerName or 'player'))
@@ -187,6 +181,7 @@ function code:isInMyGuild(name)
         if strlower(gName) == strlower(noRealmName) then return true
         elseif strlower(gName) == strlower(realmName) then return true end
     end
-    if not isFriend and UnitFactionGroup('player') ~= UnitFactionGroup(name) then
+
+    if UnitFactionGroup(name) ~= '' and not isFriend and UnitFactionGroup('player') ~= UnitFactionGroup(name) then
         return false, 'WRONG_FACTION' else return false end
 end
