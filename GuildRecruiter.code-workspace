@@ -84,7 +84,16 @@
 			"GameTooltip_AddErrorLine",
 			"UIDropDownMenu_HandleGlobalMouseEvent",
 			"UIDropDownMenu_AddSeparator",
-			"UIDROPDOWNMENU_MAXBUTTONS"
+			"UIDROPDOWNMENU_MAXBUTTONS",
+			"FormatPercentage",
+			"WOW_PROJECT_ID",
+			"WOW_PROJECT_CLASSIC",
+			"GetUnitName",
+			"Mixin",
+			"BackdropTemplateMixin",
+			"WOW_PROJECT_MAINLINE",
+			"Minimap",
+			"ClubFinderGetCurrentClubListingInfo"
 		]
 	}
 }

@@ -353,7 +353,7 @@ function core:CheckIfInGuild(count, callback)
         self.isEnabled = false
 
         ns.code:cOut(L['TITLE']..' '..GR.versionOut..' '..L['DISABLED'])
-        if not CanGuildInvite() then ns.code:cOut(L['CANNOT_INVITE'])
+        if IsInGuild() and not CanGuildInvite() then ns.code:cOut(L['CANNOT_INVITE'])
         else
             ns.code:cOut(L['NOT_IN_GUILD'])
             ns.code:cOut(L['NOT_IN_GUILD_LINE1'])
