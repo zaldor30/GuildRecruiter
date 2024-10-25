@@ -346,7 +346,11 @@
             "EncounterJournal_LoadUI",
             "WHISPER",
             "GameTooltip",
-            "Mixin"
+            "Mixin",
+            "WOW_PROJECT_CLASSIC",
+            "UIDropDownMenu_SetWidth",
+            "UIDropDownMenu_GetSelectedID",
+            "UIDropDownMenu_SetSelectedID"
         ]
     }
 }
