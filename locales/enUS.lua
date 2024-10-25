@@ -120,6 +120,11 @@ L['GUILD_INVITE_AND_MESSAGE'] = 'Guild Invite and Message'
 L['MESSAGE_ONLY_IF_INVITE_DECLINED'] = 'Message Only if Invitation is declined'
 --#endregion
 
+--#region Invite Code
+L['GUILD_INVITE_SENT'] = 'Guild invite sent to'
+L['INVITE_MESSAGE_SENT'] = 'Invite message sent to'
+--#endregion
+
 --#region Home Screen
 L['SELECT_A_FILTER'] = 'Select a filter'
 L['MIN_LEVEL'] = 'Min Level'

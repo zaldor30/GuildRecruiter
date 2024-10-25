@@ -67,7 +67,10 @@ function invite:ManualInvite(fullName, justName, sendGuildInvite, sendInviteMess
     return self:InvitePlayer(fullName, justName, sendGuildInvite or false, not (sendInviteMessage or false), not (sendWelcomeMessage or false), not (sendWelcomeWhisper or false))
 end
 function invite:InvitePlayer(fullName, justName, sendGuildInvite, skipInviteMessage, skipWelcomeGuild, skipWelcomeWhisper)
-    fullName = (GR.isTesting and ns.classic) and 'Pokypoke' or (ns.retail and 'Monkstrife' or fullName)
+    if GR.isTesting then
+        fullName = ns.classic and 'Pokypoke' or 'Monkstrife'
+    end
+
     local nameRealm = fullName:match('-') and fullName or fullName..'-'..GetRealmName()
     nameRealm = strlower(nameRealm)
 
