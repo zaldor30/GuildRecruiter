@@ -300,17 +300,15 @@ function core:StartupGuild(clubID)
     ns.guildInfo.clubID = clubID
     ns.guildInfo.guildName = guildName
 
-    if ns.retail then
-        local club = clubID and ClubFinderGetCurrentClubListingInfo(clubID) or nil
-        if not ns.classic and club and
-            (not ns.guildInfo.guildLink or ns.guildInfo.guildLink == '' or
-            not ns.guildInfo.guildLink:match(club.clubFinderGUID)) then
-            local guildLink = "|cffffd200|HclubFinder:"..club.clubFinderGUID.."|h["..club.name.."]|h|r"
-            ns.guildInfo.guildLink = guildLink or nil
-        end
+    local club = clubID and ClubFinderGetCurrentClubListingInfo(clubID) or nil
+    if club and
+        (not ns.guildInfo.guildLink or ns.guildInfo.guildLink == '' or
+        not ns.guildInfo.guildLink:match(club.clubFinderGUID)) then
+        local guildLink = "|cffffd200|HclubFinder:"..club.clubFinderGUID.."|h["..club.name.."]|h|r"
+        ns.guildInfo.guildLink = guildLink or nil
     else ns.guildInfo.guildLink = nil end
 
-    if not ns.classic and (not ns.guildInfo.guildLink or ns.guildInfo.guildLink == '') then
+    if not ns.guildInfo.guildLink or ns.guildInfo.guildLink == '' then
         ns.code:fOut(ns.code:cText(ns.COLOR_ERROR, L['GUILD_LINK_NOT_FOUND']))
         ns.code:fOut(L['GUILD_LINK_NOT_FOUND_LINE1'])
         ns.code:fOut(L['GUILD_LINK_NOT_FOUND_LINE2'])
