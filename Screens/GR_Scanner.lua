@@ -316,7 +316,12 @@ function scanner:DisplayWhoList()
 
     local function findPlayer(name)
         for _, v in ipairs(self.tblToInivite) do
-            if v.fullName == name then return true end
+            local nameNoRealm = v.fullName:gsub('-.*', '') or v.fullName
+            local nameRealm = not v.fullName:match('-') and v.fullName..'-'..GetRealmName() or v.fullName
+
+            if v.fullName == name then return true
+            elseif nameNoRealm == name then return true
+            elseif nameRealm == name then return true end
         end
 
         return false
@@ -324,8 +329,7 @@ function scanner:DisplayWhoList()
 
     for i, result in ipairs(tblWho) do
         local inviteOk, reason = ns.invite:CheckWhoList(result.fullName, result.area)
-        if inviteOk and not findPlayer(result.fullName) and result.guild == '' then
-            tinsert(self.tblToInivite, result)
+        if inviteOk and not findPlayer(result.fullName) and result.guild == '' then tinsert(self.tblToInivite, result)
         elseif not inviteOk then
             result.level = ns.code:cText('FFFF0000', result.level)
             result.failed = ns.code:cText('FFFF0000', reason)

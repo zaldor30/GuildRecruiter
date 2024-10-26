@@ -2,8 +2,8 @@
 ## X-Website: https://www.curseforge.com/wow/addons/guild-recruiter
 
 ## Interface: 11504, 40400
-## Version: 4.0.03
 ## Title: Guild Recruiter
+## Version: 4.0.06
 ## Notes: Facilitates guild officers to recruit new members
 ## Author: Moonfury
 ## SavedVariables: GuildRecruiterDB
