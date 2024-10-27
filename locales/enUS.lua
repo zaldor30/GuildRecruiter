@@ -53,9 +53,11 @@ L['PREVIEW_TITLE'] = 'Selected Message Preview'
 
 --#region General Error Messages
 L['NO_GUILD_NAME'] = 'No Guild Name, please reload your UI.'
+L['BL_NO_ONE_ADDED'] = 'No one was added to the blacklist.'
 L['GUILD_LINK_NOT_FOUND'] = 'Guild Link not found. Please reload your UI.'
 L["GUILD_LINK_NOT_FOUND_LINE1"] = "Try /rl or relogging (It may take a few attempts)"
-L["GUILD_LINK_NOT_FOUND_LINE2"] = "Also, it could take a few minutes to become available."
+L["GM_GUILD_LINK_NOT_FOUND"] = "Try creating a recruitment in guild finder the /rl."
+L["PLAYER_GUILD_LINK_NOT_FOUND"] = "Try to sync with the guild to get the guild link."
 --#endregion
 
 --#region Context Menu
@@ -63,6 +65,7 @@ L['GUILD_INVITE_NO_MESSAGE'] = 'Guild Invite (No Messages)'
 L['GUILD_INVITE_WELCOME_MESSAGE'] = 'Guild Invite (Welcome Messages)'
 L['BLACKLIST_PLAYER'] = 'Blacklist Player'
 L['KICK_PLAYER_FROM_GUILD'] = 'Kick Player from Guild (Add to Blacklist)'
+L['KICK_PLAYER_CONFIRMATION'] = 'Are you sure you want to kick %s from the guild?'
 --#endregion
 
 --#region Core
@@ -165,7 +168,7 @@ L['MESSAGE_LENGTH'] = 'Message Length'
 L['GEN_GUILD_WIDE'] = 'Indicates only your current guild will be effected.'
 L['GEN_ACCOUNT_WIDE'] = 'Indicates all your charcters will be effected account wide.'
 L['RELOAD_AFTER_CHANGE'] = 'You must reload your UI (/rl) after making changes.'
-L['MESSAGE_REPLACEMENT_INSTRUCTIONS_CLASSIC'] = 'GUILDLINK - Is not supported in classic.'
+L['MESSAGE_REPLACEMENT_INSTRUCTIONS_CLASSIC'] = '' --  Leave blank for now
 L['MESSAGE_REPLACEMENT_INSTRUCTIONS_PART_1'] = 'GUILDLINK - Will create a clickable link to your guild.'
 L['MESSAGE_REPLACEMENT_INSTRUCTIONS_PART_2'] = [[
 GUILDNAME - Will display your guild name.

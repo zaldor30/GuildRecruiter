@@ -300,21 +300,33 @@ function core:StartupGuild(clubID)
     ns.guildInfo.clubID = clubID
     ns.guildInfo.guildName = guildName
 
-    local club = clubID and ClubFinderGetCurrentClubListingInfo(clubID) or nil
-    if club and
-        (not ns.guildInfo.guildLink or ns.guildInfo.guildLink == '' or
-        not ns.guildInfo.guildLink:match(club.clubFinderGUID)) then
-        local guildLink = "|cffffd200|HclubFinder:"..club.clubFinderGUID.."|h["..club.name.."]|h|r"
-        ns.guildInfo.guildLink = guildLink or nil
-    else ns.guildInfo.guildLink = nil end
+    local function createGuildLink(retry)
+        retry = retry + 1
 
-    if not ns.guildInfo.guildLink or ns.guildInfo.guildLink == '' then
-        ns.code:fOut(ns.code:cText(ns.COLOR_ERROR, L['GUILD_LINK_NOT_FOUND']))
-        ns.code:fOut(L['GUILD_LINK_NOT_FOUND_LINE1'])
-        ns.code:fOut(L['GUILD_LINK_NOT_FOUND_LINE2'])
+        local club = clubID and ClubFinderGetCurrentClubListingInfo(clubID) or nil
+
+        if club then
+            local guildLink = "|cffffd200|HclubFinder:"..club.clubFinderGUID.."|h["..club.name.."]|h|r"
+            ns.guildInfo.guildLink = guildLink or nil
+            return
+        elseif retry >= 10 then
+            ns.guildInfo.guildLink = nil
+            ns.code:fOut(ns.code:cText(ns.COLOR_ERROR, L['GUILD_LINK_NOT_FOUND']))
+            if ns.core.isGM then ns.code:fOut(L['GUILD_LINK_NOT_FOUND_GM'])
+            else ns.code:fOut(L['PLAYER_GUILD_LINK_NOT_FOUND']) end
+
+            return
+        else C_Timer.After(1, function() createGuildLink(retry) end) end
     end
 
-    if not IsGuildLeader() then
+    ns.isGM = ns.guild.isGuildLeader or IsGuildLeader() or false
+    if not ns.isGM then
+        ns.gmActive = ns.guild.gmActive or false
+        ns.obeyBlockInvites = ns.gmSettings.obeyBlockInvites and ns.gmSettings.obeyBlockInvites or ns.gSettings.obeyBlockInvites
+        if not ns.gmSettings.antiSpam and not ns.pSettings.antiSpam then ns.code:fOut(L['NO_ANTI_SPAM'], ns.COLOR_ERROR) end
+    elseif not ns.gmSettings.antiSpam then ns.code:fOut(L['NO_ANTI_SPAM'], ns.COLOR_ERROR) end
+
+    if not ns.isGM then
         if GetUnitName('player', true) == ns.guild.guildLeaderToon then
             ns.guild.isGuildLeader = false
             ns.guild.guildLeaderToon = nil
@@ -325,18 +337,8 @@ function core:StartupGuild(clubID)
         ns.guild.guildLeaderToon = GetUnitName('player', true)
     end
 
-    ns.isGM = ns.guild.isGuildLeader
-    if not ns.isGM then
-        ns.gmActive = ns.guild.gmActive or false
-        ns.obeyBlockInvites = ns.gmSettings.obeyBlockInvites and ns.gmSettings.obeyBlockInvites or ns.gSettings.obeyBlockInvites
-        if not not ns.gmSettings.antiSpam and not ns.pSettings.antiSpam then
-            ns.code:fOut(L['NO_ANTI_SPAM'], ns.COLOR_ERROR)
-        end
-    else
-        if not not ns.gmSettings.antiSpam then
-            ns.code:fOut(L['NO_ANTI_SPAM'], ns.COLOR_ERROR)
-        end
-    end
+    ns.guildInfo.guildLink = (ns.guildInfo.guildLink and ns.guildInfo.guildLink ~= '') and ns.guildInfo.guildLink or nil
+    if not ns.classic and not ns.guildInfo.guildLink then createGuildLink(0) end
 end
 function core:CheckIfInGuild(count, callback)
     count = count or 0

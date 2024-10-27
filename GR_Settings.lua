@@ -40,7 +40,7 @@ end
 function ns.newSettingsMessage() tblMessage = newMsg() end
 local function GetInstructions()
     local msg = (ns.classic and L['MESSAGE_REPLACEMENT_INSTRUCTIONS_CLASSIC'] or L['MESSAGE_REPLACEMENT_INSTRUCTIONS_PART_1'])..'\n'..L['MESSAGE_REPLACEMENT_INSTRUCTIONS_PART_2']
-    msg = msg:gsub('GUILDLINK', ns.code:cText(ns.classic and 'FFFF0000' or 'FFFFFF00', L['GUILDLINK']))
+    msg = not ns.classic and msg:gsub('GUILDLINK', ns.code:cText('FFFFFF00', L['GUILDLINK'])) or msg
     msg = msg:gsub('GUILDNAME', ns.code:cText('FFFFFF00', L['GUILDNAME']))
     msg = msg:gsub('PLAYERNAME', ns.code:cText('FFFFFF00', L['PLAYERNAME']))
 
@@ -719,8 +719,8 @@ ns.guildRecuriterSettings = {
                     type = 'toggle',
                     width = 'full',
                     disabled = function() return ns.gmSettings.forceSendGuildGreeting end,
-                    set = function(_, val) ns.gSettings.sendGuildGreeting = val end,
-                    get = function() return ns.gmSettings.forceSendGuildGreeting and ns.gmSettings.sendGuildGreeting or ns.gSettings.sendGuildGreeting end,
+                    set = function(_, val) ns.pSettings.sendGuildGreeting = val end,
+                    get = function() return ns.gmSettings.forceSendGuildGreeting and ns.gmSettings.sendGuildGreeting or ns.pSettings.sendGuildGreeting end,
                 },
                 invGuildWelcomeMessage = {
                     order = 23,
@@ -735,10 +735,10 @@ ns.guildRecuriterSettings = {
                             ns.frames:AcceptDialog(L['MAX_CHARS']:gsub('<sub>', MAX_CHARACTERS), function() return end)
                             return
                         end
-                        ns.gSettings.guildMessage = ns.code:capitalKeyWord(val:trim())
-                        ns.invite:GetWelcomeMessages()
+                        ns.pSettings.guildMessage = ns.code:capitalKeyWord(val:trim())
+                        ns.invite:GetMessage()
                     end,
-                    get = function() return ns.gmSettings.forceGuildMessage and ns.gmSettings.guildMessage or ns.gSettings.guildMessage end,
+                    get = function() return ns.gmSettings.forceGuildMessage and ns.gmSettings.guildMessage or ns.pSettings.guildMessage end,
                 },
                 invHeader3 = {
                     name = L['WHISPER_WELCOME_MSG'],
@@ -752,8 +752,8 @@ ns.guildRecuriterSettings = {
                     type = 'toggle',
                     width = 'full',
                     disabled = function() return ns.gmSettings.forceSendWhisper end,
-                    set = function(_, val) ns.gSettings.sendWhisperGreeting = val end,
-                    get = function() return ns.gmSettings.forceSendWhisper or ns.gSettings.sendWhisperGreeting end,
+                    set = function(_, val) ns.pSettings.sendWhisperGreeting = val end,
+                    get = function() return ns.gmSettings.forceSendWhisper or ns.pSettings.sendWhisperGreeting end,
                 },
                 invWelcomeWhisperMessage = {
                     order = 26,
@@ -769,9 +769,9 @@ ns.guildRecuriterSettings = {
                             ns.frames:AcceptDialog(L['MAX_CHARS']:gsub('<sub>', MAX_CHARACTERS), function() return end)
                             return
                         end
-                        ns.gSettings.whisperMessage = ns.code:capitalKeyWord(val:trim())
+                        ns.pSettings.whisperMessage = ns.code:capitalKeyWord(val:trim())
                     end,
-                    get = function() return ns.gmSettings.forceWhisperMessage and ns.gmSettings.whisperMessage or ns.gSettings.whisperMessage end,
+                    get = function() return ns.gmSettings.forceWhisperMessage and ns.gmSettings.whisperMessage or ns.pSettings.whisperMessage end,
                 },
                 invHeader4 = {
                     name = 'Message Instructions',

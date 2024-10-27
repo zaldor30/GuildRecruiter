@@ -84,6 +84,7 @@ function invite:InvitePlayer(fullName, justName, sendGuildInvite, skipInviteMess
         ns.analytics:Reception('declined')
     end, 120)
     local newInvite = {
+        fullName = fullName,
         sentInvite = sendGuildInvite,
         welcomeGuild = (not skipWelcomeGuild and self.mGuild) and ns.code:variableReplacement(self.mGuild, justName, 'Remove <>') or nil,
         welcomeWhisper = (not skipWelcomeWhisper and self.mWhisper) and nil or ns.code:variableReplacement(self.mWhisper, justName, 'Remove <>'),
@@ -159,6 +160,7 @@ function invite:RegisterInviteObservers()
         if not playerName then return end
 
         local r = self.tblQueue[playerName]
+        for k, v in pairs(r) do print(k, v) end
         GR:CancelTimer(r.timeOutTimer)
         C_Timer.After(3, function()
             if r.welcomeGuild then

@@ -12,38 +12,38 @@ local function InitializeCustomMenu(frame, level, menuList)
     if not playerName then return end
 
     local isInGuild, faction = ns.code:isInMyGuild(playerName)
-    if faction then return end
+    --if faction then return end
 
-    local title = UIDropDownMenu_CreateInfo()
-    title = {
-        text = playerName,
-        isTitle = true,
-        fontObject = GameFontHighlightLarge,
-        notCheckable = true,
-        justifyH = "CENTER"
-    }
-    UIDropDownMenu_AddButton(title, level)
+    if not isInGuild then
+        local title = UIDropDownMenu_CreateInfo()
+        title = {
+            text = playerName,
+            isTitle = true,
+            fontObject = GameFontHighlightLarge,
+            notCheckable = true,
+            justifyH = "CENTER"
+        }
+        UIDropDownMenu_AddButton(title, level)
 
-    -- Add a separator line
-    local separator = UIDropDownMenu_CreateInfo()
-    separator.text = " " -- No text for the separator
-    separator.notCheckable = true
-    separator.isTitle = true
-    separator.disabled = true
-    separator.iconOnly = true
-    separator.icon = "Interface\\Common\\UI-TooltipDivider-Transparent" -- Use a built-in divider texture
-    separator.iconInfo = {
-        tCoordLeft = 0,
-        tCoordRight = 1,
-        tCoordTop = 0,
-        tCoordBottom = 1,
-        tSizeX = 0,
-        tSizeY = 8,
-        tFitDropDownSizeX = true
-    }
-    UIDropDownMenu_AddButton(separator, level)
+        -- Add a separator line
+        local separator = UIDropDownMenu_CreateInfo()
+        separator.text = " " -- No text for the separator
+        separator.notCheckable = true
+        separator.isTitle = true
+        separator.disabled = true
+        separator.iconOnly = true
+        separator.icon = "Interface\\Common\\UI-TooltipDivider-Transparent" -- Use a built-in divider texture
+        separator.iconInfo = {
+            tCoordLeft = 0,
+            tCoordRight = 1,
+            tCoordTop = 0,
+            tCoordBottom = 1,
+            tSizeX = 0,
+            tSizeY = 8,
+            tFitDropDownSizeX = true
+        }
+        UIDropDownMenu_AddButton(separator, level)
 
-    if not isInGuild and faction ~= 'differentFaction' then
         local invNoMessage = UIDropDownMenu_CreateInfo()
         invNoMessage = {
             text = L['GUILD_INVITE_NO_MESSAGE'],
@@ -70,15 +70,19 @@ local function InitializeCustomMenu(frame, level, menuList)
             end,
         }
         UIDropDownMenu_AddButton(blacklistPlayer, level)
-    elseif isInGuild then
+    --[[elseif isInGuild then
         local kickPlayerOut = UIDropDownMenu_CreateInfo()
         kickPlayerOut = {
             text = L['KICK_PLAYER_FROM_GUILD'],
             notCheckable = true,
             func = function()
+                ns.frames:Confirmation(string.format(L['KICK_PLAYER_CONFIRMATION'], playerName), function()
+                    GuildUninvite(playerName)
+                    ns.list:ManualBlackList(playerName, 'Kicked from guild', true)
+                end, true)
             end,
         }
-        UIDropDownMenu_AddButton(kickPlayerOut, level)
+        UIDropDownMenu_AddButton(kickPlayerOut, level)]]--
     end
 end
 
