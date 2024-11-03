@@ -51,7 +51,7 @@ function invite:CheckInvite(player, antispam, blacklist, zones, zoneName)
     local blReason = ns.list:BlacklistReason(player) or nil
     if antispam and ns.list:CheckAntiSpam(player) then return false, L["ANTI_SPAM"] end
     if blacklist and ns.list:CheckBlacklist(player) then return false, (blReason or L["BLACKLIST"]) end
-    if zones and zoneName and ns.invalidZones[strlower(zoneName)] then return false, L['INVALID_ZONE'] end
+    if zones and zoneName and (zoneName == 'Delves' or ns.invalidZones[strlower(zoneName)]) then return false, L['INVALID_ZONE'] end
 
     return true, ''
 end
@@ -160,7 +160,6 @@ function invite:RegisterInviteObservers()
         if not playerName then return end
 
         local r = self.tblQueue[playerName]
-        for k, v in pairs(r) do print(k, v) end
         GR:CancelTimer(r.timeOutTimer)
         C_Timer.After(3, function()
             if r.welcomeGuild then

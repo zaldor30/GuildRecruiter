@@ -168,7 +168,7 @@ function home:CreateFilterAndLevel()
             ns.status:SetText(L['MAX_LEVEL_ERROR'] .. ns.MAX_CHARACTER_LEVEL)
         end
 
-        home:validate_data_scan_button()
+        self:validate_data_scan_button()
     end
 
     local skipValidation = false
@@ -332,18 +332,22 @@ function home:validate_data_scan_button()
         end
     end
 
+    local allOk = msg == '' or false
+    if maxLevel - minLevel > 5 then
+        msg = "Level range of more than 5 levels is not recommended."
+    end
     if self.inviteFormat ~= ns.InviteFormat.GUILD_INVITE_ONLY then
         if not self.activeMessage then msg = "Please select a message." end
     end
 
-    if msg ~= '' then
+    if msg ~= '' and not allOk then
         buttonScan:Disable()
         msg = ns.code:cText('FFFF0000', msg)
     end
     ns.status:SetText(msg)
 
 
-    return (msg == '' or false), msg
+    return (msg == '' or allOk or false), msg
 end
 function home:UpdatePreviewText()
     local previewFrame = self.tblFrame.previewFrame.previewText

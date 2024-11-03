@@ -24,9 +24,9 @@ function frames:ResetFrame(frame, childrenOnly)
     for i = 1, numChildren do
         local child = select(i, frame:GetChildren())
         if child then
-            child:Hide()
             clearScripts(child)
             child:SetParent(nil)
+            child:Hide()
         end
     end
     if childrenOnly then return end

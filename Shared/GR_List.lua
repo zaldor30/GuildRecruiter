@@ -12,17 +12,8 @@ function list:AddToAntiSpam(fullName)
         time = time(),
         name = fullName,
     }
-    fullName = strlower(fullName)
+    fullName = strlower(fullName:match('-') and fullName or fullName..'-'..GetRealmName())
     ns.tblAntiSpamList[fullName] = newAntiSpam
-end
-function list:CheckAntiSpam(fullName)
-    if not fullName then return end
-
-    fullName = strlower(fullName)
-    local antiSpam = ns.tblAntiSpamList[fullName]
-    if not antiSpam then return false, L['ANTI_SPAM'] end
-
-    return true, ''
 end
 
 --* Blacklist Routines
@@ -30,7 +21,7 @@ function list:AddToBlackList(fullName, reason)
     if not fullName then return end
 
     local pName = fullName:match('-') and fullName:gsub('%-.*', '') or fullName
-    fullName = strlower(fullName)
+    fullName = strlower(fullName:match('-') and fullName or fullName..'-'..GetRealmName())
     ns.tblBlackList[fullName] = {
         name = pName,
         reason = reason,
@@ -38,16 +29,10 @@ function list:AddToBlackList(fullName, reason)
         date = time(),
     }
 end
-function list:CheckBlacklist(fullName)
-    if not fullName then return end
-
-    fullName = strlower(fullName)
-    return (ns.tblBlackList[fullName] or false), ((ns.tblBlackList[fullName] and ns.tblBlackList[fullName].reason) and ns.tblBlackList[fullName].reason or L['BLACKLIST'])
-end
 function list:BlacklistReason(fullName)
     if not fullName then return end
 
-    fullName = strlower(fullName)
+    fullName = strlower(fullName:match('-') and fullName or fullName..'-'..GetRealmName())
     return ns.tblBlackList[fullName] and ns.tblBlackList[fullName].reason or ''
 end
 function list:ManualBlackList(blName, blMsg, POPUP_NAME)
@@ -110,4 +95,21 @@ function list:ManualBlackList(blName, blMsg, POPUP_NAME)
     }
 
     StaticPopup_Show(POPUP_NAME)
+end
+
+--* Check Routines
+function list:CheckAntiSpam(fullName)
+    if not fullName then return end
+
+    fullName = strlower(fullName:match('-') and fullName or fullName..'-'..GetRealmName())
+    local antiSpam = ns.tblAntiSpamList[fullName]
+    if not antiSpam then return false, L['ANTI_SPAM'] end
+
+    return true, ''
+end
+function list:CheckBlacklist(fullName)
+    if not fullName then return end
+
+    fullName = strlower(fullName:match('-') and fullName or fullName..'-'..GetRealmName())
+    return (ns.tblBlackList[fullName] or false), ((ns.tblBlackList[fullName] and ns.tblBlackList[fullName].reason) and ns.tblBlackList[fullName].reason or L['BLACKLIST'])
 end

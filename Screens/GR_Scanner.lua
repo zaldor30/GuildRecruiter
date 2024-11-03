@@ -41,6 +41,7 @@ function scanner:Init()
 
     self.tblWho = self.tblWho or {}
     self.tblToInivite = self.tblToInivite or {}
+    self.tblToIniviteSorted = {}
 
     self.minLevel, self.maxLevel = (ns.pSettings.minLevel or ns.MAX_CHARACTER_LEVEL - 5), ns.pSettings.maxLevel or ns.MAX_CHARACTER_LEVEL
     self.minLevel = type(self.minLevel) == 'string' and tonumber(self.minLevel) or self.minLevel
@@ -73,7 +74,6 @@ function scanner:SetShown(val)
 
     self:UpdateButtons()
     self:DisplayWhoList()
-    self:DisplayInviteList()
 
     self.tblFrame.frame:SetShown(val)
 
@@ -140,7 +140,8 @@ function scanner:CreateInviteFrame()
     buttonSkip:SetPoint("LEFT", buttonBlacklist, "RIGHT", 5, 0)
     buttonSkip:SetText(L['SKIP_PLAYER'])
     buttonSkip:SetSize((buttonInvite:GetWidth() /2) - 3, 30)
-    buttonSkip:SetScript("OnClick", function(self, button, down) scanner:AntiSpam() end)
+    buttonSkip:SetScript("OnClick", function(self, button, down)
+        scanner:AntiSpam() end)
     buttonSkip:SetScript("OnEnter", function(self) ns.code:createTooltip(L['ANTISPAM_TITLE'], L['ANTISPAM_SCANNER_TOOLTIP']) end)
     buttonSkip:SetScript("OnLeave", function(self) GameTooltip:Hide() end)
     self.tblFrame.buttonSkip = buttonSkip
@@ -256,14 +257,21 @@ function scanner:ProcessWhoResults()
     self:DisplayWhoList()
 end
 function scanner:DisplayWhoList()
-    local tblWho = self.tblWho
+    self.tblWho = self.tblWho or {}
+    self.tblToInivite = self.tblToInivite or {}
+
     local rowHeight = 20
-    local scrollFrame = self.tblFrame.whoScroll
+    local sFrame = self.tblFrame.whoScroll
+    local whoSorted = ns.code:sortTableByField(self.tblWho, 'fullName')
 
-    ns.frames:ResetFrame(self.tblFrame.whoContent)
+    -- Clear Records from Invite List
+    if self.tblFrame.whoContent then
+        ns.frames:ResetFrame(self.tblFrame.whoContent)
+    end
 
-    local content = ns.frames:CreateFrame('Frame', 'Who_Entry_Content', scrollFrame)
-    content:SetSize(scrollFrame:GetWidth() - 20, 1)
+    -- Create the frame to hold the content
+    local content = ns.frames:CreateFrame('Frame', 'Who_Content', sFrame)
+    content:SetSize(sFrame:GetWidth() - 20, 1)
     self.tblFrame.whoContent = content
 
     local function createWhoEntry(parent, r)
@@ -288,7 +296,7 @@ function scanner:DisplayWhoList()
         txtName:SetWidth(100)
         txtName:SetJustifyH("LEFT")
         txtName:SetWordWrap(false)
-        txtName:SetText(r.name)
+        txtName:SetText(r.fullName)
 
         local txtGuild = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         txtGuild:SetPoint("LEFT", txtName, "RIGHT", 10, 0)
@@ -301,8 +309,8 @@ function scanner:DisplayWhoList()
         row:SetScript("OnEnter", function(self)
             rowTexture:Show()
             local guild = r.guild == '' and '-  No Guild -' or r.guild
-            local title = r.level..' '..r.name..' ('..r.raceStr..': '..(r.gender == 2 and 'Male' or 'Female')..')'
-            local body = r.failed ~= '' and 'Failed: '..r.failed..'\n' or ''
+            local title = r.level..' '..r.fullName..' ('..r.raceStr..': '..(r.gender == 2 and 'Male' or 'Female')..')'
+            local body = r.failed ~= '' and 'Failed: '..(r.failed or 'Unknown')..'\n' or ''
             body = body..'Guild: '..guild..'\n \nLocation: '..(r.zone or 'Unknown')
             ns.code:createTooltip(title, body, true)
         end)
@@ -314,51 +322,44 @@ function scanner:DisplayWhoList()
         return row
     end
 
-    local function findPlayer(name)
-        for _, v in ipairs(self.tblToInivite) do
-            local nameNoRealm = v.fullName:gsub('-.*', '') or v.fullName
-            local nameRealm = not v.fullName:match('-') and v.fullName..'-'..GetRealmName() or v.fullName
-
-            if v.fullName == name then return true
-            elseif nameNoRealm == name then return true
-            elseif nameRealm == name then return true end
-        end
-
-        return false
-    end
-
-    for i, result in ipairs(tblWho) do
-        local inviteOk, reason = ns.invite:CheckWhoList(result.fullName, result.area)
-        if inviteOk and not findPlayer(result.fullName) and result.guild == '' then tinsert(self.tblToInivite, result)
-        elseif not inviteOk then
-            result.level = ns.code:cText('FFFF0000', result.level)
-            result.failed = ns.code:cText('FFFF0000', reason)
+    for i, result in ipairs(whoSorted) do
+        if result.guild == '' then
+            local inviteOk, reason = ns.invite:CheckWhoList(result.fullName, result.zone)
+            if inviteOk and not self.tblToInivite[result.fullName] then
+                result.level = result.level == ns.MAX_CHARACTER_LEVEL and ns.code:cText('FF00FF00', result.level) or ns.code:cText('FFFFFFFF', result.level)
+                self.tblToInivite[result.fullName] = result
+            else
+                result.level = ns.code:cText('FFFF0000', result.level)
+                result.failed = ns.code:cText('FFFF0000', reason)
+            end
         end
 
         local row = createWhoEntry(content, result)
-        if row then
-            row:SetPoint("TOPLEFT", 0, -(i - 1) * rowHeight) end
+        row:SetPoint("TOPLEFT", content, "TOPLEFT", 0, -((i-1) * rowHeight))
     end
-    content:SetHeight(#tblWho * rowHeight)
-    scrollFrame:SetScrollChild(content)
 
-    scrollFrame:SetVerticalScroll(0)
-    scrollFrame:UpdateScrollChildRect()
+    content:SetHeight(#whoSorted * rowHeight)
+    sFrame:SetScrollChild(content)
 
-    if self.tblToInivite then
-        self.tblToInivite = ns.code:sortTableByField(self.tblToInivite, 'fullName') end
+    sFrame:SetVerticalScroll(0)
+    sFrame:UpdateScrollChildRect()
 
     self:DisplayInviteList()
 end
 function scanner:DisplayInviteList()
+    self.tblToInivite = self.tblToInivite or {}
+
     local rowHeight = 20
     local sFrame = self.tblFrame.scannerFrame
     local scrollFrame = self.tblFrame.inviteScroll
+    self.tblToIniviteSorted = ns.code:sortTableByField(self.tblToInivite, 'fullName')
 
-    ns.frames:ResetFrame(self.tblFrame.inviteContent)
+    if self.tblFrame.inviteContent then
+        ns.frames:ResetFrame(self.tblFrame.inviteContent) end
 
     local content = ns.frames:CreateFrame('Frame', 'Invite_Entry_Content', scrollFrame)
-    content:SetSize(scrollFrame:GetWidth() - 20, 1)
+    content:SetSize(scrollFrame:GetWidth() - 20, #self.tblToIniviteSorted * rowHeight)
+    content:Show()
     self.tblFrame.inviteContent = content
 
     local function createInviteEntry(parent, r)
@@ -398,7 +399,7 @@ function scanner:DisplayInviteList()
             rowTexture:Show()
             local guild = r.guild == '' and '-  No Guild -' or r.guild
             local title = r.level..' '..r.name..' ('..r.raceStr..': '..(r.gender == 2 and 'Male' or 'Female')..')'
-            local body = r.failed ~= '' and 'Failed: '..r.failed..'\n' or ''
+            local body = r.failed ~= '' and 'Failed: '..(r.failed  or 'Unknown')..'\n' or ''
             body = body..'Guild: '..guild..'\n \nLocation: '..(r.zone or 'Unknown')
             ns.code:createTooltip(title, body, true)
         end)
@@ -411,25 +412,25 @@ function scanner:DisplayInviteList()
     end
 
     local rowCount = 0
-    for _, result in pairs(self.tblToInivite) do
+    for i, result in ipairs(self.tblToIniviteSorted) do
         local row = createInviteEntry(content, result)
         if row then
+            row:SetPoint("TOPLEFT", content, "TOPLEFT", 0, -((i-1) * rowHeight))
             rowCount = rowCount + 1
-            row:SetPoint("TOPLEFT", 0, -(rowCount - 1) * rowHeight)
         end
     end
-    self.tblFrame.scannerFrame.playerCountText:SetText(string.format(L['PLAYERS_QUEUED'], #self.tblToInivite))
+
+    scrollFrame:SetScrollChild(content)
+    scrollFrame:UpdateScrollChildRect()
+    scrollFrame:SetVerticalScroll(0)
+    scrollFrame:Show()
+
+    self.tblFrame.scannerFrame.playerCountText:SetText(string.format(L['PLAYERS_QUEUED'], #self.tblToIniviteSorted))
     if sFrame.nextText then
-        local nextPlayer = #self.tblToInivite > 0 and self.tblToInivite[1].name or L['NO_QUEUED_PLAYERS']
-        sFrame.nextText:SetText(string.format(L['NEXT_PLAYER_INVITE'], #self.tblToInivite))
+        local nextPlayer = #self.tblToIniviteSorted > 0 and self.tblToIniviteSorted[1].name or L['NO_QUEUED_PLAYERS']
+        sFrame.nextText:SetText(string.format(L['NEXT_PLAYER_INVITE'], #self.tblToIniviteSorted))
         sFrame.nextPlayerText:SetText(nextPlayer)
     end
-
-    content:SetHeight(#self.tblToInivite * rowHeight)
-    scrollFrame:SetScrollChild(content)
-
-    scrollFrame:SetVerticalScroll(0)
-    scrollFrame:UpdateScrollChildRect()
 end
 
 --* Scanner Functions
@@ -523,7 +524,7 @@ function scanner:CompactModeChanged(startCompact, closed)
         buttonSkip:SetScript("OnLeave", function(self) GameTooltip:Hide() end)
         sFrame.buttonSkip = buttonSkip
 
-        self:DisplayInviteList()
+        self:DisplayWhoList()
     end
 end
 function scanner:BuildFilters()
@@ -635,16 +636,16 @@ function scanner:InvitePlayer()
     if not tbl then return end
 
     ns.invite:AutoInvite(tbl.fullName, tbl.pName, self.inviteFormat)
-    scanner:DisplayInviteList()
+    self:DisplayWhoList()
 end
 function scanner:AntiSpam()
     if not self.tblToInivite then return end
 
     local count = 0
-    for k, v in pairs(self.tblToInivite) do
+    for _, v in pairs(self.tblToIniviteSorted) do
         if v.isChecked and not ns.list:CheckAntiSpam(v.fullName) then
             ns.list:AddToAntiSpam(v.fullName)
-            self.tblToInivite[k] = nil
+            self.tblToInivite[v.fullName] = nil
             count = count + 1
         end
     end
@@ -656,10 +657,10 @@ function scanner:BlacklistPlayer()
     if not self.tblToInivite then return end
 
     local count = 0
-    for k, v in pairs(self.tblToInivite) do
+    for _, v in pairs(self.tblToInivite) do
         if v.isChecked and not ns.list:CheckBlacklist(v.fullName) then
             ns.list:AddToBlackList(v.fullName, 'Blacklisted during invite process.')
-            self.tblToInivite[k] = nil
+            self.tblToInivite[v.fullName] = nil
             count = count + 1
         end
     end

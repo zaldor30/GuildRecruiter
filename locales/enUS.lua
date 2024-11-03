@@ -42,6 +42,7 @@ L["OK"] = "OK"
 L["TITLE"] = "Guild Recruiter"
 L['BETA_INFORMATION'] = [[This is a VER version of Guild Recruiter.
 Please report any issues on our Discord server.]]
+L['AUTO_LOCKED'] = 'Moving screen is now locked.'
 --#endregion
 
 --#region Frequently used strings
