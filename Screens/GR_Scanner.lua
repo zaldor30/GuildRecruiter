@@ -627,12 +627,13 @@ end
 
 --* Invite Functions
 function scanner:InvitePlayer()
-    if not scanner.tblToInivite then return
-    elseif #scanner.tblToInivite == 0 then
+    if not self.tblToIniviteSorted then return
+    elseif #self.tblToIniviteSorted == 0 then
         ns.code:fOut(L['INVITE_FIRST_STEP']) return
     end
 
-    local tbl = tremove(scanner.tblToInivite, 1)
+    local tbl = tremove(self.tblToIniviteSorted, 1)
+    self.tblToInivite[tbl.fullName] = nil
     if not tbl then return end
 
     ns.invite:AutoInvite(tbl.fullName, tbl.pName, self.inviteFormat)
