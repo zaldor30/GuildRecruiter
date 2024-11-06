@@ -10,6 +10,7 @@ local function obsCLOSE_SCREENS()
 end
 
 local function parseMarkdown(text)
+    text = text:gsub("### (.-)\n", "|cFFFFFFFF%1|r\n")
     text = text:gsub("## (.-)\n", "|cFF00FF00%1|r\n")
     text = text:gsub("# (.-)\n", "|cFFFFFF00%1|r\n")
     text = text:gsub("%*%*(.-)%*%*", "|cFFFFFFFF%1|r")
@@ -68,12 +69,13 @@ function whatsnew:SetShown(val, startUpView)
 
     self:CreateBaseFrame()
     self:CreateTopFrame()
+    self:CreateNoteFrame()
 end
 local baseHeight = -60
 function whatsnew:CreateBaseFrame()
     local f = ns.frames:CreateFrame('Frame', 'GR_WhatsNew', UIParent)
     f:SetPoint(self.screenPos.point, self.screenPos.x, self.screenPos.y)
-    f:SetSize(300, 300)
+    f:SetSize(400, 300)
     f:SetBackdropColor(0, 0, 0, .5)
     f:SetBackdropBorderColor(1, 1, 1, 1)
     f:SetFrameStrata(ns.DEFAULT_STRATA)
@@ -116,4 +118,32 @@ function whatsnew:CreateTopFrame()
     btnClose:SetScript('OnClick', function() whatsnew:SetShown(false) end)
     btnClose:SetScript('OnEnter', function() highlightButton(btnClose) ns.code:createTooltip(L["CLOSE"]..' '..L['TITLE']) end)
     btnClose:SetScript('OnLeave', function() highlightButton(btnClose, true) GameTooltip:Hide() end)
+end
+function whatsnew:CreateNoteFrame()
+    local f = ns.frames:CreateFrame('Frame', 'GR_NoteFrame', self.tblFrame.frame)
+    f:SetPoint('TOPLEFT', self.tblFrame.frame, 'TOPLEFT', 10, baseHeight)
+    f:SetPoint('BOTTOMRIGHT', self.tblFrame.frame, 'BOTTOMRIGHT', -10, 10)
+    f:SetBackdropColor(0, 0, 0, 1)
+    f:SetBackdropBorderColor(1, 1, 1, 1)
+
+    local scroll = ns.frames:CreateFrame('ScrollFrame', 'GR_NoteScroll', f, 'UIPanelScrollFrameTemplate')
+    scroll:SetPoint('TOPLEFT', f, 'TOPLEFT', 5, -5)
+    scroll:SetPoint('BOTTOMRIGHT', f, 'BOTTOMRIGHT', -5, 5)
+
+    local scrollBar = scroll.ScrollBar
+    scrollBar:SetWidth(12)
+    scrollBar:ClearAllPoints()
+    scrollBar:SetPoint("TOPRIGHT", scroll, "TOPRIGHT", 0, -25)
+    scrollBar:SetPoint("BOTTOMRIGHT", scroll, "BOTTOMRIGHT", 0, 25)
+
+    local content = ns.frames:CreateFrame('Frame', 'GR_NoteContent', scroll)
+    content:SetSize(scroll:GetWidth(), scroll:GetHeight())
+    scroll:SetScrollChild(content)
+
+    local txt = content:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
+    txt:SetPoint('TOPLEFT', content, 'TOPLEFT', 5, -5)
+    txt:SetPoint('TOPRIGHT', content, 'TOPRIGHT', -5, -5)
+    txt:SetJustifyH('LEFT')
+    txt:SetJustifyV('TOP')
+    txt:SetText(parseMarkdown(ns.changeLog))
 end

@@ -149,7 +149,7 @@ function core:StartGuildRecruiter(clubID)
     if GR.isPreRelease then
         ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.preReleaseType))), 'FFFFFF00', true)
     end
-    --ns.whatsnew:SetShown(true, true)
+    ns.whatsnew:SetShown(true, true)
 end
 function core:StartDatabase(clubID)
     local wasReset = false
