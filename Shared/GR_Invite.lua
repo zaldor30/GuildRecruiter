@@ -121,6 +121,7 @@ end
 
 --* Send Message Queue
 function invite:RunInviteQueue()
+    local delay = tonumber(ns.pSettings.timeBetweenMessages) or 0.2
     local function sendQueue(remaining)
         remaining = (remaining and remaining > 0) and remaining or 0
         if remaining == 0 then self.inviteQueueRunning = false return end
@@ -137,7 +138,7 @@ function invite:RunInviteQueue()
             ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER_INFORM', message)
         else SendChatMessage(message, 'WHISPER', nil, rec.name) end
 
-        C_Timer.After(0.2, function() sendQueue(#self.tblQueueMessages or 0) end)
+        C_Timer.After(delay, function() sendQueue(#self.tblQueueMessages or 0) end)
     end
 
     if not self.inviteQueueRunning and #self.tblQueueMessages > 0 then

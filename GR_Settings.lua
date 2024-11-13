@@ -213,10 +213,22 @@ ns.guildRecuriterSettings = {
                     type = 'input',
                     width = 1,
                     set = function(_, val)
-                        if tonumber(val) >= 2 and tonumber(val) <= 10 then ns.g.scanWaitTime = tonumber(val)
+                        if tonumber(val) >= 2 and tonumber(val) <= 10 then ns.g.scanWaitTime = val
                         else ns.frames:AcceptDialog('Enter value of 1 to 10.', function() return end) end
                     end,
                     get = function() return tostring(ns.g.scanWaitTime or 5) end,
+                },
+                genSendWaitTime = {
+                    order = 28,
+                    name = bulletAccountWide..L['SEND_MESSAGE_WAIT_TIME'],
+                    desc = L['SEND_MESSAGE_WAIT_TIME_DESC'],
+                    type = 'range',
+                    min = 0.1,
+                    max = 1.0,
+                    step = 0.1,
+                    width = 1,
+                    set = function(_, val) ns.g.timeBetweenMessages = tostring(val) end,
+                    get = function() return tonumber(ns.g.timeBetweenMessages) or .2 end,
                 },
                 genHeading4 = {
                     order = 30,

@@ -47,6 +47,7 @@ function core:Init()
             analytics = {},
         },
         global = {
+            timeBetweenMessages = "0.2",
             showWhatsNew = true,
             showToolTips = true, -- Show Tool Tips
             compactSize = 1,

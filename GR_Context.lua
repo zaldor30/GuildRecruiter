@@ -70,19 +70,6 @@ local function InitializeCustomMenu(frame, level, menuList)
             end,
         }
         UIDropDownMenu_AddButton(blacklistPlayer, level)
-    --[[elseif isInGuild then
-        local kickPlayerOut = UIDropDownMenu_CreateInfo()
-        kickPlayerOut = {
-            text = L['KICK_PLAYER_FROM_GUILD'],
-            notCheckable = true,
-            func = function()
-                ns.frames:Confirmation(string.format(L['KICK_PLAYER_CONFIRMATION'], playerName), function()
-                    GuildUninvite(playerName)
-                    ns.list:ManualBlackList(playerName, 'Kicked from guild', true)
-                end, true)
-            end,
-        }
-        UIDropDownMenu_AddButton(kickPlayerOut, level)]]--
     end
 end
 

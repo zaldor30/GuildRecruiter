@@ -59,31 +59,8 @@ function list:ManualBlackList(blName, blMsg, POPUP_NAME)
         blName = blName:match(GetRealmName()) and blName:gsub('%-.*', '') or blName
         blName = ns.code:capitalizeAfterHyphen(value) -- Capitalize first letter
 
-            StaticPopupDialogs[POPUP_REASON] = {
-                text = L['BLACK_LIST_REASON_INPUT']..'\n'..blName,
-                button1 = L['OK'],
-                button2 = L['CANCEL'],
-                OnAccept = function(rData)
-                    if not blName then return end
-
-                    value = rData.editBox:GetText()
-                    value = value ~= '' and value or L['NO_REASON_GIVEN']
-
-                    if not blName or not value then return end
-                    ns.list:AddToBlackList(blName, value)
-                    ns.code:fOut(string.format(blName..' '..L['ADDED_TO_BLACK_LIST'], '\"'..value..'\"'))
-                end,
-                OnCancel = function() UIErrorsFrame:AddMessage(blName..' '..L['BL_NAME_NOT_ADDED'], 1.0, 0.1, 0.1, 1.0) end,
-                timeout = 0,
-                whileDead = true,
-                hideOnEscape = true,
-                preferredIndex = 3,
-                hasEditBox = true,
-                maxLetters = 255,
-                -- You can add more properties as needed
-            }
-
-            StaticPopup_Show(POPUP_REASON)
+        list:GetReason(blName, value, POPUP_REASON)
+        list:GetReason(blName, POPUP_REASON)
         end,
         OnCancel = function() UIErrorsFrame:AddMessage(L['BL_NO_ONE_ADDED'], 1.0, 0.1, 0.1, 1.0) end,
         timeout = 0,
@@ -94,7 +71,36 @@ function list:ManualBlackList(blName, blMsg, POPUP_NAME)
         maxLetters = 255,
     }
 
-    StaticPopup_Show(POPUP_NAME)
+    if not blName then StaticPopup_Show(POPUP_NAME)
+    else list:GetReason(blMsg, blName, POPUP_REASON) end
+end
+function list:GetReason(blMsg, blName, POPUP_REASON)
+    local value = nil
+    StaticPopupDialogs[POPUP_REASON] = {
+        text = string.format(L['BLACK_LIST_REASON_INPUT'], ('\n'..blName)),
+        button1 = L['OK'],
+        button2 = L['CANCEL'],
+        OnAccept = function(rData)
+            if not blName then return end
+
+            value = rData.editBox:GetText()
+            value = value ~= '' and value or L['NO_REASON_GIVEN']
+
+            if not blName or not value then return end
+            ns.list:AddToBlackList(blName, value)
+            ns.code:fOut(string.format(blName..' '..L['ADDED_TO_BLACK_LIST'], '\"'..value..'\"'))
+        end,
+        OnCancel = function() UIErrorsFrame:AddMessage(blName..' '..L['BL_NAME_NOT_ADDED'], 1.0, 0.1, 0.1, 1.0) end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+        preferredIndex = 3,
+        hasEditBox = true,
+        maxLetters = 255,
+        -- You can add more properties as needed
+    }
+
+    StaticPopup_Show(POPUP_REASON)
 end
 
 --* Check Routines

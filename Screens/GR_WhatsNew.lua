@@ -63,12 +63,14 @@ function whatsnew:SetShown(val, startUpView)
 
     whatsnew:Init()
     if startUpView and (not self.startUpWhatsNew or self.oldVer == GR.version) then return end
+    ns.g.shownVersion = GR.version
 
     ns.observer:Notify('CLOSE_SCREENS')
     ns.observer:Register('CLOSE_SCREENS', obsCLOSE_SCREENS)
 
     self:CreateBaseFrame()
     self:CreateTopFrame()
+    self:CreateFooterFrame()
     self:CreateNoteFrame()
 end
 local baseHeight = -60
@@ -119,10 +121,39 @@ function whatsnew:CreateTopFrame()
     btnClose:SetScript('OnEnter', function() highlightButton(btnClose) ns.code:createTooltip(L["CLOSE"]..' '..L['TITLE']) end)
     btnClose:SetScript('OnLeave', function() highlightButton(btnClose, true) GameTooltip:Hide() end)
 end
+function whatsnew:CreateFooterFrame()
+    local f = ns.frames:CreateFrame('Frame', 'GR_NoteFooter', self.tblFrame.frame)
+    f:SetPoint('BOTTOMLEFT', self.tblFrame.frame, 'BOTTOMLEFT', 10, 10)
+    f:SetPoint('BOTTOMRIGHT', self.tblFrame.frame, 'BOTTOMRIGHT', -10, 10)
+    f:SetHeight(30)
+    f:SetBackdropColor(0, 0, 0, 1)
+    f:SetBackdropBorderColor(1, 1, 1, 1)
+    self.tblFrame.footer = f
+
+    local btnShowWhatsNew = ns.frames:CreateFrame('Button', 'GR_ShowWhatsNew', f)
+    btnShowWhatsNew:SetPoint('TOPRIGHT', f, 'TOPRIGHT', -10, -8)
+    btnShowWhatsNew:SetSize(15, 15)
+    btnShowWhatsNew:SetNormalTexture(ns.g.showWhatsNew and ns.BUTTON_EXIT or ns.BUTTON_EXIT_EMPTY)
+    btnShowWhatsNew:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
+    btnShowWhatsNew:SetScript('OnClick', function(self)
+        ns.g.showWhatsNew = not ns.g.showWhatsNew
+        self.startUpWhatsNew = ns.g.showWhatsNew
+        self:SetNormalTexture(ns.g.showWhatsNew and ns.BUTTON_EXIT or ns.BUTTON_EXIT_EMPTY)
+    end)
+    btnShowWhatsNew:SetScript('OnEnter', function() highlightButton(btnShowWhatsNew) ns.code:createTooltip(L['GEN_WHATS_NEW'], L['GEN_WHATS_NEW_DESC']) end)
+    btnShowWhatsNew:SetScript('OnLeave', function() highlightButton(btnShowWhatsNew, true) GameTooltip:Hide() end)
+
+    local txt = f:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
+    txt:SetPoint('TOPLEFT', f, 'TOPLEFT', 10, -10)
+    txt:SetPoint('TOPRIGHT', btnShowWhatsNew, 'TOPLEFT', -10, -10)
+    txt:SetTextColor(1, 1, 1, 1)
+    txt:SetJustifyH('RIGHT')
+    txt:SetText(L['GEN_WHATS_NEW'])
+end
 function whatsnew:CreateNoteFrame()
     local f = ns.frames:CreateFrame('Frame', 'GR_NoteFrame', self.tblFrame.frame)
     f:SetPoint('TOPLEFT', self.tblFrame.frame, 'TOPLEFT', 10, baseHeight)
-    f:SetPoint('BOTTOMRIGHT', self.tblFrame.frame, 'BOTTOMRIGHT', -10, 10)
+    f:SetPoint('BOTTOMRIGHT', self.tblFrame.footer, 'TOPRIGHT', 0, 0)
     f:SetBackdropColor(0, 0, 0, 1)
     f:SetBackdropBorderColor(1, 1, 1, 1)
 

@@ -3,6 +3,11 @@
 
     ### v4.0.10
         - Added What's New Screen
+        - Added ability to change send message delay.
+            - If you get error that states "Chat message
+            limits exceeded" you can increase this delay
+            in settings.
+        - Fixed issue with context blacklisting a player.
     
     ### v4.0 Notes
         - Added Classic and Cataclysm support
