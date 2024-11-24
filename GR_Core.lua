@@ -109,6 +109,7 @@ function core:StartGuildRecruiter(clubID)
     if not clubID or not core.isEnabled then return end
 
     core:Init()
+    GR.clubID = clubID
     GR:RegisterChatCommand('rl', function() ReloadUI() end) -- Set the /rl slash command to reload the UI
 
     ns.fPlayerName = ns.code:cPlayer(GetUnitName('player', false), UnitClassBase('player')) -- Set the player name
@@ -177,12 +178,9 @@ function core:StartDatabase(clubID)
     end
 
     ns.p, ns.g, ns.guild = db.profile, db.global, db.global[clubID] -- Set the profile and global database
+    ns.pAnalytics, ns.gAnalytics = ns.p.analytics, ns.guild.analytics -- Set the analytics database
     ns.pSettings, ns.gSettings = ns.p.settings, ns.guild.settings -- Set the settings database
     ns.guildInfo, ns.gmSettings = ns.guild.guildInfo, ns.guild.gmSettings -- Set the guild info and GM settings database
-
-    ns.p.analytics = ns.p.analytics or {} -- Set the analytics database
-    ns.guild.analytics = ns.guild.analytics or {} -- Set the analytics database
-    ns.pAnalytics, ns.gAnalytics = ns.p.analytics, ns.guild.analytics -- Set the analytics database
     ns.gFilterList = ns.guild.filterList -- Set the filter list database
 
     GR.debug = GR.isTesting or ns.pSettings.debugMode -- Set the debug modes
@@ -216,7 +214,7 @@ function core:LoadTables()
     ns.invite:GetMessage()
     ns.invite:RegisterInviteObservers()
 
-    ns.analytics:BuildAnalytics()
+    ns.analytics:RetrieveSavedData()
 end
 function core:PerformRecordMaintenance()
     --* Move Player Message List to GM Message List
@@ -340,6 +338,8 @@ function core:StartupGuild(clubID)
     end
 
     ns.guildInfo.guildLink = (ns.guildInfo.guildLink and ns.guildInfo.guildLink ~= '') and ns.guildInfo.guildLink or nil
+    if ns.guildInfo.guildLink and not ns.guildInfo.guildLink:match(guildName) then ns.guildInfo.guildLink = nil end
+
     if not ns.classic and not ns.guildInfo.guildLink then createGuildLink(0) end
 end
 function core:CheckIfInGuild(count, callback)

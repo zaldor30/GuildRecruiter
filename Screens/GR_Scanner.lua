@@ -1,4 +1,4 @@
-local addonName, ns = ... -- Namespace (myaddon, namespace)
+local addonName, ns = ... -- Namespace (myAddon, namespace)
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
 ns.scanner = {}
@@ -222,6 +222,16 @@ function scanner:CreateAnalyticsFrame()
     analText:SetPoint("TOPLEFT", f, "TOPLEFT", 10, 3)
     analText:SetText("Session Analytics:")
     analText:SetTextColor(1, 1, 1, 1)
+
+    local scrollFrame = CreateFrame('ScrollFrame', 'Anal_ScrollFrame', f, 'UIPanelScrollFrameTemplate')
+    scrollFrame:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -10)
+    scrollFrame:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -25, 10)
+    self.tblFrame.analyticsScroll = scrollFrame
+
+    local scrollBar = scrollFrame.ScrollBar
+    scrollBar:SetWidth(12)
+
+    self:UpdateSessionData(scrollFrame)
 end
 
 --* Who Functions
@@ -668,4 +678,63 @@ function scanner:BlacklistPlayer()
     ns.code:fOut(string.format(L['ADD_TO_BLACKLIST'], count))
 
     self:DisplayWhoList() -- Displays invite inside of function
+end
+
+--* Analytics Functions
+function scanner:UpdateSessionData(parent, rowsPerColumn)
+    local sorted = ns.code:sortTableByField(ns.analytics.sData, 'label')
+
+    -- Layout constants
+    local rowHeight = 20
+    local columnSpacing = 190
+    local maxRows = rowsPerColumn or 4
+    local font = "GameFontNormal"
+
+    -- Create the frame to hold the content
+    if self.tblFrame.analyticsContent then ns.frames:ResetFrame(self.tblFrame.analyticsContent) end
+    local content = ns.frames:CreateFrame('Frame', 'Anal_Contents', parent)
+    content:SetSize(parent:GetWidth(), 1)
+    self.tblFrame.analyticsContent = content
+
+    -- Helper function to create a text row
+    local function createTextRow(text, offsetX, offsetY, col)
+        local fontString = parent:CreateFontString(nil, "ARTWORK", font)
+        fontString:SetPoint("TOPLEFT", content, "TOPLEFT", offsetX, offsetY)
+        fontString:SetText(text)
+        fontString:SetJustifyH("LEFT")
+        fontString:SetWordWrap(false)
+        if col == 1 then fontString:SetWidth(115)
+        else fontString:SetWidth(75) end
+        fontString:SetTextColor(1, 1, 1, 1)
+        return fontString
+    end
+
+    -- Create table layout
+    local offsetX = 10
+    local offsetY = -10
+    local currentRow = 1
+    local currentColumn = 1
+
+    for _, entry in ipairs(sorted) do
+        if entry.key ~= 'TIMESTAMP' then
+            -- Create description and value font strings
+            createTextRow(entry.label, offsetX, offsetY - (rowHeight * (currentRow - 1)), 1)
+            createTextRow(entry.value, offsetX + 115, offsetY - (rowHeight * (currentRow - 1)), 2)
+
+            currentRow = currentRow + 1
+
+            -- If we've reached the max rows, move to the next column
+            if currentRow > maxRows then
+                currentRow = 1
+                currentColumn = currentColumn + 1
+                offsetX = offsetX + columnSpacing
+            end
+        end
+    end
+
+    content:SetHeight((#sorted - 1) * rowHeight)
+    parent:SetScrollChild(content)
+
+    parent:SetVerticalScroll(0)
+    parent:UpdateScrollChildRect()
 end

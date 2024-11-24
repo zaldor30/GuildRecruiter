@@ -1,101 +1,109 @@
-local addonName, ns = ... -- Namespace (myaddon, namespace)
+local addonName, ns = ... -- Namespace (myAddon, namespace)
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
 ns.analytics = {}
 local analytics = ns.analytics
 
-function analytics:BuildAnalytics()
-    local dNow = date("*t", GetServerTime())
-    if dNow then return end
-    ns.pAnalytics.start = ns.pAnalytics.start or time()
-    ns.gAnalytics.start = ns.gAnalytics.start or time()
-    ns.pAnalytics.sStart = ns.pAnalytics.sStart or dNow.yday
+--[[
+    Invited to Guild
+    Declined invite to Guild
+    Accepted invite to Guild
 
-    if ns.pAnalytics.sStart ~= dNow.yday then
-        ns.pAnalytics.sStart = time()
-        ns.pAnalytics.sScanned = 0
-        ns.pAnalytics.sDeclined = 0
-        ns.pAnalytics.sInvited = 0
-        ns.pAnalytics.sAccepted = 0
-        ns.pAnalytics.sBlacklisted = 0
-        ns.pAnalytics.sTimeout = 0
-        ns.pAnalytics.sQueued = 0
+    Total Scanned Players
+    Valid Unguilded Players Found
+    Players blacklisted
+
+    Session:
+    Total Scanned Players
+    Valid Unguilded Players Found
+    Players blacklisted
+    Players invited to Guild
+    Players declined invite to Guild
+    Players accepted invite to Guild
+    Waiting on Response
+]]
+
+local savedStruct = {
+    -- Saved Vars
+    ['BLACKLISTED'] = { label = 'Players blacklisted', value = 0 },
+    ['TOTAL_SCANNED'] = { label = 'Total Scanned Players', value = 0 },
+    ['INVITED_GUILD'] = { label = 'Invited to Guild', value = 0 },
+    ['DECLINED_INVITE'] = { label = 'Declined invite to Guild', value = 0 },
+    ['ACCEPTED_INVITE'] = { label = 'Accepted invite to Guild', value = 0 },
+    ['SCANNED_NO_GUILD'] = { label = 'Players with no guild found', value = 0 },
+}
+local sessionStruct = {
+    ['TIMESTAMP'] = { label = 'Session Started', value = date('%m/%d/%Y') },
+    ['SESSION_TOTAL_SCANNED'] = { label = 'Scanned', value = 100000 },
+    ['SESSION_BLACKLISTED'] = { label = 'Blacklisted', value = 0 },
+    ['SESSION_INVITED_GUILD'] = { label = 'Invited', value = 0 },
+    ['SESSION_DECLINED_INVITE'] = { label = 'Declined Invite', value = 0 },
+    ['SESSION_ACCEPTED_INVITE'] = { label = 'Accepted Invite', value = 100000 },
+    ['SESSION_WAITING_RESPONSE'] = { label = 'Waiting on Response', value = 0 },
+    ['SESSION_INVITE_TIMED_OUT'] = { label = 'Invite Timed Out', value = 0 },
+    ['SESSION_SCANNED_NO_GUILD'] = { label = 'Potential Found', value = 100000 },
+}
+
+function analytics:Init()
+    self.gData = ns.code:deepCopy(savedStruct)
+    self.pData = ns.code:deepCopy(savedStruct)
+end
+--* Build Data
+function analytics:SaveData()
+    ns.gAnalytics = table.wipe(ns.gAnalytics or {})
+    for k, v in pairs(self.gData) do ns.gAnalytics[k] = v.value end
+    ns.pAnalytics = ns.pAnalytics and table.wipe(ns.pAnalytics) or {}
+    for k, v in pairs(self.pData) do ns.pAnalytics[k] = v.value end
+end -- Session data updated separately in UpdateSessionData
+function analytics:RetrieveSavedData()
+    for k, v in pairs(ns.gAnalytics) do
+        if self.gData[k] then self.gData[k].value = v end
+    end
+    for k, v in pairs(ns.pAnalytics or {}) do
+        if self.pData[k] then self.pData[k].value = v end
     end
 
-    local scanned = {
-        field = 'Players Scanned',
-        pAmt = ns.pAnalytics.scanned and (ns.pAnalytics.scanned.amt or 0) or 0,
-        gAmt = ns.gAnalytics.scanned and (ns.gAnalytics.scanned.amt or 0) or 0,
-        sAmt = ns.pAnalytics.sScanned and (ns.pAnalytics.sScanned.amt or 0) or 0,
-    }
-    ns.analytics.scanned = scanned
+    local currentDate = date('%m/%d/%Y')
+    print(currentDate)
+    ns.pAnalytics.session = ns.pAnalytics.session or {}
+    if not ns.pAnalytics.session.TIMESTAMP or currentDate ~= ns.pAnalytics.session.TIMESTAMP then
+        print('New Session')
+        ns.pAnalytics.session = table.wipe(ns.pAnalytics.session)
+        sessionStruct.TIMESTAMP.value = currentDate
+        self.sData = ns.code:deepCopy(sessionStruct)
+        for k, v in pairs(self.sData) do ns.pAnalytics.session[k] = v.value end
+    end
 
-    local declined = {
-        field = 'Players Declined',
-        pAmt = ns.pAnalytics.declined and (ns.pAnalytics.declined.amt or 0) or 0,
-        gAmt = ns.gAnalytics.declined and (ns.gAnalytics.declined.amt or 0) or 0,
-        sAmt = ns.pAnalytics.sDeclined and (ns.pAnalytics.sDeclined.amt or 0) or 0,
-    }
-    ns.analytics.declined = declined
-
-    local invited = {
-        field = 'Players Invited',
-        pAmt = ns.pAnalytics.invited and (ns.pAnalytics.invited.amt or 0) or 0,
-        gAmt = ns.gAnalytics.invited and (ns.gAnalytics.invited.amt or 0) or 0,
-        sAmt = ns.pAnalytics.sInvited and (ns.pAnalytics.sInvited.amt or 0) or 0,
-    }
-    ns.analytics.invited = invited
-
-    local accepted = {
-        field = 'Players Accepted',
-        pAmt = ns.pAnalytics.accepted and (ns.pAnalytics.accepted.amt or 0) or 0,
-        gAmt = ns.gAnalytics.accepted and (ns.gAnalytics.accepted.amt or 0) or 0,
-        sAmt = ns.pAnalytics.sAccepted and (ns.pAnalytics.sAccepted.amt or 0) or 0,
-    }
-    ns.analytics.accepted = accepted
-
-    local blacklisted = {
-        field = 'Blacklisted',
-        pAmt = ns.pAnalytics.blacklisted and (ns.pAnalytics.blacklisted.amt or 0) or 0,
-        gAmt = ns.gAnalytics.blacklisted and (ns.gAnalytics.blacklisted.amt or 0) or 0,
-        sAmt = ns.pAnalytics.sBlacklisted and (ns.pAnalytics.sBlacklisted.amt or 0) or 0,
-    }
-    ns.analytics.blacklisted = blacklisted
-
-    local timeout = {
-        field = 'Invites Timed Out',
-        sAmt = ns.pAnalytics.sTimeout and (ns.pAnalytics.sTimeout.amt or 0) or 0,
-    }
-    ns.analytics.timeout = timeout
-
-    local queued = {
-        field = 'Players Queued',
-        sAmt = ns.pAnalytics.sQueued and (ns.pAnalytics.sQueued.amt or 0) or 0,
-    }
-    ns.analytics.queued = queued
-end
-function analytics:SaveAnalytics()
-end
-local function updateAmount(field, amt)
-    if ns.analytics[field] then
-        ns.analytics[field].pAmt = ns.analytics[field].pAmt and ns.analytics[field].pAmt + amt
-        ns.analytics[field].gAmt = ns.analytics[field].gAmt and ns.analytics[field].gAmt + amt
-        ns.analytics[field].sAmt = ns.analytics[field].sAmt + amt
+    self.sData = self.sData or ns.code:deepCopy(sessionStruct)
+    for k, v in pairs(ns.pAnalytics.session or {}) do
+        if v and self.sData[k] then self.sData[k].value = v end
     end
 end
-function analytics:Reception(field, amt)
-    amt = amt or 1
 
-    if field == 'scanned' then updateAmount(field, amt) return
-    elseif field == 'declined' then updateAmount(field, amt)
-    elseif field == 'invited' then updateAmount(field, amt)
-    elseif field == 'accepted' then updateAmount(field, amt)
-    elseif field == 'queued' then updateAmount(field, amt) return
-    elseif field == 'timeout' then updateAmount(field, amt)
-    elseif field == 'offline' then updateAmount('invited', -(amt))
-    elseif field == 'notplaying' then updateAmount('invited', -(amt))
-    elseif field == 'notfound' then updateAmount('invited', -(amt))
-    elseif field == 'alreadyinguild' then updateAmount('invited', -(amt)) end
+--* Functions
+function analytics:UpdateData(key, value)
+    if not self.gData[key] then return end
 
-    updateAmount('queued', -(amt))
+    local valueOut = self.sData[key].value + (value or 1)
+    valueOut = valueOut < 0 and 0 or valueOut
+    self.gData[key].value = valueOut
+    self.pData[key].value = valueOut
+    self.sData[key].value = valueOut
+
+    self:SaveData()
 end
+function analytics:UpdateSessionData(key, value)
+    if not self.sData[key] then return end
+    local valueOut = self.sData[key].value + (value or 1)
+    valueOut = valueOut < 0 and 0 or valueOut
+    self.sData[key].value = valueOut
+
+    ns.pAnalytics.session = ns.pAnalytics.session or {}
+    for k, v in pairs(self.sData) do ns.pAnalytics.session[k] = v.value end
+
+    if ns.scanner:IsShown() then ns.scanner:UpdateSessionData() end
+end
+function analytics:GetData(key)
+    return (self.gData[key] and self.gData[key].value or nil), (self.pData[key] and self.pData[key].value or nil), (self.sData[key] and self.sData[key].value or nil)
+end
+analytics:Init()

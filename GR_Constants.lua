@@ -46,7 +46,7 @@ ns.PLAYER_PROFILE = UnitName('player')..'-'..GetRealmName()
 ns.SECONDS_IN_A_DAY = 86400
 ns.MAX_CHARACTER_LEVEL = GetMaxPlayerLevel()
 
--- Highlgiht Images
+-- Highlight Images
 ns.BLUE_HIGHLIGHT = 'bags-glow-heirloom'
 ns.BLUE_LONG_HIGHLIGHT = 'communitiesfinder_card_highlight'
 
@@ -64,3 +64,11 @@ ns.InviteFormat = {
     GUILD_INVITE_AND_MESSAGE = 3,
     MESSAGE_ONLY_IF_INVITE_DECLINED = 4
 }
+
+--* Link Constants
+ns.GITHUB = 'https://github.com/zaldor30/GuildRecruiter'
+ns.DISCORD = 'https://discord.gg/ZtS6Q2sKRH'
+ns.CURSE_FORGE = 'https://www.curseforge.com/wow/addons/guild-recruiter'
+
+ns.PATREON = 'https://www.patreon.com/AlwaysBeConvoking'
+ns.BUY_ME_COFFEE = 'https://bmc.link/alwaysbeconvoking'

@@ -1,6 +1,9 @@
 # Guild Recruiter
     ## 4.0 - War Within/Classic/Cata Release
 
+    ### v4.0.11
+        - Created the about page.
+        - Added fix for guild name change.
     ### v4.0.10
         - Added What's New Screen
         - Added ability to change send message delay.

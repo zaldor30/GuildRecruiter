@@ -114,5 +114,15 @@
     },
     "Lua.workspace.library": [
         "~\\.vscode\\extensions\\ketho.wow-api-0.17.6\\Annotations"
+    ],
+    "cSpell.words": [
+        "alreadyinguild",
+        "antispam",
+        "Invie",
+        "Monkstrife",
+        "myaddon",
+        "notplaying",
+        "Pokypoke",
+        "tremove"
     ]
 }

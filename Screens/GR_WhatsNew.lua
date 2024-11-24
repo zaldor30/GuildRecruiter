@@ -34,6 +34,7 @@ local function highlightButton(btn, normal)
     --else normTexture:SetVertexColor(12, 179, 230, 1) end
 end
 
+whatsnew.returnToMain = false
 function whatsnew:Init()
     self.tblFrame = self.tblFrame or {}
     self.oldVer = ns.g.shownVersion
@@ -117,7 +118,12 @@ function whatsnew:CreateTopFrame()
     btnClose:SetSize(15, 15)
     btnClose:SetNormalTexture(ns.BUTTON_EXIT)
     btnClose:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
-    btnClose:SetScript('OnClick', function() whatsnew:SetShown(false) end)
+    btnClose:SetScript('OnClick', function()
+        whatsnew:SetShown(false)
+
+        if whatsnew.returnToMain then ns.base:SetShown(true) end
+        self.returnToMain = false
+    end)
     btnClose:SetScript('OnEnter', function() highlightButton(btnClose) ns.code:createTooltip(L["CLOSE"]..' '..L['TITLE']) end)
     btnClose:SetScript('OnLeave', function() highlightButton(btnClose, true) GameTooltip:Hide() end)
 end

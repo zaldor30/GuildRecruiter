@@ -162,6 +162,16 @@ L['SKIP_PLAYER'] = 'Skip Player'
 L['SKIP'] = 'Skip'
 --endregion
 
+--#region About Screen
+-- * Donation Message
+L['DONATION_MESSAGE'] = [[
+I hope you find this addon useful. I have put a lot of time and effort into
+making this addon. If you would like to donate, please use the link below.
+Thank you for your support!]]
+L['ABOUT_LINK_MESSAGE'] = 'For more information, please visit the following links:'
+L['COPY_LINK_MESSAGE'] = 'Links are copyable. Highlight link and copy (CTRL+C).'
+--#endregion
+
 --#region Guild Recruiter Settings
 L['MAX_CHARS'] = '(<sub> characters per message)'
 L['LENGTH_INFO'] = 'Assumes 12 characters when using PLAYERNAME'
@@ -260,6 +270,13 @@ L['ADDED_TO_BLACK_LIST'] = 'has been added to the blacklist with the reason %s.'
 L['BL_NAME_NOT_ADDED'] = 'was not added to the blacklist.'
 L['IS_ON_BLACK_LIST'] = 'is already on the blacklist.'
 L['BLACK_LIST_REASON_INPUT'] = 'Please enter a reason for blacklisting %s.'
+L['BLACKLIST_NAME_PROMPT'] = [[
+Please enter the name of the player
+you want to blacklist.
+
+Different realm, add - and the realm name.
+(Playername-Realmname)
+]]
 --#endregion
 --#region Invalid Zones
 L['INVALID_ZONE'] = 'Invalid Zones'

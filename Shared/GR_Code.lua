@@ -158,6 +158,19 @@ function code:sortTableByField(tbl, sortField, reverse)
     table.sort(keyArray, sortFunc)
     return keyArray
 end
+function code:deepCopy(orig)
+    local origType = type(orig)
+    local copy
+    if origType == 'table' then
+        copy = {}
+        for origKey, origValue in pairs(orig) do
+            copy[origKey] = self:deepCopy(origValue) -- Recursively copy sub-tables
+        end
+    else
+        copy = orig -- For non-table types, directly assign the value
+    end
+    return copy
+end
 
 --* Guild checks
 function code:isInMyGuild(name)

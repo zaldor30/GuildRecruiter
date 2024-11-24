@@ -1,4 +1,4 @@
-local addonName, ns = ... -- Namespace (myaddon, namespace)
+local addonName, ns = ... -- Namespace (myAddon, namespace)
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
 ns.base, ns.status = {}, nil
@@ -38,6 +38,7 @@ function base:SetShown(val, hideAfter) --! Double Check save
         ns.observer:Notify('CLOSE_SCREENS')
 
         self.tblFrame.frame:SetShown(val)
+        ns.analytics:SaveData()
         return
     end
 
@@ -165,7 +166,11 @@ local function highlightButton(btn, normal)
     if not btn then return end
 
     local normTexture = btn:GetNormalTexture()
-    if not normTexture then return end
+    if not normTexture then return
+    else
+        local r, g, b, a = normTexture:GetVertexColor()
+        if r == 0 and g == 1 and b == 0 and a == 1 then return end
+    end
 
     normTexture:SetAllPoints(true) -- Ensure the texture covers the entire button
     normTexture:SetBlendMode("BLEND") -- Enable alpha blending for transparency
@@ -268,6 +273,7 @@ function base:CreateBottomIcons()
     btnAbout:SetScript('OnClick', function() base:buttonAction('OPEN_ABOUT') end)
     btnAbout:SetScript('OnEnter', function() highlightButton(btnAbout) ns.code:createTooltip(L["ABOUT"]..' '..L['TITLE'], L['ABOUT_TOOLTIP']) end)
     btnAbout:SetScript('OnLeave', function() highlightButton(btnAbout, true) GameTooltip:Hide() end)
+    self.tblFrame.aboutButton = btnAbout
 
     --* Settings Button
     local btnSettings = ns.frames:CreateFrame('Button', 'GR_SettingsButton', iconFrame)
@@ -336,7 +342,7 @@ function base:buttonAction(button)
         ns.status:SetText(msg)
         if not valid then return end
         ns.scanner:SetShown(true)
-    elseif button == 'OPEN_ABOUT' then ns.frames:AcceptDialog('About Screen\nUnder Construction!!', function() return end)
+    elseif button == 'OPEN_ABOUT' then ns.about:SetShown(true)
     elseif button == 'OPEN_SETTINGS' then Settings.OpenToCategory('Guild Recruiter')
     elseif button == 'SYNC_TOGGLE' then ns.frames:AcceptDialog('Sync\nUnder Construction!!', function() return end)
     elseif button == 'OPEN_STATS' then ns.frames:AcceptDialog('Stats Screen\nUnder Construction!!', function() return end)

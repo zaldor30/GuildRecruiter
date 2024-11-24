@@ -1,4 +1,4 @@
-local addonName, ns = ... -- Namespace (myaddon, namespace)
+local addonName, ns = ... -- Namespace (myAddon, namespace)
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
 ns.home = {}
@@ -6,8 +6,8 @@ local home = ns.home
 
 local function obsCLOSE_SCANNER()
     ns.observer:Unregister('CLOSE_SCREENS', obsCLOSE_SCANNER)
-    ns.frames:ResetFrame(home.tblFrame.frame)
     ns.frames:ResetFrame(home.tblFrame.previewFrame.frame)
+    ns.frames:ResetFrame(home.tblFrame.frame)
     home.tblFrame.frame = nil
 end
 

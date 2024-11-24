@@ -41,7 +41,7 @@ function invite:GetMessage()
     end
 end
 
---* Plaayer Invite Check Routines
+--* Player Invite Check Routines
 function invite:CheckWhoList(player, zoneName) return self:CheckInvite(player, true, true, true, zoneName) end
 function invite:CheckAutoInvite(player) return self:CheckInvite(player, false, true, false) end
 function invite:CheckManualInvite(player) return self:CheckInvite(player, false, true, false) end
@@ -81,7 +81,7 @@ function invite:InvitePlayer(fullName, justName, sendGuildInvite, skipInviteMess
 
     local timeOutTimer = GR:ScheduleTimer(function()
         self.tblQueue[fullName] = nil
-        ns.analytics:Reception('declined')
+        ns.analytics:UpdateSessionData('SESSION_INVITE_TIMED_OUT')
     end, 120)
     local newInvite = {
         fullName = fullName,
@@ -95,8 +95,9 @@ function invite:InvitePlayer(fullName, justName, sendGuildInvite, skipInviteMess
 
     ns.list:AddToAntiSpam(fullName)
 
-    ns.analytics:Reception('queued')
-    ns.analytics:Reception('invited')
+    ns.analytics:UpdateData('INVITED_GUILD')
+    ns.analytics:UpdateSessionData('SESSION_INVITED_GUILD')
+    ns.analytics:UpdateSessionData('SESSION_WAITING_RESPONSE')
 
     if sendGuildInvite then
         C_GuildInfo.Invite(fullName)
@@ -147,7 +148,7 @@ function invite:RunInviteQueue()
     end
 end
 
---* System Chat Obersvers
+--* System Chat Observers
 function invite:RegisterInviteObservers()
     local function getPlayerName(msg)
         for k in pairs(self.tblQueue) do
@@ -170,7 +171,11 @@ function invite:RegisterInviteObservers()
                 SendChatMessage(r.welcomeWhisper, 'WHISPER', nil, r.fullName)
             end
         end)
-        ns.analytics:Reception('accepted')
+
+        ns.analytics:UpdateData('ACCEPTED_INVITE')
+        ns.analytics:UpdateSessionData('SESSION_ACCEPTED_INVITE')
+        ns.analytics:UpdateSessionData('SESSION_WAITING_RESPONSE', -1)
+
         self.tblQueue[playerName] = nil
     end
     local function eventPLAYER_DECLINED_INVITE(...)
@@ -180,7 +185,10 @@ function invite:RegisterInviteObservers()
 
         GR:CancelTimer(self.tblQueue[playerName].timeOutTimer)
         self.tblQueue[playerName] = nil
-        ns.analytics:Reception('timeout')
+
+        ns.analytics:UpdateData('DECLINED_INVITE')
+        ns.analytics:UpdateSessionData('SESSION_DECLINED_INVITE')
+        ns.analytics:UpdateSessionData('SESSION_WAITING_RESPONSE', -1)
     end
     local function eventPLAYER_NOT_ONLINE(...)
         local _, msg = ...
@@ -189,7 +197,10 @@ function invite:RegisterInviteObservers()
 
         GR:CancelTimer(self.tblQueue[playerName].timeOutTimer)
         self.tblQueue[playerName] = nil
-        ns.analytics:Reception('offline')
+
+        ns.analytics:UpdateData('INVITED_GUILD', -1)
+        ns.analytics:UpdateSessionData('SESSION_INVITED_GUILD', -1)
+        ns.analytics:UpdateSessionData('SESSION_WAITING_RESPONSE', -1)
     end
     local function eventPLAYER_NOT_PLAYING(...)
         local _, msg = ...
@@ -198,7 +209,10 @@ function invite:RegisterInviteObservers()
 
         GR:CancelTimer(self.tblQueue[playerName].timeOutTimer)
         self.tblQueue[playerName] = nil
-        ns.analytics:Reception('notplaying')
+
+        ns.analytics:UpdateData('INVITED_GUILD', -1)
+        ns.analytics:UpdateSessionData('SESSION_INVITED_GUILD', -1)
+        ns.analytics:UpdateSessionData('SESSION_WAITING_RESPONSE', -1)
     end
     local function eventPLAYER_NOT_FOUND(...)
         local _, msg = ...
@@ -207,7 +221,10 @@ function invite:RegisterInviteObservers()
 
         GR:CancelTimer(self.tblQueue[playerName].timeOutTimer)
         self.tblQueue[playerName] = nil
-        ns.analytics:Reception('notfound')
+
+        ns.analytics:UpdateData('INVITED_GUILD', -1)
+        ns.analytics:UpdateSessionData('SESSION_INVITED_GUILD', -1)
+        ns.analytics:UpdateSessionData('SESSION_WAITING_RESPONSE', -1)
     end
     local function eventPLAYER_IN_GUILD(...)
         local _, msg = ...
@@ -217,6 +234,10 @@ function invite:RegisterInviteObservers()
         GR:CancelTimer(self.tblQueue[playerName].timeOutTimer)
         self.tblQueue[playerName] = nil
         ns.analytics:Reception('alreadyinguild')
+
+        ns.analytics:UpdateData('INVITED_GUILD', -1)
+        ns.analytics:UpdateSessionData('SESSION_INVITED_GUILD', -1)
+        ns.analytics:UpdateSessionData('SESSION_WAITING_RESPONSE', -1)
     end
     local function eventPLAYER_ALREADY_IN_GUILD(...)
         local _, msg = ...
@@ -226,6 +247,10 @@ function invite:RegisterInviteObservers()
         GR:CancelTimer(self.tblQueue[playerName].timeOutTimer)
         self.tblQueue[playerName] = nil
         ns.analytics:Reception('alreadyinguild')
+
+        ns.analytics:UpdateData('INVITED_GUILD', -1)
+        ns.analytics:UpdateSessionData('SESSION_INVITED_GUILD', -1)
+        ns.analytics:UpdateSessionData('SESSION_WAITING_RESPONSE', -1)
     end
 
     ns.observer:Register('PLAYER_JOINED_GUILD', eventPLAYER_JOINED_GUILD)
