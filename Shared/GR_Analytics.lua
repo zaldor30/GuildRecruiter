@@ -66,7 +66,6 @@ function analytics:RetrieveSavedData()
     local currentDate = date('%m/%d/%Y')
     ns.pAnalytics.session = ns.pAnalytics.session or {}
     if not ns.pAnalytics.session.TIMESTAMP or currentDate ~= ns.pAnalytics.session.TIMESTAMP then
-        print('New Session')
         ns.pAnalytics.session = table.wipe(ns.pAnalytics.session)
         sessionStruct.TIMESTAMP.value = currentDate
         self.sData = ns.code:deepCopy(sessionStruct)

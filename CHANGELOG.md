@@ -4,6 +4,7 @@
     ### v4.0.11
         - Created the about page.
         - Added fix for guild name change.
+        - Implemented Analytics (can only see session for now).
     ### v4.0.10
         - Added What's New Screen
         - Added ability to change send message delay.
