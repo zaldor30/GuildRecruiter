@@ -67,6 +67,7 @@ function code:fOut(msg, color, noPrefix) -- Force console print routine)
     if msg == '' then return
     else code:consolePrint(msg, (color or ns.COLOR_DEFAULT), noPrefix) end
 end
+
 -- *Keyword Replacement Routines
 function code:capitalKeyWord(input)
     if not input or input == '' then return end
@@ -197,4 +198,22 @@ function code:isInMyGuild(name)
 
     if UnitFactionGroup(name) ~= '' and not isFriend and UnitFactionGroup('player') ~= UnitFactionGroup(name) then
         return false, 'WRONG_FACTION' else return false end
+end
+
+--* Other Routines
+function code:formatNumberWithCommas(number, formatThousands)
+    if number >= 1e6 then
+        -- Abbreviate to millions (e.g., 1.1M)
+        return string.format("%.1fM", number / 1e6)
+    elseif formatThousands and number >= 1e3 then
+        -- Abbreviate to thousands (e.g., 1.1K)
+        return string.format("%.1fK", number / 1e3)
+    else
+        -- Format with commas (e.g., 1,234)
+        local formatted = tostring(number):reverse():gsub("(%d%d%d)", "%1,"):reverse()
+        if formatted:sub(1, 1) == "," then
+            formatted = formatted:sub(2)
+        end
+        return formatted
+    end
 end

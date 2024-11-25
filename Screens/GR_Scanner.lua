@@ -14,7 +14,7 @@ end
 local function CallBackWhoListUpdate()
     GR:UnregisterEvent('WHO_LIST_UPDATE', CallBackWhoListUpdate)
 
-    ns.analytics:Reception('scanned', C_FriendList.GetNumWhoResults())
+    ns.analytics:UpdateSessionData('SESSION_TOTAL_SCANNED', C_FriendList.GetNumWhoResults())
     scanner:ProcessWhoResults(C_FriendList.GetNumWhoResults())
 end
 
@@ -222,16 +222,16 @@ function scanner:CreateAnalyticsFrame()
     analText:SetPoint("TOPLEFT", f, "TOPLEFT", 10, 3)
     analText:SetText("Session Analytics:")
     analText:SetTextColor(1, 1, 1, 1)
+    self.tblFrame.analyticsText = analText
 
-    local scrollFrame = CreateFrame('ScrollFrame', 'Anal_ScrollFrame', f, 'UIPanelScrollFrameTemplate')
-    scrollFrame:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -10)
-    scrollFrame:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -25, 10)
-    self.tblFrame.analyticsScroll = scrollFrame
+    local dataFrame = ns.frames:CreateFrame('Frame', 'Analytics_DataFrame', f)
+    dataFrame:SetPoint("TOPLEFT", f, "TOPLEFT", 0, -10)
+    dataFrame:SetSize(f:GetWidth() - 20, f:GetHeight() - 20)
+    dataFrame:SetBackdropColor(0, 0, 0, 0.5)
+    dataFrame:SetBackdropBorderColor(0, 0, 0, 0)
+    self.tblFrame.analyticsData = dataFrame
 
-    local scrollBar = scrollFrame.ScrollBar
-    scrollBar:SetWidth(12)
-
-    self:UpdateSessionData(scrollFrame)
+    self:UpdateSessionData(dataFrame)
 end
 
 --* Who Functions
@@ -281,11 +281,15 @@ function scanner:DisplayWhoList()
 
     -- Create the frame to hold the content
     local content = ns.frames:CreateFrame('Frame', 'Who_Content', sFrame)
-    content:SetSize(sFrame:GetWidth() - 20, 1)
+    content:SetSize(sFrame:GetWidth() - rowHeight, 1)
+    content:SetBackdropColor(0, 0, 0, 0)
+    content:SetBackdropBorderColor(0, 0, 0, 0)
     self.tblFrame.whoContent = content
 
     local function createWhoEntry(parent, r)
         local row = ns.frames:CreateFrame('Frame', nil, parent)
+        row:SetBackdropColor(1, 1, 1, 0)
+        row:SetBackdropBorderColor(0, 0, 0, 0)
         row:SetSize(parent:GetWidth(), rowHeight)
 
         local rowTexture = row:CreateTexture(nil, "BACKGROUND")
@@ -306,7 +310,7 @@ function scanner:DisplayWhoList()
         txtName:SetWidth(100)
         txtName:SetJustifyH("LEFT")
         txtName:SetWordWrap(false)
-        txtName:SetText(r.fullName)
+        txtName:SetText(ns.code:cPlayer(r.fullName, r.class))
 
         local txtGuild = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         txtGuild:SetPoint("LEFT", txtName, "RIGHT", 10, 0)
@@ -368,12 +372,16 @@ function scanner:DisplayInviteList()
         ns.frames:ResetFrame(self.tblFrame.inviteContent) end
 
     local content = ns.frames:CreateFrame('Frame', 'Invite_Entry_Content', scrollFrame)
-    content:SetSize(scrollFrame:GetWidth() - 20, #self.tblToIniviteSorted * rowHeight)
+    content:SetSize(scrollFrame:GetWidth() - rowHeight, #self.tblToIniviteSorted * rowHeight)
+    content:SetBackdropColor(0, 0, 0, 0)
+    content:SetBackdropBorderColor(0, 0, 0, 0)
     content:Show()
     self.tblFrame.inviteContent = content
 
     local function createInviteEntry(parent, r)
         local row = ns.frames:CreateFrame('Frame', nil, parent)
+        row:SetBackdropColor(1, 1, 1, 0)
+        row:SetBackdropBorderColor(0, 0, 0, 0)
         row:SetSize(parent:GetWidth(), rowHeight)
 
         local rowTexture = row:CreateTexture(nil, "BACKGROUND")
@@ -682,6 +690,7 @@ end
 
 --* Analytics Functions
 function scanner:UpdateSessionData(parent, rowsPerColumn)
+    parent = parent or self.tblFrame.analyticsData
     local sorted = ns.code:sortTableByField(ns.analytics.sData, 'label')
 
     -- Layout constants
@@ -690,21 +699,22 @@ function scanner:UpdateSessionData(parent, rowsPerColumn)
     local maxRows = rowsPerColumn or 4
     local font = "GameFontNormal"
 
-    -- Create the frame to hold the content
-    if self.tblFrame.analyticsContent then ns.frames:ResetFrame(self.tblFrame.analyticsContent) end
-    local content = ns.frames:CreateFrame('Frame', 'Anal_Contents', parent)
-    content:SetSize(parent:GetWidth(), 1)
-    self.tblFrame.analyticsContent = content
+    ns.frames:ResetFontString(parent)
 
     -- Helper function to create a text row
     local function createTextRow(text, offsetX, offsetY, col)
-        local fontString = parent:CreateFontString(nil, "ARTWORK", font)
-        fontString:SetPoint("TOPLEFT", content, "TOPLEFT", offsetX, offsetY)
-        fontString:SetText(text)
-        fontString:SetJustifyH("LEFT")
+        local fontString = ns.frames:getFontString(parent, font)
+        fontString:SetPoint("TOPLEFT", parent, "TOPLEFT", offsetX, offsetY)
         fontString:SetWordWrap(false)
-        if col == 1 then fontString:SetWidth(115)
-        else fontString:SetWidth(75) end
+        if col == 1 then
+            fontString:SetText(text..': ')
+            fontString:SetJustifyH("RIGHT")
+            fontString:SetWidth(115)
+        else
+            fontString:SetWidth(75)
+            fontString:SetJustifyH("LEFT")
+            fontString:SetText(ns.code:formatNumberWithCommas(tonumber(text)))
+        end
         fontString:SetTextColor(1, 1, 1, 1)
         return fontString
     end
@@ -729,12 +739,8 @@ function scanner:UpdateSessionData(parent, rowsPerColumn)
                 currentColumn = currentColumn + 1
                 offsetX = offsetX + columnSpacing
             end
-        end
+        else self.tblFrame.analyticsText:SetText(string.format('Session Analytics: (%s)', entry.value)) end
     end
 
-    content:SetHeight((#sorted - 1) * rowHeight)
-    parent:SetScrollChild(content)
-
-    parent:SetVerticalScroll(0)
-    parent:UpdateScrollChildRect()
+    --content:SetHeight((#sorted - 1) * rowHeight)
 end

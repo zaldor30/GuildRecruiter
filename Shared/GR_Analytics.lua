@@ -34,14 +34,14 @@ local savedStruct = {
 }
 local sessionStruct = {
     ['TIMESTAMP'] = { label = 'Session Started', value = date('%m/%d/%Y') },
-    ['SESSION_TOTAL_SCANNED'] = { label = 'Scanned', value = 100000 },
+    ['SESSION_TOTAL_SCANNED'] = { label = 'Scanned', value = 0 },
     ['SESSION_BLACKLISTED'] = { label = 'Blacklisted', value = 0 },
     ['SESSION_INVITED_GUILD'] = { label = 'Invited', value = 0 },
     ['SESSION_DECLINED_INVITE'] = { label = 'Declined Invite', value = 0 },
-    ['SESSION_ACCEPTED_INVITE'] = { label = 'Accepted Invite', value = 100000 },
-    ['SESSION_WAITING_RESPONSE'] = { label = 'Waiting on Response', value = 0 },
+    ['SESSION_ACCEPTED_INVITE'] = { label = 'Accepted Invite', value = 0 },
+    ['SESSION_WAITING_RESPONSE'] = { label = 'Waiting on', value = 0 },
     ['SESSION_INVITE_TIMED_OUT'] = { label = 'Invite Timed Out', value = 0 },
-    ['SESSION_SCANNED_NO_GUILD'] = { label = 'Potential Found', value = 100000 },
+    ['SESSION_SCANNED_NO_GUILD'] = { label = 'Potential Found', value = 0 },
 }
 
 function analytics:Init()
@@ -64,7 +64,6 @@ function analytics:RetrieveSavedData()
     end
 
     local currentDate = date('%m/%d/%Y')
-    print(currentDate)
     ns.pAnalytics.session = ns.pAnalytics.session or {}
     if not ns.pAnalytics.session.TIMESTAMP or currentDate ~= ns.pAnalytics.session.TIMESTAMP then
         print('New Session')
@@ -84,11 +83,8 @@ end
 function analytics:UpdateData(key, value)
     if not self.gData[key] then return end
 
-    local valueOut = self.sData[key].value + (value or 1)
-    valueOut = valueOut < 0 and 0 or valueOut
-    self.gData[key].value = valueOut
-    self.pData[key].value = valueOut
-    self.sData[key].value = valueOut
+    self.gData[key].value = self.gData[key].value + (value or 1)
+    self.pData[key].value = self.pData[key].value + (value or 1)
 
     self:SaveData()
 end

@@ -125,6 +125,29 @@ function frames:CreateAnimation(fontString, newData, type)
     fadeOutGroup:Play()
 end
 
+--* Font String Pooling
+local fontStringPool = {}
+function frames:ResetFontString(parent)
+    for _, child in ipairs({parent:GetRegions()}) do
+        if child:IsObjectType("FontString") then
+            child:SetText("") -- Clear text
+            child:Hide()      -- Optionally hide the font string
+        end
+    end
+end
+function frames:getFontString(parent, font)
+    for _, fontString in ipairs(fontStringPool) do
+        if not fontString:IsShown() then
+            fontString:Show()
+            return fontString
+        end
+    end
+    -- Create a new FontString if none are available
+    local fontString = parent:CreateFontString(nil, "ARTWORK", font)
+    table.insert(fontStringPool, fontString)
+    return fontString
+end
+
 --* Fix ScrollBar
 function frames:FixScrollBar(scrollFrame, size)
     if not scrollFrame or not scrollFrame.ScrollBar then return end
