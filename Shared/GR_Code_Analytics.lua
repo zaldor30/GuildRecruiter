@@ -25,23 +25,23 @@ local analytics = ns.analytics
 
 local savedStruct = {
     -- Saved Vars
-    ['BLACKLISTED'] = { label = 'Players blacklisted', value = 0 },
-    ['TOTAL_SCANNED'] = { label = 'Total Scanned Players', value = 0 },
+    ['BLACKLISTED'] = { label = L['ANALYTICS_BLACKLISTED'], value = 0 },
+    ['TOTAL_SCANNED'] = { label = L['ANALYTICS_SCANNED'], value = 0 },
     ['INVITED_GUILD'] = { label = 'Invited to Guild', value = 0 },
-    ['DECLINED_INVITE'] = { label = 'Declined invite to Guild', value = 0 },
-    ['ACCEPTED_INVITE'] = { label = 'Accepted invite to Guild', value = 0 },
-    ['SCANNED_NO_GUILD'] = { label = 'Players with no guild found', value = 0 },
+    ['DECLINED_INVITE'] = { label = L['ANALYTICS_DECLINED'], value = 0 },
+    ['ACCEPTED_INVITE'] = { label = L['ANALYTICS_INVITED'], value = 0 },
+    ['SCANNED_NO_GUILD'] = { label = L['ANALYTICS_NO_GUILD'], value = 0 },
 }
 local sessionStruct = {
-    ['TIMESTAMP'] = { label = 'Session Started', value = date('%m/%d/%Y') },
-    ['SESSION_TOTAL_SCANNED'] = { label = 'Scanned', value = 0 },
-    ['SESSION_BLACKLISTED'] = { label = 'Blacklisted', value = 0 },
-    ['SESSION_INVITED_GUILD'] = { label = 'Invited', value = 0 },
-    ['SESSION_DECLINED_INVITE'] = { label = 'Declined Invite', value = 0 },
-    ['SESSION_ACCEPTED_INVITE'] = { label = 'Accepted Invite', value = 0 },
-    ['SESSION_WAITING_RESPONSE'] = { label = 'Waiting on', value = 0 },
-    ['SESSION_INVITE_TIMED_OUT'] = { label = 'Invite Timed Out', value = 0 },
-    ['SESSION_SCANNED_NO_GUILD'] = { label = 'Potential Found', value = 0 },
+    ['TIMESTAMP'] = { label = L['ANALYTICS_SESSION_STARTED'], value = date('%m/%d/%Y') },
+    ['SESSION_TOTAL_SCANNED'] = { label = L['ANALYTICS_SESSION_SCANNED'], value = 0 },
+    ['SESSION_BLACKLISTED'] = { label = L['ANALYTICS_SESSION_BLACKLISTED'], value = 0 },
+    ['SESSION_INVITED_GUILD'] = { label = L['ANALYTICS_SESSION_INVITED'], value = 0 },
+    ['SESSION_DECLINED_INVITE'] = { label = L['ANALYTICS_SESSION_DECLINED'], value = 0 },
+    ['SESSION_ACCEPTED_INVITE'] = { label = L['ANALYTICS_SESSION_ACCEPTED'], value = 0 },
+    ['SESSION_WAITING_RESPONSE'] = { label = L['ANALYTICS_SESSION_WAITING'], value = 0 },
+    ['SESSION_INVITE_TIMED_OUT'] = { label = L['ANALYTICS_SESSION_TIMED_OUT'], value = 0 },
+    ['SESSION_SCANNED_NO_GUILD'] = { label = L['ANALYTICS_SESSION_NO_GUILD'], value = 0 },
 }
 
 function analytics:Init()
