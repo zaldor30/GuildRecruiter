@@ -9,7 +9,7 @@ GR.debug = false
 GR.isTesting = false -- Used for testing purposes (invite)
 GR.enableFilter = false
 GR.isPreRelease = true
-GR.preReleaseType = 'Beta'
+GR.preReleaseType = 'Alpha'
 GR.versionOut = '(v'..GR.version..(GR.isPreRelease and ' '..GR.preReleaseType or '')..')'
 
 C_ChatInfo.RegisterAddonMessagePrefix(GR.commPrefix)
