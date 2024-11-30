@@ -32,6 +32,7 @@ Libs\LibDeflate\LibDeflate.lua
 locales\Locales.xml
 
 GR_Init.lua
+GR_Convert.lua
 GR_Constants.lua
 GR_Context.lua
 GR_ChangeLog.lua

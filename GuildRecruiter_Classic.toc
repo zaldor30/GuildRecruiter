@@ -1,7 +1,7 @@
 ## X-Curse-Project-ID: 882061
 ## X-Website: https://www.curseforge.com/wow/addons/guild-recruiter
 
-## Interface: 11504, 40400
+## Interface: 11505, 40401
 ## Title: Guild Recruiter
 ## Version: 4.0.14
 ## Notes: Facilitates guild officers to recruit new members
@@ -32,6 +32,7 @@ Libs\LibDeflate\LibDeflate.lua
 locales\Locales.xml
 
 GR_Init.lua
+GR_Convert.lua
 GR_Constants.lua
 GR_Context.lua
 GR_ChangeLog.lua
