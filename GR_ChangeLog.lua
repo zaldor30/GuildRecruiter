@@ -4,7 +4,7 @@ ns.changeLog = [[
     # Guild Recruiter
     ## 4.0 - War Within/Classic/Cata Release
 
-    ### v4.0.12 (Beta)
+    ### v4.0.13 (Beta)
         - Added analytics screen.
         - Fixed some issues with analytics not counting.
         - Other minor bug fixes.
