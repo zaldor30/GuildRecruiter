@@ -138,15 +138,6 @@ function core:StartGuildRecruiter(clubID)
 
     ns.base:SetShown(true, true)
 
-    local function checkForFGI(retry)
-        retry = retry + 1
-        local isFGILoaded = C_AddOns.IsAddOnLoaded('FastGuildInvite')
-        if isFGILoaded then ns.code:fOut(L['FGI_LOADED'], ns.COLOR_ERROR) return
-        elseif retry > 5 then return
-        elseif retry <= 5 then C_Timer.After(1, function() checkForFGI(retry + 1) end) end
-    end
-    checkForFGI(0)
-
     ns.code:fOut(L['TITLE']..' '..GR.versionOut..' '..L['ENABLED'], ns.COLOR_DEFAULT, true)
     if GR.isPreRelease then
         ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.preReleaseType))), 'FFFFFF00', true)
@@ -154,24 +145,9 @@ function core:StartGuildRecruiter(clubID)
     ns.whatsnew:SetShown(true, true)
 end
 function core:StartDatabase(clubID)
-    local wasReset = false
+    local continueConvert, whichOne = ns.convert:ConvertFrom3to4() -- Convert the database from version 3 to version 4
+
     local db = DB:New(GR.db, self.fileStructure) -- Initialize the database
-
-    local function resetDatabase()
-        db.global = db.global and table.wipe(db.global) or {} -- Reset the global database
-        db:ResetProfile() -- Reset current profile
-
-        -- Optionally, delete all other profiles by iterating through them
-        for profileName in pairs(db.profiles) do
-            db.profiles[profileName] = nil  -- Delete profile data
-        end
-
-        wasReset = true
-        db.global.dbVer = GR.dbVersion -- Set the database version
-        ns.code:fOut(L['DATABASE_RESET'], ns.COLOR_ERROR)
-    end
-
-    if not db.global.dbVer or (db.global.dbVer < 4 and db.global.dbVer ~= GR.dbVersion) then resetDatabase() end -- Reset the database if the version is different
 
     if not db.global[clubID] then
         db.global[clubID] = self.guildFileStructure -- Set the guild defaults
@@ -184,7 +160,9 @@ function core:StartDatabase(clubID)
     ns.gFilterList = ns.guild.filterList -- Set the filter list database
 
     GR.debug = GR.isTesting or ns.pSettings.debugMode -- Set the debug modes
-    return wasReset
+    if continueConvert then ns.convert:ContinueConvert(whichOne) end
+
+    return continueConvert
 end
 function core:LoadTables()
     ns.tblBlackList, ns.antiSpamList = {}, {}
@@ -373,6 +351,15 @@ local function eventsPLAYER_LOGIN()
     GR:UnregisterEvent('PLAYER_LOGIN', eventsPLAYER_LOGIN)
 
     core:CheckIfInGuild(0, function(clubID)
+        local function checkForFGI(retry)
+            retry = retry + 1
+            local isFGILoaded = C_AddOns.IsAddOnLoaded('FastGuildInvite')
+            if isFGILoaded then ns.code:fOut(L['FGI_LOADED'], ns.COLOR_ERROR) return
+            elseif retry > 5 then return
+            elseif retry <= 5 then C_Timer.After(1, function() checkForFGI(retry + 1) end) end
+        end
+        checkForFGI(0)
+
         if clubID then core:StartGuildRecruiter(clubID) end
     end)
 end

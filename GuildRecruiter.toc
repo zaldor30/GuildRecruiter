@@ -6,7 +6,7 @@
 ## Version: 4.0.13
 ## Notes: Facilitates guild officers to recruit new members
 ## Author: Moonfury
-## SavedVariables: GuildRecruiterDB
+## SavedVariables: GuildRecruiterDB, devGuildRecruiterDB
 ## IconTexture: Interface\AddOns\GuildRecruiter\Images\GR_Icon
 ## OptionalDeps: Ace3, Blizzard_UnitPopup
 
@@ -32,6 +32,7 @@ Libs\LibDeflate\LibDeflate.lua
 locales\Locales.xml
 
 GR_Init.lua
+GR_Convert.lua
 GR_Constants.lua
 GR_Context.lua
 GR_ChangeLog.lua
