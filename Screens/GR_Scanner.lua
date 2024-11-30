@@ -6,6 +6,12 @@ local scanner = ns.scanner
 
 local function obsCLOSE_SCANNER()
     ns.observer:Unregister('CLOSE_SCREENS', obsCLOSE_SCANNER)
+
+    local baseFrame = ns.base.tblFrame
+    baseFrame.back:SetShown(false)
+    baseFrame.reset:SetShown(false)
+    baseFrame.compact:SetShown(false)
+
     ns.base:SwitchToCompactMode(true, true)
     ns.frames:ResetFrame(scanner.tblFrame.frame)
     scanner.tblFrame.frame = nil
@@ -14,6 +20,7 @@ end
 local function CallBackWhoListUpdate()
     GR:UnregisterEvent('WHO_LIST_UPDATE', CallBackWhoListUpdate)
 
+    ns.analytics:UpdateData('TOTAL_SCANNED', C_FriendList.GetNumWhoResults())
     ns.analytics:UpdateSessionData('SESSION_TOTAL_SCANNED', C_FriendList.GetNumWhoResults())
     scanner:ProcessWhoResults(C_FriendList.GetNumWhoResults())
 end
@@ -343,6 +350,9 @@ function scanner:DisplayWhoList()
                 result.level = result.level == ns.MAX_CHARACTER_LEVEL and ns.code:cText('FF00FF00', result.level) or ns.code:cText('FFFFFFFF', result.level)
                 self.tblToInivite[result.fullName] = result
             else
+                ns.analytics:UpdateData('SCANNED_NO_GUILD')
+                ns.analytics:UpdateSessionData('SESSION_SCANNED_NO_GUILD')
+
                 result.level = ns.code:cText('FFFF0000', result.level)
                 result.failed = ns.code:cText('FFFF0000', reason)
             end
@@ -594,6 +604,8 @@ function scanner:PerformSearch()
     end
 
     updateFilterProgress()
+    ns.analytics:UpdateData('LAST_SCAN', date('%m/%d/%Y %H:%M:%S'))
+    ns.analytics:UpdateSessionData('LAST_SCAN', date('%m/%d/%Y %H:%M:%S'))
 
     FriendsFrame:UnregisterEvent("WHO_LIST_UPDATE")
     GR:RegisterEvent('WHO_LIST_UPDATE', CallBackWhoListUpdate)

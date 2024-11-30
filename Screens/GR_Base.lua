@@ -306,6 +306,7 @@ function base:CreateBottomIcons()
     btnStats:SetScript('OnClick', function() base:buttonAction('OPEN_STATS') end)
     btnStats:SetScript('OnEnter', function() highlightButton(btnStats) ns.code:createTooltip(L['VIEW_ANALYTICS'], L['VIEW_ANALYTICS_TOOLTIP']) end)
     btnStats:SetScript('OnLeave', function() highlightButton(btnStats, true) GameTooltip:Hide() end)
+    self.tblFrame.statsButton = btnStats
 
     --* Blacklist Button
     local btnBlacklist = ns.frames:CreateFrame('Button', 'GR_BlacklistButton', iconFrame)
@@ -345,7 +346,7 @@ function base:buttonAction(button)
     elseif button == 'OPEN_ABOUT' then ns.about:SetShown(true)
     elseif button == 'OPEN_SETTINGS' then Settings.OpenToCategory('Guild Recruiter')
     elseif button == 'SYNC_TOGGLE' then ns.frames:AcceptDialog('Sync\nUnder Construction!!', function() return end)
-    elseif button == 'OPEN_STATS' then ns.frames:AcceptDialog('Stats Screen\nUnder Construction!!', function() return end)
+    elseif button == 'OPEN_STATS' then ns.stats:SetShown(true)
     elseif button == 'OPEN_BLACKLIST' then
         ns.list:ManualBlackList(nil, L['BLACKLIST_NAME_PROMPT'], true)
     elseif button == 'OPEN_RESET' then
@@ -356,5 +357,5 @@ function base:buttonAction(button)
     elseif button == 'OPEN_COMPACT' then
         ns.pSettings.isCompact = not ns.pSettings.isCompact
         ns.scanner:CompactModeChanged(true)
-    end
+    else ns.frames:AcceptDialog('Under Construction!!', function() return end) end
 end

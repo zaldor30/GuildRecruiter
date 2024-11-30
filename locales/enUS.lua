@@ -296,3 +296,30 @@ L['ZONE_NOTE'] = 'Zones with |cFF00FF00*|r are the only editable zones.'
 L['ZONE_LIST_NAME'] = 'The following zones will be ignored by the scanner:'
 --#endregion
 --#endregion
+
+--#region Analytics
+L['ANALYTICS'] = 'Analytics'
+L['ANALYTICS_DESC'] = 'View your stats on inviting players to the guild.'
+L['ANALYTICS_BLACKLISTED'] = 'Players you blacklisted'
+L['ANALYTICS_SCANNED'] = 'Total players scanned'
+L['ANALYTICS_INVITED'] = 'Players you invited to the guild'
+L['ANALYTICS_DECLINED'] = 'Players that declined invite'
+L['ANALYTICS_ACCEPTED'] = 'Players that accepted invite'
+L['ANALYTICS_NO_GUILD'] = 'Players with no guild found'
+L['ANALYTICS_STATS_START'] = 'Stats beginning on'
+L['ANALYTICS_SESSION'] = 'Session'
+L['ANALYTICS_SESSION_SCANNED'] = 'Scanned'
+L['ANALYTICS_SESSION_BLACKLISTED'] = 'Blacklisted'
+L['ANALYTICS_SESSION_INVITED'] = 'Invited'
+L['ANALYTICS_SESSION_DECLINED'] = 'Declined Invite'
+L['ANALYTICS_SESSION_ACCEPTED'] = 'Accepted Invite'
+L['ANALYTICS_SESSION_WAITING'] = 'Waiting on'
+L['ANALYTICS_SESSION_TIMED_OUT'] = 'Invite Timed Out'
+L['ANALYTICS_SESSION_NO_GUILD'] = 'Potential Found'
+L['ANALYTICS_SESSION_STARTED'] = 'Session Started'
+L['LAST_SCAN'] = 'Last Player Scanned'
+
+L['GUILD_ANALYTICS'] = 'Guild Analytics'
+L['PROFILE_ANALYTICS'] = 'Character Analytics'
+L['SESSION_ANALYTICS'] = 'Session Analytics'
+--#endregion
