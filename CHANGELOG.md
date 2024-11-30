@@ -1,10 +1,12 @@
 # Guild Recruiter
     ## 4.0 - War Within/Classic/Cata Release
 
-    ### v4.0.12
+    ### v4.0.12 (Beta)
         - Added analytics screen.
         - Fixed some issues with analytics not counting.
         - Other minor bug fixes.
+        Note: This marks beta for the stable release of 4.0.
+        The alpha will now be for the sync feature.
     ### v4.0.11
         - Created the about page.
         - Added fix for guild name change.
