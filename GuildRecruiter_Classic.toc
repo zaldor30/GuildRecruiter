@@ -6,7 +6,7 @@
 ## Version: 4.0.14
 ## Notes: Facilitates guild officers to recruit new members
 ## Author: Moonfury
-## SavedVariables: GuildRecruiterDB
+## SavedVariables: GuildRecruiterDB, devGuildRecruiterDB
 ## IconTexture: Interface\AddOns\GuildRecruiter\Images\GR_Icon
 ## OptionalDeps: Ace3, Blizzard_UnitPopup
 
