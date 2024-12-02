@@ -80,7 +80,13 @@
         "ToggleDropDownMenu",
         "UIDropDownMenu_CreateInfo",
         "ChatFrame_RemoveMessageEventFilter",
-        "EncounterJournal_LoadUI"
+        "EncounterJournal_LoadUI",
+        "GameFontNormalOutline",
+        "GetUnitName",
+        "FormatPercentage",
+        "WOW_PROJECT_ID",
+        "WOW_PROJECT_MAINLINE",
+        "Minimap"
     ],
     "Lua.diagnostics.disable": [
         "undefined-field",
