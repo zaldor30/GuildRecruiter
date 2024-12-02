@@ -88,14 +88,9 @@
         "UIDropDownMenu_GetSelectedID",
         "AdjustMenuPosition",
         "SetItemRef",
-        "WOW_PROJECT_ID",
-        "WOW_PROJECT_CLASSIC",
-        "GetUnitName",
-        "FormatPercentage",
         "Mixin",
         "BackdropTemplateMixin",
-        "WOW_PROJECT_MAINLINE",
-        "Minimap"
+        "FormatPercentage"
     ],
     "Lua.diagnostics.disable": [
         "undefined-field",
