@@ -87,7 +87,10 @@
         "UIDropDownMenu_SetSelectedID",
         "UIDropDownMenu_GetSelectedID",
         "AdjustMenuPosition",
-        "SetItemRef"
+        "SetItemRef",
+        "Mixin",
+        "BackdropTemplateMixin",
+        "FormatPercentage"
     ],
     "Lua.diagnostics.disable": [
         "undefined-field",
