@@ -3,7 +3,7 @@
 
 ## Interface: 110005
 ## Title: Guild Recruiter (Development)
-## Version: 4.0.13
+## Version: 4.0.15
 ## Notes: Facilitates guild officers to recruit new members
 ## Author: Moonfury
 ## SavedVariables: GuildRecruiterDB, devGuildRecruiterDB
@@ -32,7 +32,6 @@ Libs\LibDeflate\LibDeflate.lua
 locales\Locales.xml
 
 GR_Init.lua
-GR_Convert.lua
 GR_Constants.lua
 GR_Context.lua
 GR_ChangeLog.lua
@@ -47,6 +46,7 @@ Shared\GR_Code_Analytics.lua
 
 #GR_Sync.lua
 GR_Core.lua
+GR_Convert.lua
 GR_Settings.lua
 
 Screens\GR_Base.lua
