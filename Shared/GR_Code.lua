@@ -31,6 +31,17 @@ function code:decompressData(data, decode, skipCompression)
 
     return aceSerializer:Deserialize(decompressedData)
 end
+function code:saveTables(whichOne)
+    ns.guild.blackList = ns.code:compressData(ns.tblBlackList) or ''
+    ns.guild.antiSpamList = ns.code:compressData(ns.tblAntiSpamList) or ''
+
+    if ns.tblAntiSpamList then return end
+    if whichOne == 'BLACK_LIST' then ns.guild.blackList = ns.code:compressData(ns.tblBlackList)
+    elseif whichOne == 'ANTI_SPAM_LIST' then ns.guild.antiSpamList = ns.code:compressData(ns.tblAntiSpamList)
+    else
+        --if ns.guilduildSession then ns.guildAnalytics.session = ns.code:compressData(ns.guilduildSession) end
+    end
+end
 
 -- *Console Text Output Routines
 function code:cText(color, text)
@@ -128,17 +139,6 @@ function code:createTooltip(text, body, force, frame)
 end
 
 -- * Tables and Data Sorting Routines
-function code:saveTables(whichOne)
-    ns.g.blackList = ns.code:compressData(ns.tblBlackList) or ''
-    ns.g.antiSpamList = ns.code:compressData(ns.tblAntiSpamList) or ''
-
-    if ns.tblAntiSpamList then return end
-    if whichOne == 'BLACK_LIST' then ns.g.blackList = ns.code:compressData(ns.tblBlackList)
-    elseif whichOne == 'ANTI_SPAM_LIST' then ns.g.antiSpamList = ns.code:compressData(ns.tblAntiSpamList)
-    else
-        --if ns.guildSession then ns.gAnalytics.session = ns.code:compressData(ns.guildSession) end
-    end
-end
 function code:sortTableByField(tbl, sortField, reverse)
     if not tbl or not sortField then return end
 
