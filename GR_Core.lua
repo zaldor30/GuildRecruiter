@@ -43,6 +43,21 @@ function GR:OnInitialize()
         end
     end
 
+    if WOW_PROJECT_ID ~= WOW_PROJECT_MAINLINE then
+        core.isEnabled = false
+        ns.code:fOut(L['CLASSIC_WARNING'], 'FFFF0000')
+        return
+    end
+
+    local function checkForFGI(retry)
+        retry = retry + 1
+        local isFGILoaded = C_AddOns.IsAddOnLoaded('FastGuildInvite')
+        if isFGILoaded then ns.code:fOut(L['FGI_LOADED'], ns.COLOR_ERROR) return
+        elseif retry > 5 then return
+        elseif retry <= 5 then C_Timer.After(1, function() checkForFGI(retry + 1) end) end
+    end
+    checkForFGI(0)
+
     checkIfInGuild(0)
 end
 

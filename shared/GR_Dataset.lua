@@ -49,6 +49,9 @@ function ds:WhatsNew() -- What's new in the current version
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
 
+    |CFFFFFF00v3.2.72 Notes|r
+        - Added a warning about FGI not disabled.
+        - Added a warning about not supporting classic/cata.
     |CFFFFFF00v3.2.71 Notes|r
         - Update version to 11.05 for patch.
     |CFFFFFF00v3.2.70 Notes|r

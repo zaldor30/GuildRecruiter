@@ -1,6 +1,9 @@
 # Guild Recruiter
 ## 3.0 - War Within Release
 
+### 3.2.72
+    - Added a warning about FGI not disabled.
+    - Added a warning about not supporting classic/cata.
 ### 3.2.71
     - Update version for 11.05
 ### 3.2.70

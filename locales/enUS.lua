@@ -2,6 +2,13 @@
 local L = LibStub("AceLocale-3.0"):NewLocale("GuildRecruiter", "enUS", true)
 if not L then return end
 
+L['CLASSIC_WARNING'] = [[
+This version only works for Retail WoW.
+In Curseforge, right click on Guild Recruiter
+and select Release Type Beta for Classic WoW
+and Cata WoW.
+]]
+
 -- * General
 L["TITLE"] = "Guild Recruiter"
 L["INVITE"] = 'Invite'
