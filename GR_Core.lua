@@ -98,10 +98,10 @@ function core:Init()
         guildLeaderToon = nil,
         gmActive = false,
         analytics = {},
-        blackList = {},
+        blackList = "",
         filterList = {},
         messageList = {},
-        antiSpamList = {},
+        antiSpamList = "",
         blackListRemoved = {},
     }
 end
@@ -167,10 +167,10 @@ end
 function core:LoadTables()
     ns.tblBlackList, ns.antiSpamList = {}, {}
 
-    local blSuccess, tblBL = ns.code:decompressData(ns.g.blackList or {})
+    local blSuccess, tblBL = ns.code:decompressData(ns.guild.blackList or {})
     ns.tblBlackList = blSuccess and tblBL or {}
 
-    local asSuccess, tblAS = ns.code:decompressData(ns.g.antiSpamList or {})
+    local asSuccess, tblAS = ns.code:decompressData(ns.guild.antiSpamList or {})
     ns.tblAntiSpamList = asSuccess and tblAS or {}
 
     --* Load Class/Race and Invalid Zones Table
