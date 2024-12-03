@@ -281,7 +281,7 @@ function core:StartupGuild(clubID)
     local function createGuildLink(retry)
         retry = retry + 1
 
-        local club = clubID and ClubFinderGetCurrentClubListingInfo(clubID) or nil
+        local club = clubID and C_ClubFinder.GetRecruitingClubInfoFromClubID(clubID) or nil
 
         if club then
             local guildLink = "|cffffd200|HclubFinder:"..club.clubFinderGUID.."|h["..club.name.."]|h|r"
