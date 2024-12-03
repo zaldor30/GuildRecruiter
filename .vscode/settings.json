@@ -47,7 +47,8 @@
         "OKAY",
         "NOT_BOUND",
         "IsSecureCmd",
-        "ChatEdit_GetActiveWindow"
+        "ChatEdit_GetActiveWindow",
+        "class"
     ],
     "Lua.runtime.version": "Lua 5.1",
     "Lua.runtime.builtin": {
