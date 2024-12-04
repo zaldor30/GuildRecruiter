@@ -323,3 +323,16 @@ L['GUILD_ANALYTICS'] = 'Guild Analytics'
 L['PROFILE_ANALYTICS'] = 'Character Analytics'
 L['SESSION_ANALYTICS'] = 'Session Analytics'
 --#endregion
+
+--#region Sync
+L['SYNC_ALREADY_IN_PROGRESS'] = 'Sync is already in progress'
+-- Server
+L['SYNC_SERVER_STARTED'] = 'You have initiated a sync with your guild.'
+L['SYNC_CLIENTS_FOUND'] = 'You found &d clients to sync with.'
+-- Client
+L['SYNC_CLIENT_STARTED'] = 'A guild member requested a sync with you.'
+
+L['DATA_WAIT_TIMEOUT'] = 'Did not get data from client(s).'
+L['REQUEST_WAIT_TIMEOUT'] = 'Did not get a reply from server.'
+L['NO_CLIENTS_FOUND_TO_SYNC_WITH'] = 'No clients found to sync with.'
+--#endregion

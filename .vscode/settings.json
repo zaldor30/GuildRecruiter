@@ -87,7 +87,15 @@
         "UIDropDownMenu_SetSelectedID",
         "UIDropDownMenu_GetSelectedID",
         "AdjustMenuPosition",
-        "SetItemRef"
+        "SetItemRef",
+        "WOW_PROJECT_ID",
+        "WOW_PROJECT_CLASSIC",
+        "GetUnitName",
+        "FormatPercentage",
+        "Mixin",
+        "BackdropTemplateMixin",
+        "WOW_PROJECT_MAINLINE",
+        "Minimap"
     ],
     "Lua.diagnostics.disable": [
         "undefined-field",
@@ -113,7 +121,7 @@
         "utf8": "disable"
     },
     "Lua.workspace.library": [
-        "~\\.vscode\\extensions\\ketho.wow-api-0.17.6\\Annotations"
+        "~\\.vscode\\extensions\\ketho.wow-api-0.17.9\\Annotations"
     ],
     "cSpell.words": [
         "alreadyinguild",

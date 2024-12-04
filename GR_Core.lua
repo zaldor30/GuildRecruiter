@@ -82,7 +82,6 @@ function core:Init()
         },
         settings = {
             -- General Settings
-            obeyBlockInvites = true, -- Obey Block Invites
             showConsoleMessages = false, -- Show Console Messages
             -- Invite Settings
             antiSpam = true,
@@ -103,6 +102,7 @@ function core:Init()
         messageList = {},
         antiSpamList = {},
         blackListRemoved = {},
+        lastSync = {}, -- Who, Date
     }
 end
 function core:StartGuildRecruiter(clubID)
@@ -340,7 +340,9 @@ function core:StartupGuild(clubID)
     ns.guildInfo.guildLink = (ns.guildInfo.guildLink and ns.guildInfo.guildLink ~= '') and ns.guildInfo.guildLink or nil
     if ns.guildInfo.guildLink and not ns.guildInfo.guildLink:match(guildName) then ns.guildInfo.guildLink = nil end
 
-    if not ns.classic and not ns.guildInfo.guildLink then createGuildLink(0) end
+    if not ns.classic then
+        if not ns.guildInfo.guildLink or not ns.guildInfo.guildLink:match(guildName) then createGuildLink(0) end
+    end
 end
 function core:CheckIfInGuild(count, callback)
     count = count or 0

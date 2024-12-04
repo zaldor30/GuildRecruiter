@@ -296,6 +296,7 @@ function base:CreateBottomIcons()
         if not self.syncActive then highlightButton(btnSync) end
         ns.code:createTooltip(L['MANUAL_SYNC'], L['MANUAL_SYNC_TOOLTIP']) end)
     btnSync:SetScript('OnLeave', function() highlightButton(btnSync, true) GameTooltip:Hide() end)
+    self.tblFrame.syncButton = btnSync
 
     --* Stats Button
     local btnStats = ns.frames:CreateFrame('Button', 'GR_StatsButton', iconFrame)
