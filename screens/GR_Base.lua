@@ -32,7 +32,7 @@ function base:Init()
     }
 end
 function base:StartUp() -- Start the Main (base) Window.  Called from ns.core.
-    self.screenPos = ns.pSettings.screenPos or self.screenPos
+    self.screenPos = ns.pSettings and (ns.pSettings.screenPos or self.screenPos) or self.screenPos
     self.isFGILoaded = C_AddOns.IsAddOnLoaded('FastGuildInvite')
     self:CreateBaseFrame()
     self:CreateBaseHeaderFrame()
@@ -49,7 +49,7 @@ function base:CreateBaseFrame()
             end
         end
 
-        if not notSpecial and not ns.gSettings.keepOpen then
+        if not notSpecial and (not ns.gSettings or not ns.gSettings.keepOpen) then
             _G['GuildRecruiter'] = self.tblFrame.frame
             tinsert(UISpecialFrames, 'GuildRecruiter')
         end
@@ -217,7 +217,7 @@ function base:CreateBaseIconFrame()
     blacklistIconButton:SetShown(true)
 
     -- Create Filter 
-    if ns.pSettings.debugMode then
+    if ns.pSettings and ns.pSettings.debugMode then
         local filterIconButton = CreateFrame('Button', 'GR_BASE_FILTERICON', tblFrame.topFrame)
         filterIconButton:SetSize(20, 20)
         filterIconButton:SetPoint('LEFT', blacklistIconButton, 'RIGHT', 5, 0)

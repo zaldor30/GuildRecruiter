@@ -72,6 +72,8 @@ end
 
 -- * Tables and Data Sorting Routines
 function code:saveTables(whichOne)
+    if not ns.g then return end
+
     ns.g.blackList = ns.code:compressData(ns.tblBlackList) or ''
     ns.g.antiSpamList = ns.code:compressData(ns.tblAntiSpamList) or ''
 

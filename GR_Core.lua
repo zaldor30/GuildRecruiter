@@ -14,51 +14,10 @@ function GR:OnInitialize()
     if core.isEnabled then return end -- Prevents double initialization
 
     GR:RegisterChatCommand('rl', function() ReloadUI() end) -- Set the /rl slash command to reload the UI
+
     ns.events:RegisterEvent('PLAYER_LOGIN', function()
-        local function OnCommReceived(_,prefix, message, distribution, sender)
-            ns.sync:OnCommReceived(prefix, message, distribution, sender)
-        end
-        --GR:RegisterComm(GR.commPrefix, OnCommReceived)
-        ns.events:RegisterEvent('CHAT_MSG_ADDON', OnCommReceived)
+        core:PreInitialize() -- Pre-Initialize the application
     end)
-
-    local function checkIfInGuild(count) -- Check if the player is in a guild
-        if not count then return end
-
-        local clubID = C_Club.GetGuildClubId() -- Get the guild club ID (Guild ID)
-        if count >= 60 then -- If the player is not in a guild after 30 attempts, then return
-            core.isEnabled = false
-            ns.code:cOut(L['NO GUILD']..' '..L['NOT_LOADED'])
-            return
-        elseif IsInGuild() and not CanGuildInvite() then -- If the player is in a guild but cannot invite, then return
-            core.isEnabled = false
-            ns.code:dOut(L['CANNOT_INVITE'])
-            ns.code:dOut(L['NOT_LOADED'])
-            return
-        elseif not IsInGuild() or not clubID or not select(1, GetGuildInfo('player')) then -- If the player is not in a guild, then check again in 1 second
-            C_Timer.After(1, function() checkIfInGuild(count + 1) end)
-        elseif clubID then
-            core.isEnabled = true
-            core:StartGuildRecruiter(clubID)
-        end
-    end
-
-    if WOW_PROJECT_ID ~= WOW_PROJECT_MAINLINE then
-        core.isEnabled = false
-        ns.code:fOut(L['CLASSIC_WARNING'], 'FFFF0000')
-        return
-    end
-
-    local function checkForFGI(retry)
-        retry = retry + 1
-        local isFGILoaded = C_AddOns.IsAddOnLoaded('FastGuildInvite')
-        if isFGILoaded then ns.code:fOut(L['FGI_LOADED'], ns.COLOR_ERROR) return
-        elseif retry > 5 then return
-        elseif retry <= 5 then C_Timer.After(1, function() checkForFGI(retry + 1) end) end
-    end
-    checkForFGI(0)
-
-    checkIfInGuild(0)
 end
 
 function core:Init()
@@ -141,6 +100,52 @@ function core:Init()
     }
 end
 -- * Guild Recruiter Startup Routines
+function core:PreInitialize() -- Pre-Initialize the application
+    if WOW_PROJECT_ID ~= WOW_PROJECT_MAINLINE then
+        core.isEnabled = false
+        ns.code:fOut(L['CLASSIC_WARNING'], 'FFFF0000')
+        ns.win.classic:SetShown(true)
+        return
+    end
+
+    local function checkForFGI(retry)
+        retry = retry + 1
+        local isFGILoaded = C_AddOns.IsAddOnLoaded('FastGuildInvite')
+        if isFGILoaded then ns.code:fOut(L['FGI_LOADED'], ns.COLOR_ERROR) return true
+        elseif retry > 5 then return
+        elseif retry <= 5 then C_Timer.After(1, function() checkForFGI(retry + 1) end) end
+    end
+    if checkForFGI(0) then return end
+
+    local function OnCommReceived(_,prefix, message, distribution, sender)
+        ns.sync:OnCommReceived(prefix, message, distribution, sender)
+    end
+    --GR:RegisterComm(GR.commPrefix, OnCommReceived)
+    ns.events:RegisterEvent('CHAT_MSG_ADDON', OnCommReceived)
+
+    local function checkIfInGuild(count) -- Check if the player is in a guild
+        if not count then return end
+
+        local clubID = C_Club.GetGuildClubId() -- Get the guild club ID (Guild ID)
+        if count >= 60 then -- If the player is not in a guild after 30 attempts, then return
+            core.isEnabled = false
+            ns.code:cOut(L['NO GUILD']..' '..L['NOT_LOADED'])
+            return
+        elseif IsInGuild() and not CanGuildInvite() then -- If the player is in a guild but cannot invite, then return
+            core.isEnabled = false
+            ns.code:dOut(L['CANNOT_INVITE'])
+            ns.code:dOut(L['NOT_LOADED'])
+            return
+        elseif not IsInGuild() or not clubID or not select(1, GetGuildInfo('player')) then -- If the player is not in a guild, then check again in 1 second
+            C_Timer.After(1, function() checkIfInGuild(count + 1) end)
+        elseif clubID then
+            core.isEnabled = true
+            core:StartGuildRecruiter(clubID)
+        end
+    end
+
+    checkIfInGuild(0)
+end
 function core:StartDatabase(clubID)
     if not clubID then return end
 

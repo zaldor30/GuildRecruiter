@@ -2,7 +2,7 @@
 ## X-Website: https://www.curseforge.com/wow/addons/guild-recruiter
 
 ## Interface: 11503, 40400
-## Version: 3.1.38
+## Version: 3.2.73
 ## Title: Guild Recruiter
 ## Notes: Facilitates guild officers to recruit new members
 ## Author: Moonfury
@@ -46,6 +46,7 @@ GR_Settings.lua
 Screens\GR_Base.lua
 Screens\GR_Home.lua
 Screens\GR_About.lua
+Screens\GR_Classic.lua
 Screens\GR_Filters.lua
 Screens\GR_Scanner.lua
 Screens\GR_WhatsNew.lua
