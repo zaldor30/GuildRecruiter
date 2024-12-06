@@ -331,6 +331,7 @@ function base:CreateBottomIcons()
     btnFilter:SetShown(GR.enableFilter)
 end
 function base:buttonAction(button)
+    --ns.frames:AcceptDialog('Sync\nUnder Construction!!', function() return end)
     if button == 'HOME' then
         base.tblFrame.back:SetShown(false)
         base.tblFrame.reset:SetShown(false)
@@ -346,7 +347,7 @@ function base:buttonAction(button)
         ns.scanner:SetShown(true)
     elseif button == 'OPEN_ABOUT' then ns.about:SetShown(true)
     elseif button == 'OPEN_SETTINGS' then Settings.OpenToCategory('Guild Recruiter')
-    elseif button == 'SYNC_TOGGLE' then ns.frames:AcceptDialog('Sync\nUnder Construction!!', function() return end)
+    elseif button == 'SYNC_TOGGLE' then ns.sync:BeginSync('SERVER')
     elseif button == 'OPEN_STATS' then ns.stats:SetShown(true)
     elseif button == 'OPEN_BLACKLIST' then
         ns.list:ManualBlackList(nil, L['BLACKLIST_NAME_PROMPT'], true)

@@ -326,13 +326,30 @@ L['SESSION_ANALYTICS'] = 'Session Analytics'
 
 --#region Sync
 L['SYNC_ALREADY_IN_PROGRESS'] = 'Sync is already in progress'
+L['SYNC_FAIL_TIMER'] = 'Sync timed out, please try again.'
 -- Server
-L['SYNC_SERVER_STARTED'] = 'You have initiated a sync with your guild.'
-L['SYNC_CLIENTS_FOUND'] = 'You found &d clients to sync with.'
+L['AUTO_SYNC_STARTED'] = 'You have initiated an auto sync with your guild.'
+L['MANUAL_SYNC_STARTED'] = 'You have initiated a sync with your guild.'
+L['SYNC_CLIENTS_FOUND'] = 'You found %d clients to sync with.'
 -- Client
-L['SYNC_CLIENT_STARTED'] = 'A guild member requested a sync with you.'
+L['SYNC_CLIENT_STARTED'] = 'has requested to sync with Guild Recruiter.'
+-- Either
+L['SYNC_SETTINGS_FAILED'] = 'Failed to prep settings for send.'
 
+-- Errors
 L['DATA_WAIT_TIMEOUT'] = 'Did not get data from client(s).'
 L['REQUEST_WAIT_TIMEOUT'] = 'Did not get a reply from server.'
 L['NO_CLIENTS_FOUND_TO_SYNC_WITH'] = 'No clients found to sync with.'
+
+-- Sync Messages
+L['AUTO_SYNC'] = 'Auto Sync'
+L['MANUAL_SYNC'] = 'Manual Sync'
+L['CLIENT_SYNC'] = 'Client Sync'
+L['SYNC_FINISHED'] = 'has finished.'
+
+-- End of Sync Messages
+L['SETTINGS_CHANGED'] = 'Settings have been updated.'
+L['MESSAGE_LIST_CHANGED'] = 'Message list has been updated.'
+L['BLACKLIST_CHANGED'] = 'Blacklist has been updated with %d entries.'
+L['ANTISPAM_CHANGED'] = 'Anti-Spam list has been updated with %d entries.'
 --#endregion

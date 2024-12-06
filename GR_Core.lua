@@ -152,6 +152,7 @@ function core:StartGuildRecruiter(clubID)
         ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.preReleaseType))), 'FFFFFF00', true)
     end
     ns.whatsnew:SetShown(true, true)
+    self.isEnabled = true
 end
 function core:StartDatabase(clubID)
     local wasReset = false

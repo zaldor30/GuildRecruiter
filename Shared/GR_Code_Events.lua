@@ -8,10 +8,10 @@ local events, observer = ns.events, ns.observer
 function events:StartBaseEvents()
     local function eventPLAYER_LOGOUT()
         ns.code:saveTables()
-        ns.analytics:SaveAnalytics()
+        ns.analytics:SaveData()
     end
     local function eventCHAT_MSG_ADDON(...)
-        local prefix = ...
+        local _, prefix = ...
         if prefix:match(GR.commPrefix) then
             observer:Notify('eventCHAT_MSG_ADDON', ...) end
     end
