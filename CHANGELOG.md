@@ -1,6 +1,8 @@
 # Guild Recruiter
     ## 4.0 - War Within/Classic/Cata Release
 
+    ### v4.0.19
+        - Misc bug fixes.
     ### v4.0.14
         - Fixed issue with converting to new database.
     ### v4.0.13 (Beta)
