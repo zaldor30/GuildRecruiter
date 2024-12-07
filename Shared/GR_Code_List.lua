@@ -8,12 +8,11 @@ local list = ns.list
 function list:AddToAntiSpam(fullName)
     if not fullName then return end
 
-    local newAntiSpam = {
+    fullName = strlower(fullName:match('-') and fullName or fullName..'-'..GetRealmName())
+    ns.tblAntiSpamList[fullName] = {
         time = time(),
         name = fullName,
     }
-    fullName = strlower(fullName:match('-') and fullName or fullName..'-'..GetRealmName())
-    ns.tblAntiSpamList[fullName] = newAntiSpam
 end
 
 --* Blacklist Routines
@@ -28,6 +27,9 @@ function list:AddToBlackList(fullName, reason)
         blBy = UnitName('player'),
         date = time(),
     }
+
+    ns.analytics:UpdateData('BLACKLISTED', 1)
+    ns.analytics:UpdateSessionData('SESSION_BLACKLISTED', 1)
 end
 function list:BlacklistReason(fullName)
     if not fullName then return end

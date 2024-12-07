@@ -32,14 +32,12 @@ function code:decompressData(data, decode, skipCompression)
     return aceSerializer:Deserialize(decompressedData)
 end
 function code:saveTables(whichOne)
-    ns.guild.blackList = ns.code:compressData(ns.tblBlackList) or ''
-    ns.guild.antiSpamList = ns.code:compressData(ns.tblAntiSpamList) or ''
-
-    if ns.tblAntiSpamList then return end
+    if not ns.tblAntiSpamList then return end
     if whichOne == 'BLACK_LIST' then ns.guild.blackList = ns.code:compressData(ns.tblBlackList)
     elseif whichOne == 'ANTI_SPAM_LIST' then ns.guild.antiSpamList = ns.code:compressData(ns.tblAntiSpamList)
     else
-        --if ns.guilduildSession then ns.guildAnalytics.session = ns.code:compressData(ns.guilduildSession) end
+        ns.guild.blackList = ns.code:compressData(ns.tblBlackList)
+        ns.guild.antiSpamList = ns.code:compressData(ns.tblAntiSpamList)
     end
 end
 
@@ -182,7 +180,7 @@ function code:isInMyGuild(name)
     local isFriend = false
     local numFriends = C_FriendList.GetNumFriends()
     for i = 1, numFriends do
-        local friendInfo = C_FriendList.GetFriendInfo(i)
+        local friendInfo = C_FriendList.GetFriendInfoByIndex(i)
         if friendInfo and friendInfo.name == name then
             isFriend = true -- Player is on the friends list
             break

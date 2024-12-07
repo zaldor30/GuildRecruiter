@@ -3,7 +3,7 @@
 
 ## Interface: 11505, 40401
 ## Title: Guild Recruiter
-## Version: 4.0.20
+## Version: 4.0.21
 ## Notes: Facilitates guild officers to recruit new members
 ## Author: Moonfury
 ## SavedVariables: GuildRecruiterDB, devGuildRecruiterDB

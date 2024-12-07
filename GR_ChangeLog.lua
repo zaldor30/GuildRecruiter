@@ -4,6 +4,9 @@ ns.changeLog = [[
     # Guild Recruiter
     ## 4.0 - War Within/Classic/Cata Release
 
+    ### v4.0.21
+        - Fixed issue with blacklist and anti-spam list not loading/saving.
+        - Fixed issue with counting Blacklisted players.
     ### v4.0.19
         - Misc bug fixes.
     ### v4.0.14

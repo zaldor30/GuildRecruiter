@@ -22,13 +22,13 @@ local function CallBackWhoListUpdate()
 
     ns.analytics:UpdateData('TOTAL_SCANNED', C_FriendList.GetNumWhoResults())
     ns.analytics:UpdateSessionData('SESSION_TOTAL_SCANNED', C_FriendList.GetNumWhoResults())
-    scanner:ProcessWhoResults(C_FriendList.GetNumWhoResults())
+    scanner:ProcessWhoResults()
 end
 
 local function updateFilterProgress(skipInc)
     -- Progress in filter
     if not skipInc then scanner.filterCount = scanner.filterCount + 1 end
-    ns.status:SetText(L['FILTER_PROGRESS']..': '..FormatPercentage(scanner.filterCount/scanner.filterTotal, 2))
+    ns.status:SetText(L['FILTER_PROGRESS']..': '..FormatPercentage(scanner.filterCount/scanner.filterTotal, true))
 end
 
 function scanner:Init()
