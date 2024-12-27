@@ -4,6 +4,11 @@ ns.changeLog = [[
     # Guild Recruiter
     ## 4.0 - War Within/Classic/Cata Release
 
+    ### v4.0.23
+        - Fixed issue always sending guild greetings.
+        - Fixed issue with detecting certain rejections on invite.
+        - Worked on logic to use invite and welcome messages.
+        - Bumped retail to cover patch 11.07.
     ### v4.0.22
         - Fixed issue with blacklist and anti-spam list not loading/saving.
         - Fixed issue with counting Blacklisted players.

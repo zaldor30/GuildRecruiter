@@ -1,4 +1,4 @@
-local addonName, ns = ... -- Namespace (myaddon, namespace)
+local addonName, ns = ... -- Namespace (myAddon, namespace)
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
 local AC, ACD = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0')
@@ -212,7 +212,7 @@ function core:LoadTables()
     end
 
     ns.invite:Init()
-    ns.invite:GetMessage()
+    ns.invite:GetMessages()
     ns.invite:RegisterInviteObservers()
 
     ns.analytics:RetrieveSavedData()
@@ -338,10 +338,10 @@ function core:StartupGuild(clubID)
     end
 
     ns.guildInfo.guildLink = (ns.guildInfo.guildLink and ns.guildInfo.guildLink ~= '') and ns.guildInfo.guildLink or nil
-    if ns.guildInfo.guildLink and not ns.guildInfo.guildLink:match(guildName) then ns.guildInfo.guildLink = nil end
+    if ns.guildInfo.guildLink and not strmatch(ns.guildInfo.guildLink, guildName) then ns.guildInfo.guildLink = nil end
 
     if not ns.classic then
-        if not ns.guildInfo.guildLink or not ns.guildInfo.guildLink:match(guildName) then createGuildLink(0) end
+        if not ns.guildInfo.guildLink or not strmatch(ns.guildInfo.guildLink, guildName) then createGuildLink(0) end
     end
 end
 function core:CheckIfInGuild(count, callback)

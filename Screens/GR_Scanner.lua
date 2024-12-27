@@ -35,6 +35,8 @@ function scanner:Init()
     self.isCompact = false
     self.compactMode = ns.g.compactSize or 1
 
+    ns.invite:GetMessages()
+
     self.baseX, self.baseY = 600, 475
     self.adjustedY = self.baseY - (ns.base.tblFrame.icon:GetHeight() + ns.status.frame:GetHeight() + 5)
 
@@ -47,8 +49,8 @@ function scanner:Init()
     self.filterTotal = self.filterTotal or 0
 
     self.tblWho = self.tblWho or {}
-    self.tblToInivite = self.tblToInivite or {}
-    self.tblToIniviteSorted = {}
+    self.tblToInvite = self.tblToInvite or {}
+    self.tblToInviteSorted = {}
 
     self.minLevel, self.maxLevel = (ns.pSettings.minLevel or ns.MAX_CHARACTER_LEVEL - 5), ns.pSettings.maxLevel or ns.MAX_CHARACTER_LEVEL
     self.minLevel = type(self.minLevel) == 'string' and tonumber(self.minLevel) or self.minLevel
@@ -275,7 +277,7 @@ function scanner:ProcessWhoResults()
 end
 function scanner:DisplayWhoList()
     self.tblWho = self.tblWho or {}
-    self.tblToInivite = self.tblToInivite or {}
+    self.tblToInvite = self.tblToInvite or {}
 
     local rowHeight = 20
     local sFrame = self.tblFrame.whoScroll
@@ -346,9 +348,9 @@ function scanner:DisplayWhoList()
     for i, result in ipairs(whoSorted) do
         if result.guild == '' then
             local inviteOk, reason = ns.invite:CheckWhoList(result.fullName, result.zone)
-            if inviteOk and not self.tblToInivite[result.fullName] then
+            if inviteOk and not self.tblToInvite[result.fullName] then
                 result.level = result.level == ns.MAX_CHARACTER_LEVEL and ns.code:cText('FF00FF00', result.level) or ns.code:cText('FFFFFFFF', result.level)
-                self.tblToInivite[result.fullName] = result
+                self.tblToInvite[result.fullName] = result
             else
                 ns.analytics:UpdateData('SCANNED_NO_GUILD')
                 ns.analytics:UpdateSessionData('SESSION_SCANNED_NO_GUILD')
@@ -371,18 +373,18 @@ function scanner:DisplayWhoList()
     self:DisplayInviteList()
 end
 function scanner:DisplayInviteList()
-    self.tblToInivite = self.tblToInivite or {}
+    self.tblToInvite = self.tblToInvite or {}
 
     local rowHeight = 20
     local sFrame = self.tblFrame.scannerFrame
     local scrollFrame = self.tblFrame.inviteScroll
-    self.tblToIniviteSorted = ns.code:sortTableByField(self.tblToInivite, 'fullName')
+    self.tblToInviteSorted = ns.code:sortTableByField(self.tblToInvite, 'fullName')
 
     if self.tblFrame.inviteContent then
         ns.frames:ResetFrame(self.tblFrame.inviteContent) end
 
     local content = ns.frames:CreateFrame('Frame', 'Invite_Entry_Content', scrollFrame)
-    content:SetSize(scrollFrame:GetWidth() - rowHeight, #self.tblToIniviteSorted * rowHeight)
+    content:SetSize(scrollFrame:GetWidth() - rowHeight, #self.tblToInviteSorted * rowHeight)
     content:SetBackdropColor(0, 0, 0, 0)
     content:SetBackdropBorderColor(0, 0, 0, 0)
     content:Show()
@@ -440,7 +442,7 @@ function scanner:DisplayInviteList()
     end
 
     local rowCount = 0
-    for i, result in ipairs(self.tblToIniviteSorted) do
+    for i, result in ipairs(self.tblToInviteSorted) do
         local row = createInviteEntry(content, result)
         if row then
             row:SetPoint("TOPLEFT", content, "TOPLEFT", 0, -((i-1) * rowHeight))
@@ -453,10 +455,10 @@ function scanner:DisplayInviteList()
     scrollFrame:SetVerticalScroll(0)
     scrollFrame:Show()
 
-    self.tblFrame.scannerFrame.playerCountText:SetText(string.format(L['PLAYERS_QUEUED'], #self.tblToIniviteSorted))
+    self.tblFrame.scannerFrame.playerCountText:SetText(string.format(L['PLAYERS_QUEUED'], #self.tblToInviteSorted))
     if sFrame.nextText then
-        local nextPlayer = #self.tblToIniviteSorted > 0 and self.tblToIniviteSorted[1].name or L['NO_QUEUED_PLAYERS']
-        sFrame.nextText:SetText(string.format(L['NEXT_PLAYER_INVITE'], #self.tblToIniviteSorted))
+        local nextPlayer = #self.tblToInviteSorted > 0 and self.tblToInviteSorted[1].name or L['NO_QUEUED_PLAYERS']
+        sFrame.nextText:SetText(string.format(L['NEXT_PLAYER_INVITE'], #self.tblToInviteSorted))
         sFrame.nextPlayerText:SetText(nextPlayer)
     end
 end
@@ -556,15 +558,16 @@ function scanner:CompactModeChanged(startCompact, closed)
     end
 end
 function scanner:BuildFilters()
-    local filter = ns.pSettings.filterList or {}
     local filterID = ns.pSettings.activeFilter or 9999
     self.tblFilter = {}
 
     local min, max = self.minLevel, self.maxLevel
-    local function createQuery(desc, criteria)
+    local function createQuery(desc, criteria, lMin, rangeEnd)
         local fRec = {
             ['desc'] = desc..' ('..min..'-'..max..')',
             ['cmdWho'] = criteria..' '..min..'-'..max,
+            ['min'] = lMin,
+            ['max'] = rangeEnd,
         }
         return fRec
     end
@@ -577,7 +580,7 @@ function scanner:BuildFilters()
         prefix = 'c-'
         tblSorted = ns.code:sortTableByField(ns.classes, 'name') end
 
-    for _, v in pairs(tblSorted) do
+    for _, v in pairs(tblSorted or {}) do
         local lMin, lMax = min, max
         while lMin <= lMax do
             local query = prefix..v.name
@@ -636,7 +639,7 @@ function scanner:PerformSearch()
     waitTimer(self.scanReset or 6)
 end
 function scanner:UpdateButtons()
-    local tblInvite = self.tblToInivite
+    local tblInvite = self.tblToInvite
     local sFrame = self.tblFrame
 
     local checked = false
@@ -657,26 +660,26 @@ end
 
 --* Invite Functions
 function scanner:InvitePlayer()
-    if not self.tblToIniviteSorted then return
-    elseif #self.tblToIniviteSorted == 0 then
+    if not self.tblToInviteSorted then return
+    elseif #self.tblToInviteSorted == 0 then
         ns.code:fOut(L['INVITE_FIRST_STEP']) return
     end
 
-    local tbl = tremove(self.tblToIniviteSorted, 1)
-    self.tblToInivite[tbl.fullName] = nil
+    local tbl = tremove(self.tblToInviteSorted, 1)
+    self.tblToInvite[tbl.fullName] = nil
     if not tbl then return end
 
     ns.invite:AutoInvite(tbl.fullName, tbl.pName, self.inviteFormat)
     self:DisplayWhoList()
 end
 function scanner:AntiSpam()
-    if not self.tblToInivite then return end
+    if not self.tblToInvite then return end
 
     local count = 0
-    for _, v in pairs(self.tblToIniviteSorted) do
+    for _, v in pairs(self.tblToInviteSorted) do
         if v.isChecked and not ns.list:CheckAntiSpam(v.fullName) then
             ns.list:AddToAntiSpam(v.fullName)
-            self.tblToInivite[v.fullName] = nil
+            self.tblToInvite[v.fullName] = nil
             count = count + 1
         end
     end
@@ -685,13 +688,13 @@ function scanner:AntiSpam()
     self:DisplayWhoList() -- Displays invite inside of function
 end
 function scanner:BlacklistPlayer()
-    if not self.tblToInivite then return end
+    if not self.tblToInvite then return end
 
     local count = 0
-    for _, v in pairs(self.tblToInivite) do
+    for _, v in pairs(self.tblToInvite) do
         if v.isChecked and not ns.list:CheckBlacklist(v.fullName) then
             ns.list:AddToBlackList(v.fullName, 'Blacklisted during invite process.')
-            self.tblToInivite[v.fullName] = nil
+            self.tblToInvite[v.fullName] = nil
             count = count + 1
         end
     end

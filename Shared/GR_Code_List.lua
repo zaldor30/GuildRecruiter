@@ -107,13 +107,14 @@ end
 
 --* Check Routines
 function list:CheckAntiSpam(fullName)
-    if not fullName then return end
+    if not fullName then return
+    elseif GR.isTesting then return false, L['ANTI_SPAM'] end
 
     fullName = strlower(fullName:match('-') and fullName or fullName..'-'..GetRealmName())
     local antiSpam = ns.tblAntiSpamList[fullName]
     if not antiSpam then return false, L['ANTI_SPAM'] end
 
-    return true, ''
+    return true, L['ANTI_SPAM']
 end
 function list:CheckBlacklist(fullName)
     if not fullName then return end

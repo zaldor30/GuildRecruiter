@@ -376,7 +376,10 @@ ns.guildRecuriterSettings = {
                     desc = L['GUILD_WELCOME_MSG_DESC'],
                     type = 'toggle',
                     width = 'full',
-                    set = function(_, val) ns.gmSettings.sendGuildGreeting = val end,
+                    set = function(_, val)
+                        ns.gmSettings.sendGuildGreeting = val
+                        ns.invite:GetMessages()
+                    end,
                     get = function() return ns.gmSettings.sendGuildGreeting end,
                 },
                 invGuildWelcomeMessage = {
@@ -392,7 +395,7 @@ ns.guildRecuriterSettings = {
                             return
                         end
                         ns.gmSettings.guildMessage = ns.code:capitalKeyWord(val:trim())
-                        ns.invite:GetWelcomeMessages()
+                        ns.invite:GetMessages()
                     end,
                     get = function() return ns.gmSettings.guildMessage end,
                 },
@@ -731,7 +734,10 @@ ns.guildRecuriterSettings = {
                     type = 'toggle',
                     width = 'full',
                     disabled = function() return ns.gmSettings.forceSendGuildGreeting end,
-                    set = function(_, val) ns.pSettings.sendGuildGreeting = val end,
+                    set = function(_, val)
+                        ns.pSettings.sendGuildGreeting = val
+                        ns.invite:GetMessages()
+                    end,
                     get = function() return ns.gmSettings.forceSendGuildGreeting and ns.gmSettings.sendGuildGreeting or ns.pSettings.sendGuildGreeting end,
                 },
                 invGuildWelcomeMessage = {
@@ -748,7 +754,7 @@ ns.guildRecuriterSettings = {
                             return
                         end
                         ns.pSettings.guildMessage = ns.code:capitalKeyWord(val:trim())
-                        ns.invite:GetMessage()
+                        ns.invite:GetMessages()
                     end,
                     get = function() return ns.gmSettings.forceGuildMessage and ns.gmSettings.guildMessage or ns.pSettings.guildMessage end,
                 },
@@ -790,7 +796,7 @@ ns.guildRecuriterSettings = {
                     type = 'header',
                     order = 90,
                 },
-                GMMessageListInstructions = {
+                MessageListInstructions = {
                     order = 91,
                     name = function() return GetInstructions() end,
                     type = 'description',
@@ -1072,7 +1078,7 @@ ns.guildRecuriterSettings = {
                     order = 1,
                     func = function()
                         ns.g.blackListRemoved = ns.g.blackListRemoved and ns.g.blackListRemoved or {}
-                        for _, r in pairs(tblBlackListSorted) do
+                        for _, r in pairs(tblBlackListSorted or {}) do
                             if r.selected then
                                 tinsert(ns.g.blackListRemoved, ns.tblBlackList[r.key])
                                 ns.tblBlackList[r.key] = nil
@@ -1087,7 +1093,7 @@ ns.guildRecuriterSettings = {
                     width = 1.25,
                     order = 2,
                     func = function()
-                        for _, r in pairs(tblBlackListSorted) do
+                        for _, r in pairs(tblBlackListSorted or {}) do
                             if r.blBy == UnitName('player') then
                                 if r.selected and not r.private then
                                     ns.tblBlackList[r.key].private = true
@@ -1215,7 +1221,7 @@ ns.guildRecuriterSettings = {
                     width = .5,
                     hidden = function() return not checkedZones end,
                     func = function()
-                        for k, r in pairs(tblPlayerZone) do
+                        for k, r in pairs(tblPlayerZone or {}) do
                             if r.selected then
                                 ns.g.zoneList[k] = nil
                                 tblPlayerZone[k] = nil
