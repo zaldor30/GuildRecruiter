@@ -138,6 +138,10 @@ function core:StartGuildRecruiter(clubID)
 
     ns.base:SetShown(true, true)
 
+    ns.invite:Init()
+    ns.invite:GetMessages()
+    ns.invite:RegisterInviteObservers()
+
     local function checkForFGI(retry)
         retry = retry + 1
         local isFGILoaded = C_AddOns.IsAddOnLoaded('FastGuildInvite')
@@ -211,15 +215,11 @@ function core:LoadTables()
         ns.invalidZones = ns.ds:invalidZones_Cata()
     end
 
-    ns.invite:Init()
-    ns.invite:GetMessages()
-    ns.invite:RegisterInviteObservers()
-
     ns.analytics:RetrieveSavedData()
 end
 function core:PerformRecordMaintenance()
     --* Move Player Message List to GM Message List
-    if self.hasGM and #ns.pSettings.messageList > 0 then
+    if ns.isGM and #ns.pSettings.messageList > 0 then
         for _, v in pairs(ns.pSettings.messageList) do
             table.insert(ns.gmSettings.messageList, v)
         end

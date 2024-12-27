@@ -59,6 +59,7 @@ function invite:GetMessages()
     self.msgWhisper = (ns.gmSettings.forceWhisperMessage and ns.gmSettings.sendWhisperGreeting and ns.gmSettings.whisperMessage ~= '') and ns.gmSettings.whisperMessage or (ns.pSettings.whisperMessage or nil)
 
     if ns.gmSettings.forceSendGuildGreeting and ns.gmSettings.sendGuildGreeting then self.useGuild = true
+    elseif ns.isGM then self.useGuild = ns.gmSettings.sendGuildGreeting or false
     else self.useGuild = ns.pSettings.sendGuildGreeting or false end
 
     if ns.pSettings.inviteFormat == ns.InviteFormat.GUILD_INVITE_ONLY or not self.msgInvite then self.useInvite = false
@@ -67,8 +68,8 @@ function invite:GetMessages()
 
     if not self.msgWhisper then self.useWhisper = false
     elseif ns.gmSettings.forceWhisperMessage and ns.gmSettings.sendWhisperGreeting then self.useWhisper = true
+    elseif ns.isGM then self.useWhisper = ns.gmSettings.sendWhisperGreeting or false
     else self.useWhisper = ns.pSettings.sendWhisperGreeting or false end
-    print('Getmessages')
 end
 --* System Message Chat Observers
 function invite:RegisterInviteObservers()
@@ -87,7 +88,7 @@ function invite:RegisterInviteObservers()
         GR:CancelTimer(r.timeOutTimer)
         C_Timer.After(3, function()
             if r.useGuildWelcome then SendChatMessage(ns.code:variableReplacement(self.msgGuild, r.nameOnly, true), 'GUILD') end
-            if r.useWelcomeWhisper then print('Send Whisper Welcome', r.fullName, (self.msgWhisper or 'no message')) queueMessage(r.fullName, ns.code:variableReplacement(self.msgWhisper, r.nameOnly)) end
+            if r.useWelcomeWhisper then queueMessage(r.fullName, ns.code:variableReplacement(self.msgWhisper, r.nameOnly)) end
         end)
 
         ns.analytics:UpdateData('ACCEPTED_INVITE')
@@ -186,7 +187,7 @@ function invite:CheckManualInvite(player) return self:CheckInvite(player, false,
 function invite:CheckInvite(player, antispam, blacklist, zones, zoneName)
     if not player then ns.code:cOut('CheckInvite: No name provided.') return end
 
-    local blReason = ns.list:BlacklistReason(player) or nil
+    local blReason = ns.list:BlacklistReason(player)
     if antispam and ns.list:CheckAntiSpam(player) then return false, L["ANTI_SPAM"] end
     if blacklist and ns.list:CheckBlacklist(player) then return false, (blReason or L["BLACKLIST"]) end
     if zones and zoneName and (zoneName == 'Delves' or ns.invalidZones[strlower(zoneName)]) then return false, L['INVALID_ZONE'] end

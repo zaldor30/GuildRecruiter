@@ -4,6 +4,8 @@ ns.changeLog = [[
     # Guild Recruiter
     ## 4.0 - War Within/Classic/Cata Release
 
+    ### v4.0.24
+        - Fixing issue with Guild welcome message.
     ### v4.0.23
         - Fixed issue always sending guild greetings.
         - Fixed issue with detecting certain rejections on invite.
