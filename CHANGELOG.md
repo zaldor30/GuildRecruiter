@@ -1,8 +1,9 @@
 # Guild Recruiter
     ## 4.0 - War Within/Classic/Cata Release
 
-    ### v4.0.24
+    ### v4.0.25
         - Fixing issue with Guild welcome message.
+        - Fixing issue with Guild invite message.
     ### v4.0.23
         - Fixed issue always sending guild greetings.
         - Fixed issue with detecting certain rejections on invite.

@@ -17,6 +17,8 @@ local function startQueue()
         else queueRunning = true end
 
         local toSend = tremove(messageQueue, 1)
+        if not toSend or not toSend.sendTo or not toSend.message then sendNextMessage() return end
+
         local fName, message = toSend.sendTo:gsub('%-.*', ''), toSend.message
         if toSend.sendTo and fName and message then
             if not ns.pSettings.showWhispers then
@@ -29,10 +31,11 @@ local function startQueue()
             if not ns.pSettings.showWhispers then
                 ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER', message)
                 ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER_INFORM', message)
+                ns.code:fOut(L['INVITE_MESSAGE_SENT']..' '..toSend.sendTo, 'FFFFFF00')
             end
         end
 
-        if #messageQueue > 0 then C_Timer.After(ns.g.timeBetweenMessages or 0.2, sendNextMessage) end
+        C_Timer.After(ns.g.timeBetweenMessages or 0.2, sendNextMessage)
     end
     sendNextMessage()
 end
