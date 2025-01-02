@@ -55,7 +55,7 @@ local function InitializeCustomMenu(frame, level, menuList)
         invWelcomeMessage = {
             text = L['GUILD_INVITE_WELCOME_MESSAGE'],
             notCheckable = true,
-            func = function() ns.invite:ManualInvite(playerName, nil, true, false, true, true) end,
+            func = function() ns.invite:ManualInvite(playerName, true, false, true, true) end,
         }
         UIDropDownMenu_AddButton(invWelcomeMessage, level)
 

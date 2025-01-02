@@ -57,10 +57,12 @@ function invite:Init()
     self:RegisterInviteObservers()
 end
 function invite:GetMessages()
-    self.msgGuild = (ns.gmSettings.forceSendGuildGreeting and ns.gmSettings.sendGuildGreeting and ns.gmSettings.guildMessage ~= '') and ns.gmSettings.guildMessage or ns.gSettings.guildMessage or L['DEFAULT_GUILD_WELCOME']
+    self.msgGuild = L['DEFAULT_GUILD_WELCOME']
+    if ns.isGM then self.msgGuild = ns.gmSettings.guildMessage or self.msgGuild
+    else self.msgGuild = ns.pSettings.guildMessage or self.msgGuild end
+
     self.msgInvite = (ns.guild.messageList and ns.pSettings.activeMessage and ns.guild.messageList[ns.pSettings.activeMessage]) and ns.guild.messageList[ns.pSettings.activeMessage].message or nil
     self.msgWhisper = (ns.gmSettings.forceWhisperMessage and ns.gmSettings.sendWhisperGreeting and ns.gmSettings.whisperMessage ~= '') and ns.gmSettings.whisperMessage or (ns.pSettings.whisperMessage or nil)
-
     if ns.gmSettings.forceSendGuildGreeting and ns.gmSettings.sendGuildGreeting then self.useGuild = true
     elseif ns.isGM then self.useGuild = ns.gmSettings.sendGuildGreeting or false
     else self.useGuild = ns.pSettings.sendGuildGreeting or false end
@@ -205,9 +207,9 @@ function invite:AutoInvite(fullName, justName, inviteFormat)
     local sendInviteMessage = inviteFormat ~= ns.InviteFormat.MESSAGE_ONLY or false
     return self:InvitePlayer(fullName, justName, sendInviteMessage, self.useInvite, self.useGuild, self.useWhisper)
 end
-function invite:ManualInvite(fullName, justName, sendGuildInvite, sendInviteMessage, sendWelcomeMessage, sendWelcomeWhisper)
-    justName = (not justName or justName:match('-')) and fullName:gsub('%-.*', '') or justName
-    return self:InvitePlayer(fullName, justName, (sendGuildInvite or false), (sendInviteMessage or false), not ((sendWelcomeMessage and self.msgGuild) or false), not ((sendWelcomeWhisper and self.msgWhisper) or false))
+function invite:ManualInvite(fullName, sendGuildInvite, sendInviteMessage, sendWelcomeMessage, sendWelcomeWhisper)
+    local justName = (not fullName or fullName:match('-')) and fullName:gsub('%-.*', '') or fullName
+    return self:InvitePlayer(fullName, justName, (sendGuildInvite or false), (sendInviteMessage or false), sendWelcomeMessage, sendWelcomeWhisper)
 end
 function invite:InvitePlayer(fullName, justName, sendGuildInvite, useInviteMessage, useGuildWelcome, useWelcomeWhisper)
     local name_with_realm = strlower(fullName:match('-') and fullName or fullName .. '-' .. GetRealmName())
@@ -228,7 +230,7 @@ function invite:InvitePlayer(fullName, justName, sendGuildInvite, useInviteMessa
         useWelcomeWhisper = useWelcomeWhisper,
         timeOutTimer = GR:ScheduleTimer(function()
             self.tblInvited[name_with_realm] = nil
-            ns.code:cOut('Invite sent to '..fullName..' timed out.')
+            ns.code:dOut('Invite sent to '..fullName..' timed out.')
             ns.analytics:UpdateSessionData('SESSION_INVITE_TIMED_OUT') end, INVITE_TIME_OUT)
     }
     self.tblInvited[fullName] = newInvite

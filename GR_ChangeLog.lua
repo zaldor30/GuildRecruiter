@@ -4,6 +4,10 @@ ns.changeLog = [[
     # Guild Recruiter
     ## 4.0 - War Within/Classic/Cata Release
 
+    ### v4.0.26
+        - Fixed issue with guild welcome message.
+        - Fixed issue with not sending messages with manual invite.
+        - Removed message about timeout on invite.
     ### v4.0.25
         - Fixing issue with Guild welcome message.
         - Fixing issue with Guild invite message.

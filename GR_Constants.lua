@@ -1,4 +1,4 @@
-local addonName, ns = ... -- Namespace (myaddon, namespace)
+local addonName, ns = ... -- Namespace (myAddon, namespace)
 
 ns.ICON_PATH = 'Interface\\AddOns\\'..addonName..'\\Images\\'
 
@@ -6,7 +6,7 @@ GR.commPrefix = 'GRSync'
 GR.dbVersion = 4
 
 GR.debug = false
-GR.isTesting = false -- Used for testing purposes (invite)
+GR.isTesting = true -- Used for testing purposes (invite)
 GR.enableFilter = false
 GR.isPreRelease = true
 GR.preReleaseType = 'Beta'
