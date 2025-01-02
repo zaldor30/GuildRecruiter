@@ -1,7 +1,7 @@
 # Guild Recruiter
     ## 4.0 - War Within/Classic/Cata Release
 
-    ### v4.0.26
+    ### v4.0.27
         - Fixed issue with guild welcome message.
         - Fixed issue with not sending messages with manual invite.
         - Removed message about timeout on invite.
