@@ -1,7 +1,7 @@
 # Guild Recruiter
     ## 4.0 - War Within/Classic/Cata Release
 
-    ### v4.0.29
+    ### v4.0.30
         - Fixed issue tabbing when setting up levels.
     ### v4.0.27
         - Fixed issue with guild welcome message.
