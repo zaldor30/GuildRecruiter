@@ -168,7 +168,7 @@ function home:CreateFilterAndLevel()
             ns.status:SetText(L['MAX_LEVEL_ERROR'] .. ns.MAX_CHARACTER_LEVEL)
         end
 
-        self:validate_data_scan_button()
+        home:validate_data_scan_button()
     end
 
     local skipValidation = false
