@@ -7,6 +7,7 @@ GR.dbVersion = 4
 
 GR.debug = false
 GR.isTesting = false -- Used for testing purposes (invite)
+GR.testingPlayerName = 'Monkstrife'
 GR.enableFilter = false
 GR.isPreRelease = true
 GR.preReleaseType = 'Beta'

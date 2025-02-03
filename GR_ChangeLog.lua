@@ -1,9 +1,13 @@
-local _, ns = ... -- Namespace (myaddon, namespace)
+local _, ns = ... -- Namespace (myAddon, namespace)
 
 ns.changeLog = [[
     # Guild Recruiter
     ## 4.0 - War Within/Classic/Cata Release
 
+    ### v4.0.31
+        - Moving this version to retail due to issues with the previous version.
+        - Fixed issue with not sending messages with manual invite.
+        - Fixed issue with allowing players to scan when no invite message is set.
     ### v4.0.30
         - Fixed issue tabbing when setting up levels.
     ### v4.0.27

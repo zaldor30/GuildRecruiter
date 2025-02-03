@@ -5,14 +5,17 @@ local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 local customMenuFrame = CreateFrame("Frame", "CustomChatDropdownMenu", UIParent, "UIDropDownMenuTemplate")
 
 -- Function to initialize the custom dropdown menu
-local function InitializeCustomMenu(frame, level, menuList)
-    if not level or level ~= 1 then return end
+local function InitializeCustomMenu(frame, level)
+    level = 1
 
     local playerName = frame.targetName
     if not playerName then return end
 
-    local isInGuild, faction = ns.code:isInMyGuild(playerName)
-    --if faction then return end
+    local isInGuild = ns.code:isInMyGuild(playerName)
+    if isInGuild then
+        ns.code:fOut("Player is in the guild: " .. playerName)
+        return
+    end
 
     if not isInGuild then
         local title = UIDropDownMenu_CreateInfo()
@@ -82,7 +85,7 @@ local function ShowCustomMenu(name)
     -- Determine screen width and cursor position to adjust menu placement
     local screenWidth = GetScreenWidth()
     local menuWidth = 150 -- Approximate width of the dropdown menu
-    local cursorX, cursorY = GetCursorPosition()
+    local cursorX = GetCursorPosition()
     local uiScale = UIParent:GetEffectiveScale()
     cursorX = cursorX / uiScale
 
@@ -99,10 +102,10 @@ end
 for i = 1, NUM_CHAT_WINDOWS do
     local chatFrame = _G["ChatFrame" .. i]
     if chatFrame then
-        chatFrame:HookScript("OnHyperlinkClick", function(self, link, text, button)
+        chatFrame:HookScript("OnHyperlinkClick", function(self, link, _, button)
             if button == "RightButton" then
                 local linkType, playerName = strsplit(":", link)
-                if linkType == "player" and playerName then ShowCustomMenu(playerName)
+                if linkType == "player" and playerName then C_Timer.After(.1, function() ShowCustomMenu(playerName) end)
                 else
                     ns.code:dOut("Link type or player name not valid:", linkType, playerName) -- Debug message
                 end

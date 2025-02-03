@@ -24,7 +24,6 @@ function home:Init()
     self.maxLevel = ns.pSettings.maxLevel or ns.MAX_CHARACTER_LEVEL -- Default Max Level
 
     self.tblFormat = {}
-    self.inviteFormat = ns.pSettings.inviteFormat or 2
     table.insert(self.tblFormat, { id = 2, description = L['GUILD_INVITE_ONLY'] })
     table.insert(self.tblFormat, { id = 3, description = L['GUILD_INVITE_AND_MESSAGE'] })
     table.insert(self.tblFormat, { id = 1, description = L['MESSAGE_ONLY'] })
@@ -158,7 +157,7 @@ function home:CreateFilterAndLevel()
     local function startValidate(self, level)
         if validateLevel(level) then
             self:ClearFocus()
-            self:SetText(tonumber(self:GetText()))
+            self:SetText(self:GetText() and tonumber(self:GetText() ) or level)
             ns.status:SetText('')
             if self:GetName() == "GR_MinLevel" then ns.pSettings.minLevel = tonumber(self:GetText())
             else ns.pSettings.maxLevel = tonumber(self:GetText()) end
@@ -203,6 +202,10 @@ function home:CreateFilterAndLevel()
         skipValidation = false
         editMinLevel:ClearFocus()
         editMaxLevel:ClearFocus()
+        if ns.pSettings.inviteFormat ~= ns.InviteFormat.GUILD_INVITE_ONLY and (not ns.pSettings.activeMessage or ns.pSettings.activeMessage == '') then
+            ns.status:SetText(L['SELECT_INVITE_MESSAGE'])
+            return
+        end
         ns.base:buttonAction('OPEN_SCANNER')
     end)
     self.tblFrame.buttonScan = buttonScan
@@ -211,8 +214,6 @@ function home:CreateInviteTypeAndMessage()
     local inviteReturn = { -- Callback when filter is selected
         onSelect = function(id, description)
             id = tonumber(id)
-            self.inviteFormat = id
-
             ns.pSettings.inviteFormat = id
             self:validate_data_scan_button()
         end
@@ -229,7 +230,7 @@ function home:CreateInviteTypeAndMessage()
 
     -- Position the dropdown within the parent frame
     dropInvite.frame:SetPoint("TOPLEFT", self.tblFrame.dropFilters.frame, "BOTTOMLEFT", 0, -15)
-    dropInvite.frame:SetSelectedValue(self.inviteFormat)
+    dropInvite.frame:SetSelectedValue(ns.pSettings.inviteFormat)
     self.tblFrame.dropInvite = dropInvite
 
     local dropLabel = self.tblFrame.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -262,7 +263,7 @@ function home:CreateInviteTypeAndMessage()
 
     local dropMsgLabel = self.tblFrame.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     dropMsgLabel:SetPoint("BOTTOMLEFT", dropMessages.frame, "TOPLEFT", 20, 0)
-    dropMsgLabel:SetText(L['SELECT_INVITE_MESASAGE']..":")
+    dropMsgLabel:SetText(L['SELECT_INVITE_MESSAGE']..":")
     dropMsgLabel:SetTextColor(1, 1, 1)
     self.tblFrame.dropMessages = dropMessages
     self.tblFrame.dropMessages.text = dropMsgLabel
@@ -319,7 +320,7 @@ function home:validate_data_scan_button()
 
     local dropMessages, preview = self.tblFrame.dropMessages, self.tblFrame.previewFrame
     if dropMessages and preview then
-        if self.inviteFormat == ns.InviteFormat.GUILD_INVITE_ONLY then
+        if ns.pSettings.inviteFormat == ns.InviteFormat.GUILD_INVITE_ONLY then
             preview.frame:SetShown(false)
             dropMessages.frame:SetShown(false)
             dropMessages.text:SetShown(false)
@@ -336,7 +337,7 @@ function home:validate_data_scan_button()
     if maxLevel - minLevel > 5 then
         msg = "Level range of more than 5 levels is not recommended."
     end
-    if self.inviteFormat ~= ns.InviteFormat.GUILD_INVITE_ONLY then
+    if ns.pSettings.inviteFormat ~= ns.InviteFormat.GUILD_INVITE_ONLY then
         if not self.activeMessage then msg = "Please select a message." end
     end
 

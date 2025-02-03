@@ -97,6 +97,14 @@ function scanner:CreateScannerBaseFrame()
     f:SetBackdropColor(0, 0, 0, 0)
     f:SetBackdropBorderColor(0, 0, 0, 0)
     f:EnableMouse(false)
+    f:SetScript('OnKeyDown', function(_, key)
+        if ns.g.keybindings.scan and key == ns.g.keybindings.scan then
+            if self.waitTimer and self.waitTimer > 0 then
+                ns.code:fOut(L['PLEASE_WAIT']..' '..self.waitTimer..' '..L['ERROR_SCAN_WAIT'])
+            elseif self.ctrlSearch.btnSearch.disabled then ns.code:fOut(L['ERROR_CANNOT_SCAN'])
+            else scanner:PerformSearch() end
+        elseif ns.g.keybindings.invite and key == ns.g.keybindings.invite then scanner:InvitePlayer() end
+    end)
     self.tblFrame.frame = f
 end
 function scanner:CreateInviteFrame()

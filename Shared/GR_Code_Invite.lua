@@ -4,7 +4,6 @@ local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 ns.invite = {}
 local invite = ns.invite
 
-local testingPlayerName = 'Monkstrife'
 local INVITE_TIME_OUT = 120
 
 --#region Message Queue/Sender Routines
@@ -26,7 +25,9 @@ local function startQueue()
                 ChatFrame_AddMessageEventFilter('CHAT_MSG_WHISPER_INFORM', function(_, _, msg) return msg == message end, message)
             end
 
-            SendChatMessage(message, 'WHISPER', nil, toSend.sendTo)
+            local sendTo = toSend.sendTo
+            sendTo = sendTo:match(GetRealmName()) and sendTo:gsub('%-.*', '') or sendTo
+            SendChatMessage(message, 'WHISPER', nil, sendTo)
 
             if not ns.pSettings.showWhispers then
                 ChatFrame_RemoveMessageEventFilter('CHAT_MSG_WHISPER', message)
@@ -215,7 +216,7 @@ function invite:InvitePlayer(fullName, justName, sendGuildInvite, useInviteMessa
     local name_with_realm = strlower(fullName:match('-') and fullName or fullName .. '-' .. GetRealmName())
 
     if GR.isTesting then
-        fullName =  testingPlayerName or ns.classic and 'Pokypoke' or 'Monkstrife'
+        fullName = GR.testingPlayerName or (ns.classic and 'Pokypoke' or 'Monkstrife')
         name_with_realm = strlower(fullName:match('-') and fullName or fullName .. '-' .. GetRealmName())
         ns.code:fOut('Testing mode is enabled. Invites sent to: '..fullName..'.')
     elseif self.tblInvited[name_with_realm] then return false, L['ALREADY_INVITED'] end

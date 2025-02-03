@@ -135,7 +135,7 @@ L['MIN_LEVEL'] = 'Min Level'
 L['MAX_LEVEL'] = 'Max Level'
 L['MAX_LEVEL_ERROR'] =  'Please enter a number between 1 and '
 L['SELECT_INVITE_TYPE'] = 'Select Invite Type'
-L['SELECT_INVITE_MESASAGE'] = 'Select Invite Message'
+L['SELECT_INVITE_MESSAGE'] = 'Select Invite Message'
 --#endregion
 
 --#region Scanner Screen
