@@ -1,4 +1,7 @@
-# Guild Recruiter
+local _, ns = ... -- Namespace (myAddon, namespace)
+
+ns.changeLog = [[
+    # Guild Recruiter
     ## 4.0 - War Within/Classic/Cata Release
 
     ### v4.0.31
@@ -20,8 +23,8 @@
         - Worked on logic to use invite and welcome messages.
         - Bumped retail to cover patch 11.07.
     ### v4.0.22
-    - Fixed issue with blacklist and anti-spam list not loading/saving.
-    - Fixed issue with counting Blacklisted players.
+        - Fixed issue with blacklist and anti-spam list not loading/saving.
+        - Fixed issue with counting Blacklisted players.
     ### v4.0.19
         - Misc bug fixes.
     ### v4.0.14
@@ -52,3 +55,4 @@
         - Added a super compact mode to scan/invite.
         - Reduced reliance on the Ace3 library.
           - Allows for more flexibility in the future.
+]]

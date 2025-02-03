@@ -1,137 +1,186 @@
-local _, ns = ... -- Namespace (myaddon, namespace)
-local L = LibStub('AceLocale-3.0'):GetLocale('GuildRecruiter')
-local aceGUI = LibStub("AceGUI-3.0")
+local addonName, ns = ... -- Namespace (myaddon, namespace)
+local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
-ns.win.whatsnew = {}
-local whatsnew = ns.win.whatsnew
+ns.whatsnew = {}
+local whatsnew = ns.whatsnew
 
 local function obsCLOSE_SCREENS()
     ns.observer:Unregister('CLOSE_SCREENS', obsCLOSE_SCREENS)
     whatsnew:SetShown(false)
 end
 
-function whatsnew:Init()
-    self.tblFrame = {}
-    self.title = nil
-    self.body = nil
-    self.height = 300
-
-    self.startUpWhatsNew = false
+local function parseMarkdown(text)
+    text = text:gsub("### (.-)\n", "|cFFFFFFFF%1|r\n")
+    text = text:gsub("## (.-)\n", "|cFF00FF00%1|r\n")
+    text = text:gsub("# (.-)\n", "|cFFFFFF00%1|r\n")
+    text = text:gsub("%*%*(.-)%*%*", "|cFFFFFFFF%1|r")
+    text = text:gsub("%*(.-)%*", "|cFFAAAAAA%1|r")
+    text = text:gsub("\n%- (.-)\n", "\n|cFFDDDDDD• %1|r\n")
+    return text
 end
-function whatsnew:SetShown(val)
-    if not val then
-        if whatsnew.tblFrame.inline then
-            whatsnew.tblFrame.inline:ReleaseChildren()
-            whatsnew.tblFrame.inline.frame:Hide()
-        end
-        ns.win.base.tblFrame.statusBar:SetShown(true)
-        ns.win.base.tblFrame.topFrame:SetShown(true)
-        ns.win.base.tblFrame.statusBar:SetShown(true)
-        ns.win.base:SetShown(false)
+local function highlightButton(btn, normal)
+    if not btn then return end
 
-        whatsnew.tblFrame.frame:SetShown(false)
+    local normTexture = btn:GetNormalTexture()
+    if not normTexture then return end
+
+    normTexture:SetAllPoints(true) -- Ensure the texture covers the entire button
+    normTexture:SetBlendMode("BLEND") -- Enable alpha blending for transparency
+    normTexture:SetTexCoord(0, 1, 0, 1) -- Use the full texture
+    if normal then normTexture:SetVertexColor(1, 1, 1, 1)
+    else normTexture:SetVertexColor(0.05, 0.70, 0.90, 1) end
+
+    --if lostFocus then normTexture:SetVertexColor(1, 1, 1, 1)
+    --else normTexture:SetVertexColor(12, 179, 230, 1) end
+end
+
+whatsnew.returnToMain = false
+function whatsnew:Init()
+    self.tblFrame = self.tblFrame or {}
+    self.oldVer = ns.g.shownVersion
+    self.showBase = ns.base:IsShown() or false
+
+    self.changes = parseMarkdown(ns.changeLog)
+    self.startUpWhatsNew = ns.g.showWhatsNew
+
+    self.screenPos = ns.pSettings.screenPos or { -- Get default position and current position
+        point = 'CENTER',
+        x = 0,
+        y = 0
+    }
+end
+
+function whatsnew:IsShown() return (self.tblFrame and self.tblFrame.frame) and self.tblFrame.frame:IsShown() or false end
+function whatsnew:SetShown(val, startUpView)
+    if whatsnew:IsShown() == val then return
+    elseif not val then
+        if not self.tblFrame or not self.tblFrame.frame then return end
+
+        self.tblFrame.frame:Hide()
+        ns.frames:ResetFrame(self.tblFrame.frame)
+        ns.base:SetShown(self.showBase)
         return
     end
+
+    whatsnew:Init()
+    if startUpView and (not self.startUpWhatsNew or self.oldVer == GR.version) then return end
+    ns.g.shownVersion = GR.version
 
     ns.observer:Notify('CLOSE_SCREENS')
     ns.observer:Register('CLOSE_SCREENS', obsCLOSE_SCREENS)
 
-    ns.win.base:SetShown(true)
-    ns.win.base.tblFrame.topFrame:SetShown(false)
-    ns.win.base.tblFrame.frame:SetSize(ns.win.base.tblFrame.frame:GetWidth() + 50, self.height)
-    ns.win.base.tblFrame.statusBar:SetShown(false)
-
-    ns.global.currentVersion = GR.version
-    self.title, self.body, self.height, self.update = ns.ds:WhatsNew()
-
     self:CreateBaseFrame()
     self:CreateTopFrame()
-    self:CreateBodyFrame()
+    self:CreateFooterFrame()
+    self:CreateNoteFrame()
 end
+local baseHeight = -60
 function whatsnew:CreateBaseFrame()
-    local tblBase = ns.win.base.tblFrame
-
-    local f = self.tblFrame.frame or CreateFrame('Frame', 'GR_WhatsNew', tblBase.frame, 'BackdropTemplate')
-    f:SetBackdrop(BackdropTemplate(BLANK_BACKGROUND))
-    f:SetBackdropColor(0, 0, 0, 0)
-    f:SetBackdropBorderColor(1, 1, 1, 0)
-    f:SetPoint('TOPLEFT', tblBase.frame, 'TOPLEFT', 10, -15)
-    f:SetPoint('BOTTOMRIGHT', tblBase.frame, 'TOPRIGHT', -5, -30)
+    local f = ns.frames:CreateFrame('Frame', 'GR_WhatsNew', UIParent)
+    f:SetPoint(self.screenPos.point, self.screenPos.x, self.screenPos.y)
+    f:SetSize(400, 300)
+    f:SetBackdropColor(0, 0, 0, .5)
+    f:SetBackdropBorderColor(1, 1, 1, 1)
+    f:SetFrameStrata(ns.DEFAULT_STRATA)
+    f:SetClampedToScreen(true)
     f:SetShown(true)
+
     self.tblFrame.frame = f
+
+    --* Create Icon Frame
+    f = ns.frames:CreateFrame('Frame', 'GR_BaseIconFrame', self.tblFrame.frame)
+    f:SetPoint('TOPLEFT', self.tblFrame.frame, 'TOPLEFT', 0, 0)
+    f:SetPoint('BOTTOMRIGHT', self.tblFrame.frame, 'TOPRIGHT', 0, baseHeight)
+    f:SetBackdropColor(0, 0, 0, 1)
+    self.tblFrame.icon = f
+
+    local t = f:CreateTexture(nil, 'ARTWORK')
+    t:SetPoint('LEFT', f, 'LEFT', 10, 0)
+    t:SetTexture(ns.GR_ICON)
+
+    local txt = f:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
+    txt:SetPoint('TOPLEFT', t, 'TOPRIGHT', 10, 0)
+    txt:SetText(L['TITLE'])
+    txt:SetTextColor(1, 1, 1, 1)
+    txt:SetFont(ns.DEFAULT_FONT, 16, 'OUTLINE')
+
+    local txtVer = f:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
+    txtVer:SetPoint('BOTTOMLEFT', t, 'BOTTOMRIGHT', 10, 0)
+    txtVer:SetText(GR.versionOut:gsub("[%(%)]", ""))
+    txtVer:SetTextColor(1, 1, 1, 1)
+    txtVer:SetFont(ns.DEFAULT_FONT, 12, 'OUTLINE')
+    --? End Icon Frame
+    --self:CreateBodyFrame()
 end
 function whatsnew:CreateTopFrame()
-    local appIconButton = CreateFrame('Button', 'GR_BASE_APPICON', self.tblFrame.frame)
-    appIconButton:SetSize(32, 32)
-    appIconButton:SetPoint('TOPLEFT', 5, -5)
-    appIconButton:SetNormalTexture(GR.icon)
-    appIconButton:SetShown(true)
+    local btnClose = ns.frames:CreateFrame('Button', 'GR_CloseButton', self.tblFrame.icon)
+    btnClose:SetPoint('TOPRIGHT', self.tblFrame.icon, 'TOPRIGHT', -10, -10)
+    btnClose:SetSize(15, 15)
+    btnClose:SetNormalTexture(ns.BUTTON_EXIT)
+    btnClose:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
+    btnClose:SetScript('OnClick', function()
+        whatsnew:SetShown(false)
 
-    -- Title text
-    local titleText = self.tblFrame.frame:CreateFontString(nil, 'OVERLAY')
-    titleText:SetFont(DEFAULT_FONT, 14, 'OUTLINE')
-    titleText:SetPoint('TOP', 0, -5)
-    titleText:SetText(L['TITLE'])
-    titleText:SetShown(true)
-
-    -- Close Button
-    local closeButton = CreateFrame('Button', 'GR_BASE_CLOSE', self.tblFrame.frame)
-    closeButton:SetSize(16, 16)
-    closeButton:SetPoint('TOPRIGHT', -5, -5)
-    closeButton:SetNormalTexture(ICON_PATH..'GR_Exit')
-    closeButton:SetHighlightTexture(BLUE_HIGHLIGHT)
-    closeButton:SetScript('OnClick', function()
-        if self.startUpWhatsNew then
-            self.startUpWhatsNew = false
-            self:SetShown(false)
-        else ns.win.home:SetShown(true) end
+        if whatsnew.returnToMain then ns.base:SetShown(true) end
+        self.returnToMain = false
     end)
-    closeButton:SetScript('OnEnter', function() ns.code:createTooltip("Close What's New?") end)
-    closeButton:SetScript('OnLeave', function() GameTooltip:Hide() end)
-    closeButton:SetShown(true)
+    btnClose:SetScript('OnEnter', function() highlightButton(btnClose) ns.code:createTooltip(L["CLOSE"]..' '..L['TITLE']) end)
+    btnClose:SetScript('OnLeave', function() highlightButton(btnClose, true) GameTooltip:Hide() end)
 end
-function whatsnew:CreateBodyFrame()
-    local title = self.tblFrame.frame:CreateFontString(nil, 'OVERLAY')
-    title:SetFont(SKURRI_FONT, 30, 'OUTLINE')
-    title:SetPoint('TOPLEFT', self.tblFrame.frame, 'TOPLEFT', 0, -30)
-    title:SetPoint('TOPRIGHT', self.tblFrame.frame, 'TOPRIGHT', 0, -30)
-    title:SetJustifyH('CENTER')
-    title:SetText(self.title)
-    title:SetShown(true)
+function whatsnew:CreateFooterFrame()
+    local f = ns.frames:CreateFrame('Frame', 'GR_NoteFooter', self.tblFrame.frame)
+    f:SetPoint('BOTTOMLEFT', self.tblFrame.frame, 'BOTTOMLEFT', 10, 10)
+    f:SetPoint('BOTTOMRIGHT', self.tblFrame.frame, 'BOTTOMRIGHT', -10, 10)
+    f:SetHeight(30)
+    f:SetBackdropColor(0, 0, 0, 1)
+    f:SetBackdropBorderColor(1, 1, 1, 1)
+    self.tblFrame.footer = f
 
-    local showWhatsNew = true
-    if type(ns.gSettings.showWhatsNew) == "boolean" then showWhatsNew = ns.gSettings.showWhatsNew or false end
-    local checkbox = CreateFrame('CheckButton', 'GR_BASE_checkbox', self.tblFrame.frame, 'UICheckButtonTemplate')
-    checkbox:SetPoint('BOTTOMRIGHT', ns.win.base.tblFrame.frame, 'BOTTOMRIGHT', -5, 5)
-    checkbox:SetSize(20, 20)
-    checkbox:SetChecked(showWhatsNew)
-    checkbox:SetScript('OnClick', function() ns.global.showWhatsNew = not ns.global.showWhatsNew end)
+    local btnShowWhatsNew = ns.frames:CreateFrame('Button', 'GR_ShowWhatsNew', f)
+    btnShowWhatsNew:SetPoint('TOPRIGHT', f, 'TOPRIGHT', -10, -8)
+    btnShowWhatsNew:SetSize(15, 15)
+    btnShowWhatsNew:SetNormalTexture(ns.g.showWhatsNew and ns.BUTTON_EXIT or ns.BUTTON_EXIT_EMPTY)
+    btnShowWhatsNew:SetHighlightTexture(ns.BLUE_HIGHLIGHT)
+    btnShowWhatsNew:SetScript('OnClick', function(self)
+        ns.g.showWhatsNew = not ns.g.showWhatsNew
+        self.startUpWhatsNew = ns.g.showWhatsNew
+        self:SetNormalTexture(ns.g.showWhatsNew and ns.BUTTON_EXIT or ns.BUTTON_EXIT_EMPTY)
+    end)
+    btnShowWhatsNew:SetScript('OnEnter', function() highlightButton(btnShowWhatsNew) ns.code:createTooltip(L['GEN_WHATS_NEW'], L['GEN_WHATS_NEW_DESC']) end)
+    btnShowWhatsNew:SetScript('OnLeave', function() highlightButton(btnShowWhatsNew, true) GameTooltip:Hide() end)
 
-    checkbox.text = checkbox:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    checkbox.text:SetPoint('RIGHT', checkbox, 'LEFT', -5, 0)
-    checkbox.text:SetText('Show when new versions are available')
-
-    local inline = self.tblFrame.inline or aceGUI:Create('InlineGroup')
-    inline:SetLayout('Fill')
-    inline:SetPoint('TOPLEFT', title, 'BOTTOMLEFT', 0, -5)
-    inline:SetPoint('BOTTOMRIGHT', checkbox, 'BOTTOMRIGHT', -5, 20)
-    inline.frame:SetShown(true)
-    self.tblFrame.inline = inline
-
-    local scroll = aceGUI:Create('ScrollFrame')
-    scroll:SetLayout('fill')
-    scroll:SetFullWidth(true)
-    scroll:SetFullHeight(true)
-    inline:AddChild(scroll)
-
-    local body = aceGUI:Create('Label')
-    body:SetFont(DEFAULT_FONT, 14, 'OUTLINE')
-    body:SetColor(1, 1, 1)
-    body:SetText(self.body)
-    body:SetJustifyH('LEFT')
-    body:SetJustifyV('TOP')
-    body:SetFullWidth(true)
-    body:SetFullHeight(true)
-    scroll:AddChild(body)
+    local txt = f:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
+    txt:SetPoint('TOPLEFT', f, 'TOPLEFT', 10, -10)
+    txt:SetPoint('TOPRIGHT', btnShowWhatsNew, 'TOPLEFT', -10, -10)
+    txt:SetTextColor(1, 1, 1, 1)
+    txt:SetJustifyH('RIGHT')
+    txt:SetText(L['GEN_WHATS_NEW'])
 end
-whatsnew:Init()
+function whatsnew:CreateNoteFrame()
+    local f = ns.frames:CreateFrame('Frame', 'GR_NoteFrame', self.tblFrame.frame)
+    f:SetPoint('TOPLEFT', self.tblFrame.frame, 'TOPLEFT', 10, baseHeight)
+    f:SetPoint('BOTTOMRIGHT', self.tblFrame.footer, 'TOPRIGHT', 0, 0)
+    f:SetBackdropColor(0, 0, 0, 1)
+    f:SetBackdropBorderColor(1, 1, 1, 1)
+
+    local scroll = ns.frames:CreateFrame('ScrollFrame', 'GR_NoteScroll', f, 'UIPanelScrollFrameTemplate')
+    scroll:SetPoint('TOPLEFT', f, 'TOPLEFT', 5, -5)
+    scroll:SetPoint('BOTTOMRIGHT', f, 'BOTTOMRIGHT', -5, 5)
+
+    local scrollBar = scroll.ScrollBar
+    scrollBar:SetWidth(12)
+    scrollBar:ClearAllPoints()
+    scrollBar:SetPoint("TOPRIGHT", scroll, "TOPRIGHT", 0, -25)
+    scrollBar:SetPoint("BOTTOMRIGHT", scroll, "BOTTOMRIGHT", 0, 25)
+
+    local content = ns.frames:CreateFrame('Frame', 'GR_NoteContent', scroll)
+    content:SetSize(scroll:GetWidth(), scroll:GetHeight())
+    scroll:SetScrollChild(content)
+
+    local txt = content:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
+    txt:SetPoint('TOPLEFT', content, 'TOPLEFT', 5, -5)
+    txt:SetPoint('TOPRIGHT', content, 'TOPRIGHT', -5, -5)
+    txt:SetJustifyH('LEFT')
+    txt:SetJustifyV('TOP')
+    txt:SetText(parseMarkdown(ns.changeLog))
+end

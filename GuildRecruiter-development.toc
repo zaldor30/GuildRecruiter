@@ -1,13 +1,13 @@
 ## X-Curse-Project-ID: 882061
 ## X-Website: https://www.curseforge.com/wow/addons/guild-recruiter
 
-## Interface: 11505, 40401
-## Title: Guild Recruiter
+## Interface: 110005
+## Title: Guild Recruiter (Development)
 ## Version: 4.0.31
 ## Notes: Facilitates guild officers to recruit new members
 ## Author: Moonfury
 ## SavedVariables: GuildRecruiterDB, devGuildRecruiterDB
-## IconTexture: Interface\AddOns\GuildRecruiter\Images\GR_Icon
+## IconTexture: Interface\AddOns\GuildRecruiter-development\Images\GR_Icon
 ## OptionalDeps: Ace3, Blizzard_UnitPopup
 
 Libs\LibStub\LibStub.lua
