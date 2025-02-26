@@ -1,6 +1,10 @@
 # Guild Recruiter
     ## 4.0 - War Within/Classic/Cata Release
 
+    ### v4.0.32
+        - Changed beta to release
+        - Updated wow version
+
     ### v4.0.31
         - Moving this version to retail due to issues with the previous version.
         - Fixed issue with not sending messages with manual invite.

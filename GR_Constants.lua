@@ -9,7 +9,7 @@ GR.debug = false
 GR.isTesting = false -- Used for testing purposes (invite)
 GR.testingPlayerName = 'Monkstrife'
 GR.enableFilter = false
-GR.isPreRelease = true
+GR.isPreRelease = false
 GR.preReleaseType = 'Beta'
 GR.versionOut = '(v'..GR.version..(GR.isPreRelease and ' '..GR.preReleaseType or '')..')'
 
