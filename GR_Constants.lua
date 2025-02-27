@@ -6,7 +6,7 @@ GR.commPrefix = 'GRSync'
 GR.dbVersion = 4
 
 GR.debug = false
-GR.isTesting = true -- Used for testing purposes (invite)
+GR.isTesting = false -- Used for testing purposes (invite)
 GR.testingPlayerName = 'Monkstrife'
 GR.enableFilter = false
 GR.isPreRelease = false
