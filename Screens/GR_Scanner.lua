@@ -97,13 +97,58 @@ function scanner:CreateScannerBaseFrame()
     f:SetBackdropColor(0, 0, 0, 0)
     f:SetBackdropBorderColor(0, 0, 0, 0)
     f:EnableMouse(false)
-    f:SetScript('OnKeyDown', function(_, key)
-        if ns.g.keybindings.scan and key == ns.g.keybindings.scan then
+    f:SetScript("OnKeyDown", function(self, key)
+        local function ParseKeybinding(binding)
+            local modifiers = {}
+            local key = nil
+        
+            -- Split binding by "-" to separate modifiers from the key
+            for part in string.gmatch(binding, "[^-]+") do
+                if part == "CTRL" or part == "SHIFT" or part == "ALT" then
+                    table.insert(modifiers, part)
+                else
+                    key = part  -- Assume last part is the actual key
+                end
+            end
+            return modifiers, key
+        end
+        
+        local function CheckKeybinding(binding, key)
+            local modifiers, bindKey = ParseKeybinding(binding)
+        
+            -- Check current modifier states
+            local ctrlDown = IsControlKeyDown()
+            local shiftDown = IsShiftKeyDown()
+            local altDown = IsAltKeyDown()
+        
+            -- Flags to check if the binding requires modifiers
+            local ctrlNeeded, shiftNeeded, altNeeded = false, false, false
+        
+            for _, mod in ipairs(modifiers) do
+                if mod == "CTRL" then ctrlNeeded = true end
+                if mod == "SHIFT" then shiftNeeded = true end
+                if mod == "ALT" then altNeeded = true end
+            end
+        
+            -- Ensure key and modifiers match
+            return key == bindKey and
+                (ctrlNeeded == ctrlDown) and
+                (shiftNeeded == shiftDown) and
+                (altNeeded == altDown)
+        end
+
+        if ns.g.keybindings.scan and CheckKeybinding(ns.g.keybindings.scan, key) then
             if self.waitTimer and self.waitTimer > 0 then
                 ns.code:fOut(L['PLEASE_WAIT']..' '..self.waitTimer..' '..L['ERROR_SCAN_WAIT'])
-            elseif self.ctrlSearch.btnSearch.disabled then ns.code:fOut(L['ERROR_CANNOT_SCAN'])
             else scanner:PerformSearch() end
-        elseif ns.g.keybindings.invite and key == ns.g.keybindings.invite then scanner:InvitePlayer() end
+            return
+        -- Check for Invite Keybind (e.g., "CTRL-SHIFT-I")
+        elseif ns.g.keybindings.invite and CheckKeybinding(ns.g.keybindings.invite, key) then
+            scanner:InvitePlayer()
+            return
+        end
+
+        self:SetPropagateKeyboardInput(true)
     end)
     self.tblFrame.frame = f
 end
