@@ -1020,6 +1020,128 @@ ns.guildRecuriterSettings = {
             type = 'group',
             args = {}
         },
+        filterSettings = {
+            name = L['FILTER_SETTINGS'],
+            type = 'group',
+            order = 20,
+            args = {
+                filterHeader = {
+                    order = 0,
+                    name = L['FILTER_SETTINGS'],
+                    type = 'header',
+                },
+                classFiltersHeader = {
+                    order = 1,
+                    name = L['CLASS_FILTERS'],
+                    type = 'header',
+                },
+                classSelectAll = {
+                    order = 2,
+                    name = L['FILTER_ALL'],
+                    desc = L['CLASS_FILTERS_DESC'],
+                    type = 'execute',
+                    width = 'normal',
+                    func = function()
+                        local classes = ns.ds:GetClassList()
+                        for classFile, _ in pairs(classes) do
+                            ns.pSettings.classFilters[classFile] = true
+                        end
+                        ns.core:NotifySettingsUpdate()
+                    end,
+                },
+                classSelectNone = {
+                    order = 3,
+                    name = L['FILTER_NONE'],
+                    desc = L['CLASS_FILTERS_DESC'],
+                    type = 'execute',
+                    width = 'normal',
+                    func = function()
+                        local classes = ns.ds:GetClassList()
+                        for classFile, _ in pairs(classes) do
+                            ns.pSettings.classFilters[classFile] = false
+                        end
+                        ns.core:NotifySettingsUpdate()
+                    end,
+                },
+                classFilters = {
+                    order = 4,
+                    name = L['CLASS_FILTERS'],
+                    desc = L['CLASS_FILTERS_DESC'],
+                    type = 'multiselect',
+                    width = 'full',
+                    values = function()
+                        local classes = {}
+                        local classList = ns.ds:GetClassList()
+                        for classFile, classData in pairs(classList) do
+                            if ns.retail or (not classData.retail) then
+                                classes[classFile] = classData.name
+                            end
+                        end
+                        return classes
+                    end,
+                    set = function(_, key, val) 
+                        ns.pSettings.classFilters[key] = val 
+                        ns.core:NotifySettingsUpdate()
+                    end,
+                    get = function(_, key) return ns.pSettings.classFilters[key] end,
+                },
+                raceFiltersHeader = {
+                    order = 5,
+                    name = L['RACE_FILTERS'],
+                    type = 'header',
+                },
+                raceSelectAll = {
+                    order = 6,
+                    name = L['FILTER_ALL'],
+                    desc = L['RACE_FILTERS_DESC'],
+                    type = 'execute',
+                    width = 'normal',
+                    func = function()
+                        local races = ns.ds:GetRaceList()
+                        for raceName, _ in pairs(races) do
+                            ns.pSettings.raceFilters[raceName] = true
+                        end
+                        ns.core:NotifySettingsUpdate()
+                    end,
+                },
+                raceSelectNone = {
+                    order = 7,
+                    name = L['FILTER_NONE'],
+                    desc = L['RACE_FILTERS_DESC'],
+                    type = 'execute',
+                    width = 'normal',
+                    func = function()
+                        local races = ns.ds:GetRaceList()
+                        for raceName, _ in pairs(races) do
+                            ns.pSettings.raceFilters[raceName] = false
+                        end
+                        ns.core:NotifySettingsUpdate()
+                    end,
+                },
+                raceFilters = {
+                    order = 8,
+                    name = L['RACE_FILTERS'],
+                    desc = L['RACE_FILTERS_DESC'],
+                    type = 'multiselect',
+                    width = 'full',
+                    values = function()
+                        local races = {}
+                        local raceList = ns.ds:GetRaceList()
+                        for raceName, raceData in pairs(raceList) do
+                            if ns.retail or (not raceData.retail) then
+                                races[raceName] = raceData.name
+                            end
+                        end
+                        return races
+                    end,
+                    set = function(_, key, val) 
+                        ns.pSettings.raceFilters[key] = val 
+                        ns.core:NotifySettingsUpdate()
+                    end,
+                    get = function(_, key) return ns.pSettings.raceFilters[key] end,
+                },
+            }
+        },
         antiSpam = {
             name = L['ANTI_SPAM'],
             type = 'group',

@@ -43,6 +43,9 @@ function core:Init()
                 inviteFormat = 2,
                 isCompact = false,
                 whisperMessage = '',
+                -- Add filter settings initialization
+                classFilters = {},
+                raceFilters = {},
             },
             analytics = {},
         },
@@ -99,7 +102,6 @@ function core:Init()
         analytics = {},
         blackList = {},
         filterList = {},
-        messageList = {},
         antiSpamList = {},
         blackListRemoved = {},
         lastSync = {}, -- Who, Date
@@ -123,6 +125,24 @@ function core:StartGuildRecruiter(clubID)
         ns.code:fOut(L['TITLE']..' '..GR.versionOut..' '..L['DISABLED'], ns.COLOR_DEFAULT, true)
         return
     end
+    
+    -- Initialize filter settings if they don't exist
+    if not ns.pSettings.classFilters then
+        ns.pSettings.classFilters = {}
+        -- Default to all classes enabled
+        for classFile, _ in pairs(ns.ds:GetClassList()) do
+            ns.pSettings.classFilters[classFile] = true
+        end
+    end
+    
+    if not ns.pSettings.raceFilters then
+        ns.pSettings.raceFilters = {}
+        -- Default to all races enabled
+        for raceName, _ in pairs(ns.ds:GetRaceList()) do
+            ns.pSettings.raceFilters[raceName] = true
+        end
+    end
+
     self:LoadTables()
     self:PerformRecordMaintenance()
     self:StartupGuild(clubID)
