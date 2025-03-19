@@ -626,22 +626,68 @@ function scanner:BuildFilters()
     end
 
     local tblSorted, prefix = nil, nil
-    if filterID == 9998 then
+    if filterID == 10000 then  -- New custom filter option
+        -- Handle both race and class custom filters
+        local selectedRaces = {}
+        for raceName, raceData in pairs(ns.races) do
+            if ns.pSettings.raceFilters[raceName] == true then
+                selectedRaces[raceName] = raceData
+            end
+        end
+        
+        local selectedClasses = {}
+        for classFile, classData in pairs(ns.classes) do
+            if ns.pSettings.classFilters[classFile] == true then
+                selectedClasses[classFile] = classData
+            end
+        end
+
+        -- First add race filters
+        prefix = 'r-'
+        for _, raceData in pairs(ns.code:sortTableByField(selectedRaces, 'name')) do
+            local lMin, lMax = min, max
+            while lMin <= lMax do
+                local query = prefix..raceData.name
+                local rangeEnd = lMin + 5 > lMax and lMax or lMin + 5
+                table.insert(self.tblFilter, createQuery(raceData.name, query, lMin, rangeEnd))
+                
+                lMin = (rangeEnd < lMax and (rangeEnd - lMin > 0)) and rangeEnd or lMax + 1
+                if lMax - lMin > 0 then lMin = lMin + 1 end
+            end
+        end
+
+        -- Then add class filters
+        prefix = 'c-'
+        for _, classData in pairs(ns.code:sortTableByField(selectedClasses, 'name')) do
+            local lMin, lMax = min, max
+            while lMin <= lMax do
+                local query = prefix..classData.name
+                local rangeEnd = lMin + 5 > lMax and lMax or lMin + 5
+                table.insert(self.tblFilter, createQuery(classData.name, query, lMin, rangeEnd))
+                
+                lMin = (rangeEnd < lMax and (rangeEnd - lMin > 0)) and rangeEnd or lMax + 1
+                if lMax - lMin > 0 then lMin = lMin + 1 end
+            end
+        end
+    elseif filterID == 9998 then
         prefix = 'r-'
         tblSorted = ns.code:sortTableByField(ns.races, 'name')
     elseif filterID == 9999 then
         prefix = 'c-'
-        tblSorted = ns.code:sortTableByField(ns.classes, 'name') end
+        tblSorted = ns.code:sortTableByField(ns.classes, 'name')
+    end
 
-    for _, v in pairs(tblSorted or {}) do
-        local lMin, lMax = min, max
-        while lMin <= lMax do
-            local query = prefix..v.name
-            local rangeEnd = lMin + 5 > lMax and lMax or lMin + 5
-            table.insert(self.tblFilter, createQuery(v.name, query, lMin, rangeEnd))
+    if filterID ~= 10000 and tblSorted then
+        for _, v in pairs(tblSorted) do
+            local lMin, lMax = min, max
+            while lMin <= lMax do
+                local query = prefix..v.name
+                local rangeEnd = lMin + 5 > lMax and lMax or lMin + 5
+                table.insert(self.tblFilter, createQuery(v.name, query, lMin, rangeEnd))
 
-            lMin = (rangeEnd < lMax and (rangeEnd - lMin > 0)) and rangeEnd or lMax + 1
-            if lMax - lMin > 0 then lMin = lMin + 1 end
+                lMin = (rangeEnd < lMax and (rangeEnd - lMin > 0)) and rangeEnd or lMax + 1
+                if lMax - lMin > 0 then lMin = lMin + 1 end
+            end
         end
     end
 
