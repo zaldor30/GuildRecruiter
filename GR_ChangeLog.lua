@@ -4,6 +4,10 @@ ns.changeLog = [[
     # Guild Recruiter
     ## 4.0 - War Within/Classic/Cata Release
 
+    ### v4.1.35
+        - WoW Version Updated
+        - Better input of player levels
+        - Updated invite type checking
     ### v4.0.33
         - Fixed issue with keybind not working
         - Can move again when addon is open

@@ -91,7 +91,7 @@ Right Click: Open Config
 %BlackList in blacklisted list.]]
 L["NO_LONGER_GUILD_LEADER"] = "is no longer the guild leader."
 L["NO_ANTI_SPAM"] = "Anti-Spam is not enabled. Please enable it in the settings."
-L["CANNOT_INVITE"] = "Guild Recruiter is disabled, because you do not have permission to invite."
+L["CANNOT_INVITE"] = "You do not have permission to invite new members."
 L["NOT_IN_GUILD"] = "Guild Recruiter is disabled because you are not in a guild."
 L["NOT_IN_GUILD_LINE1"] = "If you join a guild type /rl to reload."
 L['FGI_LOADED'] = '*WARNING* FGI is loaded. Please disable it to use Guild Recruiter.'
@@ -134,8 +134,11 @@ L['SELECT_A_FILTER'] = 'Select a filter'
 L['MIN_LEVEL'] = 'Min Level'
 L['MAX_LEVEL'] = 'Max Level'
 L['MAX_LEVEL_ERROR'] =  'Please enter a number between 1 and '
+L['LEVELS_FIXED'] = 'Levels Fixed'
+L['LEVELS_TOO_CLOSE'] = 'Caution: Keep level range within 5 levels.'
 L['SELECT_INVITE_TYPE'] = 'Select Invite Type'
 L['SELECT_INVITE_MESSAGE'] = 'Select Invite Message'
+L['CREATE_MESSAGE_IN_SETTINGS'] = 'Create message in settings'
 --#endregion
 
 --#region Scanner Screen
