@@ -18,7 +18,7 @@
 			"utf8": "disable"
 		},
 		"Lua.workspace.library": [
-			"~\\.vscode\\extensions\\ketho.wow-api-0.17.9\\Annotations"
+			"~\\.vscode\\extensions\\ketho.wow-api-0.20.8\\Annotations\\Core"
 		],
 		"Lua.diagnostics.globals": [
 			"ChatFrame_RemoveMessageEventFilter",
@@ -356,8 +356,20 @@
 			"SELECTED_CHAT_FRAME",
 			"NORMAL_FONT_COLOR_CODE",
 			"SetDesaturation",
-			"IsSecureCmd"
+			"IsSecureCmd",
+			"NORMAL_FONT_COLOR",
+			"GameFontNormal",
+			"GameFontHighlight",
+			"ChatFontNormal"
 		],
-		"editor.fontSize": 18
+		"editor.fontSize": 18,
+		"cSpell.customDictionaries": {
+			"custom-dictionary-workspace": {
+				"name": "custom-dictionary-workspace",
+				"path": "${workspaceFolder:GuildRecruiter_Dev}/.cspell/custom-dictionary-workspace.txt",
+				"addWords": true,
+				"scope": "workspace"
+			}
+		}
 	}
 }

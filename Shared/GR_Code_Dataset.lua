@@ -251,6 +251,7 @@ function ds:invalidZones_Retail() -- Invalid zones for recruitment
             end
         end
     end
+
     ListAllInstances() -- List all seasonal dungeons
     ListAllInstances(true) -- List all seasonal raids
 

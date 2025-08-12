@@ -159,7 +159,7 @@ function base:CreateIconAndStatusFrame()
             return
         end
 
-        if (ns.status.text:GetText() ~= nil and ns.status.text:GetText() == "") and (text ~= nil and text == "") then return end
+        if (ns.status:GetText() ~= nil and ns.status:GetText() == "") and (text ~= nil and text == "") then return end
         ns.frames:animateText(txtStatus, text)
     end
 
@@ -348,9 +348,7 @@ function base:buttonAction(button)
         ns.observer:Notify('CLOSE_SCREENS')
         base:buttonAction('HOME')
     elseif button == 'OPEN_SCANNER' then
-        local valid, msg = ns.home:validate_data_scan_button()
-        ns.status.text:SetText(msg)
-        if not valid then return end
+        if not ns.home.isOk then return end
         ns.scanner:SetShown(true)
     elseif button == 'OPEN_ABOUT' then ns.about:SetShown(true)
     elseif button == 'OPEN_SETTINGS' then Settings.OpenToCategory('Guild Recruiter')
@@ -359,10 +357,10 @@ function base:buttonAction(button)
     elseif button == 'OPEN_BLACKLIST' then
         ns.list:ManualBlackList(nil, L['BLACKLIST_NAME_PROMPT'], true)
     elseif button == 'OPEN_RESET' then
-        local oldStatus = ns.status.text:GetText()
-        ns.status.text:SetText('Filter was reset.')
+        local oldStatus = ns.status:GetText()
+        ns.status:SetText('Filter was reset.')
         ns.scanner:BuildFilters()
-        C_Timer.After(2.5, function() ns.status.text:SetText(oldStatus) end)
+        C_Timer.After(2.5, function() ns.status:SetText(oldStatus) end)
     elseif button == 'OPEN_COMPACT' then
         ns.pSettings.isCompact = not ns.pSettings.isCompact
         ns.scanner:CompactModeChanged(true)

@@ -5,7 +5,7 @@ ns.ICON_PATH = 'Interface\\AddOns\\'..addonName..'\\Images\\'
 GR.commPrefix = 'GRSync'
 GR.dbVersion = 4
 
-GR.debug = false
+GR.debug = false -- Enable debug messages
 GR.isTesting = false -- Used for testing purposes (invite)
 GR.testingPlayerName = 'Monkstrife'
 GR.enableFilter = false

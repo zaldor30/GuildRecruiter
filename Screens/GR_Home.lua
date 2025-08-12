@@ -37,6 +37,8 @@ function home:Init()
 
     self.minLevel = ns.pSettings.minLevel or (ns.MAX_CHARACTER_LEVEL - 5 > 0 and ns.MAX_CHARACTER_LEVEL - 5 or 1) -- Default Min Level
     self.maxLevel = ns.pSettings.maxLevel or ns.MAX_CHARACTER_LEVEL -- Default Max Level
+
+    self.isOk = false
 end
 local function ChangeBaseFrameSize(x, y) -- Change the size of the base frame
     if not ns.base.tblFrame or not ns.base.tblFrame.frame then return end
@@ -59,7 +61,7 @@ function home:LoadTables()
     for k,v in pairs(tblMessages) do
         msgCount = msgCount + 1
         local desc = (not ns.isGM and v.gmSync) and ns.code:cText(ns.COLOR_GM, v.desc) or v.desc
-        table.insert(self.tblMessages, { id = k, description = desc })
+        tinsert(self.tblMessages, { id = k, description = desc })
     end
     msgFound = msgCount > 0 or false
     self.activeMessage = (msgFound and ns.pSettings.activeMessage) and ns.pSettings.activeMessage or nil
@@ -69,18 +71,18 @@ function home:LoadTables()
     -- Populate filters
     local filters = {}
     local tblFilters = ns.guild and ns.guild.filterList or {}
-    for k,v in pairs(tblFilters) do table.insert(filters, { id = k, description = v.desc }) end
-    table.insert(filters, { id = 9998, description = 'Race Filter (Default Filter)' })
-    table.insert(filters, { id = 9999, description = 'Class Filter (Default Filter)' })
+    for k,v in pairs(tblFilters) do tinsert(filters, { id = k, description = v.desc }) end
+    tinsert(filters, { id = 9998, description = 'Race Filter (Default Filter)' })
+    tinsert(filters, { id = 9999, description = 'Class Filter (Default Filter)' })
     self.tblFilters = filters
 
     -- Populate Invite Formats
     self.tblFormat = {}
-    table.insert(self.tblFormat, { id = 1, description = L['GUILD_INVITE_ONLY'] })
+    tinsert(self.tblFormat, { id = ns.InviteFormat.GUILD_INVITE_ONLY, description = L['GUILD_INVITE_ONLY'] })
     if msgFound then
-        table.insert(self.tblFormat, { id = 2, description = L['GUILD_INVITE_AND_MESSAGE'] })
-        table.insert(self.tblFormat, { id = 3, description = L['MESSAGE_ONLY'] })
-        table.insert(self.tblFormat, { id = 4, description = L['MESSAGE_ONLY_IF_INVITE_DECLINED'] })
+        tinsert(self.tblFormat, { id = ns.InviteFormat.GUILD_INVITE_AND_MESSAGE, description = L['GUILD_INVITE_AND_MESSAGE'] })
+        tinsert(self.tblFormat, { id = ns.InviteFormat.MESSAGE_ONLY, description = L['MESSAGE_ONLY'] })
+        tinsert(self.tblFormat, { id = ns.InviteFormat.MESSAGE_ONLY_IF_INVITE_DECLINED, description = L['MESSAGE_ONLY_IF_INVITE_DECLINED'] })
     end
 end
 
@@ -287,10 +289,6 @@ function home:CreateFilterAndLevel()
     buttonScan:SetScript("OnClick", function(self, button, down)
         editMinLevel:ClearFocus()
         editMaxLevel:ClearFocus()
-        if ns.pSettings.inviteFormat ~= ns.InviteFormat.GUILD_INVITE_ONLY and (not ns.pSettings.activeMessage or ns.pSettings.activeMessage == '') then
-            ns.status:SetText(L['SELECT_INVITE_MESSAGE'])
-            return
-        end
         ns.base:buttonAction('OPEN_SCANNER')
     end)
     buttonScan:SetEnabled(false)
@@ -317,7 +315,10 @@ function home:CreateInviteTypeAndMessage()
 
     -- Position the dropdown within the parent frame
     dropInvite.frame:SetPoint("TOPLEFT", self.tblFrame.dropFilters.frame, "BOTTOMLEFT", 0, -15)
-    dropInvite.frame:SetSelectedValue(ns.pSettings.inviteFormat)
+    local inviteFormat = ns.pSettings.inviteFormat or f.GUILD_INVITE_ONLY
+    ns.pSettings.inviteFormat = inviteFormat
+
+    dropInvite.frame:SetSelectedValue(inviteFormat)
     self.tblFrame.dropInvite = dropInvite
 
     local dropLabel = self.tblFrame.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -380,13 +381,16 @@ end
 -- Check Routines
 function home:validate_data_scan_button()
     local btnScan = self.tblFrame.buttonScan
-    btnScan:SetEnabled(ns.pSettings.inviteFormat ~= ns.InviteFormat.GUILD_INVITE_ONLY or (ns.pSettings.activeMessage and ns.pSettings.activeMessage ~= ''))
 
     if ns.pSettings.inviteFormat ~= ns.InviteFormat.GUILD_INVITE_ONLY and (not ns.pSettings.activeMessage or ns.pSettings.activeMessage == '') then
         updateStatusText(L['SELECT_INVITE_MESSAGE'], { r = 1, g = 0, b = 0, a = 1 })
+        self.isOk = false
     else
+        self.isOk = true
         updateStatusText()
     end
+
+    btnScan:SetEnabled(self.isOk)
 end
 function home:UpdatePreviewText()
     local previewFrame = self.tblFrame.previewFrame.previewText

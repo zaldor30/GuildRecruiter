@@ -1,0 +1,7 @@
+# Custom Dictionary Words
+antispam
+Metatable
+Monkstrife
+Moonfury
+myaddon
+Pokypoke

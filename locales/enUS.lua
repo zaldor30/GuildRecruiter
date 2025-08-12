@@ -2,16 +2,17 @@
 local addonName = ...
 local L = LibStub("AceLocale-3.0"):NewLocale(addonName, "enUS", true)
 
---#region WoW System Message Translations
---! MUST BE IN LOWERCASE!
-L["PLAYER_NOT_ONLINE"] = "is not online"
-L["PLAYER_NOT_PLAYING"] = "is currently playing"
-L["PLAYER_NOT_FOUND"] = "no player named" -- Duplicate removed
-L["PLAYER_IN_GUILD"] = "has already been invited to a guild"
-L["PLAYER_ALREADY_IN_GUILD"] = "is already in a guild"
-L["PLAYER_JOINED_GUILD"] = "has joined the guild"
-L["PLAYER_DECLINED_INVITE"] = "declines your guild invitation"
---#endregion
+-- System outcomes (map from PATS tags)
+L["PLAYER_DECLINED_INVITE"]        = "Player declined the guild invite."
+L["PLAYER_ALREADY_IN_GUILD"]       = "That player is already in a guild."
+L["PLAYER_ALREADY_IN_YOUR_GUILD"]  = "That player is already in your guild."
+L["PLAYER_ALREADY_INVITED_TO_GUILD"]= "That player has already been invited."
+L["PLAYER_NOT_FOUND"]              = "Player not found."
+L["PLAYER_NOT_PLAYING"]            = "Player is not playing World of Warcraft."
+L["PLAYER_IGNORING_YOU"]           = "That player is ignoring you."
+L["PLAYER_JOINED_GUILD"]           = "Player has joined a guild."
+L["PLAYER_NOT_ONLINE"]             = "Player is not online."
+L["PLAYER_IN_GUILD"]               = "Player is in a guild."
 
 --#region General
 L["INVITE"] = "Invite"
@@ -125,8 +126,11 @@ L['MESSAGE_ONLY_IF_INVITE_DECLINED'] = 'Message Only if Invitation is declined'
 --#endregion
 
 --#region Invite Code
+L['ALREADY_INVITED_STATUS'] = 'Pending'
 L['GUILD_INVITE_SENT'] = 'Guild invite sent to'
 L['INVITE_MESSAGE_SENT'] = 'Invite message sent to'
+L['INVITE_MESSAGE_QUEUED'] = 'Invite message queued to be sent to'
+L['GUILD_INVITE_BLOCKED'] = 'Invite message skipped for %s due to blocked guild invites.'
 --#endregion
 
 --#region Home Screen
