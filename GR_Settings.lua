@@ -1,6 +1,5 @@
 local addonName, ns = ... -- Namespace (myaddon, namespace)
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
-local ACR = LibStub("AceConfigRegistry-3.0")
 
 local MAX_CHARACTERS = 255
 local bulletAccountWide = ns.code:cText('ff00ff00', '* ')

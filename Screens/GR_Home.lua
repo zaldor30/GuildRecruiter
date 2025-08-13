@@ -315,7 +315,7 @@ function home:CreateInviteTypeAndMessage()
 
     -- Position the dropdown within the parent frame
     dropInvite.frame:SetPoint("TOPLEFT", self.tblFrame.dropFilters.frame, "BOTTOMLEFT", 0, -15)
-    local inviteFormat = ns.pSettings.inviteFormat or f.GUILD_INVITE_ONLY
+    local inviteFormat = ns.pSettings.inviteFormat or ns.InviteFormat.GUILD_INVITE_ONLY
     ns.pSettings.inviteFormat = inviteFormat
 
     dropInvite.frame:SetSelectedValue(inviteFormat)
