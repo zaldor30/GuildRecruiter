@@ -6,7 +6,7 @@ GR.commPrefix = 'GRSync'
 GR.dbVersion = 4
 
 GR.debug = false -- Enable debug messages
-GR.isTesting = false -- Used for testing purposes (invite)
+GR.isTesting = UnitName('player') == 'Holycynic' or false -- Used for testing purposes (invite)
 GR.testingPlayerName = 'Monkstrife'
 GR.enableFilter = false
 GR.isPreRelease = false

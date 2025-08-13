@@ -76,6 +76,8 @@ Guild bucket (per clubID):
 local addonName, ns = ... -- Namespace (myAddon, namespace)
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
+ns.tblBlackList, ns.antiSpamList = {}, {}
+
 local AC, ACD   = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0')
 local icon, DB  = LibStub('LibDBIcon-1.0'), LibStub('AceDB-3.0')
 local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
@@ -292,14 +294,12 @@ function core:StartDatabase(clubID)
     ns.gFilterList                          = ns.guild.filterList
 
     -- Debug flags
-    GR.debug = GR.isTesting or ns.pSettings.debugMode
+    GR.debug = (GR.debug or GR.isTesting) or ns.pSettings.debugMode
     return wasReset
 end
 
 --- Inflate in-memory tables and load game-version dependent datasets.
 function core:LoadTables()
-    ns.tblBlackList, ns.antiSpamList = {}, {}
-
     -- Decompress persisted tables (no-op if empty or invalid)
     local blSuccess, tblBL = ns.code:decompressData(ns.guild.blackList)
     ns.tblBlackList = blSuccess and tblBL or {}
