@@ -29,8 +29,6 @@ Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
 Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
 Libs\LibDeflate\LibDeflate.lua
 
-Libs\ChatThrottleLib\ChatThrottleLib.lua
-
 locales\Locales.xml
 
 GR_Init.lua
@@ -39,6 +37,7 @@ GR_Context.lua
 GR_ChangeLog.lua
 
 Shared\GR_Code.lua
+Shared\GR_Queue.lua
 Shared\GR_Code_List.lua
 Shared\GR_Code_Frames.lua
 Shared\GR_Code_Events.lua

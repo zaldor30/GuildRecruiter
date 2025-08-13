@@ -1,12 +1,13 @@
 local addonName, ns = ... -- Namespace (myaddon, namespace)
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
+local ACR = LibStub("AceConfigRegistry-3.0")
 
 local MAX_CHARACTERS = 255
 local bulletAccountWide = ns.code:cText('ff00ff00', '* ')
 local bulletGuildWide = ns.code:cText('ffffff00', '* ')
 
 local disableSaveButton = false
-local tblAntiSpamSorted, tblBlackListSorted = nil, nil
+local tblAntiSpamSorted, tblBlackListSorted, tblFilter = nil, nil, {}
 local activeZone, checkedZones, tblPlayerZone = nil, false, nil
 local tblZoneList, tblZone = nil, {}
 
@@ -18,24 +19,22 @@ local function newMsg()
         gmSync = ns.isGM,
     }
 end
+
 local getMessageLength = function(msg)
     if not msg or msg == '' then return false, 0, msg end
 
     local gd = ns.guildInfo
     local playerNameFound = false
-    local count, tMsg = 0, (msg or '')
 
-    msg = ns.code:capitalKeyWord(msg)
+    msg = ns.code:capitalKeyWord(msg:trim())
+    playerNameFound = msg:match('PLAYERNAME') and true or false
+    msg = msg:gsub('PLAYERNAME', '')
 
-    if msg:match(L['GUILDLINK']) then count = strlen(gd.guildName) + 9 end
-    if msg:match(L['GUILDNAME']) then count = count + strlen(gd.guildName) + 2 end
-    if msg:match(L['PLAYERNAME']) then
-        playerNameFound = true
-        count = count + 12
-    end
+    local count = playerNameFound and 12 or 0
+    count = count + ((msg:match('GUILDLINK') or (msg:match('GUILDNAME'))) and ((strlen(gd.guildName)) + 2) or 0)
+    msg = msg:gsub('GUILDLINK', ''):gsub('GUILDNAME', '')
 
-    tMsg = msg:gsub('GUILDLINK', ''):gsub('GUILDNAME', ''):gsub('PLAYERNAME', '')
-    return (playerNameFound or false), count + (strlen(tMsg) or 0), count, msg
+    return playerNameFound, ((count + (strlen(msg))) or 0)
 end
 function ns.newSettingsMessage() tblMessage = newMsg() end
 local function GetInstructions()
@@ -1014,7 +1013,7 @@ ns.guildRecuriterSettings = {
                 },
             }
         },
-        blankHeader3 = {
+        blankHeader4 = {
             order = 20,
             name = '',
             type = 'group',
@@ -1023,7 +1022,7 @@ ns.guildRecuriterSettings = {
         antiSpam = {
             name = L['ANTI_SPAM'],
             type = 'group',
-            order = 21,
+            order = 30,
             args = {
                 asHeader1 = {
                     order = 0,
@@ -1063,7 +1062,7 @@ ns.guildRecuriterSettings = {
         blackList = {
             name = L['BLACKLIST'],
             type = 'group',
-            order = 22,
+            order = 31,
             args = {
                 blHeader1 = {
                     order = 0,
@@ -1137,7 +1136,7 @@ ns.guildRecuriterSettings = {
         zoneList = {
             name = L['INVALID_ZONE'],
             type = 'group',
-            order = 23,
+            order = 32,
             args = {
                 zHeader1 = {
                     order = 0,
@@ -1280,7 +1279,7 @@ ns.guildRecuriterSettings = {
                 }
             }
         },
-        blankHeader4 = {
+        blankHeader6 = {
             type = 'group',
             name = '',
             order = 90,

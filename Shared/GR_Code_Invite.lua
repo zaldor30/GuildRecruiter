@@ -12,16 +12,15 @@ Key Concepts:
   - System monitoring:
       * Accepts detected by guild roster change (locale-safe).
       * Declines/errors detected by CHAT_MSG_SYSTEM matching localized strings.
-  - Whisper queuing uses ChatThrottleLib (no manual tickers).
+  - Whisper queuing uses ns.MQ (no external libs).
 
 Dependencies:
-  - ChatThrottleLib (for chat pacing)
   - AceTimer via `GR:ScheduleTimer` and `GR:CancelTimer`
   - AceLocale-3.0
-  - `ns` facilities: ns.code (dOut/fOut/cOut/variableReplacement), ns.analytics, ns.list, settings
+  - `ns` facilities: ns.MQ, ns.code (dOut/fOut/cOut/variableReplacement), ns.analytics, ns.list, settings
 Notes:
   - All maps use case-insensitive keys with `strlower`.
-  - Keep one CTL queue instance (`invite.Q`).
+  - Keep one queue instance (`invite.Q`).
 -----------------------------------------------------------------------------]]--
 
 local addonName, ns = ...
@@ -48,35 +47,10 @@ function invite:Init()
     self.useGuild, self.useWhisper, self.useInvite = false, false, false
     self.msgGuild, self.msgWhisper, self.msgInvite = nil, nil, nil
 
-    -- Single ChatThrottleLib whisper queue instance
-    -- Single ChatThrottleLib whisper queue instance
-    self.Q = self.Q or (function()
-        local WhisperQueue = {}
-        WhisperQueue.__index = WhisperQueue
-
-        function WhisperQueue:New(defaultPrio, prefix)
-            assert(ChatThrottleLib, "ChatThrottleLib is required")
-            return setmetatable({
-                defaultPrio = defaultPrio or "NORMAL",
-                prefix = prefix or addonName,
-                sent = 0,
-            }, self)
-        end
-
-        -- CTL signature:
-        -- ChatThrottleLib:SendChatMessage(priority, prefix, text, chatType, language, destination[, queueName])
-        function WhisperQueue:queue(playerName, message, prio)
-            if type(playerName) ~= "string" or playerName == "" then return end
-            if type(message) ~= "string"  or message == ""  then return end
-            message = message:sub(1, 255) -- whisper hard cap
-
-            ChatThrottleLib:SendChatMessage(prio or self.defaultPrio, self.prefix, message, "WHISPER", nil, playerName)
-            self.sent = self.sent + 1
-        end
-
-        return WhisperQueue:New("NORMAL", addonName)
-    end)()
-
+    -- Single ns.MQ instance for paced sending
+    assert(ns.MQ, "ns.MQ is required")
+    local interval = tonumber(ns.g and ns.g.timeBetweenMessages) or 0.1
+    self.Q = self.Q or ns.MQ:New({ interval = interval })
 
     self:RegisterInviteObservers()
 end
@@ -222,7 +196,7 @@ end
 function invite:InvitePlayer(fullName, justName, sendGuildInvite, sendInviteMessage, sendGuildWelcome, sendGuildWhisper)
     if GR.isTesting then
         ns.code:fOut('Testing mode is enabled. Invites sent to: '..testName..'.')
-        fullName = testName  -- do NOT call prepForInvite here
+        fullName = testName -- do NOT call prepForInvite here
     end
 
     local name, realm = prepForInvite(fullName)
@@ -247,17 +221,16 @@ function invite:InvitePlayer(fullName, justName, sendGuildInvite, sendInviteMess
     if sendInviteMessage and inviteMessage then
         local msg = ns.code:variableReplacement(inviteMessage, justName)
         if sendGuildInvite and (ns.gmSettings.obeyBlockInvites or ns.gSettings and ns.gSettings.obeyBlockInvites) then
-            -- Optionally delay to respect “block invites” windows
             C_Timer.After(1, function()
                 if Invited.Get(fullName) then
-                    self.Q:queue(fullName, msg)
+                    self.Q:Whisper(fullName, msg)
                     ns.code:cOut(L['INVITE_MESSAGE_QUEUED']..' '..fullName, ns.COLOR_SYSTEM, true)
                 else
                     ns.code:cOut(L['GUILD_INVITE_BLOCKED'], fullName)
                 end
             end)
         else
-            self.Q:queue(fullName, msg)
+            self.Q:Whisper(fullName, msg)
             ns.code:cOut(L['INVITE_MESSAGE_QUEUED']..' '..fullName, ns.COLOR_SYSTEM, true)
         end
     end
@@ -293,6 +266,7 @@ local PATS = {
     NOT_FOUND         = pat(GS("ERR_CHAT_PLAYER_NOT_FOUND_S", "ERR_PLAYER_NOT_FOUND_S")),
     NOT_PLAYING       = pat(GS("ERR_NOT_PLAYING_WOW_S")),
     IGNORES           = pat(GS("ERR_IGNORING_YOU_S")),
+    JOINED_GUILD      = pat(GS("GUILD_EVENT_PLAYER_JOINED", "ERR_GUILD_JOIN_S", "GUILD_JOIN_S")),  -- sometimes seen on accept
 }
 for k,v in pairs(PATS) do if not v then PATS[k] = nil end end
 
@@ -322,13 +296,12 @@ local function finalize(fullName, status)
     if not r then return end
 
     if status == "ACCEPTED" then
-        -- Optional delay to avoid spam right on join
         C_Timer.After(3, function()
             if r.guildMessage and invite.useGuild then
                 SendChatMessage(ns.code:variableReplacement(invite.msgGuild, r.justName, true), "GUILD")
             end
             if r.whisperMessage and invite.useWhisper then
-                invite.Q:queue(fullName, ns.code:variableReplacement(invite.msgWhisper, r.justName))
+                invite.Q:Whisper(fullName, ns.code:variableReplacement(invite.msgWhisper, r.justName))
             end
         end)
         if ns and ns.analytics then
@@ -366,24 +339,38 @@ function invite:RegisterInviteObservers()
 
     -- System-text declines/errors (locale-safe)
     local function SystemFilter(_, event, msg)
-        if event ~= "CHAT_MSG_SYSTEM" or not next(invite.tblInvited) then return false end
-        for tag, patn in pairs(PATS) do
-            local captured = msg:match(patn)  -- capture player display name
-            if captured then
-                local full = findFullNameFromSystem(captured)
-                if full then finalize(full, tag) end
-                break
+    if event ~= "CHAT_MSG_SYSTEM" or not next(invite.tblInvited) then return false end
+
+    -- check all known patterns
+    for tag, patn in pairs(PATS) do
+        local captured = msg:match(patn)  -- the player name shown in the system text
+        if captured then
+            -- Resolve to our stored full name (Name-Realm) if possible
+            local full = findFullNameFromSystem(captured)
+
+            -- Notify: which exact PATS key matched
+            -- Primary hook
+            pcall(invite.inviteStatus, invite, tag, captured, full, msg)
+            -- Optional alternate callback if registered
+            if invite._statusHandler then pcall(invite._statusHandler, tag, captured, full, msg) end
+
+            -- Finalize when we have a tracked player
+            if full then
+                -- JOINED_GUILD is effectively an accept
+                local status = (tag == "JOINED_GUILD") and "ACCEPTED" or tag
+                finalize(full, status)
             end
+            break
         end
-        return false
     end
-    ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", SystemFilter)
+    return false
+end
+ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", SystemFilter)
+
 end
 
 --=============================================================================
 -- Message Preference Resolution
---  Populates: self.msgGuild, self.msgInvite, self.msgWhisper
---  Toggles:   self.useGuild, self.useInvite, self.useWhisper
 --=============================================================================
 function invite:GetMessages()
     -- Guild welcome text
@@ -399,7 +386,6 @@ function invite:GetMessages()
     -- Welcome whisper text
     local function nonempty(s) return type(s)=="string" and s ~= "" and s or nil end
 
-    -- inside invite:GetMessages()
     do
         local gmMsg = nonempty(ns.gmSettings and ns.gmSettings.whisperMessage)
         local pMsg  = nonempty(ns.pSettings and ns.pSettings.whisperMessage)
@@ -452,7 +438,7 @@ function invite:GetMessages()
 end
 
 --=============================================================================
--- Validation helpers (unchanged behavior)
+-- Validation helpers
 --=============================================================================
 function invite:CheckWhoList(player, zoneName) return self:CheckInvite(player, true,  true,  true,  zoneName) end
 function invite:CheckAutoInvite(player)        return self:CheckInvite(player, false, true,  false) end
@@ -468,3 +454,54 @@ function invite:CheckInvite(player, antispam, blacklist, zones, zoneName)
     if zones and zoneName and (zoneName == 'Delves' or ns.invalidZones[strlower(zoneName)]) then return false, L['INVALID_ZONE'] end
     return true, ''
 end
+
+-- =============================================================================
+-- Status Callback Registration (Hooks) for Blizzard string matches
+-- =============================================================================
+function ns.invite:inviteStatus(tag, name, captured, full, msg)
+    -- Notify: which exact PATS key matched
+    if tag == 'DECLINED' then
+        ns.code:dOut("Invite to "..(full or captured).." was DECLINED.")
+        ns.analytics:UpdateData('DECLINED_INVITE')
+        ns.analytics:UpdateSessionData('SESSION_DECLINED_INVITE')
+        ns.analytics:UpdateSessionData('SESSION_WAITING_RESPONSE', -1)
+    elseif tag == 'ALREADY_IN_GUILD' or tag == 'ALREADY_IN_YOURS' then
+        ns.code:dOut((full or captured).." is already in a guild.")
+        ns.analytics:UpdateData('INVITED_GUILD', -1)
+        ns.analytics:UpdateSessionData('SESSION_INVITED_GUILD', -1)
+        ns.analytics:UpdateSessionData('SESSION_WAITING_RESPONSE', -1)
+    elseif tag == 'ALREADY_INVITED' then
+        ns.code:dOut("Already invited "..(full or captured)..".")
+        ns.analytics:UpdateData('INVITED_GUILD', -1)
+        ns.analytics:UpdateSessionData('SESSION_INVITED_GUILD', -1)
+        ns.analytics:UpdateSessionData('SESSION_WAITING_RESPONSE', -1)
+    elseif tag == 'NOT_FOUND' or tag == 'NOT_PLAYING' then
+        ns.code:dOut("Player "..(full or captured).." not found.")
+        ns.analytics:UpdateData('INVITED_GUILD', -1)
+        ns.analytics:UpdateSessionData('SESSION_INVITED_GUILD', -1)
+        ns.analytics:UpdateSessionData('SESSION_WAITING_RESPONSE', -1)
+    elseif tag == 'IGNORES' then
+        ns.code:dOut((full or captured).." is ignoring you.")
+        ns.analytics:UpdateData('INVITED_GUILD', -1)
+        ns.analytics:UpdateSessionData('SESSION_INVITED_GUILD', -1)
+        ns.analytics:UpdateSessionData('SESSION_WAITING_RESPONSE', -1)
+    elseif tag == 'JOINED_GUILD' then
+        ns.code:dOut((full or captured).." has JOINED the guild.")
+        ns.analytics:UpdateData('ACCEPTED_INVITE')
+        ns.analytics:UpdateSessionData('SESSION_ACCEPTED_INVITE')
+        ns.analytics:UpdateSessionData('SESSION_WAITING_RESPONSE', -1)
+    end
+end
+
+--[[
+    local PATS = {
+        DECLINED          = pat(GS("ERR_GUILD_DECLINE_S")),
+        ALREADY_IN_GUILD  = pat(GS("ERR_ALREADY_IN_GUILD_S", "ERR_ALREADY_IN_GUILD")),
+        ALREADY_IN_YOURS  = pat(GS("ERR_ALREADY_IN_YOUR_GUILD_S")),
+        ALREADY_INVITED   = pat(GS("ERR_ALREADY_INVITED_TO_GUILD_S")),
+        NOT_FOUND         = pat(GS("ERR_CHAT_PLAYER_NOT_FOUND_S", "ERR_PLAYER_NOT_FOUND_S")),
+        NOT_PLAYING       = pat(GS("ERR_NOT_PLAYING_WOW_S")),
+        IGNORES           = pat(GS("ERR_IGNORING_YOU_S")),
+        JOINED_GUILD      = pat(GS("GUILD_EVENT_PLAYER_JOINED", "ERR_GUILD_JOIN_S", "GUILD_JOIN_S")),  -- sometimes seen on accept
+    }
+--]]

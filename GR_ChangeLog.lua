@@ -10,6 +10,7 @@ ns.changeLog = [[
         - Updated invite type checking
         - Updated how the addon gets invite status from Blizzard
         - Addressed issue with not sending welcome whispers
+        - Added message queueing for whispers and addon messages
     ### v4.0.33
         - Fixed issue with keybind not working
         - Can move again when addon is open

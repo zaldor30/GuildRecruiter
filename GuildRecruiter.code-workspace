@@ -2,6 +2,9 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "../GuildRecruiter"
 		}
 	],
 	"settings": {
@@ -360,7 +363,8 @@
 			"NORMAL_FONT_COLOR",
 			"GameFontNormal",
 			"GameFontHighlight",
-			"ChatFontNormal"
+			"ChatFontNormal",
+			"JOIN"
 		],
 		"editor.fontSize": 18,
 		"cSpell.customDictionaries": {

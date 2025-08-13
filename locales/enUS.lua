@@ -116,6 +116,21 @@ L['VIEW_ANALYTICS_TOOLTIP'] = 'Breaks down your stats on inviting people to the 
 L['BLACKLIST_TOOLTIP'] = 'Add players from the blacklist.'
 L['CUSTOM_FILTERS'] = 'Custom Filters'
 L['CUSTOM_FILTERS_TOOLTIP'] = 'Add custom filters to the scanner.'
+L['CUSTOM_FILTERS_DESC'] = [[
+Custom filters allow you to filter players based on specific criteria.
+For example, you can filter players by class or race.
+]]
+L['NEW_FILTER_DESC'] = 'Create a new filter for the scanner.'
+L['FILTER_SAVE_LIST'] = 'Save Filter List'
+L['FILTER_SAVE_LIST_DESC'] = 'Choose a filter to modify.'
+L['FILTER_NAME'] = 'Enter Filter Name:'
+L['FILTER_NAME_EXISTS'] = 'Filter name already exists.'
+L['FILTER_CLASS'] = 'Choose a Class or Class Combination:'
+L['SELECT_ALL_CLASSES'] = 'Select All Classes'
+L['CLEAR_ALL_CLASSES'] = 'Clear All Classes'
+L['FILTER_SAVED'] = 'Filter saved successfully.'
+L['FILTER_DELETED'] = 'Filter deleted successfully.'
+L['FILTER_SAVE_ERROR'] = 'Select at least 1 class and/or race.'
 --#endregion
 
 --#region Invite Formats
