@@ -321,6 +321,7 @@ function core:LoadTables()
         ns.classes = ns.ds:classes_cata()
         ns.invalidZones = ns.ds:invalidZones_Cata()
     end
+    ns.classesByID = ns.code:sortTableByField(ns.classes, 'id')
 
     ns.analytics:RetrieveSavedData()
 end

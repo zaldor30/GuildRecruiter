@@ -487,3 +487,92 @@ function filters:ResetUI(clearName)
 
     self:UpdateButtonState()
 end
+
+function filters:GetActiveSnapshot()
+    -- prefer saved
+    if self.activeFilter and ns.gFilterList and ns.gFilterList[self.activeFilter] then
+        local f = ns.gFilterList[self.activeFilter]
+        local set = {}
+        for k, v in pairs(f.criteria or {}) do
+            if v then set[tonumber(k) or k] = true end
+        end
+        return { id=self.activeFilter, name=f.name, type=(f.type or 'CLASS'), set=set }
+    end
+    -- fallback to unsaved editor state
+    if self.tblFilter then
+        local t  = (self.filtering == 'CLASS') and 'CLASS' or 'RACE'
+        local inSet = (t == 'CLASS') and (self.tblFilter.class or {}) or (self.tblFilter.race or {})
+        local set = {}
+        for id, v in pairs(inSet) do if v then set[tonumber(id) or id] = true end end
+        local name = self.tblFrame and self.tblFrame.eSave and self.tblFrame.eSave:GetText() or nil
+        return { id=nil, name=name, type=t, set=set }
+    end
+    return nil
+end
+
+-- Make a predicate from a snapshot. If no selection, allows everything.
+-- Usage: local allow = ns.filters:MakePredicate(); if allow{ classID=1 } then ...
+function filters:MakePredicate(snapshot)
+    snapshot = snapshot or self:GetActiveSnapshot()
+    if not snapshot or not next(snapshot.set) then
+        return function() return true end
+    end
+    if snapshot.type == 'CLASS' then
+        local allowed = snapshot.set
+        return function(arg)
+            local id = arg.classID or arg.class or arg[1]
+            return id and allowed[id] or false
+        end
+    else
+        local allowed = snapshot.set
+        return function(arg)
+            local id = arg.raceID or arg.race or arg[1]
+            return id and allowed[id] or false
+        end
+    end
+end
+
+-- Direct unit check. Works in Classic/Cata/Retail.
+function filters:IsUnitAllowed(unit, snapshot)
+    snapshot = snapshot or self:GetActiveSnapshot()
+    if not snapshot or not next(snapshot.set) then return true end
+
+    if snapshot.type == 'CLASS' then
+        local _, tag, classID = UnitClass(unit)
+        local id = classID or (ns.classes and tag and ns.classes[tag] and ns.classes[tag].id)
+        return id and snapshot.set[id] or false
+    else
+        local _, raceFile, raceID = UnitRace(unit)
+        local id = raceID or (ns.races and raceFile and ns.races[raceFile] and ns.races[raceFile].id)
+        return id and snapshot.set[id] or false
+    end
+end
+
+-- Load by saved index
+function filters:GetSnapshotById(id)
+    local f = ns.gFilterList and ns.gFilterList[id]
+    if not f then return nil end
+    local set = {}
+    for k, v in pairs(f.criteria or {}) do
+        if v then set[tonumber(k) or k] = true end
+    end
+    return { id=id, name=f.name, type=(f.type or 'CLASS'), set=set }
+end
+
+-- Load by saved name
+function filters:GetSnapshotByName(name)
+    for i, f in ipairs(ns.gFilterList or {}) do
+        if f.name == name then
+            local set = {}
+            for k, v in pairs(f.criteria or {}) do
+                if v then set[tonumber(k) or k] = true end
+            end
+            return { id=i, name=f.name, type=(f.type or 'CLASS'), set=set }
+        end
+    end
+    return nil
+end
+
+-- Convenience wrappers
+function filters:MakePredicateFromId(id)   return self:MakePredicate(self:GetSnapshotById(id)) end
+function filters:MakePredicateFromName(n)  return self:MakePredicate(self:GetSnapshotByName(n)) end
