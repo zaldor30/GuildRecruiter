@@ -6,11 +6,16 @@ local home = ns.home
 
 local function obsCLOSE_SCANNER()
     ns.observer:Unregister('CLOSE_SCREENS', obsCLOSE_SCANNER)
+
+    if not home.tblFrame or not home.tblFrame.frame or not home.tblFrame.previewFrame or not home.tblFrame.previewFrame.frame then return end
     ns.frames:ResetFrame(home.tblFrame.previewFrame.frame)
     ns.frames:ResetFrame(home.tblFrame.frame)
     home.tblFrame.frame = nil
 end
 
+-- Initialize the home frame
+local msgFound = false
+local baseSizeX, baseSizeY = 500, 300
 function home:Init()
     self.tblFrame = self.tblFrame or {}
 
@@ -20,46 +25,80 @@ function home:Init()
     self.activeFilter = ns.pSettings.activeFilter or 9999 -- Default Filter
     self.activeMessage = ns.pSettings.activeMessage or nil -- Default Message
 
-    self.minLevel = ns.pSettings.minLevel or ns.MAX_CHARACTER_LEVEL - 5 -- Default Min Level
+    self.minLevel = ns.pSettings.minLevel or (ns.MAX_CHARACTER_LEVEL - 5 > 0 and ns.MAX_CHARACTER_LEVEL - 5 or 1) -- Default Min Level
     self.maxLevel = ns.pSettings.maxLevel or ns.MAX_CHARACTER_LEVEL -- Default Max Level
 
+    self.isOk = false
+end
+function home:LoadTables()
+    self.tblMessages, self.tblFilters = {}, {}
+    local tblMessages = ns.guild.messageList
+    if not tblMessages or type(tblMessages) ~= 'table' then
+        tblMessages = {}
+        ns.guild.messageList = tblMessages
+    end
+
+    -- Load messages and filters
+    local msgCount = 0
+    for k,v in pairs(tblMessages) do
+        msgCount = msgCount + 1
+        local desc = (not ns.isGM and v.gmSync) and ns.code:cText(ns.COLOR_GM, v.desc) or v.desc
+        tinsert(self.tblMessages, { id = k, description = desc })
+    end
+    msgFound = msgCount > 0 or false
+    self.activeMessage = (msgFound and ns.pSettings.activeMessage) and ns.pSettings.activeMessage or nil
+    ns.pSettings.activeMessage = self.activeMessage
+
+
+    -- Populate filters
+    local filters = {}
+    local tblFilters = ns.guild and ns.guild.filterList or {}
+    for k,v in pairs(tblFilters) do tinsert(filters, { id = k, description = v.desc }) end
+    tinsert(filters, { id = 9998, description = 'Race Filter (Default Filter)' })
+    tinsert(filters, { id = 9999, description = 'Class Filter (Default Filter)' })
+    self.tblFilters = filters
+
+    -- Populate Invite Formats
     self.tblFormat = {}
-    table.insert(self.tblFormat, { id = 2, description = L['GUILD_INVITE_ONLY'] })
-    table.insert(self.tblFormat, { id = 3, description = L['GUILD_INVITE_AND_MESSAGE'] })
-    table.insert(self.tblFormat, { id = 1, description = L['MESSAGE_ONLY'] })
-    table.insert(self.tblFormat, { id = 4, description = L['MESSAGE_ONLY_IF_INVITE_DECLINED'] })
+    tinsert(self.tblFormat, { id = ns.InviteFormat.GUILD_INVITE_ONLY, description = L['GUILD_INVITE_ONLY'] })
+    if msgFound then
+        tinsert(self.tblFormat, { id = ns.InviteFormat.GUILD_INVITE_AND_MESSAGE, description = L['GUILD_INVITE_AND_MESSAGE'] })
+        tinsert(self.tblFormat, { id = ns.InviteFormat.MESSAGE_ONLY, description = L['MESSAGE_ONLY'] })
+        tinsert(self.tblFormat, { id = ns.InviteFormat.MESSAGE_ONLY_IF_INVITE_DECLINED, description = L['MESSAGE_ONLY_IF_INVITE_DECLINED'] })
+    end
 end
 
-local baseSizeX, baseSizeY = 500, 300
-local function ChangeBaseFrameSize(x, y)
-    x = x or baseSizeX
-    y = y or baseSizeY
-
-    ns.base.tblFrame.frame:SetSize(x, y)
-end
-function home:IsShown() return (self.tblFrame and self.tblFrame.frame) and self.tblFrame.frame:IsShown() or false end
+-- Show the home frame
+function home:IsShown() return (self.tblFrame and self.tblFrame.frame) and self.tblFrame.frame:IsShown() or false end  -- Check if the home frame is shown
 function home:SetShown(val)
     if not val and not self:IsShown() then return
     elseif not val then self.tblFrame.frame:SetShown(false) end
 
+    -- Notify observers and register for close events
     ns.observer:Notify('CLOSE_SCREENS')
     ns.observer:Register('CLOSE_SCREENS', obsCLOSE_SCANNER)
 
     self:Init()
     self:LoadTables()
-    ChangeBaseFrameSize()
+
     if not self.tblFrame or not self.tblFrame.frame then
-        self:CreateBaseFrame()
+        -- Create the base frame and its components
+        self:CreateHomeScreenFrame()
         self:CreateFilterAndLevel()
         self:CreateInviteTypeAndMessage()
-        self:MessagePreview()
+        self:CreatePreviewWindow()
     end
+
+    ns.code:updateStatusText()
+    ns.code:ChangeBaseFrameSize()
 
     self:UpdatePreviewText()
     self:validate_data_scan_button()
-    self.tblFrame.frame:SetShown(val)
 end
-function home:CreateBaseFrame()
+
+-- Create the home screen frame
+-- This function should create the main frame and its components
+function home:CreateHomeScreenFrame()
     local baseFrame = ns.base.tblFrame
     local f = ns.frames:CreateFrame("Frame", "GR_HomeFrame", baseFrame.frame)
     f:SetPoint("TOPLEFT", baseFrame.icon, "BOTTOMLEFT", 5, 0)
@@ -96,7 +135,6 @@ function home:CreateFilterAndLevel()
     dropLabel:SetText(L['SELECT_A_FILTER']..":")
     dropLabel:SetTextColor(1, 1, 1)
 
-    local oldValue = nil
     local editMinLevel = ns.frames:CreateFrame("EditBox", "GR_MinLevel", self.tblFrame.frame, "InputBoxTemplate")
     editMinLevel:SetSize(50, 20)
     editMinLevel:SetPoint("LEFT", dropFilters.frame, "RIGHT", 0, 2)
@@ -125,89 +163,97 @@ function home:CreateFilterAndLevel()
     maxLabel:SetText(L['MAX_LEVEL']..":")
     maxLabel:SetTextColor(1, 1, 1)
 
-    local function HandleTabNavigation(self, key)
-        if key == "TAB" then
-            if IsShiftKeyDown() then
-                -- Shift+Tab pressed: Move focus to the previous Edit Box
-                if self:GetName() == "GR_MaxLevel" then
-                    editMinLevel:SetFocus()
-                elseif self:GetName() == "GR_MinLevel" then
-                    -- If more Edit Boxes exist, set focus to the last one or handle accordingly
-                    editMinLevel:SetFocus() -- Example for two Edit Boxes
-                end
-            else
-                -- Tab pressed: Move focus to the next Edit Box
-                if self:GetName() == "GR_MinLevel" then
-                    editMaxLevel:SetFocus()
-                elseif self:GetName() == "GR_MaxLevel" then
-                    -- If more Edit Boxes exist, set focus to the first one or handle accordingly
-                    editMinLevel:SetFocus() -- Example for two Edit Boxes
-                end
-            end
-        end
-    end
-
-    local validateLevel = function(value)
-        if value == "" then return true end
-        local num = tonumber(value)
-        if num == nil then return false end
-        if num < 1 or num > ns.MAX_CHARACTER_LEVEL then return false end
-        return true
-    end
-    local function startValidate(self, level)
-        if validateLevel(level) then
-            self:ClearFocus()
-            self:SetText(self:GetText() and tonumber(self:GetText() ) or level)
-            ns.status:SetText('')
-            if self:GetName() == "GR_MinLevel" then ns.pSettings.minLevel = tonumber(self:GetText())
-            else ns.pSettings.maxLevel = tonumber(self:GetText()) end
-            HandleTabNavigation(self, "TAB")
-        else
-            self:SetText(oldValue)
-            ns.status:SetText(L['MAX_LEVEL_ERROR'] .. ns.MAX_CHARACTER_LEVEL)
-        end
-
-        home:validate_data_scan_button()
-    end
-
-    local skipValidation = false
-    editMinLevel:SetScript("OnEnterPressed", function(self) startValidate(self, self:GetText()) end)
-    editMinLevel:SetScript("OnEscapePressed", function(self)
-        self:ClearFocus()
-        self:SetText(oldValue)
-    end)
-    editMinLevel:SetScript("OnEditFocusLost", function(self) if not skipValidation then startValidate(self, self:GetText()) end end)
-    editMinLevel:SetScript("OnEditFocusGained", function(self)
-        self:HighlightText()
-        oldValue = self:GetText()
-    end)
-    editMinLevel:SetScript("OnKeyDown", function(self, key) HandleTabNavigation(self, key) end)
-
-    editMaxLevel:SetScript("OnEnterPressed", function(self) startValidate(self, self:GetText()) end)
-    editMaxLevel:SetScript("OnEscapePressed", function(self)
-        self:ClearFocus()
-        self:SetText(oldValue)
-    end)
-    editMaxLevel:SetScript("OnEditFocusLost", function(self) if not skipValidation then startValidate(self, self:GetText()) end end)
-    editMaxLevel:SetScript("OnEditFocusGained", function(self)
-        self:HighlightText()
-        oldValue = self:GetText()
-    end)
 
     local buttonScan = ns.frames:CreateFrame('Button', 'GR_Start_Invite', self.tblFrame.frame, 'UIPanelButtonTemplate')
+
+    -- Check min and max levels
+    local function fixLevel(self)
+        ns.code:updateStatusText()
+        if not self:GetText() then return end
+        if not self or not self:GetText() or type(tonumber(self:GetText())) ~= 'number' then
+            ns.code:updateStatusText(L['MAX_LEVEL_ERROR'] .. ns.MAX_CHARACTER_LEVEL, { r = 1, g = 0, b = 0, a = 1 })
+            return
+        end
+
+        local origMinLevel = tonumber(editMinLevel:GetText()) or nil
+        local origMaxLevel = tonumber(editMaxLevel:GetText()) or nil
+
+        local minLvl = origMinLevel and (tonumber(origMinLevel) or 1) or (ns.MAX_CHARACTER_LEVEL -5 > 0 and ns.MAX_CHARACTER_LEVEL -5 or 1)
+        local maxLvl = origMaxLevel and (tonumber(origMaxLevel) or ns.MAX_CHARACTER_LEVEL) or ns.MAX_CHARACTER_LEVEL
+
+        if minLvl < 1 then minLvl = 1
+        elseif minLvl > maxLvl then minLvl = maxLvl end
+
+        if maxLvl < 1 then maxLvl = 1
+        elseif maxLvl > ns.MAX_CHARACTER_LEVEL then maxLvl = ns.MAX_CHARACTER_LEVEL end
+
+        editMinLevel:SetText(minLvl)
+        editMaxLevel:SetText(maxLvl)
+
+        if origMinLevel ~= minLvl or origMaxLevel ~= maxLvl then
+            ns.code:updateStatusText(L['LEVELS_FIXED'] .. ": " .. minLvl .. " - " .. maxLvl, { r = 1, g = 1, b = 0, a = 1 })
+        elseif maxLvl - minLvl > 5 then
+            ns.code:updateStatusText(L['LEVELS_TOO_CLOSE'], { r = 1, g = 0, b = 0, a = 1 })
+        end
+    end
+
+    local oldMinLevel, oldMaxLevel = nil, nil
+    local function levelFocusGained(self)
+        self:HighlightText()
+        oldMinLevel = self:GetText() == "" and (ns.MAX_CHARACTER_LEVEL -5 > 0 and ns.MAX_CHARACTER_LEVEL -5 or 1) or tonumber(self:GetText())
+        oldMaxLevel = self:GetText() == "" and ns.MAX_CHARACTER_LEVEL or tonumber(self:GetText())
+    end
+    editMinLevel:SetScript("OnEditFocusGained", function(self) levelFocusGained(self) end)
+    editMinLevel:SetScript("OnEditFocusLost", function(self)
+        if not self:GetText() or self:GetText() == "" then
+            self:SetText(oldMinLevel and oldMinLevel or (ns.MAX_CHARACTER_LEVEL - 5 > 0 and ns.MAX_CHARACTER_LEVEL - 5 or 1))
+        end
+        fixLevel(self)
+     end)
+    editMinLevel:SetScript("OnEnterPressed", function(self) 
+        fixLevel(self) 
+        editMaxLevel:SetFocus()
+    end)
+    editMinLevel:SetScript("OnEscapePressed", function(self)
+        self:SetText(oldMinLevel)
+        fixLevel(self)
+        self:ClearFocus()
+    end)
+    editMinLevel:SetScript("OnTabPressed", function(self) 
+        editMaxLevel:SetFocus()
+    end)
+
+    editMaxLevel:SetScript("OnEditFocusGained", function(self) levelFocusGained(self) end)
+    editMaxLevel:SetScript("OnEditFocusLost", function(self)
+        if not self:GetText() or self:GetText() == "" then
+            self:SetText(oldMaxLevel and oldMaxLevel or ns.MAX_CHARACTER_LEVEL)
+        end
+        fixLevel(self)
+     end)
+    editMaxLevel:SetScript("OnEnterPressed", function(self)
+        fixLevel(self) 
+        self:ClearFocus()
+    end)
+    editMaxLevel:SetScript("OnEscapePressed", function(self)
+        self:SetText(oldMaxLevel)
+        fixLevel(self)
+        self:ClearFocus()
+    end)
+    editMaxLevel:SetScript("OnTabPressed", function(self) 
+        editMinLevel:SetFocus()
+    end)
+
     buttonScan:SetPoint("LEFT", editMaxLevel, "RIGHT", 10, 0)
     buttonScan:SetSize(100, 20)
     buttonScan:SetText(L['SCAN'])
+
     buttonScan:SetScript("OnClick", function(self, button, down)
-        skipValidation = false
         editMinLevel:ClearFocus()
         editMaxLevel:ClearFocus()
-        if ns.pSettings.inviteFormat ~= ns.InviteFormat.GUILD_INVITE_ONLY and (not ns.pSettings.activeMessage or ns.pSettings.activeMessage == '') then
-            ns.status:SetText(L['SELECT_INVITE_MESSAGE'])
-            return
-        end
         ns.base:buttonAction('OPEN_SCANNER')
     end)
+    buttonScan:SetEnabled(false)
+
     self.tblFrame.buttonScan = buttonScan
 end
 function home:CreateInviteTypeAndMessage()
@@ -223,14 +269,17 @@ function home:CreateInviteTypeAndMessage()
         'GR_Filter_Dropdown', -- Name of the dropdown frame
         self.tblFrame.frame,          -- Parent frame
         210,                  -- Width of the dropdown
-        'Select a filter.',   -- Default text
+        L['SELECT_INVITE_TYPE'],   -- Default text
         self.tblFormat,              -- Entries for the dropdown
         inviteReturn              -- Additional options (callbacks)
     )
 
     -- Position the dropdown within the parent frame
     dropInvite.frame:SetPoint("TOPLEFT", self.tblFrame.dropFilters.frame, "BOTTOMLEFT", 0, -15)
-    dropInvite.frame:SetSelectedValue(ns.pSettings.inviteFormat)
+    local inviteFormat = ns.pSettings.inviteFormat or ns.InviteFormat.GUILD_INVITE_ONLY
+    ns.pSettings.inviteFormat = inviteFormat
+
+    dropInvite.frame:SetSelectedValue(inviteFormat)
     self.tblFrame.dropInvite = dropInvite
 
     local dropLabel = self.tblFrame.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -252,7 +301,7 @@ function home:CreateInviteTypeAndMessage()
         'GR_Filter_Dropdown', -- Name of the dropdown frame
         self.tblFrame.frame,          -- Parent frame
         220,                  -- Width of the dropdown
-        #self.tblMessages == 0 and 'Create message in settings' or 'Select a message',   -- Default text
+        #self.tblMessages == 0 and L['CREATE_MESSAGE_IN_SETTINGS'] or L['SELECT_INVITE_MESSAGE'],   -- Default text
         self.tblMessages,              -- Entries for the dropdown
         messageReturn              -- Additional options (callbacks)
     )
@@ -268,7 +317,7 @@ function home:CreateInviteTypeAndMessage()
     self.tblFrame.dropMessages = dropMessages
     self.tblFrame.dropMessages.text = dropMsgLabel
 end
-function home:MessagePreview()
+function home:CreatePreviewWindow()
     local previewFrame = ns.frames:CreateFrame("Frame", "GR_MessagePreview", self.tblFrame.frame)
     previewFrame:SetPoint("TOPLEFT", self.tblFrame.dropInvite.frame, "BOTTOMLEFT", 15, -5)
     previewFrame:SetPoint("BOTTOMRIGHT", ns.status.frame, "TOPRIGHT", -10, 5)
@@ -290,65 +339,19 @@ function home:MessagePreview()
     self.tblFrame.previewFrame.previewText = previewText
 end
 
---* Home Support Functions
-function home:LoadTables()
-    self.tblMessages, self.tblFilters = {}, {}
-    local tblMessages = ns.guild.messageList or {}
-    for k,v in pairs(tblMessages) do
-        local desc = (not ns.isGM and v.gmSync) and ns.code:cText(ns.COLOR_GM, v.desc) or v.desc
-        table.insert(self.tblMessages, { id = k, description = desc })
-    end
-    self.activeMessage = ns.pSettings.activeMessage or nil
-
-    local filters = {}
-    local tblFilters = ns.guild and ns.guild.filterList or {}
-    for k,v in pairs(tblFilters) do table.insert(filters, { id = k, description = v.desc }) end
-    table.insert(filters, { id = 9998, description = 'Race Filter (Default Filter)' })
-    table.insert(filters, { id = 9999, description = 'Class Filter (Default Filter)' })
-    self.tblFilters = filters
-end
+-- Check Routines
 function home:validate_data_scan_button()
-    local msg = ''
-    local buttonScan = self.tblFrame.buttonScan
-    local minLevel = tonumber(ns.pSettings.minLevel)
-    local maxLevel = tonumber(ns.pSettings.maxLevel)
+    local btnScan = self.tblFrame.buttonScan
 
-    buttonScan:Enable()
-    if minLevel > maxLevel then msg = "Min Level cannot be greater than Max Level."
-    elseif minLevel < 1 or minLevel > ns.MAX_CHARACTER_LEVEL then msg = "Min Level must be between 1 and " .. ns.MAX_CHARACTER_LEVEL
-    elseif maxLevel < 1 or maxLevel > ns.MAX_CHARACTER_LEVEL then msg = "Max Level must be between 1 and " .. ns.MAX_CHARACTER_LEVEL end
-
-    local dropMessages, preview = self.tblFrame.dropMessages, self.tblFrame.previewFrame
-    if dropMessages and preview then
-        if ns.pSettings.inviteFormat == ns.InviteFormat.GUILD_INVITE_ONLY then
-            preview.frame:SetShown(false)
-            dropMessages.frame:SetShown(false)
-            dropMessages.text:SetShown(false)
-            ChangeBaseFrameSize(baseSizeX, 185)
-        else
-            preview.frame:SetShown(true)
-            dropMessages.frame:SetShown(true)
-            dropMessages.text:SetShown(true)
-            ChangeBaseFrameSize(baseSizeX, baseSizeY)
-        end
+    if ns.pSettings.inviteFormat ~= ns.InviteFormat.GUILD_INVITE_ONLY and (not ns.pSettings.activeMessage or ns.pSettings.activeMessage == '') then
+        ns.code:updateStatusText(L['SELECT_INVITE_MESSAGE'], { r = 1, g = 0, b = 0, a = 1 })
+        self.isOk = false
+    else
+        self.isOk = true
+        ns.code:updateStatusText()
     end
 
-    local allOk = msg == '' or false
-    if maxLevel - minLevel > 5 then
-        msg = "Level range of more than 5 levels is not recommended."
-    end
-    if ns.pSettings.inviteFormat ~= ns.InviteFormat.GUILD_INVITE_ONLY then
-        if not self.activeMessage then msg = "Please select a message." end
-    end
-
-    if msg ~= '' and not allOk then
-        buttonScan:Disable()
-        msg = ns.code:cText('FFFF0000', msg)
-    end
-    ns.status:SetText(msg)
-
-
-    return (msg == '' or allOk or false), msg
+    btnScan:SetEnabled(self.isOk)
 end
 function home:UpdatePreviewText()
     local previewFrame = self.tblFrame.previewFrame.previewText

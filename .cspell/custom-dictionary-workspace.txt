@@ -1,0 +1,14 @@
+# Custom Dictionary Words
+antispam
+deepcopy
+GUILDLINK
+GUILDNAME
+Metatable
+Monkstrife
+Moonfury
+myaddon
+PLAYERNAME
+Pokypoke
+prio
+strlower
+tinsert

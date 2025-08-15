@@ -41,6 +41,14 @@ function ds:WhatsNew() -- What's new in the current version
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
     
+        |CFFFFFF00v4.1.35 Notes|r
+        - WoW Version Updated
+        - Better input of player levels
+        - Updated invite type checking
+        - Updated how the addon gets invite
+            status from Blizzard
+        - Addressed issue with not sending welcome whispers
+
         |CFFFFFF00v4.0.00 Notes|r
             - Initial release of Guild Recruiter v4.0
     ]]
@@ -68,7 +76,7 @@ function ds:races_retail() -- Race data
             [29] = "Alliance",   -- Void Elf
             [30] = "Alliance",   -- Lightforged Draenei
             [31] = "Horde",      -- Zandalari Troll
-            [32] = "Horde",      -- Kul Tiran
+            [32] = "Alliance",      -- Kul Tiran
             [34] = "Alliance",   -- Dark Iron Dwarf
             [36] = "Horde",      -- Mag'har Orc
             [37] = "Alliance",   -- Mechagnome
@@ -251,6 +259,7 @@ function ds:invalidZones_Retail() -- Invalid zones for recruitment
             end
         end
     end
+
     ListAllInstances() -- List all seasonal dungeons
     ListAllInstances(true) -- List all seasonal raids
 

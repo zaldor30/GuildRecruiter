@@ -95,7 +95,7 @@ function frames:CreateAnimation(fontString, newData, type)
         local fadeOut = fadeOutGroup:CreateAnimation('Alpha')
         fadeOut:SetFromAlpha(1)  -- Start fully visible
         fadeOut:SetToAlpha(0)    -- End fully invisible
-        fadeOut:SetDuration(0.5)
+        fadeOut:SetDuration(0.75)
         fadeOut:SetSmoothing("OUT")
         tblFade[fontString] = { fadeOutGroup = fadeOutGroup }
     end
@@ -107,7 +107,7 @@ function frames:CreateAnimation(fontString, newData, type)
         local fadeIn = fadeInGroup:CreateAnimation('Alpha')
         fadeIn:SetFromAlpha(0)  -- Start fully invisible
         fadeIn:SetToAlpha(1)    -- Fade to fully visible
-        fadeIn:SetDuration(0.5)
+        fadeIn:SetDuration(0.75)
         fadeIn:SetSmoothing("IN")
         tblFade[fontString] = { fadeInGroup = fadeInGroup }
     end
@@ -214,65 +214,6 @@ ns.dropdown = ns.dropdown or {}
 ns.dropdown.__index = ns.dropdown
 
 -- Dropdown Class Definition
-function ns.dropdown:new(name, parent, width, defaultText, entries, options)
-    -- Create the dropdown frame using WoW's UIDropDownMenuTemplate
-    local dropdownFrame = CreateFrame("Frame", name, parent, "UIDropDownMenuTemplate")
-    dropdownFrame:SetWidth(width or 150)
-    dropdownFrame:SetHeight(30)
-
-    -- Initialize the dropdown menu
-    UIDropDownMenu_SetWidth(dropdownFrame, width or 150)
-    UIDropDownMenu_SetText(dropdownFrame, defaultText or "Select an option")
-
-    -- Store entries and options for later use
-    dropdownFrame.entries = entries or {}
-    dropdownFrame.options = options or {}
-
-    -- Function to initialize the dropdown menu
-    local function InitializeDropdown(self, level, menuList)
-        local info = UIDropDownMenu_CreateInfo()
-        for index, entry in ipairs(dropdownFrame.entries) do
-            info.text = entry.description
-            info.value = entry.id
-            info.func = function(_, value)
-                UIDropDownMenu_SetSelectedID(dropdownFrame, index) -- Set selection by index
-                if dropdownFrame.options.onSelect and type(dropdownFrame.options.onSelect) == "function" then
-                    dropdownFrame.options.onSelect(entry.id, entry.description)
-                end
-            end
-            UIDropDownMenu_AddButton(info, level)
-        end
-    end
-
-    -- Initialize the dropdown with the setup function
-    UIDropDownMenu_Initialize(dropdownFrame, InitializeDropdown)
-
-    -- Method to set the selected value programmatically
-    function dropdownFrame:SetSelectedValue(id)
-        for index, entry in ipairs(self.entries) do
-            if entry.id == id then
-                UIDropDownMenu_SetSelectedID(self, index)
-                break
-            end
-        end
-    end
-
-    -- Method to get the currently selected value
-    function dropdownFrame:GetSelectedValue()
-        local selectedID = UIDropDownMenu_GetSelectedID(dropdownFrame)
-        if selectedID and self.entries[selectedID] then
-            return self.entries[selectedID].id, self.entries[selectedID].description
-        end
-        return nil, nil
-    end
-
-    -- Store the frame reference in the object
-    local obj = { frame = dropdownFrame }
-
-    setmetatable(obj, ns.dropdown)
-
-    return obj
-end
 -- Dropdown class definition
 function ns.dropdown:new(name, parent, width, defaultText, entries, options)
     -- Create the dropdown frame using WoW's UIDropDownMenuTemplate
@@ -337,3 +278,87 @@ function ns.dropdown:new(name, parent, width, defaultText, entries, options)
     return obj
 end
 --? End of Single Level Dropdown
+
+function frames:BuildTwoColumnChecks(parent, items, saveTbl, defaultChecked, onChange)
+  if not parent then return saveTbl or {}, {} end
+  saveTbl = saveTbl or {}
+  defaultChecked = defaultChecked or false
+
+  -- clear old
+  if parent._checks then
+    for _, cb in ipairs(parent._checks) do cb:Hide(); cb:SetParent(nil) end
+  end
+  parent._checks = {}
+
+  -- stable key list
+  local keys = {}
+  for k in pairs(items or {}) do tinsert(keys, k) end
+  table.sort(keys, function(a,b)
+    local la = type(items[a])=="table" and (items[a].name or a) or a
+    local lb = type(items[b])=="table" and (items[b].name or b) or b
+    return tostring(la) < tostring(lb)
+  end)
+
+  local perCol  = math.ceil(#keys/2)
+  local COL_W   = 180
+  local ROW_H   = 20
+  local PAD_Y   = 4
+  local LEFT_PAD, RIGHT_PAD = 8, 8
+  local ffile,_,fflags = GameFontHighlight:GetFont()
+
+  local function labelAndColor(k)
+    local e = items[k]
+    local label = (type(e)=="table" and (e.name or k)) or tostring(e or k)
+    local token = type(e)=="table" and (e.class or e.classFile or e.token)
+    local c = (token and RAID_CLASS_COLORS and RAID_CLASS_COLORS[token]) or nil
+    if c then return label, c.r,c.g,c.b end
+    if type(e)=="table" and type(e.color)=="table" then return label, e.color[1],e.color[2],e.color[3] end
+    return label, 1,1,1
+  end
+
+  for i, key in ipairs(keys) do
+    local row = (i-1) % perCol
+    local col = math.floor((i-1) / perCol)
+
+    -- name can be nil; avoid concatenating parent:GetName()
+    local cb = CreateFrame("CheckButton", nil, parent, "ChatConfigCheckButtonTemplate")
+
+    if col == 0 then
+      cb:SetPoint("TOPLEFT", parent, "TOPLEFT", LEFT_PAD, -row*(ROW_H+PAD_Y))
+    else
+      cb:SetPoint("TOPLEFT", parent, "TOPRIGHT", -(RIGHT_PAD + COL_W), -row*(ROW_H+PAD_Y))
+    end
+
+    cb.Text:ClearAllPoints()
+    cb.Text:SetPoint("LEFT", cb, "RIGHT", 4, 0)
+    cb.Text:SetWidth(COL_W - 24)
+    cb.Text:SetJustifyH("LEFT")
+    cb:SetHitRectInsets(0, -(COL_W - 24), 0, 0)
+
+    local label, r,g,b = labelAndColor(key)
+    cb.Text:SetFont(ffile, 14, fflags)
+    cb.Text:SetText(label)
+    cb.Text:SetTextColor(r,g,b)
+
+    -- init check state
+    local init
+    if saveTbl[key] ~= nil then
+      init = saveTbl[key] and true or false
+    else
+      local item = items[key]
+      local perItem = (type(item)=="table") and item.default
+      init = (perItem ~= nil) and (perItem or false) or defaultChecked
+      saveTbl[key] = init
+    end
+    cb:SetChecked(init)
+
+    cb:SetScript("OnClick", function(selfBtn)
+      saveTbl[key] = selfBtn:GetChecked() and true or false
+      if onChange then pcall(onChange, key, saveTbl[key], selfBtn) end
+    end)
+
+    tinsert(parent._checks, cb)
+  end
+
+  return saveTbl, parent._checks
+end

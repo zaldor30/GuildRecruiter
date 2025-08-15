@@ -2,16 +2,17 @@
 local addonName = ...
 local L = LibStub("AceLocale-3.0"):NewLocale(addonName, "enUS", true)
 
---#region WoW System Message Translations
---! MUST BE IN LOWERCASE!
-L["PLAYER_NOT_ONLINE"] = "is not online"
-L["PLAYER_NOT_PLAYING"] = "is currently playing"
-L["PLAYER_NOT_FOUND"] = "no player named" -- Duplicate removed
-L["PLAYER_IN_GUILD"] = "has already been invited to a guild"
-L["PLAYER_ALREADY_IN_GUILD"] = "is already in a guild"
-L["PLAYER_JOINED_GUILD"] = "has joined the guild"
-L["PLAYER_DECLINED_INVITE"] = "declines your guild invitation"
---#endregion
+-- System outcomes (map from PATS tags)
+L["PLAYER_DECLINED_INVITE"]        = "Player declined the guild invite."
+L["PLAYER_ALREADY_IN_GUILD"]       = "That player is already in a guild."
+L["PLAYER_ALREADY_IN_YOUR_GUILD"]  = "That player is already in your guild."
+L["PLAYER_ALREADY_INVITED_TO_GUILD"]= "That player has already been invited."
+L["PLAYER_NOT_FOUND"]              = "Player not found."
+L["PLAYER_NOT_PLAYING"]            = "Player is not playing World of Warcraft."
+L["PLAYER_IGNORING_YOU"]           = "That player is ignoring you."
+L["PLAYER_JOINED_GUILD"]           = "Player has joined a guild."
+L["PLAYER_NOT_ONLINE"]             = "Player is not online."
+L["PLAYER_IN_GUILD"]               = "Player is in a guild."
 
 --#region General
 L["INVITE"] = "Invite"
@@ -25,10 +26,11 @@ L["DISABLED"] = "Disabled"
 L["REMOVE"] = "Remove"
 L["HELP"] = 'Help'
 L['CONFIG'] = 'Config'
+L["RACE"] = "Race"
+L["CLASS"] = "Class"
 --#endregion
 
 --#region Button Text
-L['SCAN'] = 'Scan'
 L["CANCEL"] = "Cancel"
 L["DELETE"] = "Delete"
 L["SAVE"] = "Save"
@@ -36,6 +38,7 @@ L["NEW"] = "New"
 L["YES"] = "Yes"
 L["NO"] = "No"
 L["OK"] = "OK"
+L['FILTER_SAVE_SUCCESSFUL'] = 'Filter saved successfully.'
 --#endregion
 
 --#region System Messages
@@ -43,6 +46,9 @@ L["TITLE"] = "Guild Recruiter"
 L['BETA_INFORMATION'] = [[This is a VER version of Guild Recruiter.
 Please report any issues on our Discord server.]]
 L['AUTO_LOCKED'] = 'Moving screen is now locked.'
+L['SUPPORT_LINKS'] = 'Support Links'
+L['GITHUB_LINK'] = 'GitHub Repository'
+L['DISCORD_LINK'] = 'Discord Server'
 --#endregion
 
 --#region Frequently used strings
@@ -91,7 +97,7 @@ Right Click: Open Config
 %BlackList in blacklisted list.]]
 L["NO_LONGER_GUILD_LEADER"] = "is no longer the guild leader."
 L["NO_ANTI_SPAM"] = "Anti-Spam is not enabled. Please enable it in the settings."
-L["CANNOT_INVITE"] = "Guild Recruiter is disabled, because you do not have permission to invite."
+L["CANNOT_INVITE"] = "You do not have permission to invite new members."
 L["NOT_IN_GUILD"] = "Guild Recruiter is disabled because you are not in a guild."
 L["NOT_IN_GUILD_LINE1"] = "If you join a guild type /rl to reload."
 L['FGI_LOADED'] = '*WARNING* FGI is loaded. Please disable it to use Guild Recruiter.'
@@ -113,8 +119,32 @@ L['MANUAL_SYNC_TOOLTIP'] = 'Manually sync your lists with others in the guild.'
 L['VIEW_ANALYTICS'] = 'View Analytics'
 L['VIEW_ANALYTICS_TOOLTIP'] = 'Breaks down your stats on inviting people to the guild.'
 L['BLACKLIST_TOOLTIP'] = 'Add players from the blacklist.'
+
+L['SELECT_FILTER'] = 'Select Filter or Create New'
+L['CUSTOM_FILTER_NAME'] = 'Custom Filter Name'
 L['CUSTOM_FILTERS'] = 'Custom Filters'
 L['CUSTOM_FILTERS_TOOLTIP'] = 'Add custom filters to the scanner.'
+L['CUSTOM_FILTERS_DESC'] = [[
+Custom filters allow you to filter players based on specific criteria.
+For example, you can filter players by class or race.
+]]
+L['FILTER_DUPLICATE_NAME'] = 'A filter with that name already exists. Please choose a different name.'
+L['FILTER_OVERWRITE'] = ' will be overwritten.\nDo you want to continue?'
+L['FILTER_NO_SAVE_NAME'] = 'Please enter a name for the filter.'
+L['FILTER_SELECT_CLASS'] = 'Please select at least one class.'
+L['FILTER_SELECT_RACE'] = 'Please select at least one race.'
+L['FILTER_ALL_SELECTED'] = 'Checking all boxes is the same as default filter.'
+L['NEW_FILTER_DESC'] = 'Create a new filter for the scanner.'
+L['FILTER_SAVE_LIST'] = 'Save Filter List'
+L['FILTER_SAVE_LIST_DESC'] = 'Choose a filter to modify.'
+L['FILTER_NAME'] = 'Enter Filter Name:'
+L['FILTER_NAME_EXISTS'] = 'Filter name already exists.'
+L['FILTER_CLASS'] = 'Choose a Class or Class Combination:'
+L['SELECT_ALL_CLASSES'] = 'Select All Classes'
+L['CLEAR_ALL_CLASSES'] = 'Clear All Classes'
+L['FILTER_SAVED'] = 'Filter saved successfully.'
+L['FILTER_DELETED'] = 'Filter deleted successfully.'
+L['FILTER_SAVE_ERROR'] = 'Select at least 1 class and/or race.'
 --#endregion
 
 --#region Invite Formats
@@ -125,8 +155,11 @@ L['MESSAGE_ONLY_IF_INVITE_DECLINED'] = 'Message Only if Invitation is declined'
 --#endregion
 
 --#region Invite Code
+L['ALREADY_INVITED_STATUS'] = 'Pending'
 L['GUILD_INVITE_SENT'] = 'Guild invite sent to'
 L['INVITE_MESSAGE_SENT'] = 'Invite message sent to'
+L['INVITE_MESSAGE_QUEUED'] = 'Invite message queued to be sent to'
+L['GUILD_INVITE_BLOCKED'] = 'Invite message skipped for %s due to blocked guild invites.'
 --#endregion
 
 --#region Home Screen
@@ -134,8 +167,11 @@ L['SELECT_A_FILTER'] = 'Select a filter'
 L['MIN_LEVEL'] = 'Min Level'
 L['MAX_LEVEL'] = 'Max Level'
 L['MAX_LEVEL_ERROR'] =  'Please enter a number between 1 and '
+L['LEVELS_FIXED'] = 'Levels Fixed'
+L['LEVELS_TOO_CLOSE'] = 'Caution: Keep level range within 5 levels.'
 L['SELECT_INVITE_TYPE'] = 'Select Invite Type'
 L['SELECT_INVITE_MESSAGE'] = 'Select Invite Message'
+L['CREATE_MESSAGE_IN_SETTINGS'] = 'Create message in settings'
 --#endregion
 
 --#region Scanner Screen
@@ -177,7 +213,8 @@ L['MAX_CHARS'] = '(<sub> characters per message)'
 L['LENGTH_INFO'] = 'Assumes 12 characters when using PLAYERNAME'
 L['MESSAGE_LENGTH'] = 'Message Length'
 L['GEN_GUILD_WIDE'] = 'Indicates only your current guild will be effected.'
-L['GEN_ACCOUNT_WIDE'] = 'Indicates all your charcters will be effected account wide.'
+L['GEN_ACCOUNT_WIDE'] = 'Indicates all your characters will be effected account wide.'
+L['ENABLED_NOTE'] = 'Blocking invites only works when using Guild Invite and Message.'
 L['RELOAD_AFTER_CHANGE'] = 'You must reload your UI (/rl) after making changes.'
 L['MESSAGE_REPLACEMENT_INSTRUCTIONS_CLASSIC'] = '' --  Leave blank for now
 L['MESSAGE_REPLACEMENT_INSTRUCTIONS_PART_1'] = 'GUILDLINK - Will create a clickable link to your guild.'
@@ -279,7 +316,7 @@ Different realm, add - and the realm name.
 ]]
 --#endregion
 --#region Invalid Zones
-L['INVALID_ZONE'] = 'Invalid Zones'
+L['INVALID_ZONE'] = 'Invalid Zone'
 L['ZONE_NOT_FOUND'] = 'Could not find zone'
 L['ZONE_INSTRUCTIONS'] = 'The zone name must EXACTLY match the zone name in the game.'
 L['ZONE_ID'] = 'Zone ID (Numeric ID)'

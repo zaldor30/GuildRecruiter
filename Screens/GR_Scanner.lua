@@ -404,10 +404,9 @@ function scanner:DisplayWhoList()
             if inviteOk and not self.tblToInvite[result.fullName] then
                 result.level = result.level == ns.MAX_CHARACTER_LEVEL and ns.code:cText('FF00FF00', result.level) or ns.code:cText('FFFFFFFF', result.level)
                 self.tblToInvite[result.fullName] = result
-            else
                 ns.analytics:UpdateData('SCANNED_NO_GUILD')
+            else
                 ns.analytics:UpdateSessionData('SESSION_SCANNED_NO_GUILD')
-
                 result.level = ns.code:cText('FFFF0000', result.level)
                 result.failed = ns.code:cText('FFFF0000', reason)
             end

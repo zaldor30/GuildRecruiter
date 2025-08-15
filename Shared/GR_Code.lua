@@ -215,3 +215,24 @@ function code:formatNumberWithCommas(number, formatThousands)
         return formatted
     end
 end
+function code:updateStatusText(text, color)
+    if not ns.status then return end
+
+    local status = ns.status
+    if not status then return end
+
+    color = color or { r = 1, g = 1, b = 1, a = 1 } -- Default color is white
+
+    status:SetText(text or "")
+    status:SetTextColor(color.r , color.g , color.b , color.a )
+end
+function code:ChangeBaseFrameSize(x, y) -- Change the size of the base frame
+    if not ns.base.tblFrame or not ns.base.tblFrame.frame then return end
+
+    local baseSizeX, baseSizeY = 500, 300
+
+    x = x or baseSizeX
+    y = y or baseSizeY
+
+    ns.base.tblFrame.frame:SetSize(x, y)
+end

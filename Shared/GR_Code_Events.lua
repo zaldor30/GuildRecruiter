@@ -42,7 +42,7 @@ function observer:Register(event, callback)
     if not event or not callback then return end
 
     if not self.tblObservers[event] then self.tblObservers[event] = {} end
-    table.insert(self.tblObservers[event], callback)
+    tinsert(self.tblObservers[event], callback)
 end
 function observer:Unregister(event, callback)
     if not event or not callback then return end
