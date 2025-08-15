@@ -280,15 +280,19 @@ end
 --? End of Single Level Dropdown
 
 function frames:BuildTwoColumnChecks(parent, items, saveTbl, defaultChecked, onChange)
+  if not parent then return saveTbl or {}, {} end
   saveTbl = saveTbl or {}
   defaultChecked = defaultChecked or false
 
+  -- clear old
   if parent._checks then
     for _, cb in ipairs(parent._checks) do cb:Hide(); cb:SetParent(nil) end
   end
   parent._checks = {}
 
-  local keys = {}; for k in pairs(items or {}) do tinsert(keys, k) end
+  -- stable key list
+  local keys = {}
+  for k in pairs(items or {}) do tinsert(keys, k) end
   table.sort(keys, function(a,b)
     local la = type(items[a])=="table" and (items[a].name or a) or a
     local lb = type(items[b])=="table" and (items[b].name or b) or b
@@ -305,8 +309,8 @@ function frames:BuildTwoColumnChecks(parent, items, saveTbl, defaultChecked, onC
   local function labelAndColor(k)
     local e = items[k]
     local label = (type(e)=="table" and (e.name or k)) or tostring(e or k)
-    local token = type(e)=="table" and (e.class or e.classFile or e.token) or tostring(k):upper()
-    local c = RAID_CLASS_COLORS and RAID_CLASS_COLORS[token]
+    local token = type(e)=="table" and (e.class or e.classFile or e.token)
+    local c = (token and RAID_CLASS_COLORS and RAID_CLASS_COLORS[token]) or nil
     if c then return label, c.r,c.g,c.b end
     if type(e)=="table" and type(e.color)=="table" then return label, e.color[1],e.color[2],e.color[3] end
     return label, 1,1,1
@@ -316,7 +320,8 @@ function frames:BuildTwoColumnChecks(parent, items, saveTbl, defaultChecked, onC
     local row = (i-1) % perCol
     local col = math.floor((i-1) / perCol)
 
-    local cb = CreateFrame("CheckButton", parent:GetName().."_CB"..i, parent, "ChatConfigCheckButtonTemplate")
+    -- name can be nil; avoid concatenating parent:GetName()
+    local cb = CreateFrame("CheckButton", nil, parent, "ChatConfigCheckButtonTemplate")
 
     if col == 0 then
       cb:SetPoint("TOPLEFT", parent, "TOPLEFT", LEFT_PAD, -row*(ROW_H+PAD_Y))
@@ -335,7 +340,7 @@ function frames:BuildTwoColumnChecks(parent, items, saveTbl, defaultChecked, onC
     cb.Text:SetText(label)
     cb.Text:SetTextColor(r,g,b)
 
-    -- default check logic: per-item .default overrides global `defaultChecked`
+    -- init check state
     local init
     if saveTbl[key] ~= nil then
       init = saveTbl[key] and true or false
@@ -347,9 +352,9 @@ function frames:BuildTwoColumnChecks(parent, items, saveTbl, defaultChecked, onC
     end
     cb:SetChecked(init)
 
-    cb:SetScript("OnClick", function(self)
-      saveTbl[key] = self:GetChecked() and true or false
-      if onChange then pcall(onChange, key, saveTbl[key], self) end
+    cb:SetScript("OnClick", function(selfBtn)
+      saveTbl[key] = selfBtn:GetChecked() and true or false
+      if onChange then pcall(onChange, key, saveTbl[key], selfBtn) end
     end)
 
     tinsert(parent._checks, cb)
