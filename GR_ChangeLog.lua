@@ -4,6 +4,10 @@ ns.changeLog = [[
     # Guild Recruiter
     ## 4.0 - War Within/Classic/Cata Release
 
+    ### v4.1.36
+        - Fixed save issue when update min/max levels.
+        - Added notification to refresh filter when
+            changing min/max levels or filters.
     ### v4.1.35
         - WoW Version Updated
         - Better input of player levels

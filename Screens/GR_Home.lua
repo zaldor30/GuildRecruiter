@@ -4,6 +4,8 @@ local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 ns.home = {}
 local home = ns.home
 
+home.filterStarted = false
+
 local function obsCLOSE_SCANNER()
     ns.observer:Unregister('CLOSE_SCREENS', obsCLOSE_SCANNER)
 
@@ -94,6 +96,8 @@ function home:SetShown(val)
 
     self:UpdatePreviewText()
     self:validate_data_scan_button()
+
+    ns.scanner.askReset = false
 end
 
 -- Create the home screen frame
@@ -112,7 +116,9 @@ function home:CreateFilterAndLevel()
     local filterReturn = { -- Callback when filter is selected
         onSelect = function(id, description)
             id = tonumber(id)
+            local oldID = ns.pSettings.activeFilter or nil
             ns.pSettings.activeFilter = id
+            ns.scanner.askReset = home.filterStarted and (oldID ~= id and true or ns.scanner.askReset) or false
         end
     }
 
@@ -128,7 +134,7 @@ function home:CreateFilterAndLevel()
     -- Position the dropdown within the parent frame
     dropFilters.frame:SetPoint("TOPLEFT", self.tblFrame.frame, "TOPLEFT", -8, -15)
     dropFilters.frame:SetSelectedValue(self.activeFilter)
-    self.tblFrame.dropFilters = dropFilters
+    ns.scanner.resetFilters = dropFilters
 
     local dropLabel = self.tblFrame.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     dropLabel:SetPoint("BOTTOMLEFT", dropFilters.frame, "TOPLEFT", 20, 0)
@@ -177,6 +183,8 @@ function home:CreateFilterAndLevel()
 
         local origMinLevel = tonumber(editMinLevel:GetText()) or nil
         local origMaxLevel = tonumber(editMaxLevel:GetText()) or nil
+        local oldMinLevel = ns.pSettings.minLevel or nil
+        local oldgMaxLevel = ns.pSettings.maxLevel or nil
 
         local minLvl = origMinLevel and (tonumber(origMinLevel) or 1) or (ns.MAX_CHARACTER_LEVEL -5 > 0 and ns.MAX_CHARACTER_LEVEL -5 or 1)
         local maxLvl = origMaxLevel and (tonumber(origMaxLevel) or ns.MAX_CHARACTER_LEVEL) or ns.MAX_CHARACTER_LEVEL
@@ -187,13 +195,19 @@ function home:CreateFilterAndLevel()
         if maxLvl < 1 then maxLvl = 1
         elseif maxLvl > ns.MAX_CHARACTER_LEVEL then maxLvl = ns.MAX_CHARACTER_LEVEL end
 
+        if maxLvl - minLvl > 5 then
+            ns.code:updateStatusText(L['LEVELS_TOO_CLOSE'], { r = 1, g = 0, b = 0, a = 1 })
+        end
+
         editMinLevel:SetText(minLvl)
         editMaxLevel:SetText(maxLvl)
 
+        ns.pSettings.minLevel = minLvl
+        ns.pSettings.maxLevel = maxLvl
+        ns.scanner.askReset = home.filterStarted and ((oldMinLevel ~= ns.pSettings.minLevel or oldgMaxLevel ~= ns.pSettings.maxLevel) and true or ns.scanner.askReset) or false
+
         if origMinLevel ~= minLvl or origMaxLevel ~= maxLvl then
             ns.code:updateStatusText(L['LEVELS_FIXED'] .. ": " .. minLvl .. " - " .. maxLvl, { r = 1, g = 1, b = 0, a = 1 })
-        elseif maxLvl - minLvl > 5 then
-            ns.code:updateStatusText(L['LEVELS_TOO_CLOSE'], { r = 1, g = 0, b = 0, a = 1 })
         end
     end
 
@@ -275,7 +289,7 @@ function home:CreateInviteTypeAndMessage()
     )
 
     -- Position the dropdown within the parent frame
-    dropInvite.frame:SetPoint("TOPLEFT", self.tblFrame.dropFilters.frame, "BOTTOMLEFT", 0, -15)
+    dropInvite.frame:SetPoint("TOPLEFT", ns.scanner.resetFilters.frame, "BOTTOMLEFT", 0, -15)
     local inviteFormat = ns.pSettings.inviteFormat or ns.InviteFormat.GUILD_INVITE_ONLY
     ns.pSettings.inviteFormat = inviteFormat
 

@@ -4,6 +4,8 @@ local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 ns.scanner = {}
 local scanner = ns.scanner
 
+scanner.resetFilters = false
+
 local function obsCLOSE_SCANNER()
     ns.observer:Unregister('CLOSE_SCREENS', obsCLOSE_SCANNER)
 
@@ -88,6 +90,16 @@ function scanner:SetShown(val)
 
     self:SetText(self.tblFrame.scannerFrame.nextFilterText, self:DisplayNextFilter())
     if self.filterTotal > 0 and self.filterCount > 0 then updateFilterProgress(true) end
+
+    if self.askReset then
+        ns.frames:Confirmation(L['REFRESH_FILTERS'], function()
+            self.minLevel = (ns.pSettings.minLevel or ns.MAX_CHARACTER_LEVEL - 5)
+            self.maxLevel = ns.pSettings.maxLevel or ns.MAX_CHARACTER_LEVEL
+
+            self:BuildFilters()
+        end, nil, L['YES'], L['NO'])
+    end
+    self.askReset = false
 end
 function scanner:CreateScannerBaseFrame()
     local baseFrame = ns.base.tblFrame
@@ -612,6 +624,7 @@ end
 function scanner:BuildFilters()
     local filterID = ns.pSettings.activeFilter or 9999
     self.tblFilter = {}
+    ns.home.filterStarted = true
 
     local min, max = self.minLevel, self.maxLevel
     local function createQuery(desc, criteria, lMin, rangeEnd)
