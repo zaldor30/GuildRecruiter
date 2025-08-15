@@ -4,7 +4,7 @@
 ## X-Flavor: Cata
 
 ## Title: Guild Recruiter
-## Version: 4.0.34
+## Version: 4.0.36
 ## Notes: Facilitates guild officers to recruit new members
 ## Author: Moonfury
 ## SavedVariables: GuildRecruiterDB, devGuildRecruiterDB

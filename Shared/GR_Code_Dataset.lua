@@ -41,6 +41,10 @@ function ds:WhatsNew() -- What's new in the current version
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
     
+        |CFFFFFF00v4.1.36 Notes|r
+        - Fixed save issue when update min/max levels.
+        - Added notification to refresh filter when
+            changing min/max levels or filters.
         |CFFFFFF00v4.1.35 Notes|r
         - WoW Version Updated
         - Better input of player levels

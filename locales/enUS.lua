@@ -145,6 +145,7 @@ L['CLEAR_ALL_CLASSES'] = 'Clear All Classes'
 L['FILTER_SAVED'] = 'Filter saved successfully.'
 L['FILTER_DELETED'] = 'Filter deleted successfully.'
 L['FILTER_SAVE_ERROR'] = 'Select at least 1 class and/or race.'
+L['REFRESH_FILTERS'] = 'New filter or level changes detected.\n\nDo you want to refresh the filter list now?'
 --#endregion
 
 --#region Invite Formats
