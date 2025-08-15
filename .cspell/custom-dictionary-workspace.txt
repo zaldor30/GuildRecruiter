@@ -10,3 +10,5 @@ myaddon
 PLAYERNAME
 Pokypoke
 prio
+strlower
+tinsert

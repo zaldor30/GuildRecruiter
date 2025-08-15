@@ -446,11 +446,11 @@ function invite:CheckManualInvite(player)      return self:CheckInvite(player, f
 
 -- Returns: ok:boolean, reason:string
 function invite:CheckInvite(player, antispam, blacklist, zones, zoneName)
-    if not player or player == '' then ns.code:dOut('CheckInvite: No name provided'); return end
-    local blReason = ns.list:BlacklistReason(player)
+    if not player or player == '' then ns.code:dOut('CheckInvite: No name provided'); return false, 'Unknown' end
+    local blReason = ns.list:BlacklistReason(player) or L["BLACKLIST"]
     if Invited.Get(player) then return false, L['ALREADY_INVITED_STATUS'] end
     if antispam  and ns.list:CheckAntiSpam(player) then return false, L["ANTI_SPAM"] end
-    if blacklist and ns.list:CheckBlacklist(player) then return false, (blReason or L["BLACKLIST"]) end
+    if blacklist and ns.list:CheckBlacklist(player) then return false, blReason end
     if zones and zoneName and (zoneName == 'Delves' or ns.invalidZones[strlower(zoneName)]) then return false, L['INVALID_ZONE'] end
     return true, ''
 end

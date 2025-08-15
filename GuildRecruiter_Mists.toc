@@ -1,10 +1,10 @@
-## Interface: 110200
+## Interface: 50500
 ## X-Curse-Project-ID: 882061
 ## X-Website: https://www.curseforge.com/wow/addons/guild-recruiter
-## X-Flavor: Mainline
+## X-Flavor: Mists
 
 ## Title: Guild Recruiter
-## Version: 4.1.35
+## Version: 4.0.34
 ## Notes: Facilitates guild officers to recruit new members
 ## Author: Moonfury
 ## SavedVariables: GuildRecruiterDB, devGuildRecruiterDB
@@ -33,6 +33,7 @@ Libs\LibDeflate\LibDeflate.lua
 locales\Locales.xml
 
 GR_Init.lua
+GR_Convert.lua
 GR_Constants.lua
 GR_Context.lua
 GR_ChangeLog.lua
@@ -49,7 +50,6 @@ Shared\GR_Code_Analytics.lua
 #GR_Sync.lua
 GR_Core.lua
 GR_Settings.lua
-GR_Convert.lua
 
 Screens\GR_Base.lua
 Screens\GR_Home.lua

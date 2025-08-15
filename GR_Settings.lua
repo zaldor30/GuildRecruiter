@@ -1300,13 +1300,13 @@ ns.guildRecuriterSettings = {
                 },
                 aboutDesc2 = {
                     order = 1,
-                    name = L['ABOUT_LINE'],
+                    name = L['DONATION_MESSAGE'],
                     type = 'description',
                     fontSize = 'medium',
                 },
                 aboutHeader1 = {
                     order = 2,
-                    name = L['ABOUT_DOC_LINKS'],
+                    name = L['SUPPORT_LINKS'],
                     type = 'header',
                 },
                 aboutLink1 = {
@@ -1327,7 +1327,7 @@ ns.guildRecuriterSettings = {
                 },
                 aboutLink3 = {
                     order = 5,
-                    name = L['ABOUT_DISCORD_LINK'],
+                    name = L['DISCORD_LINK'],
                     type = 'input',
                     width = 'full',
                     set = function() ns.code:OpenURL('https://discord.gg/ZtS6Q2sKRH') end,

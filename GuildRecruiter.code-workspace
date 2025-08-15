@@ -364,7 +364,10 @@
 			"GameFontNormal",
 			"GameFontHighlight",
 			"ChatFontNormal",
-			"JOIN"
+			"JOIN",
+			"RAID_CLASS_COLORS",
+			"LOCALIZED_CLASS_NAMES_MALE",
+			"LOCALIZED_CLASS_NAMES_FEMALE"
 		],
 		"editor.fontSize": 18,
 		"cSpell.customDictionaries": {

@@ -364,5 +364,9 @@ function base:buttonAction(button)
     elseif button == 'OPEN_COMPACT' then
         ns.pSettings.isCompact = not ns.pSettings.isCompact
         ns.scanner:CompactModeChanged(true)
+    elseif button == 'OPEN_FILTER' then
+        if not GR.enableFilter then return
+        else ns.filters:SetShown(true) end
+        base.tblFrame.back:SetShown(true)
     else ns.frames:AcceptDialog('Under Construction!!', function() return end) end
 end

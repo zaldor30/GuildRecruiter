@@ -26,10 +26,11 @@ L["DISABLED"] = "Disabled"
 L["REMOVE"] = "Remove"
 L["HELP"] = 'Help'
 L['CONFIG'] = 'Config'
+L["RACE"] = "Race"
+L["CLASS"] = "Class"
 --#endregion
 
 --#region Button Text
-L['SCAN'] = 'Scan'
 L["CANCEL"] = "Cancel"
 L["DELETE"] = "Delete"
 L["SAVE"] = "Save"
@@ -37,6 +38,7 @@ L["NEW"] = "New"
 L["YES"] = "Yes"
 L["NO"] = "No"
 L["OK"] = "OK"
+L['FILTER_SAVE_SUCCESSFUL'] = 'Filter saved successfully.'
 --#endregion
 
 --#region System Messages
@@ -44,6 +46,9 @@ L["TITLE"] = "Guild Recruiter"
 L['BETA_INFORMATION'] = [[This is a VER version of Guild Recruiter.
 Please report any issues on our Discord server.]]
 L['AUTO_LOCKED'] = 'Moving screen is now locked.'
+L['SUPPORT_LINKS'] = 'Support Links'
+L['GITHUB_LINK'] = 'GitHub Repository'
+L['DISCORD_LINK'] = 'Discord Server'
 --#endregion
 
 --#region Frequently used strings
@@ -114,12 +119,21 @@ L['MANUAL_SYNC_TOOLTIP'] = 'Manually sync your lists with others in the guild.'
 L['VIEW_ANALYTICS'] = 'View Analytics'
 L['VIEW_ANALYTICS_TOOLTIP'] = 'Breaks down your stats on inviting people to the guild.'
 L['BLACKLIST_TOOLTIP'] = 'Add players from the blacklist.'
+
+L['SELECT_FILTER'] = 'Select Filter or Create New'
+L['CUSTOM_FILTER_NAME'] = 'Custom Filter Name'
 L['CUSTOM_FILTERS'] = 'Custom Filters'
 L['CUSTOM_FILTERS_TOOLTIP'] = 'Add custom filters to the scanner.'
 L['CUSTOM_FILTERS_DESC'] = [[
 Custom filters allow you to filter players based on specific criteria.
 For example, you can filter players by class or race.
 ]]
+L['FILTER_DUPLICATE_NAME'] = 'A filter with that name already exists. Please choose a different name.'
+L['FILTER_OVERWRITE'] = ' will be overwritten.\nDo you want to continue?'
+L['FILTER_NO_SAVE_NAME'] = 'Please enter a name for the filter.'
+L['FILTER_SELECT_CLASS'] = 'Please select at least one class.'
+L['FILTER_SELECT_RACE'] = 'Please select at least one race.'
+L['FILTER_ALL_SELECTED'] = 'Checking all boxes is the same as default filter.'
 L['NEW_FILTER_DESC'] = 'Create a new filter for the scanner.'
 L['FILTER_SAVE_LIST'] = 'Save Filter List'
 L['FILTER_SAVE_LIST_DESC'] = 'Choose a filter to modify.'
@@ -199,7 +213,8 @@ L['MAX_CHARS'] = '(<sub> characters per message)'
 L['LENGTH_INFO'] = 'Assumes 12 characters when using PLAYERNAME'
 L['MESSAGE_LENGTH'] = 'Message Length'
 L['GEN_GUILD_WIDE'] = 'Indicates only your current guild will be effected.'
-L['GEN_ACCOUNT_WIDE'] = 'Indicates all your charcters will be effected account wide.'
+L['GEN_ACCOUNT_WIDE'] = 'Indicates all your characters will be effected account wide.'
+L['ENABLED_NOTE'] = 'Blocking invites only works when using Guild Invite and Message.'
 L['RELOAD_AFTER_CHANGE'] = 'You must reload your UI (/rl) after making changes.'
 L['MESSAGE_REPLACEMENT_INSTRUCTIONS_CLASSIC'] = '' --  Leave blank for now
 L['MESSAGE_REPLACEMENT_INSTRUCTIONS_PART_1'] = 'GUILDLINK - Will create a clickable link to your guild.'
@@ -301,7 +316,7 @@ Different realm, add - and the realm name.
 ]]
 --#endregion
 --#region Invalid Zones
-L['INVALID_ZONE'] = 'Invalid Zones'
+L['INVALID_ZONE'] = 'Invalid Zone'
 L['ZONE_NOT_FOUND'] = 'Could not find zone'
 L['ZONE_INSTRUCTIONS'] = 'The zone name must EXACTLY match the zone name in the game.'
 L['ZONE_ID'] = 'Zone ID (Numeric ID)'

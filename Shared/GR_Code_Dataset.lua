@@ -76,7 +76,7 @@ function ds:races_retail() -- Race data
             [29] = "Alliance",   -- Void Elf
             [30] = "Alliance",   -- Lightforged Draenei
             [31] = "Horde",      -- Zandalari Troll
-            [32] = "Horde",      -- Kul Tiran
+            [32] = "Alliance",      -- Kul Tiran
             [34] = "Alliance",   -- Dark Iron Dwarf
             [36] = "Horde",      -- Mag'har Orc
             [37] = "Alliance",   -- Mechagnome

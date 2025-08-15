@@ -2,7 +2,7 @@ local addonName, ns = ... -- Namespace (myAddon, namespace)
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
 ns.home = {}
-local home, status = ns.home, nil
+local home = ns.home
 
 local function obsCLOSE_SCANNER()
     ns.observer:Unregister('CLOSE_SCREENS', obsCLOSE_SCANNER)
@@ -11,16 +11,6 @@ local function obsCLOSE_SCANNER()
     ns.frames:ResetFrame(home.tblFrame.previewFrame.frame)
     ns.frames:ResetFrame(home.tblFrame.frame)
     home.tblFrame.frame = nil
-end
-local function updateStatusText(text, color)
-    if not ns.status then return end
-    status = ns.status
-    if not status then return end
-
-    color = color or { r = 1, g = 1, b = 1, a = 1 } -- Default color is white
-
-    status:SetText(text or "")
-    status:SetTextColor(color.r , color.g , color.b , color.a )
 end
 
 -- Initialize the home frame
@@ -39,14 +29,6 @@ function home:Init()
     self.maxLevel = ns.pSettings.maxLevel or ns.MAX_CHARACTER_LEVEL -- Default Max Level
 
     self.isOk = false
-end
-local function ChangeBaseFrameSize(x, y) -- Change the size of the base frame
-    if not ns.base.tblFrame or not ns.base.tblFrame.frame then return end
-
-    x = x or baseSizeX
-    y = y or baseSizeY
-
-    ns.base.tblFrame.frame:SetSize(x, y)
 end
 function home:LoadTables()
     self.tblMessages, self.tblFilters = {}, {}
@@ -107,8 +89,8 @@ function home:SetShown(val)
         self:CreatePreviewWindow()
     end
 
-    updateStatusText()
-    ChangeBaseFrameSize()
+    ns.code:updateStatusText()
+    ns.code:ChangeBaseFrameSize()
 
     self:UpdatePreviewText()
     self:validate_data_scan_button()
@@ -183,34 +165,13 @@ function home:CreateFilterAndLevel()
 
 
     local buttonScan = ns.frames:CreateFrame('Button', 'GR_Start_Invite', self.tblFrame.frame, 'UIPanelButtonTemplate')
-    local function HandleTabNavigation(self, key)
-        if key == "TAB" then
-            if IsShiftKeyDown() then
-                -- Shift+Tab pressed: Move focus to the previous Edit Box
-                if self:GetName() == "GR_MaxLevel" then
-                    editMinLevel:SetFocus()
-                elseif self:GetName() == "GR_MinLevel" then
-                    -- Stay on MinLevel or could cycle back to MaxLevel
-                    editMaxLevel:SetFocus()
-                end
-            else
-                -- Tab pressed: Move focus to the next Edit Box/Button
-                if self:GetName() == "GR_MinLevel" then
-                    editMaxLevel:SetFocus()
-                elseif self:GetName() == "GR_MaxLevel" then
-                    -- Clear focus from MaxLevel (can't set focus to button)
-                    editMinLevel:SetFocus()
-                end
-            end
-        end
-    end
 
     -- Check min and max levels
     local function fixLevel(self)
-        updateStatusText()
+        ns.code:updateStatusText()
         if not self:GetText() then return end
         if not self or not self:GetText() or type(tonumber(self:GetText())) ~= 'number' then
-            updateStatusText(L['MAX_LEVEL_ERROR'] .. ns.MAX_CHARACTER_LEVEL, { r = 1, g = 0, b = 0, a = 1 })
+            ns.code:updateStatusText(L['MAX_LEVEL_ERROR'] .. ns.MAX_CHARACTER_LEVEL, { r = 1, g = 0, b = 0, a = 1 })
             return
         end
 
@@ -230,9 +191,9 @@ function home:CreateFilterAndLevel()
         editMaxLevel:SetText(maxLvl)
 
         if origMinLevel ~= minLvl or origMaxLevel ~= maxLvl then
-            updateStatusText(L['LEVELS_FIXED'] .. ": " .. minLvl .. " - " .. maxLvl, { r = 1, g = 1, b = 0, a = 1 })
+            ns.code:updateStatusText(L['LEVELS_FIXED'] .. ": " .. minLvl .. " - " .. maxLvl, { r = 1, g = 1, b = 0, a = 1 })
         elseif maxLvl - minLvl > 5 then
-            updateStatusText(L['LEVELS_TOO_CLOSE'], { r = 1, g = 0, b = 0, a = 1 })
+            ns.code:updateStatusText(L['LEVELS_TOO_CLOSE'], { r = 1, g = 0, b = 0, a = 1 })
         end
     end
 
@@ -383,11 +344,11 @@ function home:validate_data_scan_button()
     local btnScan = self.tblFrame.buttonScan
 
     if ns.pSettings.inviteFormat ~= ns.InviteFormat.GUILD_INVITE_ONLY and (not ns.pSettings.activeMessage or ns.pSettings.activeMessage == '') then
-        updateStatusText(L['SELECT_INVITE_MESSAGE'], { r = 1, g = 0, b = 0, a = 1 })
+        ns.code:updateStatusText(L['SELECT_INVITE_MESSAGE'], { r = 1, g = 0, b = 0, a = 1 })
         self.isOk = false
     else
         self.isOk = true
-        updateStatusText()
+        ns.code:updateStatusText()
     end
 
     btnScan:SetEnabled(self.isOk)
