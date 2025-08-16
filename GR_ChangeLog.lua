@@ -4,6 +4,8 @@ ns.changeLog = [[
     # Guild Recruiter
     ## 4.0 - War Within/Classic/Cata Release
 
+    ### v4.1.37
+        - Fixed issue with anti-spam not adding player when invited.
     ### v4.1.36
         - Fixed save issue when update min/max levels.
         - Added notification to refresh filter when
