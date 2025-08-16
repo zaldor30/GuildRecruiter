@@ -92,14 +92,14 @@ function scanner:SetShown(val)
     if self.filterTotal > 0 and self.filterCount > 0 then updateFilterProgress(true) end
 
     if self.askReset then
-        ns.frames:Confirmation(L['REFRESH_FILTERS'], function()
-            self.minLevel = (ns.pSettings.minLevel or ns.MAX_CHARACTER_LEVEL - 5)
-            self.maxLevel = ns.pSettings.maxLevel or ns.MAX_CHARACTER_LEVEL
+        ns.code:updateStatusText(L['RESETTING_FILTERS'], {r=1,g=1,b=0,a=1})
+        C_Timer.After(5, function() ns.code:updateStatusText('') end)
+        self.minLevel = (ns.pSettings.minLevel or ns.MAX_CHARACTER_LEVEL - 5)
+        self.maxLevel = ns.pSettings.maxLevel or ns.MAX_CHARACTER_LEVEL
 
-            self:BuildFilters()
-        end, nil, L['YES'], L['NO'])
+        self:BuildFilters()
+        self.askReset = false
     end
-    self.askReset = false
 end
 function scanner:CreateScannerBaseFrame()
     local baseFrame = ns.base.tblFrame

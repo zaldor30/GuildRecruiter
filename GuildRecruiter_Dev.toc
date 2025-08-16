@@ -4,7 +4,7 @@
 ## X-Flavor: Mainline
 
 ## Title: Guild Recruiter (Development)
-## Version: 4.1.36
+## Version: 4.1.37
 ## Notes: Facilitates guild officers to recruit new members
 ## Author: Moonfury
 ## SavedVariables: GuildRecruiterDB, devGuildRecruiterDB

@@ -212,6 +212,7 @@ function invite:InvitePlayer(fullName, justName, sendGuildInvite, sendInviteMess
     local whisperMessage = sendGuildWhisper  and self.msgWhisper or nil
 
     Invited:New(fullName, justName, guildMessage, inviteMessage, whisperMessage)
+    ns.list:AddToAntiSpam(fullName)
 
     if sendGuildInvite then
         C_GuildInfo.Invite(fullName)

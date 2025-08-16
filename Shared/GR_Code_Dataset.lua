@@ -41,6 +41,8 @@ function ds:WhatsNew() -- What's new in the current version
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
     
+        |CFFFFFF00v4.1.37 Notes|r
+        - Fixed issue with anti-spam not adding player when invited.
         |CFFFFFF00v4.1.36 Notes|r
         - Fixed save issue when update min/max levels.
         - Added notification to refresh filter when
