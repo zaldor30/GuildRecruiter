@@ -1,5 +1,6 @@
 # Custom Dictionary Words
 antispam
+cata
 deepcopy
 GUILDLINK
 GUILDNAME

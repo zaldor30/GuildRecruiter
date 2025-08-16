@@ -24,14 +24,45 @@ local function utf8_cut(s, i, limit)
   return j - 1
 end
 
+-- Outgoing whisper visibility toggle (Retail + Classic)
+local _w = { map = {}, ttl = 4 }  -- seconds
+local function _whispersEnabled()
+  local v = ns and ns.pSettings and ns.pSettings.showWhispers
+  return v == true or v == 1 or v == "1" or v == "true"
+end
+local function _markWhisper(msg)
+  local e = _w.map[msg]
+  if e then
+    e.n, e.t = e.n + 1, GetTime()
+  else
+    _w.map[msg] = { n = 1, t = GetTime() }
+  end
+end
+local function _wFilter(_, _, msg)
+  if _whispersEnabled() then return false end
+  local e = _w.map[msg]; if not e then return false end
+  if (GetTime() - e.t) <= _w.ttl and e.n > 0 then
+    e.n = e.n - 1
+    if e.n == 0 then _w.map[msg] = nil end
+    return true -- suppress this outgoing whisper line
+  end
+  _w.map[msg] = nil
+  return false
+end
+ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER_INFORM", _wFilter)
+pcall(ChatFrame_AddMessageEventFilter, "CHAT_MSG_BN_WHISPER_INFORM", _wFilter)
+
 -- internal senders -----------------------------------------------------------
 local function send_chat(job)
-  -- Send chat EXACTLY as provided (no truncation/validation here).
-  C_ChatInfo.SendChatMessage(job.msg, job.chatType, job.languageID, job.target)
+  local msg, chatType, lang, target = job.msg, job.chatType, job.languageID, job.target
+  if chatType == "WHISPER" then
+    if ns.classic then target = Ambiguate(target or "", "short") end
+    _markWhisper(msg) -- record so filter can hide if configured off
+  end
+  SendChatMessage(msg, chatType, lang, target)
 end
 
 local function send_addon(job)
-  -- job.msg already pre-chunked (and labeled if needed) at enqueue time
   C_ChatInfo.SendAddonMessage(job.prefix, job.msg, job.channel, job.target)
 end
 
@@ -61,7 +92,12 @@ function MQ:_tick()
   end
   local job = self.q[self.h]; self.q[self.h] = nil; self.h = self.h + 1
   if job then
-    if job.kind == "chat" then send_chat(job) else send_addon(job) end
+    local ok, err = pcall(function()
+      if job.kind == "chat" then send_chat(job) else send_addon(job) end
+    end)
+    if not ok and DEFAULT_CHAT_FRAME then
+      DEFAULT_CHAT_FRAME:AddMessage("|cffff3333MQ error: "..tostring(err))
+    end
     if self.onSend then pcall(self.onSend, job) end
   end
 end
@@ -69,7 +105,7 @@ end
 -- public API -----------------------------------------------------------------
 function MQ:EnqueueChat(chatType, msg, target, languageID)
   if not chatType or not msg then return end
-  self:_push({ kind="chat", chatType=chatType, msg=msg, target=target, languageID=languageID, when=time() })
+  self:_push({ kind="chat", chatType=chatType, msg=msg, target=target, languageID=languageID, when=GetTime() })
 end
 
 function MQ:Whisper(player, msg)
@@ -84,7 +120,7 @@ function MQ:EnqueueAddon(prefix, msg, channel, target)
 
   local total = #msg
   if total <= MAX_ADDON then
-    self:_push({ kind="addon", prefix=prefix, msg=msg, channel=channel, target=target, when=time() })
+    self:_push({ kind="addon", prefix=prefix, msg=msg, channel=channel, target=target, when=GetTime() })
     return
   end
 
@@ -94,7 +130,7 @@ function MQ:EnqueueAddon(prefix, msg, channel, target)
     local allow = MAX_ADDON - #label
     local j = utf8_cut(msg, i, allow)
     local chunk = label .. msg:sub(i, j)
-    self:_push({ kind="addon", prefix=prefix, msg=chunk, channel=channel, target=target, when=time() })
+    self:_push({ kind="addon", prefix=prefix, msg=chunk, channel=channel, target=target, when=GetTime() })
     i = j + 1
     part = part + 1
   end

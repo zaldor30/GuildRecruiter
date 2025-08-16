@@ -1,5 +1,9 @@
 local addonName, ns = ... -- Namespace (myAddon, namespace)
 
+ns.classic = WOW_PROJECT_ID == WOW_PROJECT_CLASSIC or false
+ns.cata    = WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC or false
+ns.retail  = not ns.classic and not ns.cata
+
 ns.ICON_PATH = 'Interface\\AddOns\\'..addonName..'\\Images\\'
 
 GR.commPrefix = 'GRSync'

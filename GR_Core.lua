@@ -199,9 +199,6 @@ function core:StartGuildRecruiter(clubID)
 
     -- Environment flags & pretty player name
     ns.fPlayerName = ns.code:cPlayer(GetUnitName('player', false), UnitClassBase('player'))
-    ns.classic = WOW_PROJECT_ID == WOW_PROJECT_CLASSIC or false
-    ns.cata    = WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC or false
-    ns.retail  = not ns.classic and not ns.cata
 
     -- Attach AceDB and possibly reset if version changed.
     if self:StartDatabase(clubID) then

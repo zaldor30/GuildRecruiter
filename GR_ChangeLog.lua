@@ -4,6 +4,9 @@ ns.changeLog = [[
     # Guild Recruiter
     ## 4.0 - War Within/Classic/Cata Release
 
+    ### v4.1.38
+        - Fixed issue with hiding/showing whispers in chat.
+        - Fixed issue with whispers not showing in classic.
     ### v4.1.37
         - Fixed issue with anti-spam not adding player when invited.
     ### v4.1.36

@@ -4,7 +4,7 @@
 ## X-Flavor: Mists
 
 ## Title: Guild Recruiter
-## Version: 4.0.37
+## Version: 4.0.38
 ## Notes: Facilitates guild officers to recruit new members
 ## Author: Moonfury
 ## SavedVariables: GuildRecruiterDB, devGuildRecruiterDB
