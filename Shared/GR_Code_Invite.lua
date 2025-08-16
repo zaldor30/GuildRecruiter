@@ -29,8 +29,8 @@ local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 ns.invite = {}
 local invite = ns.invite
 
--- Testing helper: route all invites to a fixed name if testing
-local testName = GR.testingPlayerName or (ns.classic and 'Pokypoke' or 'Monkstrife')
+-- Testing helper: route all invites to a fixed name if testing mode is enabled
+local testName = ns.classic and 'Hideme' or 'Monkstrife' -- Whitemane
 
 -- Seconds before a pending invite is considered timed out
 local INVITE_TIME_OUT = 120
