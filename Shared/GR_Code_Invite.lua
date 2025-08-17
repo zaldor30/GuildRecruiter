@@ -13,8 +13,7 @@ local testName = ns.classic and "Hideme" or "Monkstrife"
 --== utils ====================================================================
 local function canonical_full(fullName)
   if not fullName or fullName == "" then return nil end
-  -- strip link/realm junk defensively
-  fullName = fullName:gsub("|Hplayer:([^:|]+):.*", "%1") -- from chat hyperlinks
+  fullName = fullName:gsub("|Hplayer:([^:|]+):.*", "%1") -- strip chat link payload
   fullName = fullName:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
   fullName = Ambiguate(fullName, "none")
   if not fullName:find("-", 1, true) then
@@ -23,6 +22,7 @@ local function canonical_full(fullName)
   end
   return fullName
 end
+
 local function prepForInvite(fullName)
   fullName = canonical_full(fullName)
   if not fullName then return nil, nil end
@@ -62,7 +62,8 @@ end
 
 function Invited.Get(fullName) return _byFull[keyFull(canonical_full(fullName))] end
 function Invited.CancelTimer(fullName)
-  local o = Invited.Get(fullName); if o and o.timeInvited then GR:CancelTimer(o.timeInvited, true); o.timeInvited=nil; return true end
+  local o = Invited.Get(fullName)
+  if o and o.timeInvited then GR:CancelTimer(o.timeInvited, true); o.timeInvited=nil; return true end
   return false
 end
 function Invited.Remove(fullName)
@@ -142,7 +143,6 @@ function invite:GetMessages()
 end
 
 --== public ===================================================================
--- plain auto pipeline (kept for callers that want checks + templates)
 function invite:AutoInvite(fullName, justName, inviteFormat)
   self:GetMessages()
   return self:InvitePlayer(
@@ -155,7 +155,6 @@ function invite:AutoInvite(fullName, justName, inviteFormat)
   )
 end
 
--- manual: explicit flags
 function invite:ManualInvite(fullName, sendGuildInvite, sendInviteMessage, sendWelcomeMessage, sendWelcomeWhisper)
   self:GetMessages()
   local full = canonical_full(fullName); if not full then return false, "Unknown" end
@@ -163,14 +162,19 @@ function invite:ManualInvite(fullName, sendGuildInvite, sendInviteMessage, sendW
   -- straight guild invite only
   if sendGuildInvite and not sendInviteMessage and not sendWelcomeMessage and not sendWelcomeWhisper then
     local rec = Invited.Get(full)
-    if rec then if rec.timeInvited then GR:CancelTimer(rec.timeInvited,true) end; rec.guildMessage,rec.inviteMessage,rec.whisperMessage=nil,nil,nil; rec.timeInvited=_armTimeout(full)
-    else Invited:New(full, select(1,strsplit("-",full)), nil,nil,nil) end
+    if rec then
+      if rec.timeInvited then GR:CancelTimer(rec.timeInvited,true) end
+      rec.guildMessage,rec.inviteMessage,rec.whisperMessage=nil,nil,nil
+      rec.timeInvited=_armTimeout(full)
+    else
+      Invited:New(full, select(1,strsplit("-",full)), nil,nil,nil)
+    end
     doGuildInvite(full)
     if ns and ns.code then ns.code:fOut(L["GUILD_INVITE_SENT"].." "..full, ns.COLOR_SYSTEM, true) end
     return true
   end
 
-  -- welcome-on-join path: invite NOW, messages after join
+  -- welcome-on-join: invite NOW, send welcome/whisper after ACCEPTED
   if sendGuildInvite and not sendInviteMessage and sendWelcomeMessage and sendWelcomeWhisper then
     local just = select(1,strsplit("-", full))
     self:GetMessages()
@@ -183,7 +187,7 @@ function invite:ManualInvite(fullName, sendGuildInvite, sendInviteMessage, sendW
     else
       Invited:New(full, just, gm, nil, wm)
     end
-    doGuildInvite(full) -- the important bit
+    doGuildInvite(full)
     if ns and ns.code then ns.code:fOut(L["GUILD_INVITE_SENT"].." "..full, ns.COLOR_SYSTEM, true) end
     return true
   end
@@ -199,8 +203,13 @@ function invite:ContextGuildInviteOnly(fullName)
   local full = canonical_full(fullName); if not full then return false end
   local just = select(1,strsplit("-", full))
   local rec = Invited.Get(full)
-  if rec then if rec.timeInvited then GR:CancelTimer(rec.timeInvited,true) end; rec.guildMessage,rec.inviteMessage,rec.whisperMessage=nil,nil,nil; rec.timeInvited=_armTimeout(full)
-  else Invited:New(full, just, nil,nil,nil) end
+  if rec then
+    if rec.timeInvited then GR:CancelTimer(rec.timeInvited,true) end
+    rec.guildMessage,rec.inviteMessage,rec.whisperMessage=nil,nil,nil
+    rec.timeInvited=_armTimeout(full)
+  else
+    Invited:New(full, just, nil,nil,nil)
+  end
   doGuildInvite(full)
   if ns and ns.code then ns.code:fOut(L["GUILD_INVITE_SENT"].." "..full, ns.COLOR_SYSTEM, true) end
   return true
@@ -210,10 +219,9 @@ end
 function invite:ContextGuildInviteWithWelcome(fullName)
   local full = canonical_full(fullName); if not full then return false end
   local just = select(1,strsplit("-", full))
-  -- always invite right now (same as plain)
-  local rec = Invited.Get(full)
   self:GetMessages()
   local gm = nz(self.msgGuild); local wm = nz(self.msgWhisper)
+  local rec = Invited.Get(full)
   if rec then
     if rec.timeInvited then GR:CancelTimer(rec.timeInvited,true) end
     rec.guildMessage,rec.inviteMessage,rec.whisperMessage = gm,nil,wm
@@ -221,7 +229,7 @@ function invite:ContextGuildInviteWithWelcome(fullName)
   else
     rec = Invited:New(full, just, gm, nil, wm)
   end
-  doGuildInvite(full) -- same path as plain invite
+  doGuildInvite(full)
   if ns and ns.code then ns.code:fOut(L["GUILD_INVITE_SENT"].." "..full, ns.COLOR_SYSTEM, true) end
   return true
 end
@@ -242,6 +250,7 @@ function invite:InvitePlayer(fullName, justName, sendGuildInvite, sendInviteMess
   if sendGuildInvite then doGuildInvite(fullName); ns.code:fOut(L["GUILD_INVITE_SENT"].." "..fullName, ns.COLOR_SYSTEM, true) end
   if sendInviteMessage and inviteMessage then
     local msg = ns.code:variableReplacement(inviteMessage, justName)
+    if ns.HideWhisperOnceTo then ns.HideWhisperOnceTo(fullName, msg) end -- hide only this one line
     self.Q:Whisper(fullName, msg)
     ns.code:cOut(L["INVITE_MESSAGE_QUEUED"].." "..fullName, ns.COLOR_SYSTEM, true)
   end
@@ -274,12 +283,30 @@ local function findFullNameFromSystem(capturedName)
   if invite.tblInvited[capturedName] then return capturedName end
   return invite.idxByShort[strlower(capturedName)]
 end
-local function isInGuildByShort(shortName)
-  if not IsInGuild() then return false end
+
+-- full-name acceptance to avoid cross-realm false positives
+local function isInGuildAccepted(rec)
+  if not rec or not IsInGuild() then return false end
+  local wantFull = canonical_full(rec.fullName)
+  local wantShort = rec.justName and strlower(rec.justName) or ""
+  local wantRealm = select(2, strsplit("-", wantFull or "")) or GetRealmName()
   local n = (GetNumGuildMembers and GetNumGuildMembers()) or 0
-  for i=1,n do
+
+  for i = 1, n do
     local name = GetGuildRosterInfo(i)
-    if name and strlower(Ambiguate(name,"short")) == strlower(shortName) then return true end
+    if name then
+      local roFull = canonical_full(name)
+      if roFull and strlower(roFull) == strlower(wantFull) then
+        return true
+      end
+      -- fallback: roster shows short only for same-realm entries sometimes
+      local roShort = Ambiguate(name, "short")
+      if roShort and strlower(roShort) == wantShort then
+        if not tostring(name):find("-", 1, true) and wantRealm == (GetRealmName() or "") then
+          return true
+        end
+      end
+    end
   end
   return false
 end
@@ -314,7 +341,9 @@ function invite:RegisterInviteObservers()
   f:SetScript("OnEvent", function()
     if not next(invite.tblInvited) then return end
     for full, rec in pairs(invite.tblInvited) do
-      if rec and isInGuildByShort(rec.justName) then finalize(full, "ACCEPTED") end
+      if rec and isInGuildAccepted(rec) then
+        finalize(full, "ACCEPTED")
+      end
     end
   end)
 

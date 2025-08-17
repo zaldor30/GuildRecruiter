@@ -1,6 +1,6 @@
 -- MessageQueue.lua -----------------------------------------------------------
--- ns.MQ : simple FIFO queue for chat + addon messages. No external libs.
--- Chat: send verbatim (no length checks). Addon: UTF-8 safe chunking with P#| labels.
+-- ns.MQ : FIFO queue for chat + addon messages. No external libs.
+-- Chat: send verbatim. Addon: UTF-8 safe chunking with P#| labels.
 
 local addonName, ns = ...
 ns = ns or {}
@@ -24,54 +24,41 @@ local function utf8_cut(s, i, limit)
   return j - 1
 end
 
--- === Outgoing whisper echo control (Classic + Retail) =======================
--- Hides your own WHISPER/BNet WHISPER "inform" lines when showWhisper=false.
--- Works for both typed /w and programmatic sends. No message marking needed.
+-- === Per-message, per-target hide-once for outgoing whisper echo ============
+local _hide = { map = {}, ttl = 6 }  -- seconds
 
-local function _showWhisperSetting()
-  local s = ns and ns.pSettings
-  if not s then return true end
-  -- accept either key; default = show
-  if s.showWhisper ~= nil then return not (s.showWhisper == false) end
-  if s.showWhispers ~= nil then return not (s.showWhispers == false) end
-  return true
-end
-
-local function _whisperEchoFilter()
-  -- Return a filter function that the chat frame calls per message.
-  return function(_, event, msg)
-    -- true => suppress this line from appearing in chat
-    if not _showWhisperSetting() then
-      return true
-    end
-    return false
+local function _mkkey(msg, target)
+  if ns and ns.classic and _G.Ambiguate then
+    target = Ambiguate(target or "", "short")
   end
-end
-local _WEF = _whisperEchoFilter() -- stable closure instance
-
-local function _attachWhisperFilters()
-  ChatFrame_RemoveMessageEventFilter("CHAT_MSG_WHISPER_INFORM", _WEF)
-  ChatFrame_AddMessageEventFilter   ("CHAT_MSG_WHISPER_INFORM", _WEF)
-  pcall(ChatFrame_RemoveMessageEventFilter, "CHAT_MSG_BN_WHISPER_INFORM", _WEF)
-  pcall(ChatFrame_AddMessageEventFilter,    "CHAT_MSG_BN_WHISPER_INFORM", _WEF)
+  return tostring(msg) .. "\031" .. tostring(target or "")
 end
 
--- Attach after UI is ready, and on zone/reload just in case
-local _wf = CreateFrame("Frame")
-_wf:RegisterEvent("PLAYER_LOGIN")
-_wf:RegisterEvent("PLAYER_ENTERING_WORLD")
-_wf:SetScript("OnEvent", _attachWhisperFilters)
-
--- Optional: expose a refresh for runtime toggles
-function ns.RefreshWhisperEcho()
-  _attachWhisperFilters()
+-- Mark exactly one WHISPER-INFORM line (msg @ target) to be suppressed
+function ns.HideWhisperOnceTo(target, msg, ttl)
+  if not target or not msg or msg == "" then return end
+  _hide.map[_mkkey(msg, target)] = GetTime() + (ttl or _hide.ttl)
 end
 
--- internal senders -----------------------------------------------------------
+-- ChatFrame filter: suppress only if we previously marked this msg@target
+local function _whisperOutFilter(_, _, msg, target)
+  local k = _mkkey(msg, target)
+  local t = _hide.map[k]
+  if t and t >= GetTime() then
+    _hide.map[k] = nil
+    return true
+  end
+  return false
+end
+
+ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER_INFORM", _whisperOutFilter)
+pcall(ChatFrame_AddMessageEventFilter, "CHAT_MSG_BN_WHISPER_INFORM", _whisperOutFilter)
+
+-- === internal senders =======================================================
 local function send_chat(job)
   local msg, chatType, lang, target = job.msg, job.chatType, job.languageID, job.target
-  if chatType == "WHISPER" then
-    if ns.classic and _G.Ambiguate then target = Ambiguate(target or "", "short") end
+  if ns and ns.classic and chatType == "WHISPER" and _G.Ambiguate then
+    target = Ambiguate(target or "", "short")
   end
   SendChatMessage(msg, chatType, lang, target)
 end
@@ -80,7 +67,7 @@ local function send_addon(job)
   C_ChatInfo.SendAddonMessage(job.prefix, job.msg, job.channel, job.target)
 end
 
--- ctor -----------------------------------------------------------------------
+-- === ctor ===================================================================
 function MQ:New(opts)
   local o = setmetatable({}, self)
   o.interval = math.max(0.01, tonumber(opts and opts.interval) or 0.1)
@@ -89,7 +76,7 @@ function MQ:New(opts)
   return o
 end
 
--- queue core -----------------------------------------------------------------
+-- === queue core =============================================================
 function MQ:_push(job)
   self.t = self.t + 1
   self.q[self.t] = job
@@ -116,7 +103,7 @@ function MQ:_tick()
   end
 end
 
--- public API -----------------------------------------------------------------
+-- === public API =============================================================
 function MQ:EnqueueChat(chatType, msg, target, languageID)
   if not chatType or not msg then return end
   self:_push({ kind="chat", chatType=chatType, msg=msg, target=target, languageID=languageID, when=GetTime() })
@@ -127,7 +114,7 @@ function MQ:Whisper(player, msg)
   self:EnqueueChat("WHISPER", msg, player, nil)
 end
 
--- Splits addon message into ≤255-byte UTF-8 chunks; if >1 chunk, each chunk is prefixed "P#|"
+-- Splits addon message into ≤255 bytes; if >1 chunk, prefix each with "P#|"
 function MQ:EnqueueAddon(prefix, msg, channel, target)
   if not prefix or not msg or not channel then return end
   assert(#prefix <= MAX_PREFIX, "addon prefix must be ≤16 bytes")
@@ -150,7 +137,7 @@ function MQ:EnqueueAddon(prefix, msg, channel, target)
   end
 end
 
--- controls -------------------------------------------------------------------
+-- === controls ===============================================================
 function MQ:SetInterval(sec)
   self.interval = math.max(0.01, tonumber(sec) or 0.1)
   if self.ticker then
@@ -163,5 +150,5 @@ function MQ:Pause()  if self.ticker then self.ticker:Cancel(); self.ticker = nil
 function MQ:Resume() if not self.ticker and self.h <= self.t then self.ticker = C_Timer.NewTicker(self.interval, function() self:_tick() end) end end
 function MQ:Clear()  if self.ticker then self.ticker:Cancel(); self.ticker = nil end; for i=self.h,self.t do self.q[i]=nil end; self.h,self.t=1,0 end
 
--- expose ---------------------------------------------------------------------
+-- expose
 ns.MQ = MQ

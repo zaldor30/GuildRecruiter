@@ -43,6 +43,7 @@ function ds:WhatsNew() -- What's new in the current version
     
         |CFFFFFF00v4.1.40 Notes|r
         - New context menu when right click player.
+        - Fix to hidden whispers.
         |CFFFFFF00v4.1.39 Notes|r
         - Fixed issue with whispers not sending in some cases.
         - Possible fix to welcome guild/whispers not sending.

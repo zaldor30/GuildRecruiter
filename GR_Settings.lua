@@ -598,6 +598,7 @@ ns.guildRecuriterSettings = {
                     func = function()
                         local tbl = ns.guild.messageList or {}
                         local active = activeMessage
+                        tbl.message = tbl.message and ns.code:capitalKeyWord(tbl.message or '') or ''
 
                         if not active then
                             tinsert(tbl, tblMessage)
@@ -962,6 +963,7 @@ ns.guildRecuriterSettings = {
                     func = function()
                         local tbl = ns.guild.messageList or {}
                         local active = activeMessage
+                        tbl.message = tbl.message and ns.code:capitalKeyWord(tbl.message or '') or ''
 
                         if not active then
                             tinsert(tbl, tblMessage)
