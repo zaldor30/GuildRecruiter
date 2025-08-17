@@ -4,6 +4,8 @@ ns.changeLog = [[
     # Guild Recruiter
     ## 4.0 - War Within/Classic/Cata Release
 
+    ### v4.1.41
+        - Fix issue with whispers showing when disabled.
     ### v4.1.40
         - New context menu when right click player.
         - Fix to hidden whispers.
