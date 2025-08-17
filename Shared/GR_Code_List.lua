@@ -30,6 +30,7 @@ function list:AddToBlackList(fullName, reason)
 
     ns.analytics:UpdateData('BLACKLISTED', 1)
     ns.analytics:UpdateSessionData('SESSION_BLACKLISTED', 1)
+    ns.code:fOut(string.format(fullName..L['ADDED_TO_BLACK_LIST'], '\"'..reason..'\"'), 'FFFFFF00')
 end
 function list:BlacklistReason(fullName)
     if not fullName then return end

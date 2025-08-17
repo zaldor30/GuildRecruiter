@@ -41,6 +41,9 @@ function ds:WhatsNew() -- What's new in the current version
                     Discord: https://discord.gg/ZtS6Q2sKRH
                 (or click on the icon in the top left corner)|r
     
+        |CFFFFFF00v4.1.40 Notes|r
+        - New context menu when right click player.
+        - Fix to hidden whispers.
         |CFFFFFF00v4.1.39 Notes|r
         - Fixed issue with whispers not sending in some cases.
         - Possible fix to welcome guild/whispers not sending.

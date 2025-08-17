@@ -368,7 +368,10 @@
 			"RAID_CLASS_COLORS",
 			"LOCALIZED_CLASS_NAMES_MALE",
 			"LOCALIZED_CLASS_NAMES_FEMALE",
-			"UIDropDownMenu_ClearAll"
+			"UIDropDownMenu_ClearAll",
+			"UIDropDownMenu_AddSeparator",
+			"UIDROPDOWNMENU_MENU_LEVEL",
+			"UnitPopup_OpenMenu"
 		],
 		"editor.fontSize": 18,
 		"cSpell.customDictionaries": {

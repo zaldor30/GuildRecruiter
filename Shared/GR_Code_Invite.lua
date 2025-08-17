@@ -1,508 +1,407 @@
 --[[-----------------------------------------------------------------------------
 Invite Subsystem
-Author: Moonfury
-Purpose:
-  - Send guild invites and optional messages (guild, whisper, invite) with safe pacing.
-  - Track pending invitees with TTL and finalize on accept/decline/error.
-  - Work across Retail/Classic/Cata via GLOBAL_STRING pattern matching.
-
-Key Concepts:
-  - Full name = "Name-Realm" (always store canonical form).
-  - Registry (Invited): holds one record per pending invite with an auto-timeout.
-  - System monitoring:
-      * Accepts detected by guild roster change (locale-safe).
-      * Declines/errors detected by CHAT_MSG_SYSTEM matching localized strings.
-  - Whisper queuing uses ns.MQ (no external libs).
-
-Dependencies:
-  - AceTimer via `GR:ScheduleTimer` and `GR:CancelTimer`
-  - AceLocale-3.0
-  - `ns` facilities: ns.MQ, ns.code (dOut/fOut/cOut/variableReplacement), ns.analytics, ns.list, settings
-Notes:
-  - All maps use case-insensitive keys with `strlower`.
-  - Keep one queue instance (`invite.Q`).
 -----------------------------------------------------------------------------]]--
-
 local addonName, ns = ...
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
-ns.invite = {}
+ns.invite = ns.invite or {}
 local invite = ns.invite
 
--- Testing helper: route all invites to a fixed name if testing mode is enabled
-local testName = ns.classic and 'Hideme' or 'Monkstrife' -- Whitemane
-
--- Seconds before a pending invite is considered timed out
 local INVITE_TIME_OUT = 120
+local testName = ns.classic and "Hideme" or "Monkstrife"
 
---=============================================================================
--- Init & Configuration
---=============================================================================
-function invite:Init()
-    -- Mirrors of the core registry for easy external access and debug
-    self.tblInvited = {}          -- [FullName] = InvitedRecord
-    self.idxByShort = {}          -- [strlower(NameOnly)] = FullName
-
-    -- Message toggles and templates (populated by GetMessages)
-    self.useGuild, self.useWhisper, self.useInvite = false, false, false
-    self.msgGuild, self.msgWhisper, self.msgInvite = nil, nil, nil
-
-    -- Single ns.MQ instance for paced sending
-    assert(ns.MQ, "ns.MQ is required")
-    local interval = tonumber(ns.g and ns.g.timeBetweenMessages) or 0.1
-    self.Q = self.Q or ns.MQ:New({ interval = interval })
-
-    self:RegisterInviteObservers()
+--== utils ====================================================================
+local function canonical_full(fullName)
+  if not fullName or fullName == "" then return nil end
+  fullName = fullName:gsub("|Hplayer:([^:|]+):.*", "%1") -- strip chat link payload
+  fullName = fullName:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+  fullName = Ambiguate(fullName, "none")
+  if not fullName:find("-", 1, true) then
+    local rn = GetRealmName() or ""
+    if rn ~= "" then fullName = fullName .. "-" .. rn end
+  end
+  return fullName
 end
 
--- Utility: split "Name-Realm" and ensure realm
 local function prepForInvite(fullName)
-    local name, realm = strsplit('-', fullName)
-    return name, (realm or GetRealmName())
+  fullName = canonical_full(fullName)
+  if not fullName then return nil, nil end
+  local name, realm = strsplit("-", fullName)
+  return name, realm
 end
 
---=============================================================================
--- Invited Registry (core data model)
---=============================================================================
--- Record structure (InvitedRecord):
--- {
---   fullName       = "Name-Realm",
---   justName       = "Name",
---   guildMessage   = string|nil,
---   inviteMessage  = string|nil,
---   whisperMessage = string|nil,
---   timeInvited    = timerHandle|nil
--- }
+-- single place to issue guild invites across versions
+local function doGuildInvite(fullName)
+  local just = select(1, strsplit("-", fullName))
+  if C_GuildInfo and C_GuildInfo.Invite then
+    if ns.classic then C_GuildInfo.Invite(just) else C_GuildInfo.Invite(fullName) end
+  elseif GuildInvite then
+    GuildInvite(just)
+  else
+    SendSystemMessage("Guild invite API not found; attempted '"..tostring(just).."'")
+  end
+end
 
+--== registry =================================================================
 local Invited = {}
 Invited.__index = Invited
 
--- Internal authoritative store: [strlower(FullName)] = InvitedRecord
-local _byFull = {}
-
--- Case-insensitive key
+local _byFull = {} -- [lower("Name-Realm")] = record
 local function keyFull(s) return s and strlower(s) or nil end
 
--- Lookup a record by full name ("Name-Realm")
-function Invited.Get(fullName)
-    return _byFull[keyFull(fullName)]
+local function _armTimeout(fullName)
+  return GR:ScheduleTimer(function()
+    Invited.Remove(fullName)
+    if ns and ns.code and ns.code.dOut then ns.code:dOut("Invite to "..fullName.." timed out.") end
+    if ns and ns.analytics and ns.analytics.UpdateSessionData then
+      ns.analytics:UpdateSessionData("SESSION_INVITE_TIMED_OUT")
+      ns.analytics:UpdateSessionData("SESSION_WAITING_RESPONSE", -1)
+    end
+  end, INVITE_TIME_OUT)
 end
 
--- Return messages for a full name (table or nil)
-function Invited.Messages(fullName)
-    local o = Invited.Get(fullName)
-    return o and { guild = o.guildMessage, invite = o.inviteMessage, whisper = o.whisperMessage } or nil
-end
-
--- Cancel only the timeout timer for this record
+function Invited.Get(fullName) return _byFull[keyFull(canonical_full(fullName))] end
 function Invited.CancelTimer(fullName)
-    local o = Invited.Get(fullName)
-    if o and o.timeInvited then
-        GR:CancelTimer(o.timeInvited, true)
-        o.timeInvited = nil
-        return true
-    end
-    return false
+  local o = Invited.Get(fullName)
+  if o and o.timeInvited then GR:CancelTimer(o.timeInvited, true); o.timeInvited=nil; return true end
+  return false
 end
-
--- Remove a record, canceling its timer; returns the removed record or nil
 function Invited.Remove(fullName)
-    local k = keyFull(fullName)
-    local o = _byFull[k]
-    if not o then return nil end
-    if o.timeInvited then
-        GR:CancelTimer(o.timeInvited, true)
-        o.timeInvited = nil
-    end
-    _byFull[k] = nil
-
-    -- Keep mirrors in sync for external reads
-    if invite.idxByShort and o.justName then invite.idxByShort[strlower(o.justName)] = nil end
-    if invite.tblInvited then invite.tblInvited[o.fullName] = nil end
-    return o
+  fullName = canonical_full(fullName)
+  local k = keyFull(fullName)
+  local o = _byFull[k]; if not o then return nil end
+  if o.timeInvited then GR:CancelTimer(o.timeInvited, true) end
+  _byFull[k] = nil
+  if invite.idxByShort and o.justName then invite.idxByShort[strlower(o.justName)] = nil end
+  if invite.tblInvited then invite.tblInvited[o.fullName] = nil end
+  return o
 end
-
--- Create and register a new pending-invite record with TTL
 function Invited:New(fullName, justName, guildMessage, inviteMessage, whisperMessage)
-    assert(fullName, "fullName required")
-    local obj = setmetatable({
-        fullName       = fullName:gmatch('-') and fullName or fullName..'-'..GetRealmName(),
-        justName       = justName,
-        guildMessage   = guildMessage,
-        inviteMessage  = inviteMessage,
-        whisperMessage = whisperMessage,
-        timeInvited    = nil,
-    }, self)
-
-    -- Authoritative store + public mirrors
-    _byFull[keyFull(fullName)] = obj
-    invite.tblInvited[fullName] = obj
-    invite.idxByShort[strlower(justName)] = fullName
-
-    -- Auto-timeout
-    obj.timeInvited = GR:ScheduleTimer(function()
-        Invited.Remove(fullName)
-        if ns and ns.code and ns.code.dOut then
-            ns.code:dOut("Invite sent to " .. fullName .. " timed out.")
-        end
-        if ns and ns.analytics and ns.analytics.UpdateSessionData then
-            ns.analytics:UpdateSessionData("SESSION_INVITE_TIMED_OUT")
-            ns.analytics:UpdateSessionData("SESSION_WAITING_RESPONSE", -1)
-        end
-    end, INVITE_TIME_OUT)
-
-    -- Anti-spam and analytics hooks
-    if ns and ns.list and ns.list.AddToAntiSpam then ns.list:AddToAntiSpam(fullName) end
-    if ns and ns.analytics then
-        ns.analytics:UpdateData('INVITED_GUILD')
-        ns.analytics:UpdateSessionData('SESSION_INVITED_GUILD')
-        ns.analytics:UpdateSessionData('SESSION_WAITING_RESPONSE')
-    end
-
-    return obj
+  fullName = canonical_full(fullName); assert(fullName, "fullName required")
+  local obj = setmetatable({
+    fullName       = fullName,
+    justName       = justName or (select(1, strsplit("-", fullName))),
+    guildMessage   = guildMessage,   -- on ACCEPTED
+    inviteMessage  = inviteMessage,  -- sent immediately if flagged
+    whisperMessage = whisperMessage, -- on ACCEPTED
+    timeInvited    = nil,
+  }, self)
+  _byFull[keyFull(fullName)] = obj
+  invite.tblInvited[fullName] = obj
+  invite.idxByShort[strlower(obj.justName or "")] = fullName
+  obj.timeInvited = _armTimeout(fullName)
+  if ns and ns.list and ns.list.AddToAntiSpam then ns.list:AddToAntiSpam(fullName) end
+  if ns and ns.analytics then
+    ns.analytics:UpdateData("INVITED_GUILD")
+    ns.analytics:UpdateSessionData("SESSION_INVITED_GUILD")
+    ns.analytics:UpdateSessionData("SESSION_WAITING_RESPONSE")
+  end
+  return obj
 end
 
--- Optional utilities for debug/admin
-function Invited.Count()
-    local n = 0; for _ in pairs(_byFull) do n = n + 1 end; return n
-end
-function Invited.Clear()
-    for _, o in pairs(_byFull) do
-        if o.timeInvited then GR:CancelTimer(o.timeInvited, true) end
-    end
-    wipe(_byFull); wipe(invite.tblInvited); wipe(invite.idxByShort)
+--== init + prefs =============================================================
+function invite:Init()
+  self.tblInvited, self.idxByShort = {}, {}
+  self.useGuild, self.useWhisper, self.useInvite = false, false, false
+  self.msgGuild, self.msgWhisper, self.msgInvite = nil, nil, nil
+  assert(ns.MQ, "ns.MQ is required")
+  local interval = tonumber(ns.g and ns.g.timeBetweenMessages) or 0.1
+  self.Q = self.Q or ns.MQ:New({ interval = interval })
+  self:RegisterInviteObservers()
 end
 
---=============================================================================
--- Invite Flow
---=============================================================================
--- Public helpers that construct parameters and call InvitePlayer.
+local function nz(s) return type(s)=="string" and s~="" and s or nil end
+function invite:GetMessages()
+  -- guild welcome
+  local gm = nz(ns.gmSettings and ns.gmSettings.guildMessage)
+  local pm = nz(ns.pSettings  and ns.pSettings.guildMessage)
+  if ns.isGM then
+    if ns.gmSettings and ns.gmSettings.sendGuildGreeting and gm then self.msgGuild,self.useGuild=gm,true else self.msgGuild,self.useGuild=nil,false end
+  else
+    if ns.gmSettings and ns.gmSettings.forceSendGuildGreeting and gm then self.msgGuild,self.useGuild=gm,true
+    elseif ns.pSettings and ns.pSettings.sendGuildGreeting and pm then self.msgGuild,self.useGuild=pm,true
+    else self.msgGuild,self.useGuild=nil,false end
+  end
+  -- invite whisper template
+  self.msgInvite = nil
+  if ns.guild and ns.guild.messageList and ns.pSettings and ns.pSettings.activeMessage then
+    local e = ns.guild.messageList[ns.pSettings.activeMessage]; self.msgInvite = e and e.message or nil
+  end
+  self.useInvite = self.msgInvite and true or false
+  if ns.pSettings and ns.InviteFormat and ns.pSettings.inviteFormat == ns.InviteFormat.GUILD_INVITE_ONLY then self.useInvite=false end
+  if ns.gmSettings and ns.gmSettings.forceInviteMessage and ns.gmSettings.sendInviteMessage then self.useInvite = self.msgInvite and true or false end
+  -- welcome whisper
+  local gw = nz(ns.gmSettings and ns.gmSettings.whisperMessage)
+  local pw = nz(ns.pSettings  and ns.pSettings.whisperMessage)
+  if ns.isGM then
+    if ns.gmSettings and ns.gmSettings.sendWhisperGreeting and gw then self.msgWhisper,self.useWhisper=gw,true else self.msgWhisper,self.useWhisper=nil,false end
+  else
+    if ns.gmSettings and ns.gmSettings.forceWhisperMessage and gw then self.msgWhisper,self.useWhisper=gw,true
+    elseif ns.pSettings and ns.pSettings.sendWhisperGreeting and pw then self.msgWhisper,self.useWhisper=pw,true
+    else self.msgWhisper,self.useWhisper=nil,false end
+  end
+end
+
+--== public ===================================================================
 function invite:AutoInvite(fullName, justName, inviteFormat)
-    return self:InvitePlayer(
-        fullName,
-        (justName or prepForInvite(fullName)),
-        (inviteFormat ~= ns.InviteFormat.MESSAGE_ONLY or false),
-        self.useInvite,
-        self.useGuild,
-        self.useWhisper
-    )
+  self:GetMessages()
+  return self:InvitePlayer(
+    fullName,
+    (justName or select(1, prepForInvite(fullName))),
+    (ns.pSettings.inviteFormat ~= ns.InviteFormat.MESSAGE_ONLY),
+    self.useInvite,
+    self.useGuild,
+    self.useWhisper
+  )
 end
 
 function invite:ManualInvite(fullName, sendGuildInvite, sendInviteMessage, sendWelcomeMessage, sendWelcomeWhisper)
-    return self:InvitePlayer(fullName, prepForInvite(fullName), sendGuildInvite, sendInviteMessage, sendWelcomeMessage, sendWelcomeWhisper)
+  self:GetMessages()
+  local full = canonical_full(fullName); if not full then return false, "Unknown" end
+
+  -- straight guild invite only
+  if sendGuildInvite and not sendInviteMessage and not sendWelcomeMessage and not sendWelcomeWhisper then
+    local rec = Invited.Get(full)
+    if rec then
+      if rec.timeInvited then GR:CancelTimer(rec.timeInvited,true) end
+      rec.guildMessage,rec.inviteMessage,rec.whisperMessage=nil,nil,nil
+      rec.timeInvited=_armTimeout(full)
+    else
+      Invited:New(full, select(1,strsplit("-",full)), nil,nil,nil)
+    end
+    doGuildInvite(full)
+    if ns and ns.code then ns.code:fOut(L["GUILD_INVITE_SENT"].." "..full, ns.COLOR_SYSTEM, true) end
+    return true
+  end
+
+  -- welcome-on-join: invite NOW, send welcome/whisper after ACCEPTED
+  if sendGuildInvite and not sendInviteMessage and sendWelcomeMessage and sendWelcomeWhisper then
+    local just = select(1,strsplit("-", full))
+    self:GetMessages()
+    local gm = nz(self.msgGuild); local wm = nz(self.msgWhisper)
+    local rec = Invited.Get(full)
+    if rec then
+      if rec.timeInvited then GR:CancelTimer(rec.timeInvited,true) end
+      rec.guildMessage,rec.inviteMessage,rec.whisperMessage = gm,nil,wm
+      rec.timeInvited=_armTimeout(full)
+    else
+      Invited:New(full, just, gm, nil, wm)
+    end
+    doGuildInvite(full)
+    if ns and ns.code then ns.code:fOut(L["GUILD_INVITE_SENT"].." "..full, ns.COLOR_SYSTEM, true) end
+    return true
+  end
+
+  -- fallback: full pipeline with checks
+  local ok, reason = self:CheckManualInvite(full)
+  if not ok then if ns and ns.code and ns.code.dOut then ns.code:dOut("Invite blocked: "..tostring(reason)) end; return false, reason end
+  return self:InvitePlayer(full, select(1,strsplit("-",full)), sendGuildInvite, sendInviteMessage, sendWelcomeMessage, sendWelcomeWhisper)
 end
 
--- Core invite routine. Creates pending record, sends guild invite, and queues messages.
+-- context: no validation, always invite now
+function invite:ContextGuildInviteOnly(fullName)
+  local full = canonical_full(fullName); if not full then return false end
+  local just = select(1,strsplit("-", full))
+  local rec = Invited.Get(full)
+  if rec then
+    if rec.timeInvited then GR:CancelTimer(rec.timeInvited,true) end
+    rec.guildMessage,rec.inviteMessage,rec.whisperMessage=nil,nil,nil
+    rec.timeInvited=_armTimeout(full)
+  else
+    Invited:New(full, just, nil,nil,nil)
+  end
+  doGuildInvite(full)
+  if ns and ns.code then ns.code:fOut(L["GUILD_INVITE_SENT"].." "..full, ns.COLOR_SYSTEM, true) end
+  return true
+end
+
+-- context “message”: identical invite call, plus arm welcome + whisper on ACCEPTED
+function invite:ContextGuildInviteWithWelcome(fullName)
+  local full = canonical_full(fullName); if not full then return false end
+  local just = select(1,strsplit("-", full))
+  self:GetMessages()
+  local gm = nz(self.msgGuild); local wm = nz(self.msgWhisper)
+  local rec = Invited.Get(full)
+  if rec then
+    if rec.timeInvited then GR:CancelTimer(rec.timeInvited,true) end
+    rec.guildMessage,rec.inviteMessage,rec.whisperMessage = gm,nil,wm
+    rec.timeInvited = _armTimeout(full)
+  else
+    rec = Invited:New(full, just, gm, nil, wm)
+  end
+  doGuildInvite(full)
+  if ns and ns.code then ns.code:fOut(L["GUILD_INVITE_SENT"].." "..full, ns.COLOR_SYSTEM, true) end
+  return true
+end
+
+-- core
 function invite:InvitePlayer(fullName, justName, sendGuildInvite, sendInviteMessage, sendGuildWelcome, sendGuildWhisper)
-    if GR.isTesting then
-        ns.code:fOut('Testing mode is enabled. Invites sent to: '..testName..'.')
-        fullName = testName -- do NOT call prepForInvite here
-    end
+  if GR.isTesting then ns.code:fOut("Testing mode is enabled. Invites sent to "..testName.."."); fullName = canonical_full(testName) end
+  local name, realm = prepForInvite(fullName); if not name or name=="" then return end
+  fullName, justName = name.."-"..realm, name
+  if not GR.isTesting and Invited.Get(fullName) then return false, L["ALREADY_INVITED"] end
 
-    local name, realm = prepForInvite(fullName)
-    if not name or name == '' then return end
-    fullName, justName = name..'-'..realm, name
+  local guildMessage   = sendGuildWelcome  and self.msgGuild   or nil
+  local inviteMessage  = sendInviteMessage and self.msgInvite  or nil
+  local whisperMessage = sendGuildWhisper  and self.msgWhisper or nil
 
-    if not GR.isTesting and Invited.Get(fullName) then
-        return false, L['ALREADY_INVITED']
-    end
-
-    local guildMessage   = sendGuildWelcome  and self.msgGuild   or nil
-    local inviteMessage  = sendInviteMessage and self.msgInvite  or nil
-    local whisperMessage = sendGuildWhisper  and self.msgWhisper or nil
-
-    Invited:New(fullName, justName, guildMessage, inviteMessage, whisperMessage)
-    ns.list:AddToAntiSpam(fullName)
-
-    if sendGuildInvite then
-        C_GuildInfo.Invite(fullName)
-        ns.code:fOut(L['GUILD_INVITE_SENT']..' '..fullName, ns.COLOR_SYSTEM, true)
-    end
-
-    if sendInviteMessage and inviteMessage then
-        local msg = ns.code:variableReplacement(inviteMessage, justName)
-        if sendGuildInvite and (ns.gmSettings.obeyBlockInvites or ns.gSettings and ns.gSettings.obeyBlockInvites) then
-            C_Timer.After(1, function()
-                if Invited.Get(fullName) then
-                    self.Q:Whisper(fullName, msg)
-                    ns.code:cOut(L['INVITE_MESSAGE_QUEUED']..' '..fullName, ns.COLOR_SYSTEM, true)
-                else
-                    ns.code:cOut(L['GUILD_INVITE_BLOCKED'], fullName)
-                end
-            end)
-        else
-            self.Q:Whisper(fullName, msg)
-            ns.code:cOut(L['INVITE_MESSAGE_QUEUED']..' '..fullName, ns.COLOR_SYSTEM, true)
-        end
-    end
+  Invited:New(fullName, justName, guildMessage, inviteMessage, whisperMessage)
+  if ns.list and ns.list.AddToAntiSpam then ns.list:AddToAntiSpam(fullName) end
+  if sendGuildInvite then doGuildInvite(fullName); ns.code:fOut(L["GUILD_INVITE_SENT"].." "..fullName, ns.COLOR_SYSTEM, true) end
+  if sendInviteMessage and inviteMessage then
+    local msg = ns.code:variableReplacement(inviteMessage, justName)
+    if ns.HideWhisperOnceTo then ns.HideWhisperOnceTo(fullName, msg) end -- hide only this one line
+    self.Q:Whisper(fullName, msg)
+    ns.code:cOut(L["INVITE_MESSAGE_QUEUED"].." "..fullName, ns.COLOR_SYSTEM, true)
+  end
+  return true
 end
 
---=============================================================================
--- Observer Wiring (accept/decline/error detection)
---=============================================================================
--- Pattern compiler: turn a localized GLOBAL_STRING with %s into a Lua pattern.
+--== observers ================================================================
 local function pat(gs)
-    if not gs then return nil end
-    gs = gs:gsub("([%^%$%(%)%%%.%*%+%-%?%[%]])","%%%1") -- escape Lua pattern chars
-    gs = gs:gsub("%%%%s","(.+)")                        -- %s -> (.+)
-    gs = gs:gsub("%%%%d","(%%d+)")                      -- %d -> (%d+)
-    return "^" .. gs .. "$"
+  if not gs then return nil end
+  gs = gs:gsub("([%^%$%(%)%%%.%*%+%-%?%[%]])","%%%1"):gsub("%%%%s","(.+)"):gsub("%%%%d","(%%d+)")
+  return "^"..gs.."$"
 end
-
--- Pick the first available GLOBAL_STRING by key for x-version safety.
 local function GS(...)
-    for i = 1, select("#", ...) do
-        local key = select(i, ...)
-        local s = _G[key]
-        if type(s) == "string" and s ~= "" then return s end
-    end
+  for i=1,select("#", ...) do local key=select(i, ...); local s=_G[key]; if type(s)=="string" and s~="" then return s end end
 end
 
--- Status patterns (Retail/Classic/Cata). Nils are pruned.
 local PATS = {
-    DECLINED          = pat(GS("ERR_GUILD_DECLINE_S")),
-    ALREADY_IN_GUILD  = pat(GS("ERR_ALREADY_IN_GUILD_S", "ERR_ALREADY_IN_GUILD")),
-    ALREADY_IN_YOURS  = pat(GS("ERR_ALREADY_IN_YOUR_GUILD_S")),
-    ALREADY_INVITED   = pat(GS("ERR_ALREADY_INVITED_TO_GUILD_S")),
-    NOT_FOUND         = pat(GS("ERR_CHAT_PLAYER_NOT_FOUND_S", "ERR_PLAYER_NOT_FOUND_S")),
-    NOT_PLAYING       = pat(GS("ERR_NOT_PLAYING_WOW_S")),
-    IGNORES           = pat(GS("ERR_IGNORING_YOU_S")),
-    JOINED_GUILD      = pat(GS("GUILD_EVENT_PLAYER_JOINED", "ERR_GUILD_JOIN_S", "GUILD_JOIN_S")),  -- sometimes seen on accept
+  DECLINED          = pat(GS("ERR_GUILD_DECLINE_S")),
+  ALREADY_IN_GUILD  = pat(GS("ERR_ALREADY_IN_GUILD_S","ERR_ALREADY_IN_GUILD")),
+  ALREADY_IN_YOURS  = pat(GS("ERR_ALREADY_IN_YOUR_GUILD_S")),
+  ALREADY_INVITED   = pat(GS("ERR_ALREADY_INVITED_TO_GUILD_S")),
+  NOT_FOUND         = pat(GS("ERR_CHAT_PLAYER_NOT_FOUND_S","ERR_PLAYER_NOT_FOUND_S")),
+  NOT_PLAYING       = pat(GS("ERR_NOT_PLAYING_WOW_S")),
+  IGNORES           = pat(GS("ERR_IGNORING_YOU_S")),
+  JOINED_GUILD      = pat(GS("GUILD_EVENT_PLAYER_JOINED","ERR_GUILD_JOIN_S","GUILD_JOIN_S")),
 }
-for k,v in pairs(PATS) do if not v then PATS[k] = nil end end
+for k,v in pairs(PATS) do if not v then PATS[k]=nil end end
 
--- Resolve a system-captured name ("Name" or "Name-Realm") to a full name in registry.
 local function findFullNameFromSystem(capturedName)
-    if invite.tblInvited[capturedName] then return capturedName end -- already full
-    return invite.idxByShort[strlower(capturedName)]
+  if invite.tblInvited[capturedName] then return capturedName end
+  return invite.idxByShort[strlower(capturedName)]
 end
 
--- Locale-safe accept check: scan guild roster for short name match.
-local function isInGuildByShort(shortName)
-    if not IsInGuild() then return false end
-    local n = GetNumGuildMembers()
-    for i = 1, n do
-        local name = GetGuildRosterInfo(i)  -- may be "Name-Realm" or "Name"
-        if name then
-            local just = Ambiguate(name, "short")
-            if strlower(just) == strlower(shortName) then return true end
+-- full-name acceptance to avoid cross-realm false positives
+local function isInGuildAccepted(rec)
+  if not rec or not IsInGuild() then return false end
+  local wantFull = canonical_full(rec.fullName)
+  local wantShort = rec.justName and strlower(rec.justName) or ""
+  local wantRealm = select(2, strsplit("-", wantFull or "")) or GetRealmName()
+  local n = (GetNumGuildMembers and GetNumGuildMembers()) or 0
+
+  for i = 1, n do
+    local name = GetGuildRosterInfo(i)
+    if name then
+      local roFull = canonical_full(name)
+      if roFull and strlower(roFull) == strlower(wantFull) then
+        return true
+      end
+      -- fallback: roster shows short only for same-realm entries sometimes
+      local roShort = Ambiguate(name, "short")
+      if roShort and strlower(roShort) == wantShort then
+        if not tostring(name):find("-", 1, true) and wantRealm == (GetRealmName() or "") then
+          return true
         end
+      end
     end
-    return false
+  end
+  return false
 end
 
--- Unified finalize: cancels timer, removes record, posts follow-ups, updates analytics.
 local function finalize(fullName, status)
-    local r = Invited.Remove(fullName)  -- also clears mirrors
-    if not r then return end
-
-    if status == "ACCEPTED" then
-        C_Timer.After(3, function()
-            if r.guildMessage and invite.useGuild then
-                SendChatMessage(ns.code:variableReplacement(invite.msgGuild, r.justName, true), "GUILD")
-            end
-            if r.whisperMessage and invite.useWhisper then
-                invite.Q:Whisper(fullName, ns.code:variableReplacement(invite.msgWhisper, r.justName))
-            end
-        end)
-        if ns and ns.analytics then
-            ns.analytics:UpdateData("ACCEPTED_INVITE")
-            ns.analytics:UpdateSessionData("SESSION_ACCEPTED_INVITE")
-        end
-    else
-        if ns and ns.analytics then
-            ns.analytics:UpdateData("INVITED_GUILD", -1)
-            ns.analytics:UpdateSessionData("SESSION_INVITED_GUILD", -1)
-        end
-    end
+  local r = Invited.Remove(fullName); if not r then return end
+  if status == "ACCEPTED" then
+    C_Timer.After(3, function()
+      if r.guildMessage and r.guildMessage ~= "" then
+        SendChatMessage(ns.code:variableReplacement(r.guildMessage, r.justName, true), "GUILD")
+      end
+      if r.whisperMessage and r.whisperMessage ~= "" then
+        invite.Q:Whisper(fullName, ns.code:variableReplacement(r.whisperMessage, r.justName))
+      end
+    end)
     if ns and ns.analytics then
-        ns.analytics:UpdateSessionData("SESSION_WAITING_RESPONSE", -1)
+      ns.analytics:UpdateData("ACCEPTED_INVITE")
+      ns.analytics:UpdateSessionData("SESSION_ACCEPTED_INVITE")
     end
+  else
+    if ns and ns.analytics then
+      ns.analytics:UpdateData("INVITED_GUILD", -1)
+      ns.analytics:UpdateSessionData("SESSION_INVITED_GUILD", -1)
+    end
+  end
+  if ns and ns.analytics then ns.analytics:UpdateSessionData("SESSION_WAITING_RESPONSE", -1) end
 end
 
--- Register handlers:
---  * GUILD_ROSTER_UPDATE: detect "accepted" by roster presence.
---  * CHAT_MSG_SYSTEM: detect declines/errors by matching localized strings.
 function invite:RegisterInviteObservers()
-    -- Roster-driven acceptance
-    local f = self._rosterFrame or CreateFrame("Frame")
-    self._rosterFrame = f
-    f:UnregisterAllEvents()
-    f:RegisterEvent("GUILD_ROSTER_UPDATE")
-    f:SetScript("OnEvent", function()
-        if not next(invite.tblInvited) then return end
-        for full, rec in pairs(invite.tblInvited) do
-            if rec and isInGuildByShort(rec.justName) then
-                finalize(full, "ACCEPTED")
-            end
-        end
-    end)
+  local f = self._rosterFrame or CreateFrame("Frame"); self._rosterFrame = f
+  f:UnregisterAllEvents(); f:RegisterEvent("GUILD_ROSTER_UPDATE")
+  f:SetScript("OnEvent", function()
+    if not next(invite.tblInvited) then return end
+    for full, rec in pairs(invite.tblInvited) do
+      if rec and isInGuildAccepted(rec) then
+        finalize(full, "ACCEPTED")
+      end
+    end
+  end)
 
-    -- System-text declines/errors (locale-safe)
-    local function SystemFilter(_, event, msg)
+  local function SystemFilter(_, event, msg)
     if event ~= "CHAT_MSG_SYSTEM" or not next(invite.tblInvited) then return false end
-
-    -- check all known patterns
     for tag, patn in pairs(PATS) do
-        local captured = msg:match(patn)  -- the player name shown in the system text
-        if captured then
-            -- Resolve to our stored full name (Name-Realm) if possible
-            local full = findFullNameFromSystem(captured)
-
-            -- Notify: which exact PATS key matched
-            -- Primary hook
-            pcall(invite.inviteStatus, invite, tag, captured, full, msg)
-            -- Optional alternate callback if registered
-            if invite._statusHandler then pcall(invite._statusHandler, tag, captured, full, msg) end
-
-            -- Finalize when we have a tracked player
-            if full then
-                -- JOINED_GUILD is effectively an accept
-                local status = (tag == "JOINED_GUILD") and "ACCEPTED" or tag
-                finalize(full, status)
-            end
-            break
-        end
+      local captured = msg:match(patn)
+      if captured then
+        local full = findFullNameFromSystem(captured)
+        pcall(invite.inviteStatus, invite, tag, captured, full, msg)
+        if full then finalize(full, (tag == "JOINED_GUILD") and "ACCEPTED" or tag) end
+        break
+      end
     end
     return false
-end
-ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", SystemFilter)
-
-end
-
---=============================================================================
--- Message Preference Resolution
---=============================================================================
-function invite:GetMessages()
-    -- Guild welcome text
-    self.msgGuild = L['DEFAULT_GUILD_WELCOME']
-    if ns.isGM then self.msgGuild = ns.gmSettings.guildMessage or self.msgGuild
-    else self.msgGuild = ns.pSettings.guildMessage or self.msgGuild end
-
-    -- Invite whisper template (select active message if available)
-    self.msgInvite = (ns.guild.messageList and ns.pSettings.activeMessage and ns.guild.messageList[ns.pSettings.activeMessage])
-        and ns.guild.messageList[ns.pSettings.activeMessage].message
-        or nil
-
-    -- Welcome whisper text
-    local function nonempty(s) return type(s)=="string" and s ~= "" and s or nil end
-
-    do
-        local gmMsg = nonempty(ns.gmSettings and ns.gmSettings.whisperMessage)
-        local pMsg  = nonempty(ns.pSettings and ns.pSettings.whisperMessage)
-
-        if ns.isGM then
-            if ns.gmSettings and ns.gmSettings.sendWhisperGreeting and gmMsg then
-                self.msgWhisper, self.useWhisper = gmMsg, true
-            else
-                self.msgWhisper, self.useWhisper = nil, false
-            end
-        else
-            if ns.gmSettings and ns.gmSettings.forceWhisperMessage and gmMsg then
-                self.msgWhisper, self.useWhisper = gmMsg, true
-            elseif ns.pSettings and ns.pSettings.sendWhisperGreeting and pMsg then
-                self.msgWhisper, self.useWhisper = pMsg, true
-            else
-                self.msgWhisper, self.useWhisper = nil, false
-            end
-        end
-    end
-
-    do
-        local gmMsg = nonempty(ns.gmSettings and ns.gmSettings.guildMessage)
-        local pMsg  = nonempty(ns.pSettings  and ns.pSettings.guildMessage)
-
-        if ns.isGM then
-            if ns.gmSettings and ns.gmSettings.sendGuildGreeting and gmMsg then
-                self.msgGuild, self.useGuild = gmMsg, true
-            else
-                self.msgGuild, self.useGuild = nil, false
-            end
-        else
-            if ns.gmSettings and ns.gmSettings.forceSendGuildGreeting and gmMsg then
-                self.msgGuild, self.useGuild = gmMsg, true
-            elseif ns.pSettings and ns.pSettings.sendGuildGreeting and pMsg then
-                self.msgGuild, self.useGuild = pMsg, true
-            else
-                self.msgGuild, self.useGuild = nil, false
-            end
-        end
-    end
-
-    if ns.pSettings.inviteFormat == ns.InviteFormat.GUILD_INVITE_ONLY or not self.msgInvite then
-        self.useInvite = false
-    elseif ns.gmSettings.forceInviteMessage and ns.gmSettings.sendInviteMessage then
-        self.useInvite = true
-    else
-        self.useInvite = self.msgInvite or false
-    end
+  end
+  ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", SystemFilter)
 end
 
---=============================================================================
--- Validation helpers
---=============================================================================
+--== validation ===============================================================
 function invite:CheckWhoList(player, zoneName) return self:CheckInvite(player, true,  true,  true,  zoneName) end
 function invite:CheckAutoInvite(player)        return self:CheckInvite(player, false, true,  false) end
 function invite:CheckManualInvite(player)      return self:CheckInvite(player, false, true,  false) end
-
--- Returns: ok:boolean, reason:string
 function invite:CheckInvite(player, antispam, blacklist, zones, zoneName)
-    if not player or player == '' then ns.code:dOut('CheckInvite: No name provided'); return false, 'Unknown' end
-    local blReason = ns.list:BlacklistReason(player) or L["BLACKLIST"]
-    if Invited.Get(player) then return false, L['ALREADY_INVITED_STATUS'] end
-    if antispam  and ns.list:CheckAntiSpam(player) then return false, L["ANTI_SPAM"] end
-    if blacklist and ns.list:CheckBlacklist(player) then return false, blReason end
-    if zones and zoneName and (zoneName == 'Delves' or ns.invalidZones[strlower(zoneName)]) then return false, L['INVALID_ZONE'] end
-    return true, ''
+  if not player or player=="" then ns.code:dOut("CheckInvite: No name provided"); return false, "Unknown" end
+  local blReason = ns.list:BlacklistReason(player) or L["BLACKLIST"]
+  if Invited.Get(player) then return false, L["ALREADY_INVITED_STATUS"] end
+  if antispam  and ns.list:CheckAntiSpam(player) then return false, L["ANTI_SPAM"] end
+  if blacklist and ns.list:CheckBlacklist(player) then return false, blReason end
+  if zones and zoneName and (zoneName == "Delves" or ns.invalidZones[strlower(zoneName)]) then return false, L["INVALID_ZONE"] end
+  return true, ""
 end
 
--- =============================================================================
--- Status Callback Registration (Hooks) for Blizzard string matches
--- =============================================================================
+--== optional status log ======================================================
 function ns.invite:inviteStatus(tag, name, captured, full, msg)
-    -- Notify: which exact PATS key matched
-    if tag == 'DECLINED' then
-        ns.code:dOut("Invite to "..(full or captured).." was DECLINED.")
-        ns.analytics:UpdateData('DECLINED_INVITE')
-        ns.analytics:UpdateSessionData('SESSION_DECLINED_INVITE')
-        ns.analytics:UpdateSessionData('SESSION_WAITING_RESPONSE', -1)
-    elseif tag == 'ALREADY_IN_GUILD' or tag == 'ALREADY_IN_YOURS' then
-        ns.code:dOut((full or captured).." is already in a guild.")
-        ns.analytics:UpdateData('INVITED_GUILD', -1)
-        ns.analytics:UpdateSessionData('SESSION_INVITED_GUILD', -1)
-        ns.analytics:UpdateSessionData('SESSION_WAITING_RESPONSE', -1)
-    elseif tag == 'ALREADY_INVITED' then
-        ns.code:dOut("Already invited "..(full or captured)..".")
-        ns.analytics:UpdateData('INVITED_GUILD', -1)
-        ns.analytics:UpdateSessionData('SESSION_INVITED_GUILD', -1)
-        ns.analytics:UpdateSessionData('SESSION_WAITING_RESPONSE', -1)
-    elseif tag == 'NOT_FOUND' or tag == 'NOT_PLAYING' then
-        ns.code:dOut("Player "..(full or captured).." not found.")
-        ns.analytics:UpdateData('INVITED_GUILD', -1)
-        ns.analytics:UpdateSessionData('SESSION_INVITED_GUILD', -1)
-        ns.analytics:UpdateSessionData('SESSION_WAITING_RESPONSE', -1)
-    elseif tag == 'IGNORES' then
-        ns.code:dOut((full or captured).." is ignoring you.")
-        ns.analytics:UpdateData('INVITED_GUILD', -1)
-        ns.analytics:UpdateSessionData('SESSION_INVITED_GUILD', -1)
-        ns.analytics:UpdateSessionData('SESSION_WAITING_RESPONSE', -1)
-    elseif tag == 'JOINED_GUILD' then
-        ns.code:dOut((full or captured).." has JOINED the guild.")
-        ns.analytics:UpdateData('ACCEPTED_INVITE')
-        ns.analytics:UpdateSessionData('SESSION_ACCEPTED_INVITE')
-        ns.analytics:UpdateSessionData('SESSION_WAITING_RESPONSE', -1)
-    end
+  if tag == "DECLINED" then
+    ns.code:dOut("Invite to "..(full or captured).." was DECLINED.")
+    ns.analytics:UpdateData("DECLINED_INVITE"); ns.analytics:UpdateSessionData("SESSION_DECLINED_INVITE"); ns.analytics:UpdateSessionData("SESSION_WAITING_RESPONSE",-1)
+  elseif tag == "ALREADY_IN_GUILD" or tag == "ALREADY_IN_YOURS" then
+    ns.code:dOut((full or captured).." is already in a guild.")
+    ns.analytics:UpdateData("INVITED_GUILD",-1); ns.analytics:UpdateSessionData("SESSION_INVITED_GUILD",-1); ns.analytics:UpdateSessionData("SESSION_WAITING_RESPONSE",-1)
+  elseif tag == "ALREADY_INVITED" then
+    ns.code:dOut("Already invited "..(full or captured)..".")
+    ns.analytics:UpdateData("INVITED_GUILD",-1); ns.analytics:UpdateSessionData("SESSION_INVITED_GUILD",-1); ns.analytics:UpdateSessionData("SESSION_WAITING_RESPONSE",-1)
+  elseif tag == "NOT_FOUND" or tag == "NOT_PLAYING" then
+    ns.code:dOut("Player "..(full or captured).." not found.")
+    ns.analytics:UpdateData("INVITED_GUILD",-1); ns.analytics:UpdateSessionData("SESSION_INVITED_GUILD",-1); ns.analytics:UpdateSessionData("SESSION_WAITING_RESPONSE",-1)
+  elseif tag == "IGNORES" then
+    ns.code:dOut((full or captured).." is ignoring you.")
+    ns.analytics:UpdateData("INVITED_GUILD",-1); ns.analytics:UpdateSessionData("SESSION_INVITED_GUILD",-1); ns.analytics:UpdateSessionData("SESSION_WAITING_RESPONSE",-1)
+  elseif tag == "JOINED_GUILD" then
+    ns.code:dOut((full or captured).." has JOINED the guild.")
+    ns.analytics:UpdateData("ACCEPTED_INVITE"); ns.analytics:UpdateSessionData("SESSION_ACCEPTED_INVITE"); ns.analytics:UpdateSessionData("SESSION_WAITING_RESPONSE",-1)
+  end
 end
 
---[[
-    local PATS = {
-        DECLINED          = pat(GS("ERR_GUILD_DECLINE_S")),
-        ALREADY_IN_GUILD  = pat(GS("ERR_ALREADY_IN_GUILD_S", "ERR_ALREADY_IN_GUILD")),
-        ALREADY_IN_YOURS  = pat(GS("ERR_ALREADY_IN_YOUR_GUILD_S")),
-        ALREADY_INVITED   = pat(GS("ERR_ALREADY_INVITED_TO_GUILD_S")),
-        NOT_FOUND         = pat(GS("ERR_CHAT_PLAYER_NOT_FOUND_S", "ERR_PLAYER_NOT_FOUND_S")),
-        NOT_PLAYING       = pat(GS("ERR_NOT_PLAYING_WOW_S")),
-        IGNORES           = pat(GS("ERR_IGNORING_YOU_S")),
-        JOINED_GUILD      = pat(GS("GUILD_EVENT_PLAYER_JOINED", "ERR_GUILD_JOIN_S", "GUILD_JOIN_S")),  -- sometimes seen on accept
-    }
---]]
+--== convenience ==============================================================
+function invite:ManualGuildInviteOnly(fullName)                return self:ManualInvite(fullName, true,  false, false, false) end
+function invite:ManualGuildInviteWithWelcome(fullName)         return self:ManualInvite(fullName, true,  false, true,  true ) end
+function invite:ContextGuildInviteOnlyWrapper(fullName)        return self:ContextGuildInviteOnly(fullName) end
+function invite:ContextGuildInviteWithWelcomeWrapper(fullName) return self:ContextGuildInviteWithWelcome(fullName) end

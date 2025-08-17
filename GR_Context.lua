@@ -1,115 +1,170 @@
-local addonName, ns = ... -- Namespace (myaddon, namespace)
-local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
+-- GR_Context.lua — adds a "Guild Recruiter" block to Blizzard right-click menus
+local addonName, ns = ...
+ns = ns or {}
 
--- Create a custom dropdown menu frame
-local customMenuFrame = CreateFrame("Frame", "CustomChatDropdownMenu", UIParent, "UIDropDownMenuTemplate")
+-- ---------- shared utils ----------
+local function ResolveFullName(ctxOrDropdown, unit, name)
+  local n, r
+  if ctxOrDropdown and ctxOrDropdown.name then
+    n, r = ctxOrDropdown.name, ctxOrDropdown.server
+  else
+    n, r = name, ctxOrDropdown and ctxOrDropdown.server
+  end
+  if unit and UnitExists(unit) then
+    local un, ur = UnitName(unit); if un then n, r = un, ur end
+  end
+  if not n or n == "" then return nil end
+  if r and r ~= "" and not n:find("-", 1, true) then n = n.."-"..r end
+  return n
+end
 
--- Function to initialize the custom dropdown menu
-local function InitializeCustomMenu(frame, level)
-    level = 1
+local function norm_full(name)
+  if not name or name == "" then return nil end
+  if not name:find("-", 1, true) then
+    local realm = GetNormalizedRealmName and GetNormalizedRealmName() or nil
+    if realm and realm ~= "" then name = name.."-"..realm end
+  end
+  return name:lower()
+end
 
-    local playerName = frame.targetName
-    if not playerName then return end
+-- already in *my* guild?
+local function InMyGuild(unit, fullName)
+  if not IsInGuild() then return false end
+  if unit and UnitIsInMyGuild and UnitIsInMyGuild(unit) then return true end
+  if not fullName then return false end
+  local target = norm_full(fullName); if not target then return false end
 
-    local isInGuild = ns.code:isInMyGuild(playerName)
-    if isInGuild then
-        ns.code:fOut("Player is in the guild: " .. playerName)
-        return
+  if C_GuildInfo and C_GuildInfo.GuildRoster then C_GuildInfo.GuildRoster()
+  elseif GuildRoster then GuildRoster() end
+
+  local total = (GetNumGuildMembers and GetNumGuildMembers())
+             or (C_GuildInfo and C_GuildInfo.GetNumGuildMembers and C_GuildInfo.GetNumGuildMembers())
+             or 0
+  for i = 1, total do
+    local name
+    if GetGuildRosterInfo then
+      name = GetGuildRosterInfo(i)                                 -- classic tuple; name is first
+    elseif C_GuildInfo and C_GuildInfo.GetGuildRosterInfo then
+      local v = C_GuildInfo.GetGuildRosterInfo(i)                  -- retail table or string
+      name = (type(v) == "table") and v.name or v
     end
+    if name and norm_full(name) == target then return true end
+  end
+  return false
+end
 
-    if not isInGuild then
-        local title = UIDropDownMenu_CreateInfo()
-        title = {
-            text = playerName,
-            isTitle = true,
-            fontObject = GameFontHighlightLarge,
-            notCheckable = true,
-            justifyH = "CENTER"
-        }
-        UIDropDownMenu_AddButton(title, level)
-
-        -- Add a separator line
-        local separator = UIDropDownMenu_CreateInfo()
-        separator.text = " " -- No text for the separator
-        separator.notCheckable = true
-        separator.isTitle = true
-        separator.disabled = true
-        separator.iconOnly = true
-        separator.icon = "Interface\\Common\\UI-TooltipDivider-Transparent" -- Use a built-in divider texture
-        separator.iconInfo = {
-            tCoordLeft = 0,
-            tCoordRight = 1,
-            tCoordTop = 0,
-            tCoordBottom = 1,
-            tSizeX = 0,
-            tSizeY = 8,
-            tFitDropDownSizeX = true
-        }
-        UIDropDownMenu_AddButton(separator, level)
-
-        local invNoMessage = UIDropDownMenu_CreateInfo()
-        invNoMessage = {
-            text = L['GUILD_INVITE_NO_MESSAGE'],
-            notCheckable = true,
-            func = function() ns.invite:ManualInvite(playerName, nil, true) end,
-        }
-        UIDropDownMenu_AddButton(invNoMessage, level)
-        local invWelcomeMessage = UIDropDownMenu_CreateInfo()
-        invWelcomeMessage = {
-            text = L['GUILD_INVITE_WELCOME_MESSAGE'],
-            notCheckable = true,
-            func = function() ns.invite:ManualInvite(playerName, true, false, true, true) end,
-        }
-        UIDropDownMenu_AddButton(invWelcomeMessage, level)
-
-        UIDropDownMenu_AddButton(separator, level)
-
-        local blacklistPlayer = UIDropDownMenu_CreateInfo()
-        blacklistPlayer = {
-            text = L['BLACKLIST_PLAYER'],
-            notCheckable = true,
-            func = function()
-                ns.list:ManualBlackList(playerName, 'Add a reason for blacklisting: \n' .. playerName, true)
-            end,
-        }
-        UIDropDownMenu_AddButton(blacklistPlayer, level)
+-- ---------- your actions ----------
+local function DoManualInvite(fullName, withMessage)
+  if not fullName or fullName == "" then return end
+  if withMessage then
+        -- Invite to Guild (Message)
+        ns.invite:ManualInvite(fullName, true, false, true, true)
+    else
+        -- Invite to Guild
+        ns.invite:ManualInvite(fullName, true,  false, false, false)
     end
 end
 
--- Function to show the custom dropdown menu
-local function ShowCustomMenu(name)
-    -- Set the name for the menu frame
-    customMenuFrame.targetName = name
-    UIDropDownMenu_Initialize(customMenuFrame, InitializeCustomMenu, "MENU")
-
-    -- Determine screen width and cursor position to adjust menu placement
-    local screenWidth = GetScreenWidth()
-    local menuWidth = 150 -- Approximate width of the dropdown menu
-    local cursorX = GetCursorPosition()
-    local uiScale = UIParent:GetEffectiveScale()
-    cursorX = cursorX / uiScale
-
-    local xOffset = 175
-    if (cursorX + xOffset + menuWidth) > screenWidth then
-        xOffset = -185 -- Position the menu to the left if it would go off the screen
-    end
-
-    -- Set the dropdown menu position explicitly and display it
-    ToggleDropDownMenu(1, nil, customMenuFrame, "cursor", xOffset, 0)
+local function DoManualBlacklist(fullName)
+  if not fullName or fullName == "" then return end
+  if ns.list and ns.list.AddToBlackList then
+    ns.list:AddToBlackList(fullName, "Manual Addition")
+  else
+    print("|cffff3333GR: ns.list:AddToBlackList not found|r")
+  end
 end
 
--- Hook the right-click event in chat frames to display the custom menu
-for i = 1, NUM_CHAT_WINDOWS do
-    local chatFrame = _G["ChatFrame" .. i]
-    if chatFrame then
-        chatFrame:HookScript("OnHyperlinkClick", function(self, link, _, button)
-            if button == "RightButton" then
-                local linkType, playerName = strsplit(":", link)
-                if linkType == "player" and playerName then C_Timer.After(.1, function() ShowCustomMenu(playerName) end)
-                else
-                    ns.code:dOut("Link type or player name not valid:", linkType, playerName) -- Debug message
-                end
-            end
-        end)
-    end
+-- ===================== Retail (Dragonflight+) ===============================
+if type(Menu) == "table" and type(Menu.ModifyMenu) == "function" then
+  local function Inject(menuName, root, ctx)
+    local who = ResolveFullName(ctx, ctx.unit, ctx.name)
+    if not who then return end
+    if InMyGuild(ctx.unit, who) then return end  -- skip block if already guilded
+
+    root:CreateDivider()
+    root:CreateTitle("|cffffd100Guild Recruiter|r")
+
+    root:CreateButton("Invite to Guild", function()
+      DoManualInvite(who, false)
+    end, ctx)
+
+    root:CreateButton("Invite to Guild (Message)", function()
+      DoManualInvite(who, true)
+    end, ctx)
+
+    root:CreateButton("Add to Black List", function()
+      DoManualBlacklist(who)
+    end, ctx)
+    -- no trailing divider
+  end
+
+  local keys = {
+    "PLAYER","FRIEND","PARTY","RAID_PLAYER","RAID",
+    "GUILD","GUILD_OFFLINE","CHAT_ROSTER",
+    "COMMUNITIES_WOW_MEMBER","COMMUNITIES_GUILD_MEMBER",
+    "BN_FRIEND","TARGET","FOCUS",
+  }
+  for _, k in ipairs(keys) do
+    Menu.ModifyMenu("MENU_UNIT_"..k, Inject)
+  end
+end
+
+-- ==================== Classic / Wrath / Cata ===============================
+local function AddSeparatorClassic(level)
+  level = level or UIDROPDOWNMENU_MENU_LEVEL or 1
+  if UIDropDownMenu_AddSeparator then
+    UIDropDownMenu_AddSeparator(level)
+  elseif UIDROPDOWNMENU_SEPARATOR_INFO then
+    UIDropDownMenu_AddButton(UIDROPDOWNMENU_SEPARATOR_INFO, level)
+  else
+    local info = UIDropDownMenu_CreateInfo()
+    info.isTitle, info.isUninteractable, info.notCheckable = true, true, true
+    info.text = ""
+    UIDropDownMenu_AddButton(info, level)
+  end
+end
+
+local function AddTitleClassic(text, level)
+  local info = UIDropDownMenu_CreateInfo()
+  info.isTitle, info.notCheckable, info.isUninteractable = true, true, true
+  info.colorCode = "|cffffd100"
+  info.text = text
+  UIDropDownMenu_AddButton(info, level or UIDROPDOWNMENU_MENU_LEVEL or 1)
+end
+
+local function AddButtonClassic(text, fn, level)
+  local info = UIDropDownMenu_CreateInfo()
+  info.text, info.notCheckable = text, true
+  info.func = function() if CloseDropDownMenus then CloseDropDownMenus() end; fn() end
+  UIDropDownMenu_AddButton(info, level or UIDROPDOWNMENU_MENU_LEVEL or 1)
+end
+
+local function InjectClassic(dropdown, which, unit, name)
+  if UIDROPDOWNMENU_MENU_LEVEL ~= 1 then return end
+  if dropdown._grInjected then return end
+
+  local who = ResolveFullName(dropdown, unit, name)
+  if not who then return end
+  if InMyGuild(unit, who) then return end  -- skip if already guilded
+
+  dropdown._grInjected = true
+
+  AddSeparatorClassic()
+  AddTitleClassic("Guild Recruiter")
+
+  AddButtonClassic("Invite to Guild", function()
+    DoManualInvite(who, false)
+  end)
+
+  AddButtonClassic("Invite to Guild (Message)", function()
+    DoManualInvite(who, true)
+  end)
+
+  AddButtonClassic("Add to Black List", function()
+    DoManualBlacklist(who)
+  end)
+end
+
+if type(UnitPopup_ShowMenu) == "function" then
+  hooksecurefunc("UnitPopup_ShowMenu", InjectClassic)
 end
