@@ -126,7 +126,7 @@ end
 function Invited:New(fullName, justName, guildMessage, inviteMessage, whisperMessage)
     assert(fullName, "fullName required")
     local obj = setmetatable({
-        fullName       = fullName,
+        fullName       = fullName:gmatch('-') and fullName or fullName..'-'..GetRealmName(),
         justName       = justName,
         guildMessage   = guildMessage,
         inviteMessage  = inviteMessage,
