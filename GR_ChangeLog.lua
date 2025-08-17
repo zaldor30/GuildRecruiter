@@ -6,6 +6,7 @@ ns.changeLog = [[
 
     ### v4.1.40
         - New context menu when right click player.
+        - Fix to hidden whispers.
     ### v4.1.39
         - Fixed issue with whispers not sending in some cases.
         - Possible fix to welcome guild/whispers not sending.
