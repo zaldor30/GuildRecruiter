@@ -250,8 +250,8 @@ function invite:InvitePlayer(fullName, justName, sendGuildInvite, sendInviteMess
   if sendGuildInvite then doGuildInvite(fullName); ns.code:fOut(L["GUILD_INVITE_SENT"].." "..fullName, ns.COLOR_SYSTEM, true) end
   if sendInviteMessage and inviteMessage then
     local msg = ns.code:variableReplacement(inviteMessage, justName)
-    if ns.HideWhisperOnceTo then ns.HideWhisperOnceTo(fullName, msg) end -- hide only this one line
-    self.Q:Whisper(fullName, msg)
+    -- was: self.Q:Whisper(fullName, msg)
+    self.Q:WhisperHidden(fullName, msg)   -- <-- hides your own echo reliably, every time
     ns.code:cOut(L["INVITE_MESSAGE_QUEUED"].." "..fullName, ns.COLOR_SYSTEM, true)
   end
   return true

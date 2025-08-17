@@ -1,6 +1,6 @@
 -- MessageQueue.lua -----------------------------------------------------------
--- ns.MQ : FIFO queue for chat + addon messages. No external libs.
--- Chat: send verbatim. Addon: UTF-8 safe chunking with P#| labels.
+-- ns.MQ : simple FIFO queue for chat + addon messages. No external libs.
+-- Chat: send verbatim (no length checks). Addon: UTF-8 safe chunking with P#| labels.
 
 local addonName, ns = ...
 ns = ns or {}
@@ -24,41 +24,39 @@ local function utf8_cut(s, i, limit)
   return j - 1
 end
 
--- === Per-message, per-target hide-once for outgoing whisper echo ============
-local _hide = { map = {}, ttl = 6 }  -- seconds
+-- === One-shot OUTGOING whisper hider (for invite messages only) ============
+-- Keyed by exact message text; supports multiple concurrent sends by counting.
+ns._WHide = ns._WHide or { map = {} }
 
-local function _mkkey(msg, target)
-  if ns and ns.classic and _G.Ambiguate then
-    target = Ambiguate(target or "", "short")
-  end
-  return tostring(msg) .. "\031" .. tostring(target or "")
+function ns._WHide:Mark(msg)
+  if not msg or msg == "" then return end
+  local e = self.map[msg]
+  if e then e.n = e.n + 1 else self.map[msg] = { n = 1 } end
 end
 
--- Mark exactly one WHISPER-INFORM line (msg @ target) to be suppressed
-function ns.HideWhisperOnceTo(target, msg, ttl)
-  if not target or not msg or msg == "" then return end
-  _hide.map[_mkkey(msg, target)] = GetTime() + (ttl or _hide.ttl)
-end
-
--- ChatFrame filter: suppress only if we previously marked this msg@target
-local function _whisperOutFilter(_, _, msg, target)
-  local k = _mkkey(msg, target)
-  local t = _hide.map[k]
-  if t and t >= GetTime() then
-    _hide.map[k] = nil
-    return true
+local function _whisperFilter(_, event, msg)
+  -- Only suppress lines we've explicitly marked (invite message sends).
+  local e = ns._WHide.map[msg]
+  if e and e.n and e.n > 0 then
+    e.n = e.n - 1
+    if e.n == 0 then ns._WHide.map[msg] = nil end
+    return true -- hide this one line
   end
   return false
 end
 
-ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER_INFORM", _whisperOutFilter)
-pcall(ChatFrame_AddMessageEventFilter, "CHAT_MSG_BN_WHISPER_INFORM", _whisperOutFilter)
+ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER_INFORM", _whisperFilter)
+pcall(ChatFrame_AddMessageEventFilter, "CHAT_MSG_BN_WHISPER_INFORM", _whisperFilter)
 
--- === internal senders =======================================================
+-- internal senders -----------------------------------------------------------
 local function send_chat(job)
+  -- Mark right at send time so there is no race/TTL issue with queued jobs.
+  if job.chatType == "WHISPER" and job.hideOnce then
+    ns._WHide:Mark(job.msg)
+  end
   local msg, chatType, lang, target = job.msg, job.chatType, job.languageID, job.target
-  if ns and ns.classic and chatType == "WHISPER" and _G.Ambiguate then
-    target = Ambiguate(target or "", "short")
+  if chatType == "WHISPER" then
+    if ns.classic and _G.Ambiguate then target = Ambiguate(target or "", "short") end
   end
   SendChatMessage(msg, chatType, lang, target)
 end
@@ -67,7 +65,7 @@ local function send_addon(job)
   C_ChatInfo.SendAddonMessage(job.prefix, job.msg, job.channel, job.target)
 end
 
--- === ctor ===================================================================
+-- ctor -----------------------------------------------------------------------
 function MQ:New(opts)
   local o = setmetatable({}, self)
   o.interval = math.max(0.01, tonumber(opts and opts.interval) or 0.1)
@@ -76,7 +74,7 @@ function MQ:New(opts)
   return o
 end
 
--- === queue core =============================================================
+-- queue core -----------------------------------------------------------------
 function MQ:_push(job)
   self.t = self.t + 1
   self.q[self.t] = job
@@ -103,7 +101,7 @@ function MQ:_tick()
   end
 end
 
--- === public API =============================================================
+-- public API -----------------------------------------------------------------
 function MQ:EnqueueChat(chatType, msg, target, languageID)
   if not chatType or not msg then return end
   self:_push({ kind="chat", chatType=chatType, msg=msg, target=target, languageID=languageID, when=GetTime() })
@@ -111,10 +109,16 @@ end
 
 function MQ:Whisper(player, msg)
   if not player or not msg then return end
-  self:EnqueueChat("WHISPER", msg, player, nil)
+  self:_push({ kind="chat", chatType="WHISPER", msg=msg, target=player, languageID=nil, when=GetTime() })
 end
 
--- Splits addon message into ≤255 bytes; if >1 chunk, prefix each with "P#|"
+-- NEW: whisper that should be hidden once when it echoes in your chat
+function MQ:WhisperHidden(player, msg)
+  if not player or not msg then return end
+  self:_push({ kind="chat", chatType="WHISPER", msg=msg, target=player, languageID=nil, when=GetTime(), hideOnce=true })
+end
+
+-- Splits addon message into ≤255-byte UTF-8 chunks; if >1 chunk, prefix parts "P#|"
 function MQ:EnqueueAddon(prefix, msg, channel, target)
   if not prefix or not msg or not channel then return end
   assert(#prefix <= MAX_PREFIX, "addon prefix must be ≤16 bytes")
@@ -137,7 +141,7 @@ function MQ:EnqueueAddon(prefix, msg, channel, target)
   end
 end
 
--- === controls ===============================================================
+-- controls -------------------------------------------------------------------
 function MQ:SetInterval(sec)
   self.interval = math.max(0.01, tonumber(sec) or 0.1)
   if self.ticker then
@@ -150,5 +154,5 @@ function MQ:Pause()  if self.ticker then self.ticker:Cancel(); self.ticker = nil
 function MQ:Resume() if not self.ticker and self.h <= self.t then self.ticker = C_Timer.NewTicker(self.interval, function() self:_tick() end) end end
 function MQ:Clear()  if self.ticker then self.ticker:Cancel(); self.ticker = nil end; for i=self.h,self.t do self.q[i]=nil end; self.h,self.t=1,0 end
 
--- expose
+-- expose ---------------------------------------------------------------------
 ns.MQ = MQ
