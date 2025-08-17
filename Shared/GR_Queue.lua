@@ -24,40 +24,54 @@ local function utf8_cut(s, i, limit)
   return j - 1
 end
 
--- Outgoing whisper visibility toggle (Retail + Classic)
-local _w = { map = {}, ttl = 4 }  -- seconds
-local function _whispersEnabled()
-  local v = ns and ns.pSettings and ns.pSettings.showWhispers
-  return v == true or v == 1 or v == "1" or v == "true"
+-- === Outgoing whisper echo control (Classic + Retail) =======================
+-- Hides your own WHISPER/BNet WHISPER "inform" lines when showWhisper=false.
+-- Works for both typed /w and programmatic sends. No message marking needed.
+
+local function _showWhisperSetting()
+  local s = ns and ns.pSettings
+  if not s then return true end
+  -- accept either key; default = show
+  if s.showWhisper ~= nil then return not (s.showWhisper == false) end
+  if s.showWhispers ~= nil then return not (s.showWhispers == false) end
+  return true
 end
-local function _markWhisper(msg)
-  local e = _w.map[msg]
-  if e then
-    e.n, e.t = e.n + 1, GetTime()
-  else
-    _w.map[msg] = { n = 1, t = GetTime() }
+
+local function _whisperEchoFilter()
+  -- Return a filter function that the chat frame calls per message.
+  return function(_, event, msg)
+    -- true => suppress this line from appearing in chat
+    if not _showWhisperSetting() then
+      return true
+    end
+    return false
   end
 end
-local function _wFilter(_, _, msg)
-  if _whispersEnabled() then return false end
-  local e = _w.map[msg]; if not e then return false end
-  if (GetTime() - e.t) <= _w.ttl and e.n > 0 then
-    e.n = e.n - 1
-    if e.n == 0 then _w.map[msg] = nil end
-    return true -- suppress this outgoing whisper line
-  end
-  _w.map[msg] = nil
-  return false
+local _WEF = _whisperEchoFilter() -- stable closure instance
+
+local function _attachWhisperFilters()
+  ChatFrame_RemoveMessageEventFilter("CHAT_MSG_WHISPER_INFORM", _WEF)
+  ChatFrame_AddMessageEventFilter   ("CHAT_MSG_WHISPER_INFORM", _WEF)
+  pcall(ChatFrame_RemoveMessageEventFilter, "CHAT_MSG_BN_WHISPER_INFORM", _WEF)
+  pcall(ChatFrame_AddMessageEventFilter,    "CHAT_MSG_BN_WHISPER_INFORM", _WEF)
 end
-ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER_INFORM", _wFilter)
-pcall(ChatFrame_AddMessageEventFilter, "CHAT_MSG_BN_WHISPER_INFORM", _wFilter)
+
+-- Attach after UI is ready, and on zone/reload just in case
+local _wf = CreateFrame("Frame")
+_wf:RegisterEvent("PLAYER_LOGIN")
+_wf:RegisterEvent("PLAYER_ENTERING_WORLD")
+_wf:SetScript("OnEvent", _attachWhisperFilters)
+
+-- Optional: expose a refresh for runtime toggles
+function ns.RefreshWhisperEcho()
+  _attachWhisperFilters()
+end
 
 -- internal senders -----------------------------------------------------------
 local function send_chat(job)
   local msg, chatType, lang, target = job.msg, job.chatType, job.languageID, job.target
   if chatType == "WHISPER" then
-    if ns.classic then target = Ambiguate(target or "", "short") end
-    _markWhisper(msg) -- record so filter can hide if configured off
+    if ns.classic and _G.Ambiguate then target = Ambiguate(target or "", "short") end
   end
   SendChatMessage(msg, chatType, lang, target)
 end

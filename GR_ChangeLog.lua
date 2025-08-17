@@ -4,6 +4,9 @@ ns.changeLog = [[
     # Guild Recruiter
     ## 4.0 - War Within/Classic/Cata Release
 
+    ### v4.1.39
+        - Fixed issue with whispers not sending in some cases.
+        - Possible fix to welcome guild/whispers not sending.
     ### v4.1.38
         - Fixed issue with hiding/showing whispers in chat.
         - Fixed issue with whispers not showing in classic.
