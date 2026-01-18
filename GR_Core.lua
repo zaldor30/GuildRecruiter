@@ -1,82 +1,28 @@
---[[-----------------------------------------------------------------------------
-Guild Recruiter – Core Bootstrap
-Author: Moonfury
+--[[
+Guild Recruiter Core
 
-This module wires up the addon’s lifecycle: database boot, option panels, slash
-commands, minimap icon, base UI, invite system, and long-lived tables.
+Purpose:
+- Start the addon only when the player is in a guild and can invite.
+- Set up saved data (AceDB), UI hooks, and integration points.
+- Provide simple slash commands and a minimap entry for access.
 
-It exposes a single namespace table, `ns.core`, whose methods are called in
-response to PLAYER_LOGIN and internal state checks.
+Libraries used:
+- AceLocale-3.0, AceConfig-3.0, AceConfigDialog-3.0, AceDB-3.0
+- LibDataBroker-1.1, LibDBIcon-1.0
 
-# External Libraries
-- AceLocale-3.0           : localization lookups
-- AceConfig-3.0           : options table registration
-- AceConfigDialog-3.0     : embed into Blizzard Options
-- AceDB-3.0               : persistent saved variables
-- LibDataBroker-1.1       : minimap data object
-- LibDBIcon-1.0           : minimap icon wrapper
-
-# Other Addon Modules (referenced)
-- ns.code                 : formatting, dialogs, compression helpers
-- ns.events               : base event wiring
-- ns.base                 : top-level frame and navigation
-- ns.invite               : invitation subsystem
-- ns.ds                   : data source for classes/races/zones
-- ns.analytics            : telemetry helpers
-- ns.whatsnew             : “what’s new” panel
-- ns.scanner, ns.list     : UI and lists
-
-# Lifecycle (happy path)
-1) PLAYER_LOGIN → core:CheckIfInGuild(...)
-2) If guild+permission OK → core:StartGuildRecruiter(clubID)
-3) StartGuildRecruiter:
-   - core:StartDatabase(clubID) → AceDB profiles + guild bucket
-   - core:LoadTables()          → inflate tables & data sets
-   - core:PerformRecordMaintenance()
-   - core:StartupGuild(clubID)  → name/link, GM flags, sanity checks
-   - Register options (AceConfig), slash, minimap, events
-   - Boot UI & invite observers
-
-# SavedVariables Schema (AceDB)
-Profile (per-character):
-  profile.settings:
-    - minLevel, maxLevel                : numeric level range defaults
-    - activeFilter, activeMessage       : selection indices
-    - compactMode, isCompact            : UI compact flags
-    - minimap.hide                      : minimap icon visibility
-    - showContextMenu, showAppMsgs      : UX toggles
-    - debugMode                         : verbose logs
-    - enableAutoSync, showWhispers      : behavior flags
-    - antiSpam, antiSpamDays            : anti-spam controls
-    - sendGuildGreeting, guildMessage   : guild greeting toggle/text
-    - sendWhisperGreeting, whisperMessage : welcome whisper toggle/text
-    - obeyBlockInvites                  : respect Blizzard invite blocks
-    - messageList                       : personal message templates
-    - keepOpen                          : ESC close behavior
-    - inviteFormat                      : enum used by invite module
-  profile.analytics                     : per-character analytics bucket
-
-Global (account-wide):
-  global.timeBetweenMessages            : message pacing (string seconds)
-  global.showWhatsNew, showToolTips     : UI prefs
-  global.compactSize                    : compact UI sizing
-  global.ScanWaitTime                   : scan cadence
-  global.zoneList                       : user-maintained invalid zones
-  global.keybindings.scan/invite        : saved keybinds
-Guild bucket (per clubID):
-  guildInfo: { clubID, guildName, guildLink }
-  gmSettings: GM-enforced toggles/messages
-  settings  : shared guild defaults (non-enforced)
-  isGuildLeader, guildLeaderToon, gmActive
-  analytics, blackList, filterList, messageList, antiSpamList, blackListRemoved
-  lastSync
-
------------------------------------------------------------------------------]]--
+Lifecycle Overview:
+1) PLAYER_LOGIN → `core:StartGuildRecruiter()`
+2) `core:GuildVerification()` ensures guild/permissions → registers events
+3) `core:RegisterDatabase()` binds AceDB (profile/global/guild)
+4) `core:InitializeTables()` loads lists and datasets
+5) `core:InitializeGuildInfo()` sets guild name/link + GM state
+6) UI + minimap + slash commands become available
+]]
 
 local addonName, ns = ... -- Namespace (myAddon, namespace)
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
-ns.tblBlackList, ns.antiSpamList = {}, {}
+ns.BlackList, ns.AntiSpamListList = {}, {}
 
 local AC, ACD   = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0')
 local icon, DB  = LibStub('LibDBIcon-1.0'), LibStub('AceDB-3.0')
@@ -84,9 +30,41 @@ local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 
 ns.core = {}
 local core = ns.core
+local ClubID = nil
 
---- Initialize core defaults and AceDB base schemas (no I/O, no UI).
+--* Courtesy warning if FGI is also running
+local function checkForFGI(retry)
+    retry = retry + 1
+    local isFGILoaded = C_AddOns.IsAddOnLoaded('FastGuildInvite')
+    if isFGILoaded then
+        ns.code:fOut(L['FGI_LOADED'], ns.COLOR_ERROR)
+        return
+    elseif retry > 5 then
+        return
+    else
+        C_Timer.After(1, function() checkForFGI(retry + 1) end)
+    end
+end
+checkForFGI(0)
+
+--*Event handler for PLAYER_LOGIN to check guild status and start GR.
+
+--#region Event Handlers
+local function eventsPLAYER_LOGIN()
+    GR:UnregisterEvent('PLAYER_LOGIN', eventsPLAYER_LOGIN)
+    core:StartGuildRecruiter()
+end
+GR:RegisterEvent('PLAYER_LOGIN', eventsPLAYER_LOGIN)
+--#endregion Event Handlers
+
+--- Notify AceConfig that our options table changed (e.g., labels/values).
+function core:NotifySettingsUpdate()
+    AceConfigRegistry:NotifyChange(addonName)
+end
+
+--*Initialize core defaults and AceDB base schemas (no I/O, no UI).
 -- Call once on load; real boot happens in StartGuildRecruiter().
+--- Prepare default structures used by AceDB and runtime flags.
 function core:Init()
     self.isEnabled = false          -- True after full successful start
     self.fullyStarted = false       -- Reserved if stricter gating is needed
@@ -94,6 +72,7 @@ function core:Init()
     self.obeyBlockInvites = true    -- Default, can be overridden by settings
 
     self.minimapIcon = nil          -- LibDBIcon handle (set in StartMiniMapIcon)
+    self.GuildCheckTimeOut = 15     -- Seconds to wait for guild clubID fetch
 
     -- AceDB profile/global scaffolding (defaults). Do not mutate in-place;
     -- treat as constant default templates passed to AceDB:New().
@@ -187,124 +166,241 @@ function core:Init()
     }
 end
 
---- Fully start the addon for a specific guild clubID.
--- Performs DB attach, tables load, UI/options/minimap wiring, and invite boot.
--- @param clubID number|nil Guild club id from C_Club.GetGuildClubId()
-function core:StartGuildRecruiter(clubID)
-    if not clubID or not core.isEnabled then return end
+--*Do start Guild Recruiter Routines
+--- Entry point that performs initial checks and kicks off initialization.
+function core:StartGuildRecruiter()
+    core.isEnabled = false
 
-    core:Init() -- ensure defaults present (idempotent)
-    GR.clubID = clubID
+    GR:UnregisterAllEvents()
     GR:RegisterChatCommand('rl', function() ReloadUI() end) -- quick reload
 
-    -- Environment flags & pretty player name
-    ns.fPlayerName = ns.code:cPlayer(GetUnitName('player', false), UnitClassBase('player'))
+    ClubID = self:GuildVerification() or nil
+    if not ClubID then return end
+    core.isEnabled = true
 
-    -- Attach AceDB and possibly reset if version changed.
-    if self:StartDatabase(clubID) then
-        self.isEnabled = false
-        GR:UnregisterAllEvents()
-        ns.code:fOut(L['TITLE']..' '..GR.versionOut..' '..L['DISABLED'], ns.COLOR_DEFAULT, true)
+    if not (self:InitializeGuildRecruiter() or false) then return end
+end
+
+--* Verify guild status and Guild Status Events
+
+--#region Support Guild Functions
+--- Ensure the player is in a guild and can invite; register guild events.
+function core:GuildVerification()
+    -- Recursive function to wait for clubID fetch
+    local function clubIDCheck(count)
+        local clubID = C_Club.GetGuildClubId() or nil
+
+        if clubID then return clubID
+        else
+            if count < self.GuildCheckTimeOut then
+                C_Timer.After(1, function() clubIDCheck(count + 1) end)
+            else return nil end
+        end
+    end
+    local clubID = clubIDCheck(0)
+
+    if not clubID then
+        ns.code:fOut(L['NOT_IN_GUILD'])
+        ns.code:fOut(L["NOT_IN_GUILD_LINE1"])
         return
+    elseif not CanGuildInvite() then ns.code:cOut(L['CANNOT_INVITE']) end
+
+    GR:RegisterEvent('PLAYER_GUILD_UPDATE', function()
+        self:GuildStatusChanged()
+    end) -- Handle guild join/leave guild events
+
+    if clubID then
+        GR:RegisterEvent('GUILD_ROSTER_UPDATE', function()
+            self:GuidInfoChanges()
+        end) -- Check for guild info changes and check rank
+        return clubID
+    else return nil end
+end
+--* Initialize guild info (name/link) and guild leader status
+--- Populate guild info and leader state; warn if Anti-Spam is disabled.
+function core:InitializeGuildInfo()
+    local guildName = GetGuildInfo('player')
+
+    ns.guildInfo.clubID = ClubID
+    ns.guildInfo.guildName = guildName or ''
+
+    self:GuidLeaderStatus()
+
+    if (ns.isGM and not ns.gmSettings.antiSpam) or (not ns.isGM and not ns.pSettings.antiSpam) then
+        ns.code:fOut(L['NO_ANTI_SPAM'], ns.COLOR_ERROR)
     end
 
-    self:LoadTables()
-    self:PerformRecordMaintenance()
-    self:StartupGuild(clubID)
+    if ns.isGM then
+        ns.guild.isGuildLeader = true
+        ns.guild.guildLeaderToon = GetUnitName('player', true)
+    elseif not ns.isGM then
+        ns.gmActive = ns.guild.gmActive or false
+        ns.obeyBlockInvites = ns.gmSettings.obeyBlockInvites and ns.gmSettings.obeyBlockInvites or ns.gSettings.obeyBlockInvites
+        if GetUnitName('player', true) == ns.guild.guildLeaderToon then
+            ns.guild.isGuildLeader = false
+            ns.guild.guildLeaderToon = nil
+        end
+    end
+
+    -- Validate existing guildLink (may be stale across sessions/renames)
+    ns.guildInfo.guildLink = (ns.guildInfo.guildLink and ns.guildInfo.guildLink ~= '') and ns.guildInfo.guildLink or nil
+    if ns.guildInfo.guildLink and not strmatch(ns.guildInfo.guildLink, guildName) then
+        ns.guildInfo.guildLink = nil
+    end
+
+    local function createGuildLink(retry)
+        local club = ClubID and ClubFinderGetCurrentClubListingInfo(ClubID) or nil
+        if club then
+            local guildLink = "|cffffd200|HclubFinder:"..club.clubFinderGUID.."|h["..club.name.."]|h|r"
+            ns.guildInfo.guildLink = guildLink or nil
+            return
+        elseif retry >= 10 then
+            ns.guildInfo.guildLink = nil
+            ns.code:fOut(ns.code:cText(ns.COLOR_ERROR, L['GUILD_LINK_NOT_FOUND']))
+            if ns.core.isGM then ns.code:fOut(L['GUILD_LINK_NOT_FOUND_GM'])
+            else ns.code:fOut(L['PLAYER_GUILD_LINK_NOT_FOUND']) end
+            return
+        else
+            C_Timer.After(1, function() createGuildLink(retry) end)
+        end
+    end
+    if not ns.classic then
+        if not ns.guildInfo.guildLink or not strmatch(ns.guildInfo.guildLink, guildName) then
+            createGuildLink(0)
+        end
+    end
+end
+--* Check and notify guild leader status changes
+--- Compare stored vs current GM state and announce transitions.
+function core:GuidLeaderStatus()
+    if not ns.guild then return end
+
+    local storedLeaderState = ns.guild.isGuildLeader
+    local currentLeaderState = IsGuildLeader()
+    ns.isGM = currentLeaderState
+
+    if storedLeaderState ~= currentLeaderState then
+        ns.guild.isGuildLeader = currentLeaderState
+        if currentLeaderState then ns.code:cOut(L['GAINED_GUILD_LEADER'])
+        else ns.code:cOut(L['LOST_GUILD_LEADER']) end
+    end
+    ns.guild.isGuildLeader = ns.isGM
+end
+--* Handle guild join/leave guild events
+--- Handle join/leave or guild change and update enabled state/messages.
+function core:GuildStatusChanged()
+    if ClubID and C_Club.GetGuildClubId() == ClubID then core:GuidLeaderStatus()
+    elseif ClubID and C_Club.GetGuildClubId() ~= ClubID then
+        ns.code:fOut(L['NOT_IN_GUILD'])
+        core.isEnabled = false
+    elseif not ClubID and C_Club.GetGuildClubId() then
+        ns.code:fOut(L['NEW_GUILD_DETECTED'])
+        core.isEnabled = false
+    end
+end
+--* Check for guild info changes (name/link) and rank changes
+--- Detect guild info/rank changes and disable when invites are blocked.
+function core:GuidInfoChanges()
+    local tClubID = C_Club.GetGuildClubId() or nil
+    if not tClubID or tClubID ~= ClubID then return end
+
+    if not CanGuildInvite() then ns.code:cOut(L['CANNOT_INVITE_DETECTED']) core.isEnabled = false return end
+end
+--#endregion Support Guild Functions
+
+--* Initialize Guild Recruiter for the current guild
+
+--#region Initialize Guild Recruiter Routines
+--- Full initialization: DB, UI, minimap, slash, invite subsystem.
+function core:InitializeGuildRecruiter()
+    if not core.isEnabled then return false end
+
+    self:Init()
+    ns.fPlayerName = ns.code:cPlayer(GetUnitName('player', false), UnitClassBase('player'))
+
+    ns.code:fOut(L['TITLE']..' '..GR.versionOut..' '..L['ENABLED'], ns.COLOR_DEFAULT, true)
+    if GR.isPreRelease then
+        ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.preReleaseType))), 'FFFFFF00', true)
+    end
+
+    self:RegisterDatabase() -- Initialize and bind AceDB
+
+    self:InitializeTables() -- Decompress and load black/anti-spam lists
+    self:PerformRecordMaintenance() -- Clean up old records
+
+    self:InitializeGuildInfo()
 
     -- Build options UI (the options table is provided by your settings module)
     ns.newSettingsMessage()                                    -- seed blank
-    AC:RegisterOptionsTable(addonName, ns.guildRecuriterSettings) -- (sic) table name
+    AC:RegisterOptionsTable(addonName, ns.guildRecruiterSettings) -- (sic) table name
     ns.addonOptions = ACD:AddToBlizOptions(addonName, 'Guild Recruiter')
 
-    -- Shell/UI affordances
-    self:StartSlashCommands()
+    -- Shell/UI affordance
     self:StartMiniMapIcon()
-    ns.events:StartBaseEvents()
+    self:StartSlashCommands()
+
     ns.base:SetShown(true, true)
+    ns.events:StartBaseEvents()
 
     -- Invite subsystem
     ns.invite:Init()
     ns.invite:GetMessages()
     ns.invite:RegisterInviteObservers()
 
-    -- Courtesy warning if FGI is also running
-    local function checkForFGI(retry)
-        retry = retry + 1
-        local isFGILoaded = C_AddOns.IsAddOnLoaded('FastGuildInvite')
-        if isFGILoaded then
-            ns.code:fOut(L['FGI_LOADED'], ns.COLOR_ERROR)
-            return
-        elseif retry > 5 then
-            return
-        else
-            C_Timer.After(1, function() checkForFGI(retry + 1) end)
-        end
-    end
-    checkForFGI(0)
-
-    -- Final banners
-    ns.code:fOut(L['TITLE']..' '..GR.versionOut..' '..L['ENABLED'], ns.COLOR_DEFAULT, true)
-    if GR.isPreRelease then
-        ns.code:fOut(L['BETA_INFORMATION']:gsub('VER', ns.code:cText('FFFF0000', strlower(GR.preReleaseType))), 'FFFFFF00', true)
-    end
-    ns.whatsnew:SetShown(true, true)
-    self.isEnabled = true
+    return true
 end
-
---- Create/attach AceDB and bind convenience references under `ns`.
--- Also performs compatible DB reset when version requires.
--- @param clubID number
--- @return boolean wasReset True if a compatibility reset occurred
-function core:StartDatabase(clubID)
-    local wasReset = false
+--* Register and bind the AceDB database
+--- Create AceDB, reset old versions, and bind handy references.
+function core:RegisterDatabase()
     local db = DB:New(GR.db, self.fileStructure) -- AceDB: profile/global roots
-
-    local function resetDatabase()
-        -- Wipe global namespace then reset current profile. Remove any stray
-        -- extra profiles to avoid stale data after structural changes.
+    if db.global.dbVer and db.global.dbVer < 4 then
+        -- Reset database if version is older than version 4
         db.global = db.global and table.wipe(db.global) or {}
         db:ResetProfile()
         for profileName in pairs(db.profiles) do
             db.profiles[profileName] = nil
         end
-        wasReset = true
         db.global.dbVer = GR.dbVersion
         ns.code:fOut(L['DATABASE_RESET'], ns.COLOR_ERROR)
     end
-
-    -- Example migration policy: reset if missing or behind and not equal to head.
-    if not db.global.dbVer or (db.global.dbVer < 4 and db.global.dbVer ~= GR.dbVersion) then
-        resetDatabase()
-    end
-
-    -- Ensure guild bucket exists
-    if not db.global[clubID] then
-        db.global[clubID] = self.guildFileStructure
+    if ClubID and not db.global[ClubID] then
+        db.global[ClubID] = self.guildFileStructure
     end
 
     -- Bind handy references (read/write) for the rest of the addon
-    ns.p,        ns.g,        ns.guild      = db.profile, db.global, db.global[clubID]
+    ns.p,        ns.g,        ns.guild      = db.profile, db.global, db.global[ClubID]
     ns.pAnalytics, ns.gAnalytics            = ns.p.analytics, ns.guild.analytics
     ns.pSettings,  ns.gSettings             = ns.p.settings,  ns.guild.settings
     ns.guildInfo,  ns.gmSettings            = ns.guild.guildInfo, ns.guild.gmSettings
     ns.gFilterList                          = ns.guild.filterList
 
+    -- Initialize guild leader status
+    if ns.guild.isGuildLeader == nil then
+        ns.guild.isGuildLeader = IsGuildLeader()
+    end
+
     -- Debug flags
     GR.debug = (GR.debug or GR.isTesting) or ns.pSettings.debugMode
-    return wasReset
 end
+--- Inflate runtime tables from compressed storage and load datasets.
+function core:InitializeTables()
+    -- Decompress blackList
+    if ns.guild.blackList and type(ns.guild.blackList) == "table" and next(ns.guild.blackList) ~= nil then
+        ns.BlackList = ns.code:decompressData(ns.guild.blackList)
+    else
+        ns.guild.blackList = {}
+        ns.BlackList = {}
+    end
 
---- Inflate in-memory tables and load game-version dependent datasets.
-function core:LoadTables()
-    -- Decompress persisted tables (no-op if empty or invalid)
-    local blSuccess, tblBL = ns.code:decompressData(ns.guild.blackList)
-    ns.tblBlackList = blSuccess and tblBL or {}
+    -- Decompress antiSpamList
+    if ns.guild.antiSpamList and type(ns.guild.antiSpamList) == "table" and next(ns.guild.antiSpamList) ~= nil then
+        ns.AntiSpamListList = ns.code:decompressData(ns.guild.antiSpamList)
+    else
+        ns.guild.antiSpamList = {}
+        ns.AntiSpamListList = {}
+    end
 
-    local asSuccess, tblAS = ns.code:decompressData(ns.guild.antiSpamList)
-    ns.tblAntiSpamList = asSuccess and tblAS or {}
-
-    -- Data sets (classes/races/invalid zones) differ per branch
+    -- Create Datasets (classes/races/invalid zones)
     if ns.retail then
         ns.races   = ns.ds:races_retail()
         ns.classes = ns.ds:classes_retail()
@@ -322,8 +418,7 @@ function core:LoadTables()
 
     ns.analytics:RetrieveSavedData()
 end
-
---- Cleanup/migrate time-bounded records (e.g., anti-spam).
+--- Perform periodic cleanup and GM migration of personal templates.
 function core:PerformRecordMaintenance()
     -- If user became GM, move any personal message templates to GM list.
     if ns.isGM and #ns.pSettings.messageList > 0 then
@@ -336,7 +431,7 @@ function core:PerformRecordMaintenance()
     -- Drop stale anti-spam entries older than configured days.
     local function removeOldRecords(tbl, days)
         local currentTime = time()
-        for name, data in pairs(tbl) do
+        for name, data in pairs(tbl or {}) do
             if data and data.time then
                 local age = currentTime - data.time
                 if age >= days * 86400 then
@@ -345,9 +440,8 @@ function core:PerformRecordMaintenance()
             end
         end
     end
-    removeOldRecords(ns.tblAntiSpamList, ns.gmSettings.antiSpamDays)
+    removeOldRecords(ns.AntiSpamList, ns.gmSettings.antiSpamDays)
 end
-
 --- Register /gr and /recruiter style slash commands.
 -- Supported:
 --  - /gr (no args)      : toggles base UI
@@ -358,7 +452,10 @@ function core:StartSlashCommands()
     local function slashCommand(msg)
         msg = strlower(msg:trim())
 
-        if not msg or msg == '' and not ns.base:IsShown() then
+        if not core.isEnabled then
+            ns.code:fOut(L['NOT_ENABLED'], ns.COLOR_ERROR)
+            return
+        elseif not msg or msg == '' and not ns.base:IsShown() then
             return ns.base:SetShown(true)
         elseif msg == strlower(L['HELP']) then
             ns.code:fOut(L['SLASH_COMMANDS'], ns.COLOR_DEFAULT, true)
@@ -374,7 +471,6 @@ function core:StartSlashCommands()
     GR:RegisterChatCommand('gr', slashCommand)
     GR:RegisterChatCommand(L["RECRUITER"], slashCommand)
 end
-
 --- Create and register the minimap icon (LibDataBroker + LibDBIcon).
 -- Left-click toggles UI; Shift+Left opens scanner; Right-click opens options.
 function core:StartMiniMapIcon()
@@ -397,11 +493,11 @@ function core:StartMiniMapIcon()
             local body  = code:cText('FFFFFFFF', L['MINIMAP_TOOLTIP'])
 
             local count = 0
-            for _ in pairs(ns.tblAntiSpamList) do count = count + 1 end
+            for _ in pairs(ns.AntiSpamList or {}) do count = count + 1 end
             local antiSpam = ' |cFFFF0000'..count..'|r'
 
             count = 0
-            for _ in pairs(ns.tblBlackList) do count = count + 1 end
+            for _ in pairs(ns.tblBlackLists or {}) do count = count + 1 end
             local blackList = ' |cFFFF0000'..count..'|r'
 
             body = body:gsub('%%AntiSpam', antiSpam):gsub('%%BlackList', blackList)
@@ -413,115 +509,26 @@ function core:StartMiniMapIcon()
     icon:Register('GR_Icon', iconData, ns.pSettings.minimap)
     self.minimapIcon = icon
 end
+--#endregion Initialize Guild Recruiter Routines
 
---- Populate guild identity, GM state, and (Retail) derive clickable guild link.
--- Also resolves enforcement flags for non-GM users.
--- @param clubID number Guild club id
-function core:StartupGuild(clubID)
-    local guildName = GetGuildInfo('player')
+--[[
+    Namespace variables:
+    ns.core                 : Core routines and variables
+    ns.code                 : Code routines (console output, keyword replacement)
+    ns.fPlayerName          : Formatted player name with class color
+    ns.isGM                 : Is the player guild master
 
-    ns.guildInfo.clubID = clubID
-    ns.guildInfo.guildName = guildName
+    File variables:
+    ns.p                   : Profile settings (per-character)
+    ns.g                   : Global settings (all characters)
+    ns.guild               : Current guild data (per-guild/clubID)
+    ns.pSettings           : Shortcut to ns.p.settings
+    ns.gSettings           : Shortcut to ns.guild.settings
+    ns.guildInfo           : Shortcut to ns.guild.guildInfo
+    ns.gmSettings          : Shortcut to ns.guild.gmSettings
 
-    -- Attempt to build a clickable guild link (Retail only). Retry up to 10s.
-    local function createGuildLink(retry)
-        retry = retry + 1
-        local club = clubID and ClubFinderGetCurrentClubListingInfo(clubID) or nil
-        if club then
-            local guildLink = "|cffffd200|HclubFinder:"..club.clubFinderGUID.."|h["..club.name.."]|h|r"
-            ns.guildInfo.guildLink = guildLink or nil
-            return
-        elseif retry >= 10 then
-            ns.guildInfo.guildLink = nil
-            ns.code:fOut(ns.code:cText(ns.COLOR_ERROR, L['GUILD_LINK_NOT_FOUND']))
-            if ns.core.isGM then ns.code:fOut(L['GUILD_LINK_NOT_FOUND_GM'])
-            else ns.code:fOut(L['PLAYER_GUILD_LINK_NOT_FOUND']) end
-            return
-        else
-            C_Timer.After(1, function() createGuildLink(retry) end)
-        end
-    end
-
-    -- GM/leadership state & enforcement wiring
-    ns.isGM = ns.guild.isGuildLeader or IsGuildLeader() or false
-    if not ns.isGM then
-        ns.gmActive = ns.guild.gmActive or false
-        ns.obeyBlockInvites = ns.gmSettings.obeyBlockInvites and ns.gmSettings.obeyBlockInvites or ns.gSettings.obeyBlockInvites
-        if not ns.gmSettings.antiSpam and not ns.pSettings.antiSpam then
-            ns.code:fOut(L['NO_ANTI_SPAM'], ns.COLOR_ERROR)
-        end
-    elseif not ns.gmSettings.antiSpam then
-        ns.code:fOut(L['NO_ANTI_SPAM'], ns.COLOR_ERROR)
-    end
-
-    -- Track/clear leader toon name
-    if not ns.isGM then
-        if GetUnitName('player', true) == ns.guild.guildLeaderToon then
-            ns.guild.isGuildLeader = false
-            ns.guild.guildLeaderToon = nil
-            ns.code:fOut(ns.fPlayerName..' '..L['NO_LONGER_GUILD_LEADER'])
-        end
-    else
-        ns.guild.isGuildLeader = true
-        ns.guild.guildLeaderToon = GetUnitName('player', true)
-    end
-
-    -- Validate existing guildLink (may be stale across sessions/renames)
-    ns.guildInfo.guildLink = (ns.guildInfo.guildLink and ns.guildInfo.guildLink ~= '') and ns.guildInfo.guildLink or nil
-    if ns.guildInfo.guildLink and not strmatch(ns.guildInfo.guildLink, guildName) then
-        ns.guildInfo.guildLink = nil
-    end
-
-    if not ns.classic then
-        if not ns.guildInfo.guildLink or not strmatch(ns.guildInfo.guildLink, guildName) then
-            createGuildLink(0)
-        end
-    end
-end
-
---- Poll until we detect guild + invite permission, then call callback(clubID).
--- Retries every 1s up to ~30s. Prints user-facing reasons on failure.
--- @param count number (internal) retry counter
--- @param callback function|nil called with clubID (number) or nil on timeout
--- @return number|nil clubID when available
-function core:CheckIfInGuild(count, callback)
-    count = count or 0
-    local clubID = C_Club.GetGuildClubId() or nil
-
-    if clubID and CanGuildInvite() then
-        self.isEnabled = true
-        if callback then callback(clubID) end
-        return clubID
-    elseif count >= 30 then
-        -- Timed out: show hints based on current state
-        self.isEnabled = false
-        ns.code:cOut(L['TITLE']..' '..GR.versionOut..' '..L['DISABLED'])
-        if IsInGuild() and not CanGuildInvite() then
-            ns.code:cOut(L['CANNOT_INVITE'])
-        else
-            ns.code:cOut(L['NOT_IN_GUILD'])
-            ns.code:cOut(L['NOT_IN_GUILD_LINE1'])
-        end
-        if callback then callback(nil) end
-        return
-    elseif not CanGuildInvite() or not IsInGuild() or not clubID or not GetGuildInfo('player') then
-        C_Timer.After(1, function() self:CheckIfInGuild(count + 1, callback) end)
-    end
-end
-
--- Event bootstrap: wait for login before probing guild state.
-local function eventsPLAYER_LOGIN()
-    GR:UnregisterEvent('PLAYER_LOGIN', eventsPLAYER_LOGIN)
-    core:CheckIfInGuild(0, function(clubID)
-        if clubID then core:StartGuildRecruiter(clubID) end
-    end)
-end
-GR:RegisterEvent('PLAYER_LOGIN', eventsPLAYER_LOGIN)
-
---- Notify AceConfig that our options table changed (e.g., labels/values).
-function core:NotifySettingsUpdate()
-    AceConfigRegistry:NotifyChange(addonName)
-end
-
--- Seed defaults immediately so other files can read `core.fileStructure`, etc.
-core:Init()
+    Other variables:
+    core.isEnabled         : True if GR is fully started and enabled
+    ns.BlackList           : Decompressed blacklist table
+    ns.AntiSpamListList    : Decompressed anti-spam list table
+]]

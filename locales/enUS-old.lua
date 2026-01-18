@@ -1,28 +1,8 @@
---[[
-GuildRecruiter English (enUS) locale
-
-This file defines the default strings for the addon using AceLocale-3.0.
-As the default locale, the third parameter to NewLocale is true, meaning
-these English strings serve as fallbacks for all locales.
-
-Conventions:
-- Keys use UPPER_SNAKE_CASE and are grouped by feature with #region markers.
-- Avoid reusing the same key for different messages; create specific keys.
-- Placeholders supported in messages: PLAYERNAME, GUILDNAME, GUILDLINK.
-- Keep strings concise; UI labels should be short, sentences in messages.
-
-Adding strings:
-- Add new keys here first, then translate in other locale files under locales/.
-- Search for existing keys before adding to avoid duplicates.
-- Prefer grouping new keys within a relevant #region.
-]]
+-- Localization file for English/United States
 local addonName = ...
 local L = LibStub("AceLocale-3.0"):NewLocale(addonName, "enUS", true)
 
---* Blizzard System Messages
 -- System outcomes (map from PATS tags)
-
---#region System Messages
 L["PLAYER_DECLINED_INVITE"]        = "Player declined the guild invite."
 L["PLAYER_ALREADY_IN_GUILD"]       = "That player is already in a guild."
 L["PLAYER_ALREADY_IN_YOUR_GUILD"]  = "That player is already in your guild."
@@ -33,34 +13,8 @@ L["PLAYER_IGNORING_YOU"]           = "That player is ignoring you."
 L["PLAYER_JOINED_GUILD"]           = "Player has joined a guild."
 L["PLAYER_NOT_ONLINE"]             = "Player is not online."
 L["PLAYER_IN_GUILD"]               = "Player is in a guild."
---#endregion System Messages
 
---* Addon Messages
-
---#region Addon Messages
-L['TITLE'] = 'Guild Recruiter'
--- Status words are defined in Common Words as ENABLED/DISABLED
-L['BETA_INFORMATION'] = [[
-This is a pre-release VER version.
-Expect bugs and incomplete features.]]
-L['SLASH_COMMANDS'] = [[
-Guild Recruiter Slash Commands:
-/rl will reload the WoW UI (like /reload).
-/gr help - Displays this help message.
-/gr config - Opens the configuration window.
-/gr blacklist <player name> - Will add the player to the blacklist.]]
-L['MINIMAP_TOOLTIP'] = [[
-Left Click: Open Guild Recruiter
-Shift+Left Click: Open Scanner
-Right Click: Open Config
-%AntiSpam in invited list.
-%BlackList in blacklisted list.]]
-L['DEFAULT_GUILD_WELCOME'] = 'Welcome PLAYERNAME to GUILDNAME!'
-L['FGI_LOADED'] = '*WARNING* FGI is loaded. Please disable it to use Guild Recruiter.'
---#endregion Addon Messages
-
---* Common Words and Phrases
---#region Common Words
+--#region General
 L["INVITE"] = "Invite"
 L["SCAN"] = "Scan"
 L["ABOUT"] = "About"
@@ -74,14 +28,8 @@ L["HELP"] = 'Help'
 L['CONFIG'] = 'Config'
 L["RACE"] = "Race"
 L["CLASS"] = "Class"
-L['ANTI_SPAM'] = 'Anti-Spam'
-L['BLACKLIST'] = 'Blacklist'
-L['SETTINGS'] = 'Settings'
-L['RECRUITER'] = 'recruiter'
-L['PREVIEW_TITLE'] = 'Selected Message Preview'
---#endregion Common Words
+--#endregion
 
---* Button Text
 --#region Button Text
 L["CANCEL"] = "Cancel"
 L["DELETE"] = "Delete"
@@ -91,108 +39,33 @@ L["YES"] = "Yes"
 L["NO"] = "No"
 L["OK"] = "OK"
 L['FILTER_SAVE_SUCCESSFUL'] = 'Filter saved successfully.'
---#endregion Button Text
+--#endregion
 
---* Guild Messages
+--#region System Messages
+L["TITLE"] = "Guild Recruiter"
+L['BETA_INFORMATION'] = [[This is a VER version of Guild Recruiter.
+Please report any issues on our Discord server.]]
+L['AUTO_LOCKED'] = 'Moving screen is now locked.'
+L['SUPPORT_LINKS'] = 'Support Links'
+L['GITHUB_LINK'] = 'GitHub Repository'
+L['DISCORD_LINK'] = 'Discord Server'
+--#endregion
 
---#region Guild Messages
+--#region Frequently used strings
+L['ANTI_SPAM'] = 'Anti-Spam'
+L['BLACKLIST'] = 'Blacklist'
+L['SETTINGS'] = 'Settings'
+L['PREVIEW_TITLE'] = 'Selected Message Preview'
+--#endregion
+
+--#region General Error Messages
 L['NO_GUILD_NAME'] = 'No Guild Name, please reload your UI.'
-L["NOT_ENABLED"] = "Guild Recruiter is disabled.  Try reloading your UI."
-L["LOST_GM_STATUS"] = "You have lost Guild Master status. Please reload UI."
-L["GAINED_GM_STATUS"] = "You have become Guild Master. Please reload UI."
-L["GAINED_GUILD_LEADER"] = "You are the Guild Master.  Please reload your UI."
-L["LOST_GUILD_LEADER"] = "You are not the Guild Master. Please reload your UI."
-L["NOT_IN_A_GUILD"] = "You are not in a guild. Reload your UI."
-L["NEW_GUILD_DETECTED"] = "New guild detected. Reload your UI."
-L["CANNOT_INVITE_DETECTED"] = "You do not have permission to invite members to the guild. Reload your UI."
--- L["LEFT_GUILD"] could be added if a distinct message is needed
+L['BL_NO_ONE_ADDED'] = 'No one was added to the blacklist.'
 L['GUILD_LINK_NOT_FOUND'] = 'Guild Link not found. Please reload your UI.'
 L["GUILD_LINK_NOT_FOUND_LINE1"] = "Try /rl or relogging (It may take a few attempts)"
 L["GM_GUILD_LINK_NOT_FOUND"] = "Try creating a recruitment in guild finder the /rl."
 L["PLAYER_GUILD_LINK_NOT_FOUND"] = "Try to sync with the guild to get the guild link."
-L["CANNOT_INVITE"] = "You do not have permission to invite new members."
-L["NOT_IN_GUILD"] = "Guild Recruiter is disabled because you are not in a guild."
-L["NOT_IN_GUILD_LINE1"] = "If you join a guild type /rl to reload."
-L["NO_LONGER_GUILD_LEADER"] = "is no longer the guild leader."
---#endregion Guild Messages
-
---* Error Messages
-
---#region Error Messages
-L['DATABASE_RESET'] = [[
-Due to the changes in this version, all data has been cleared.
-|cFFFFFFFFPlease reload your UI (/rl or /reload).|r]]
-L['BL_NO_ONE_ADDED'] = 'No one was added to the blacklist.'
---#endregion Error Messages
-
---* Anti-Spam Messages
-
---#region Anti-Spam Messages
-L['NO_ANTI_SPAM'] = 'Warning: Anti-Spam is disabled. You may receive repeated invites/messages.'
---#endregion Anti-Spam Messages
-
---* Analytics Messages
-
---#region Analytics
-L['ANALYTICS'] = 'Analytics'
-L['ANALYTICS_DESC'] = 'View your stats on inviting players to the guild.'
-L['ANALYTICS_BLACKLISTED'] = 'Players you blacklisted'
-L['ANALYTICS_SCANNED'] = 'Total players scanned'
-L['ANALYTICS_INVITED'] = 'Players you invited to the guild'
-L['ANALYTICS_DECLINED'] = 'Players that declined invite'
-L['ANALYTICS_ACCEPTED'] = 'Players that accepted invite'
-L['ANALYTICS_NO_GUILD'] = 'Players with no guild found'
-L['ANALYTICS_STATS_START'] = 'Stats beginning on'
-L['ANALYTICS_SESSION'] = 'Session'
-L['ANALYTICS_SESSION_SCANNED'] = 'Scanned'
-L['ANALYTICS_SESSION_BLACKLISTED'] = 'Blacklisted'
-L['ANALYTICS_SESSION_INVITED'] = 'Invited'
-L['ANALYTICS_SESSION_DECLINED'] = 'Declined Invite'
-L['ANALYTICS_SESSION_ACCEPTED'] = 'Accepted Invite'
-L['ANALYTICS_SESSION_WAITING'] = 'Waiting on'
-L['ANALYTICS_SESSION_TIMED_OUT'] = 'Invite Timed Out'
-L['ANALYTICS_SESSION_NO_GUILD'] = 'Potential Found'
-L['ANALYTICS_SESSION_STARTED'] = 'Session Started'
-L['LAST_SCAN'] = 'Last Player Scanned'
-
-L['GUILD_ANALYTICS'] = 'Guild Analytics'
-L['PROFILE_ANALYTICS'] = 'Character Analytics'
-L['SESSION_ANALYTICS'] = 'Session Analytics'
 --#endregion
-
---* Donate/About Messages
-
---#region Donate/About Messages
-L['DONATION_MESSAGE'] = [[
-I hope you find this addon useful. I have put a lot of time and effort into
-making this addon. If you would like to donate, please use the link below.
-Thank you for your support!]]
-L['ABOUT_LINK_MESSAGE'] = 'For more information, please visit the following links:'
-L['COPY_LINK_MESSAGE'] = 'Links are copyable. Highlight link and copy (CTRL+C).'
-L['SUPPORT_LINKS'] = 'Support Links'
-L['GITHUB_LINK'] = 'GitHub Repository'
-L['DISCORD_LINK'] = 'Discord Server'
---#endregion Donate/About Messages
-
---* Invite Format Messages
-
---#region Invite Formats
-L['MESSAGE_ONLY'] = 'Message ONLY'
-L['GUILD_INVITE_ONLY'] = 'Guild Invite ONLY'
-L['GUILD_INVITE_AND_MESSAGE'] = 'Guild Invite and Message'
-L['MESSAGE_ONLY_IF_INVITE_DECLINED'] = 'Message Only if Invitation is declined'
---#endregion
---* Invite Code Messages
-
---#region Invite Code
-L['ALREADY_INVITED_STATUS'] = 'Pending'
-L['GUILD_INVITE_SENT'] = 'Guild invite sent to'
-L['INVITE_MESSAGE_SENT'] = 'Invite message sent to'
-L['INVITE_MESSAGE_QUEUED'] = 'Invite message queued to be sent to'
-L['GUILD_INVITE_BLOCKED'] = 'Invite message skipped for %s due to blocked guild invites.'
---#endregion
-
---* Context Menu Messages
 
 --#region Context Menu
 L['GUILD_INVITE_NO_MESSAGE'] = 'Guild Invite (No Messages)'
@@ -202,52 +75,38 @@ L['KICK_PLAYER_FROM_GUILD'] = 'Kick Player from Guild (Add to Blacklist)'
 L['KICK_PLAYER_CONFIRMATION'] = 'Are you sure you want to kick %s from the guild?'
 --#endregion
 
---* Home Screen Messages
-
---#region Home Screen
-L['SELECT_A_FILTER'] = 'Select a filter'
-L['MIN_LEVEL'] = 'Min Level'
-L['MAX_LEVEL'] = 'Max Level'
-L['MAX_LEVEL_ERROR'] =  'Please enter a number between 1 and '
-L['LEVELS_FIXED'] = 'Levels Fixed'
-L['LEVELS_TOO_CLOSE'] = 'Caution: Keep level range within 5 levels.'
-L['SELECT_INVITE_TYPE'] = 'Select Invite Type'
-L['SELECT_INVITE_MESSAGE'] = 'Select Invite Message'
-L['CREATE_MESSAGE_IN_SETTINGS'] = 'Create message in settings'
---#endregion Home Screen
-
---* Scanner Screen Messages
---#region Scanner Screen
-L['FILTER_PROGRESS'] = 'Filter Progress'
-L['PLAYERS_FOUND'] = 'Players Found'
-L['SEND_MESSAGE'] = 'Send Message'
-L['SEND_INVITE'] = 'Send Invite'
-L['SEND_INVITE_AND_MESSAGE'] = 'Send Invite and Message'
-L['BLACKLIST_TITLE'] = 'Add Selected Player(s) to Blacklist'
-L['BLACKLIST_SCANNER_TOOLTIP'] = 'Add selected players to the blacklist.'
-L['ANTISPAM_TITLE'] = 'Add Selected Player(s) to Anti-Spam List'
-L['ANTISPAM_SCANNER_TOOLTIP'] = 'Will add selected players to Anti-Spam list.'
-L['WHO_RESULTS'] = 'Who Results: %d Players Found'
-L['SCAN_FOR_PLAYERS'] = 'Scan for Players'
-L['NEXT_QUERY'] = 'Next Query: %s'
-L['NEXT_PLAYER_INVITE'] = 'Next Player to Invite (Queued: %d):'
-L['PLAYERS_QUEUED'] = 'Players Queued: %d'
-L['NO_QUEUED_PLAYERS'] = 'No players are queued.'
-L['WAIT'] = 'Wait'
-L['INVITE_FIRST_STEP'] = 'You must first click on Search for Players button.'
-L['ADD_TO_ANTISPAM'] = 'Added %d players to Anti-Spam list.'
-L['ADD_TO_BLACKLIST'] = 'Added %d players to the blacklist.'
-L['SKIP_PLAYER'] = 'Skip Player'
-L['SKIP'] = 'Skip'
+--#region Core
+L['RECRUITER'] = 'recruiter'
+L['DEFAULT_GUILD_WELCOME'] = 'Welcome PLAYERNAME to GUILDNAME!'
+L['DATABASE_RESET'] = [[
+The database has been reset.
+Due to integration of classic and cata, all data has been reset.
+I apologize for the inconvenience.
+|cFFFFFFFFPlease reload your UI (/rl or /reload).|r]]
+L['SLASH_COMMANDS'] = [[
+Guild Recruiter Slash Commands:
+/rl will reload the WoW UI (like /reload).
+/gr help - Displays this help message.
+/gr config - Opens the configuration window.
+/gr blacklist <player name> - Will add the player to the blacklist.]]
+L['MINIMAP_TOOLTIP'] = [[
+Left Click: Open Guild Recruiter
+Shift+Left Click: Open Scanner
+Right Click: Open Config
+%AntiSpam in invited list.
+%BlackList in blacklisted list.]]
+L["NO_LONGER_GUILD_LEADER"] = "is no longer the guild leader."
+L["NO_ANTI_SPAM"] = "Anti-Spam is not enabled. Please enable it in the settings."
+L["CANNOT_INVITE"] = "You do not have permission to invite new members."
+L["NOT_IN_GUILD"] = "Guild Recruiter is disabled because you are not in a guild."
+L["NOT_IN_GUILD_LINE1"] = "If you join a guild type /rl to reload."
+L['FGI_LOADED'] = '*WARNING* FGI is loaded. Please disable it to use Guild Recruiter.'
 --#endregion
-
---* Base Screen Messages
 
 --#region Base Screen
 L['BACK'] = 'Back'
 L['BACK_TOOLTIP'] = 'Go back to previous screen.'
 L['LOCK_TOOLTIP'] = 'Toggle moving of window'
-L['AUTO_LOCKED'] = 'Moving screen is now locked.'
 L['RESET_FILTER'] = 'Reset Filter'
 L['RESET_FILTER_TOOLTIP'] = 'Reset scanner filter to start over.'
 L['COMPACT_MODE'] = 'Compact Mode'
@@ -289,7 +148,67 @@ L['FILTER_SAVE_ERROR'] = 'Select at least 1 class and/or race.'
 L['RESETTING_FILTERS'] = 'Filter changes detected.  Resetting filters to apply changes.'
 --#endregion
 
---* Guild Recruiter Settings Messages
+--#region Invite Formats
+L['MESSAGE_ONLY'] = 'Message ONLY'
+L['GUILD_INVITE_ONLY'] = 'Guild Invite ONLY'
+L['GUILD_INVITE_AND_MESSAGE'] = 'Guild Invite and Message'
+L['MESSAGE_ONLY_IF_INVITE_DECLINED'] = 'Message Only if Invitation is declined'
+--#endregion
+
+--#region Invite Code
+L['ALREADY_INVITED_STATUS'] = 'Pending'
+L['GUILD_INVITE_SENT'] = 'Guild invite sent to'
+L['INVITE_MESSAGE_SENT'] = 'Invite message sent to'
+L['INVITE_MESSAGE_QUEUED'] = 'Invite message queued to be sent to'
+L['GUILD_INVITE_BLOCKED'] = 'Invite message skipped for %s due to blocked guild invites.'
+--#endregion
+
+--#region Home Screen
+L['SELECT_A_FILTER'] = 'Select a filter'
+L['MIN_LEVEL'] = 'Min Level'
+L['MAX_LEVEL'] = 'Max Level'
+L['MAX_LEVEL_ERROR'] =  'Please enter a number between 1 and '
+L['LEVELS_FIXED'] = 'Levels Fixed'
+L['LEVELS_TOO_CLOSE'] = 'Caution: Keep level range within 5 levels.'
+L['SELECT_INVITE_TYPE'] = 'Select Invite Type'
+L['SELECT_INVITE_MESSAGE'] = 'Select Invite Message'
+L['CREATE_MESSAGE_IN_SETTINGS'] = 'Create message in settings'
+--#endregion
+
+--#region Scanner Screen
+L['FILTER_PROGRESS'] = 'Filter Progress'
+L['PLAYERS_FOUND'] = 'Players Found'
+L['SEND_MESSAGE'] = 'Send Message'
+L['SEND_INVITE'] = 'Send Invite'
+L['SEND_INVITE_AND_MESSAGE'] = 'Send Invite and Message'
+L['BLACKLIST_TITLE'] = 'Add Selected Player(s) to Blacklist'
+L['BLACKLIST_SCANNER_TOOLTIP'] = 'Add selected players to the blacklist.'
+L['ANTISPAM_TITLE'] = 'Add Selected Player(s) to Anti-Spam List'
+L['ANTISPAM_SCANNER_TOOLTIP'] = 'Will add selected players to Anti-Spam list.'
+L['WHO_RESULTS'] = 'Who Results: %d Players Found'
+L['SCAN_FOR_PLAYERS'] = 'Scan for Players'
+L['NEXT_QUERY'] = 'Next Query: %s'
+L['NEXT_PLAYER_INVITE'] = 'Next Player to Invite (Queued: %d):'
+L['PLAYERS_QUEUED'] = 'Players Queued: %d'
+L['NO_QUEUED_PLAYERS'] = 'No players are queued.'
+L['WAIT'] = 'Wait'
+L['INVITE_FIRST_STEP'] = 'You must first click on Search for Players button.'
+L['ADD_TO_ANTISPAM'] = 'Added %d players to Anti-Spam list.'
+L['ADD_TO_BLACKLIST'] = 'Added %d players to the blacklist.'
+L['SKIP_PLAYER'] = 'Skip Player'
+L['SKIP'] = 'Skip'
+--endregion
+
+--#region About Screen
+-- * Donation Message
+L['DONATION_MESSAGE'] = [[
+I hope you find this addon useful. I have put a lot of time and effort into
+making this addon. If you would like to donate, please use the link below.
+Thank you for your support!]]
+L['ABOUT_LINK_MESSAGE'] = 'For more information, please visit the following links:'
+L['COPY_LINK_MESSAGE'] = 'Links are copyable. Highlight link and copy (CTRL+C).'
+--#endregion
+
 --#region Guild Recruiter Settings
 L['MAX_CHARS'] = '(<sub> characters per message)'
 L['LENGTH_INFO'] = 'Assumes 12 characters when using PLAYERNAME'
@@ -415,7 +334,33 @@ L['ZONE_NOTE'] = 'Zones with |cFF00FF00*|r are the only editable zones.'
 L['ZONE_LIST_NAME'] = 'The following zones will be ignored by the scanner:'
 --#endregion
 --#endregion
---* Sync Messages
+
+--#region Analytics
+L['ANALYTICS'] = 'Analytics'
+L['ANALYTICS_DESC'] = 'View your stats on inviting players to the guild.'
+L['ANALYTICS_BLACKLISTED'] = 'Players you blacklisted'
+L['ANALYTICS_SCANNED'] = 'Total players scanned'
+L['ANALYTICS_INVITED'] = 'Players you invited to the guild'
+L['ANALYTICS_DECLINED'] = 'Players that declined invite'
+L['ANALYTICS_ACCEPTED'] = 'Players that accepted invite'
+L['ANALYTICS_NO_GUILD'] = 'Players with no guild found'
+L['ANALYTICS_STATS_START'] = 'Stats beginning on'
+L['ANALYTICS_SESSION'] = 'Session'
+L['ANALYTICS_SESSION_SCANNED'] = 'Scanned'
+L['ANALYTICS_SESSION_BLACKLISTED'] = 'Blacklisted'
+L['ANALYTICS_SESSION_INVITED'] = 'Invited'
+L['ANALYTICS_SESSION_DECLINED'] = 'Declined Invite'
+L['ANALYTICS_SESSION_ACCEPTED'] = 'Accepted Invite'
+L['ANALYTICS_SESSION_WAITING'] = 'Waiting on'
+L['ANALYTICS_SESSION_TIMED_OUT'] = 'Invite Timed Out'
+L['ANALYTICS_SESSION_NO_GUILD'] = 'Potential Found'
+L['ANALYTICS_SESSION_STARTED'] = 'Session Started'
+L['LAST_SCAN'] = 'Last Player Scanned'
+
+L['GUILD_ANALYTICS'] = 'Guild Analytics'
+L['PROFILE_ANALYTICS'] = 'Character Analytics'
+L['SESSION_ANALYTICS'] = 'Session Analytics'
+--#endregion
 
 --#region Sync
 L['SYNC_ALREADY_IN_PROGRESS'] = 'Sync is already in progress'
@@ -435,6 +380,8 @@ L['REQUEST_WAIT_TIMEOUT'] = 'Did not get a reply from server.'
 L['NO_CLIENTS_FOUND_TO_SYNC_WITH'] = 'No clients found to sync with.'
 
 -- Sync Messages
+L['AUTO_SYNC'] = 'Auto Sync'
+L['MANUAL_SYNC'] = 'Manual Sync'
 L['CLIENT_SYNC'] = 'Client Sync'
 L['SYNC_FINISHED'] = 'has finished.'
 

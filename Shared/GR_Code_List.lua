@@ -9,7 +9,7 @@ function list:AddToAntiSpam(fullName)
     if not fullName then return end
 
     fullName = strlower(fullName:match('-') and fullName or fullName..'-'..GetRealmName())
-    ns.tblAntiSpamList[fullName] = {
+    ns.AntiSpamListList[fullName] = {
         time = time(),
         name = fullName,
     }
@@ -21,7 +21,7 @@ function list:AddToBlackList(fullName, reason)
 
     local pName = fullName:match('-') and fullName:gsub('%-.*', '') or fullName
     fullName = strlower(fullName:match('-') and fullName or fullName..'-'..GetRealmName())
-    ns.tblBlackList[fullName] = {
+    ns.BlackList[fullName] = {
         name = pName,
         reason = reason,
         blBy = UnitName('player'),
@@ -36,7 +36,7 @@ function list:BlacklistReason(fullName)
     if not fullName then return end
 
     fullName = strlower(fullName:match('-') and fullName or fullName..'-'..GetRealmName())
-    return ns.tblBlackList[fullName] and ns.tblBlackList[fullName].reason or ''
+    return ns.BlackList[fullName] and ns.BlackList[fullName].reason or ''
 end
 function list:ManualBlackList(blName, blMsg, POPUP_NAME)
     if blName then
@@ -112,7 +112,7 @@ function list:CheckAntiSpam(fullName)
     elseif GR.isTesting then return false, L['ANTI_SPAM'] end
 
     fullName = strlower(fullName:match('-') and fullName or fullName..'-'..GetRealmName())
-    local antiSpam = ns.tblAntiSpamList[fullName]
+    local antiSpam = ns.AntiSpamListList[fullName]
     if not antiSpam then return false, L['ANTI_SPAM'] end
 
     return true, L['ANTI_SPAM']
@@ -121,5 +121,5 @@ function list:CheckBlacklist(fullName)
     if not fullName then return end
 
     fullName = strlower(fullName:match('-') and fullName or fullName..'-'..GetRealmName())
-    return (ns.tblBlackList[fullName] or false), ((ns.tblBlackList[fullName] and ns.tblBlackList[fullName].reason) and ns.tblBlackList[fullName].reason or L['BLACKLIST'])
+    return (ns.BlackList[fullName] or false), ((ns.BlackList[fullName] and ns.BlackList[fullName].reason) and ns.BlackList[fullName].reason or L['BLACKLIST'])
 end

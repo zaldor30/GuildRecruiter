@@ -32,12 +32,12 @@ function code:decompressData(data, decode, skipCompression)
     return aceSerializer:Deserialize(decompressedData)
 end
 function code:saveTables(whichOne)
-    if not ns.tblAntiSpamList then return end
-    if whichOne == 'BLACK_LIST' then ns.guild.blackList = ns.code:compressData(ns.tblBlackList)
-    elseif whichOne == 'ANTI_SPAM_LIST' then ns.guild.antiSpamList = ns.code:compressData(ns.tblAntiSpamList)
+    if not ns.AntiSpamListList then return end
+    if whichOne == 'BLACK_LIST' then ns.guild.blackList = ns.code:compressData(ns.BlackList)
+    elseif whichOne == 'ANTI_SPAM_LIST' then ns.guild.antiSpamList = ns.code:compressData(ns.AntiSpamListList)
     else
-        ns.guild.blackList = ns.code:compressData(ns.tblBlackList)
-        ns.guild.antiSpamList = ns.code:compressData(ns.tblAntiSpamList)
+        ns.guild.blackList = ns.code:compressData(ns.BlackList)
+        ns.guild.antiSpamList = ns.code:compressData(ns.AntiSpamListList)
     end
 end
 

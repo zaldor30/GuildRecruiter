@@ -36,7 +36,7 @@ function convert:ConvertFrom3to4()
     if db then db.global.dbVer = nil end
     if (db and db.global.dbVersion and type(db.global.dbVersion) == 'number') and db.global.dbVersion >= 4 then return false end
 
-    ns.blacklist, ns.tblAntiSpamList = {}, {}
+    ns.blacklist, ns.AntiSpamListList = {}, {}
     for k, v in pairs(db.global) do
         if type(k) == 'number' then
             oldData[k] = v
@@ -47,7 +47,7 @@ function convert:ConvertFrom3to4()
                 if success and tbl then
                     for k1, v1 in pairs(tbl) do
                         local key = strlower(k1:match('-') and k1 or k1..'-'..GetRealmName())
-                        ns.tblAntiSpamList[key] = {
+                        ns.AntiSpamListList[key] = {
                             time = v1.date,
                             name = v1.name,
                         }

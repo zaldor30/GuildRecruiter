@@ -1,4 +1,4 @@
-local addonName, ns = ... -- Namespace (myaddon, namespace)
+local addonName, ns = ... -- Namespace (myAddon, namespace)
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
 local MAX_CHARACTERS = 255
@@ -52,7 +52,7 @@ local tblASDays = {
     [180] = '180 days (6 months)',
 }
 
-ns.guildRecuriterSettings = {
+ns.guildRecruiterSettings = {
     name = L['TITLE']..' '..GR.versionOut,
     type = 'group',
     args = {
@@ -1048,15 +1048,15 @@ ns.guildRecuriterSettings = {
                     width = 'full',
                     values = function()
                         local tbl = {}
-                        tblAntiSpamSorted = tblAntiSpamSorted or ns.code:sortTableByField(ns.tblAntiSpamList or {}, 'name')
+                        tblAntiSpamSorted = tblAntiSpamSorted or ns.code:sortTableByField(ns.AntiSpamListList or {}, 'name')
                         for k, r in pairs(tblAntiSpamSorted or {}) do
                             tbl[k] = (r.name..': '..date("%m/%d/%Y %H:%M", r.date))
                         end
 
                         return tbl
                     end,
-                    set = function(_, key, val) if not tblAntiSpamSorted then return end ns.tblAntiSpamList[tblAntiSpamSorted[key].key].selected = val end,
-                    get = function(_, key) if not tblAntiSpamSorted then return end return ns.tblAntiSpamList[tblAntiSpamSorted[key].key].selected or false end,
+                    set = function(_, key, val) if not tblAntiSpamSorted then return end ns.AntiSpamListList[tblAntiSpamSorted[key].key].selected = val end,
+                    get = function(_, key) if not tblAntiSpamSorted then return end return ns.AntiSpamListList[tblAntiSpamSorted[key].key].selected or false end,
                 }
             }
         },
@@ -1080,8 +1080,8 @@ ns.guildRecuriterSettings = {
                         ns.g.blackListRemoved = ns.g.blackListRemoved and ns.g.blackListRemoved or {}
                         for _, r in pairs(tblBlackListSorted or {}) do
                             if r.selected then
-                                tinsert(ns.g.blackListRemoved, ns.tblBlackList[r.key])
-                                ns.tblBlackList[r.key] = nil
+                                tinsert(ns.g.blackListRemoved, ns.BlackList[r.key])
+                                ns.BlackList[r.key] = nil
                             end
                         end
                     end,
@@ -1096,16 +1096,16 @@ ns.guildRecuriterSettings = {
                         for _, r in pairs(tblBlackListSorted or {}) do
                             if r.blBy == UnitName('player') then
                                 if r.selected and not r.private then
-                                    ns.tblBlackList[r.key].private = true
+                                    ns.BlackList[r.key].private = true
                                 elseif r.selected and r.private then
-                                    ns.tblBlackList[r.key].private = false
+                                    ns.BlackList[r.key].private = false
                                 end
                             elseif r.selected then ns.code:fOut(L['BL_PRIVATE_REASON_ERROR']..' '..r.key) end
                             r.selected = false
                         end
 
                         -- Put back in to black list table
-                        for _, r in pairs(ns.tblBlackList) do ns.tblBlackList[r.key] = r end
+                        for _, r in pairs(ns.BlackList) do ns.BlackList[r.key] = r end
                     end,
                 },
                 blHeader3 = {
@@ -1120,7 +1120,7 @@ ns.guildRecuriterSettings = {
                     width = 'full',
                     values = function()
                         local tbl = {}
-                        tblBlackListSorted = ns.code:sortTableByField(ns.tblBlackList, 'name')
+                        tblBlackListSorted = ns.code:sortTableByField(ns.BlackList, 'name')
                         for k, r in pairs(tblBlackListSorted or {}) do
                             local reason = r.reason
                             if r.private then reason = '<Private>' end

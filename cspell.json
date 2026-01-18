@@ -3,7 +3,19 @@
     "ignorePaths": [],
     "dictionaryDefinitions": [],
     "dictionaries": [],
-    "words": [],
-    "ignoreWords": [],
+    "words": [
+        "Bliz",
+        "cata",
+        "relogging",
+        "strlower",
+        "strmatch",
+        "strsub",
+        "strupper",
+        "Toon"
+    ],
+    "ignoreWords": [
+        "GUILDNAME",
+        "PLAYERNAME"
+    ],
     "import": []
 }
