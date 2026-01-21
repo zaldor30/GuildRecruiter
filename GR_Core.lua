@@ -175,10 +175,6 @@ function core:StartGuildRecruiter()
     GR:RegisterChatCommand('rl', function() ReloadUI() end) -- quick reload
 
     ClubID = self:GuildVerification() or nil
-    if not ClubID then return end
-    core.isEnabled = true
-
-    if not (self:InitializeGuildRecruiter() or false) then return end
 end
 
 --* Verify guild status and Guild Status Events
@@ -190,11 +186,17 @@ function core:GuildVerification()
     local function clubIDCheck(count)
         local clubID = C_Club.GetGuildClubId() or nil
 
-        if clubID then return clubID
+        if clubID then
+            core.isEnabled = true
+            ClubID = clubID
+            core:InitializeGuildRecruiter()
+            return clubID
         else
             if count < GuildCheckTimeOut then
                 C_Timer.After(1, function() clubIDCheck(count + 1) end)
-            else return nil end
+            else
+                core.isEnabled = false
+                return nil end
         end
     end
     local clubID = clubIDCheck(0)
@@ -366,7 +368,6 @@ function core:RegisterDatabase()
     if ClubID and not db.global[ClubID] then
         db.global[ClubID] = self.guildFileStructure
     end
-
     -- Bind handy references (read/write) for the rest of the addon
     ns.p,        ns.g,        ns.guild      = db.profile, db.global, db.global[ClubID]
     ns.pAnalytics, ns.gAnalytics            = ns.p.analytics, ns.guild.analytics

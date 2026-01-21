@@ -9,8 +9,8 @@ ns.ICON_PATH = 'Interface\\AddOns\\'..addonName..'\\Images\\'
 GR.commPrefix = 'GRSync'
 GR.dbVersion = 4
 
-GR.debug = true -- Enable debug messages
-GR.isPreRelease = true -- Is this a pre-release version (alpha/beta/rc)
+GR.debug = false -- Enable debug messages
+GR.isPreRelease = false -- Is this a pre-release version (alpha/beta/rc)
 GR.isTesting = UnitName('player') == 'Holycynic' or false -- Used for testing purposes (invite)
 GR.enableFilter = UnitName('player') == 'Holycynic' or false -- Enable filter system (for testing)
 
