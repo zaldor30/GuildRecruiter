@@ -407,10 +407,12 @@ function core:InitializeTables()
         ns.classes = ns.ds:classes_retail()
         ns.invalidZones = ns.ds:invalidZones_Retail()
     elseif ns.classic then
+        ns.MAX_CHARACTER_LEVEL = GetMaxPlayerLevel()
         ns.races   = ns.ds:races_classic()
         ns.classes = ns.ds:classes_classic()
         ns.invalidZones = ns.ds:invalidZones_Classic()
     elseif ns.cata then
+        ns.MAX_CHARACTER_LEVEL = GetMaxPlayerLevel()
         ns.races   = ns.ds:races_cata()
         ns.classes = ns.ds:classes_cata()
         ns.invalidZones = ns.ds:invalidZones_Cata()
