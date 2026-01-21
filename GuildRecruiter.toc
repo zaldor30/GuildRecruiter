@@ -1,4 +1,4 @@
-## Interface: 120001
+## Interface: 120000
 ## X-Curse-Project-ID: 882061
 ## X-Website: https://www.curseforge.com/wow/addons/guild-recruiter
 ## X-Flavor: Mainline
