@@ -675,7 +675,7 @@ function scanner:PerformSearch()
     ns.analytics:UpdateData('LAST_SCAN', date('%m/%d/%Y %H:%M:%S'))
     ns.analytics:UpdateSessionData('LAST_SCAN', date('%m/%d/%Y %H:%M:%S'))
 
-    FriendsFrame:UnregisterEvent("WHO_LIST_UPDATE")
+    --FriendsFrame:UnregisterEvent("WHO_LIST_UPDATE")
     GR:RegisterEvent('WHO_LIST_UPDATE', CallBackWhoListUpdate)
 
     C_FriendList.SetWhoToUi(true)

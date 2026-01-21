@@ -351,7 +351,7 @@ function base:buttonAction(button)
         if not ns.home.isOk then return end
         ns.scanner:SetShown(true)
     elseif button == 'OPEN_ABOUT' then ns.about:SetShown(true)
-    elseif button == 'OPEN_SETTINGS' then Settings.OpenToCategory('Guild Recruiter')
+    elseif button == 'OPEN_SETTINGS' then ns.core:OpenConfig()
     elseif button == 'SYNC_TOGGLE' then ns.frames:AcceptDialog('Sync\nUnder Construction!!', function() return end)
     elseif button == 'OPEN_STATS' then ns.stats:SetShown(true)
     elseif button == 'OPEN_BLACKLIST' then

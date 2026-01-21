@@ -50,7 +50,7 @@ ns.BUTTON_SETTINGS = ns.ICON_PATH..'GR_Settings'
 -- Global Variables
 ns.PLAYER_PROFILE = UnitName('player')..'-'..GetRealmName()
 ns.SECONDS_IN_A_DAY = 86400
-ns.MAX_CHARACTER_LEVEL = GetMaxPlayerLevel()
+ns.MAX_CHARACTER_LEVEL = 80 --GetMaxPlayerLevel() /! CHANGE ON FULL RELEASE
 
 -- Highlight Images
 ns.BLUE_HIGHLIGHT = 'bags-glow-heirloom'

@@ -461,7 +461,7 @@ function core:StartSlashCommands()
         elseif msg == strlower(L['HELP']) then
             ns.code:fOut(L['SLASH_COMMANDS'], ns.COLOR_DEFAULT, true)
         elseif strlower(msg) == strlower(L['CONFIG']) then
-            Settings.OpenToCategory('Guild Recruiter')
+            core:OpenConfig()
         elseif strlower(msg):match(strlower(L['BLACKLIST'])) then
             msg = strlower(msg):gsub(strlower(L['BLACKLIST']), ''):trim()
             local name = strupper(strsub(msg,1,1))..strlower(strsub(msg,2))
@@ -486,7 +486,7 @@ function core:StartMiniMapIcon()
             elseif button == 'LeftButton' then
                 ns.base:SetShown(not ns.base:IsShown())
             elseif button == 'RightButton' then
-                Settings.OpenToCategory('Guild Recruiter')
+                core:OpenConfig()
             end
         end,
         OnTooltipShow = function()
@@ -509,6 +509,31 @@ function core:StartMiniMapIcon()
 
     icon:Register('GR_Icon', iconData, ns.pSettings.minimap)
     self.minimapIcon = icon
+end
+
+--- Open the addon configuration panel across game versions.
+function core:OpenConfig()
+    -- Retail (Dragonflight+): Settings API expects a category ID/object, not a name.
+    if Settings and Settings.OpenToCategory then
+        local opts = ns.addonOptions
+        local id = opts and (opts.ID or opts.categoryID)
+        if id then
+            Settings.OpenToCategory(id)
+            return
+        end
+        -- Fallback: open AceConfigDialog window if category ID unavailable
+        ACD:Open(addonName)
+        return
+    end
+
+    -- Classic-era clients: use the legacy Interface Options frame
+    if InterfaceOptionsFrame_OpenToCategory then
+        InterfaceOptionsFrame_OpenToCategory(ns.addonOptions or addonName)
+        return
+    end
+
+    -- Last resort: open AceConfigDialog directly
+    ACD:Open(addonName)
 end
 --#endregion Initialize Guild Recruiter Routines
 
