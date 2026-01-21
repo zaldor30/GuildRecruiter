@@ -63,6 +63,7 @@ function core:NotifySettingsUpdate()
 end
 
 --*Initialize core defaults and AceDB base schemas (no I/O, no UI).
+local GuildCheckTimeOut = 15     -- Seconds to wait for guild clubID fetch
 -- Call once on load; real boot happens in StartGuildRecruiter().
 --- Prepare default structures used by AceDB and runtime flags.
 function core:Init()
@@ -72,7 +73,6 @@ function core:Init()
     self.obeyBlockInvites = true    -- Default, can be overridden by settings
 
     self.minimapIcon = nil          -- LibDBIcon handle (set in StartMiniMapIcon)
-    self.GuildCheckTimeOut = 15     -- Seconds to wait for guild clubID fetch
 
     -- AceDB profile/global scaffolding (defaults). Do not mutate in-place;
     -- treat as constant default templates passed to AceDB:New().
@@ -192,7 +192,7 @@ function core:GuildVerification()
 
         if clubID then return clubID
         else
-            if count < self.GuildCheckTimeOut then
+            if count < GuildCheckTimeOut then
                 C_Timer.After(1, function() clubIDCheck(count + 1) end)
             else return nil end
         end
