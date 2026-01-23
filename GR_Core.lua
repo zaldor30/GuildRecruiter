@@ -22,7 +22,7 @@ Lifecycle Overview:
 local addonName, ns = ... -- Namespace (myAddon, namespace)
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
-ns.BlackList, ns.AntiSpamListList = {}, {}
+ns.BlackList, ns.AntiSpamList = {}, {}
 
 local AC, ACD   = LibStub('AceConfig-3.0'), LibStub('AceConfigDialog-3.0')
 local icon, DB  = LibStub('LibDBIcon-1.0'), LibStub('AceDB-3.0')
@@ -185,9 +185,9 @@ function core:GuildVerification()
     -- Recursive function to wait for clubID fetch
     local function clubIDCheck(count)
         local clubID = C_Club.GetGuildClubId() or nil
+        core.isEnabled = true
 
         if clubID then
-            core.isEnabled = true
             ClubID = clubID
             core:InitializeGuildRecruiter()
             return clubID
@@ -207,11 +207,10 @@ function core:GuildVerification()
         return
     elseif not CanGuildInvite() then ns.code:cOut(L['CANNOT_INVITE']) end
 
-    GR:RegisterEvent('PLAYER_GUILD_UPDATE', function()
-        self:GuildStatusChanged()
-    end) -- Handle guild join/leave guild events
-
     if clubID then
+        GR:RegisterEvent('PLAYER_GUILD_UPDATE', function()
+            self:GuildStatusChanged()
+        end) -- Handle guild join/leave guild events
         GR:RegisterEvent('GUILD_ROSTER_UPDATE', function()
             self:GuidInfoChanges()
         end) -- Check for guild info changes and check rank
@@ -395,10 +394,10 @@ function core:InitializeTables()
 
     -- Decompress antiSpamList
     if ns.guild.antiSpamList and type(ns.guild.antiSpamList) == "table" and next(ns.guild.antiSpamList) ~= nil then
-        ns.AntiSpamListList = ns.code:decompressData(ns.guild.antiSpamList)
+        ns.AntiSpamList = ns.code:decompressData(ns.guild.antiSpamList)
     else
         ns.guild.antiSpamList = {}
-        ns.AntiSpamListList = {}
+        ns.AntiSpamList = {}
     end
 
     -- Create Datasets (classes/races/invalid zones)
@@ -558,5 +557,5 @@ end
     Other variables:
     core.isEnabled         : True if GR is fully started and enabled
     ns.BlackList           : Decompressed blacklist table
-    ns.AntiSpamListList    : Decompressed anti-spam list table
+    ns.AntiSpamList    : Decompressed anti-spam list table
 ]]

@@ -1048,15 +1048,15 @@ ns.guildRecruiterSettings = {
                     width = 'full',
                     values = function()
                         local tbl = {}
-                        tblAntiSpamSorted = tblAntiSpamSorted or ns.code:sortTableByField(ns.AntiSpamListList or {}, 'name')
+                        tblAntiSpamSorted = tblAntiSpamSorted or ns.code:sortTableByField(ns.AntiSpamList or {}, 'name')
                         for k, r in pairs(tblAntiSpamSorted or {}) do
                             tbl[k] = (r.name..': '..date("%m/%d/%Y %H:%M", r.date))
                         end
 
                         return tbl
                     end,
-                    set = function(_, key, val) if not tblAntiSpamSorted then return end ns.AntiSpamListList[tblAntiSpamSorted[key].key].selected = val end,
-                    get = function(_, key) if not tblAntiSpamSorted then return end return ns.AntiSpamListList[tblAntiSpamSorted[key].key].selected or false end,
+                    set = function(_, key, val) if not tblAntiSpamSorted then return end ns.AntiSpamList[tblAntiSpamSorted[key].key].selected = val end,
+                    get = function(_, key) if not tblAntiSpamSorted then return end return ns.AntiSpamList[tblAntiSpamSorted[key].key].selected or false end,
                 }
             }
         },

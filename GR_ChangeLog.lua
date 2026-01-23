@@ -4,6 +4,9 @@ ns.changeLog = [[
     # Guild Recruiter
     ## 4.0 - War Within/Classic/Cata Release
 
+    ### v4.1.47
+        - Fixing issue with AntiSpam
+        - Updated to 12.0 version
     ### v4.1.41
         - Fix issue with whispers showing when disabled.
     ### v4.1.40

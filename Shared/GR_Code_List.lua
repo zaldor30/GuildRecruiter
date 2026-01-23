@@ -9,7 +9,7 @@ function list:AddToAntiSpam(fullName)
     if not fullName then return end
 
     fullName = strlower(fullName:match('-') and fullName or fullName..'-'..GetRealmName())
-    ns.AntiSpamListList[fullName] = {
+    ns.AntiSpamList[fullName] = {
         time = time(),
         name = fullName,
     }
@@ -112,7 +112,7 @@ function list:CheckAntiSpam(fullName)
     elseif GR.isTesting then return false, L['ANTI_SPAM'] end
 
     fullName = strlower(fullName:match('-') and fullName or fullName..'-'..GetRealmName())
-    local antiSpam = ns.AntiSpamListList[fullName]
+    local antiSpam = ns.AntiSpamList[fullName]
     if not antiSpam then return false, L['ANTI_SPAM'] end
 
     return true, L['ANTI_SPAM']
